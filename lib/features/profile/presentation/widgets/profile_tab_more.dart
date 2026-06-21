@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 /// More tab: extra options + privacy controls.
 /// If [openEditorDirectly] is true, it renders the "About editor" list style.
 class ProfileTabMore extends StatelessWidget {

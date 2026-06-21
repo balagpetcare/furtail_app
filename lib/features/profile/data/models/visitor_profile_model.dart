@@ -1,5 +1,5 @@
-import 'package:bpa_app/features/pets/data/models/pet_model.dart';
-import 'package:bpa_app/core/media/media_url.dart';
+import 'package:furtail_app/features/pets/data/models/pet_model.dart';
+import 'package:furtail_app/core/media/media_url.dart';
 
 class VisitorAward {
   final String title;
@@ -133,7 +133,7 @@ class VisitorProfileModel {
 
     return VisitorProfileModel(
       id: (user['id'] is num) ? (user['id'] as num).toInt() : 0,
-      displayName: (profile['displayName'] ?? 'BPA Member').toString(),
+      displayName: (profile['displayName'] ?? 'Furtail Member').toString(),
       username: profile['username']?.toString(),
       bio: profile['bio']?.toString(),
       avatarUrl: MediaUrl.normalize((avatarMedia['url']?.toString() ?? '').toString()),

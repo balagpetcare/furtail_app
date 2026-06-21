@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/l10n/app_localizations.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/l10n/app_localizations.dart';
 
 import '../../data/models/blocked_user.dart';
 import '../providers/settings_providers.dart';

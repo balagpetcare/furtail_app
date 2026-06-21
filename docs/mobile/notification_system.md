@@ -1,6 +1,6 @@
-# BPA Mobile — Notification System Implementation Report
+# Furtail Mobile — Notification System Implementation Report
 
-**Project:** `bpa_app`  
+**Project:** `furtail_app`  
 **Date:** 2026-06-04  
 **Stack:** Firebase Cloud Messaging (FCM) + `flutter_local_notifications`  
 **Status:** Implemented (client); backend FCM send + device-token API pending
@@ -70,7 +70,7 @@ Campaign module
 |------|----------|
 | **Registration** | After FCM init, `getToken()` → `NotificationRepository.registerDeviceToken()` |
 | **Refresh** | `FirebaseMessaging.onTokenRefresh` → re-register |
-| **Cache** | `SharedPreferences`: `bpa_fcm_token`, `bpa_fcm_token_synced` |
+| **Cache** | `SharedPreferences`: `furtail_fcm_token`, `furtail_fcm_token_synced` |
 | **API** | `POST /api/v1/me/device-tokens` (forward-compatible; fails silently until backend exists) |
 | **Unregister** | `DELETE /api/v1/me/device-tokens` + clear cache |
 
@@ -155,8 +155,8 @@ presentation/providers/notification_controller.dart
 
 ## 7. Firebase setup (required for production push)
 
-1. Create Firebase project and add Android (`com.example.bpa_app`) + iOS apps.
-2. Run from `bpa_app`:
+1. Create Firebase project and add Android (`com.example.furtail_app`) + iOS apps.
+2. Run from `furtail_app`:
    ```bash
    dart pub global activate flutterfire_cli
    flutterfire configure

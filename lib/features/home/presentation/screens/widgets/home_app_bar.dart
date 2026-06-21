@@ -1,8 +1,8 @@
-import 'package:bpa_app/core/accessibility/a11y_widgets.dart';
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
+import 'package:furtail_app/core/accessibility/a11y_widgets.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:flutter/material.dart';
 
 class HomeAppBar extends StatelessWidget {
@@ -25,7 +25,7 @@ class HomeAppBar extends StatelessWidget {
           MinTouchTarget(
             semanticLabel: 'Open navigation menu',
             onTap: () => Scaffold.of(context).openDrawer(),
-            child: BpaNetworkAvatar(
+            child: FurtailNetworkAvatar(
               imageUrl: avatarUrl,
               displayName: userName,
               radius: 22,
@@ -37,7 +37,7 @@ class HomeAppBar extends StatelessWidget {
           Expanded(
             child: Semantics(
               textField: true,
-              label: 'Search BPA',
+              label: 'Search Furtail',
               child: Container(
                 height: 45,
                 decoration: BoxDecoration(
@@ -51,7 +51,7 @@ class HomeAppBar extends StatelessWidget {
                     color: cs.onSurface,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search BPA...',
+                    hintText: 'Search Furtail...',
                     hintStyle: context.appText.bodyMedium!.copyWith(
                       color: cs.onSurfaceVariant,
                     ),

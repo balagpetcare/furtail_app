@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/fundraising_providers.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_common_scaffold.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_common_scaffold.dart';
 
 class FundraisingDonationsScreen extends ConsumerWidget {
   final int campaignId;

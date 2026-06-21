@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:bpa_app/core/crash_reporting/crash_reporting_service.dart';
+import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,11 +21,11 @@ class ApiClient {
     }
     // Phase 5: X-Country-Code for API policy/context
     final prefs = await SharedPreferences.getInstance();
-    final country = prefs.getString("bpa_country_code");
+    final country = prefs.getString("furtail_country_code");
     if (country != null && country.trim().isNotEmpty) {
       headers["X-Country-Code"] = country.trim().toUpperCase();
     }
-    final state = prefs.getString("bpa_state_code");
+    final state = prefs.getString("furtail_state_code");
     if (state != null && state.trim().isNotEmpty) {
       headers["X-State-Code"] = state.trim().toUpperCase();
     }

@@ -1,4 +1,4 @@
-# BPA Flutter UI / UX Audit Report
+# Furtail Flutter UI / UX Audit Report
 
 **Date:** 2026-06-05  
 **Scope:** Home shell, drawer, feed, profile header, theme system, responsive layout (320–tablet)  
@@ -14,8 +14,8 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 |--------|--------|-------|
 | Known overflow hotspots (audited areas) | 8 | 0 (mitigated in touched files) |
 | Hard-coded API host defaults (emulator) | 4 files | 0 in runtime paths |
-| Shared image loader | Partial | `BpaCachedImage` / `BpaNetworkAvatar` |
-| Typography scale alignment | Partial | BPA scale in `AppTypography` |
+| Shared image loader | Partial | `FurtailCachedImage` / `FurtailNetworkAvatar` |
+| Typography scale alignment | Partial | Furtail scale in `AppTypography` |
 
 ---
 
@@ -34,7 +34,7 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 
 **Fixes applied:**
 - Redesigned `_DrawerHeader`: avatar + name + email + `BpaMembershipBadge` + `Wrap` action chips.
-- `BpaNetworkAvatar` with premium badge overlay.
+- `FurtailNetworkAvatar` with premium badge overlay.
 - Theme-aware drawer background (`colorScheme.surfaceContainerHighest`).
 - `AppSpacing` for padding.
 
@@ -49,7 +49,7 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 
 **Fixes applied:**
 - `MediaQuery`-aware horizontal padding (12px &lt; 360, else 16).
-- `BpaNetworkAvatar` for drawer trigger.
+- `FurtailNetworkAvatar` for drawer trigger.
 
 ---
 
@@ -66,7 +66,7 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 - Fixed label width 72px, `maxLines: 1`, ellipsis.
 - Primary color ring from `colorScheme`.
 - Deduplicated story list.
-- `BpaNetworkAvatar` + `ListView.separated`.
+- `FurtailNetworkAvatar` + `ListView.separated`.
 
 ---
 
@@ -119,7 +119,7 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 | `_ExpandableCaption` overflow detection | OK | — |
 
 **Fixes applied:**
-- Author row uses `BpaNetworkAvatar`.
+- Author row uses `FurtailNetworkAvatar`.
 
 **Remaining:** Some inline `TextStyle` / `Color(0x…)` in fundraising embed — migrate to theme in follow-up.
 
@@ -134,7 +134,7 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 
 **Fixes applied:**
 - Tile size 84px on screens &lt; 360.
-- `BpaCachedImage` with empty-state icon.
+- `FurtailCachedImage` with empty-state icon.
 
 ---
 
@@ -149,7 +149,7 @@ A focused pass addressed the highest-risk overflow and inconsistency areas on th
 **Fixes applied:**
 - `LayoutBuilder`: cover 240px phone / 280px tablet+.
 - Horizontal padding on title block.
-- `BpaCachedImage` for cover/avatar; `AppColors.accentGold` for ribbon.
+- `FurtailCachedImage` for cover/avatar; `AppColors.accentGold` for ribbon.
 
 ---
 
@@ -176,12 +176,12 @@ Canonical tokens: `AppPalette` / `Theme.of(context).colorScheme` / `AppColors` (
 
 Touched screens now prefer `colorScheme` over raw `Colors.black54` where updated.
 
-### 2.4 Images (`lib/core/widgets/bpa_network_image.dart`)
+### 2.4 Images (`lib/core/widgets/furtail_network_image.dart`)
 
 | Widget | Purpose |
 |--------|---------|
-| `BpaCachedImage` | Rectangular images, placeholder spinner, broken-image icon |
-| `BpaNetworkAvatar` | Circle avatar + initials fallback |
+| `FurtailCachedImage` | Rectangular images, placeholder spinner, broken-image icon |
+| `FurtailNetworkAvatar` | Circle avatar + initials fallback |
 | `BpaMembershipBadge` | Drawer/profile membership pill |
 | `BpaActionChip` | Drawer quick actions |
 
@@ -192,8 +192,8 @@ Touched screens now prefer `colorScheme` over raw `Colors.black54` where updated
 | File | Summary |
 |------|---------|
 | `lib/core/theme/spacing.dart` | **New** spacing scale |
-| `lib/core/theme/typography.dart` | BPA type sizes |
-| `lib/core/widgets/bpa_network_image.dart` | **New** image/avatar/chips |
+| `lib/core/theme/typography.dart` | Furtail type sizes |
+| `lib/core/widgets/furtail_network_image.dart` | **New** image/avatar/chips |
 | `lib/features/home/presentation/screens/widgets/custom_drawer.dart` | Header redesign, theme |
 | `lib/features/home/presentation/screens/widgets/home_app_bar.dart` | Responsive padding, avatar |
 | `lib/features/home/presentation/screens/widgets/custom_bottom_nav.dart` | Flexible tabs |
@@ -283,4 +283,4 @@ No screenshots were committed with this pass. Suggested capture paths for QA:
 
 ---
 
-*Generated as part of BPA mobile UI stabilization. Update this document when additional modules are migrated.*
+*Generated as part of Furtail mobile UI stabilization. Update this document when additional modules are migrated.*

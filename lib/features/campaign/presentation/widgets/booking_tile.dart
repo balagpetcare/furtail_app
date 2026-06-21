@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import '../../data/models/campaign_models.dart';
 import '../utils/campaign_format_utils.dart';
 

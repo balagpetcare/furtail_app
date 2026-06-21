@@ -1,18 +1,18 @@
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_sheet.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
-import 'package:bpa_app/core/media/media_playback_controller.dart';
-import 'package:bpa_app/core/media/media_url.dart';
-import 'package:bpa_app/app/router/app_routes.dart';
-import 'package:bpa_app/core/services/share_service.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_sheet.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/core/media/media_playback_controller.dart';
+import 'package:furtail_app/core/media/media_url.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
+import 'package:furtail_app/core/services/share_service.dart';
 
 class ReelsPlayerScreen extends StatefulWidget {
   final List<PostModel> reels;

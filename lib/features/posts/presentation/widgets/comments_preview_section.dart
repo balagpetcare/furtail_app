@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_comment_model.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_comment_model.dart';
 
 /// Inline preview of the latest comments for a post.
 ///
@@ -165,7 +165,7 @@ class _MiniCommentTile extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BpaNetworkAvatar(
+        FurtailNetworkAvatar(
           imageUrl: item.author.avatarUrl,
           displayName: item.author.name,
           radius: isReply ? 12 : 14,

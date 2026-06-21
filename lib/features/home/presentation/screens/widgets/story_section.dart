@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 
 class StorySection extends StatelessWidget {
   const StorySection({super.key});
@@ -67,7 +67,7 @@ class _StoryItem extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: cs.primary, width: 2),
                 ),
-                child: BpaNetworkAvatar(
+                child: FurtailNetworkAvatar(
                   imageUrl: data.isMyStory
                       ? 'https://i.pravatar.cc/150?img=5'
                       : data.imgUrl,

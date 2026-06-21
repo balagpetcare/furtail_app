@@ -1,6 +1,6 @@
-# BPA Cat Flu & Rabies Vaccination Campaign System — Mobile Implementation Plan
+# Furtail Cat Flu & Rabies Vaccination Campaign System — Mobile Implementation Plan
 
-**Project:** `bpa_app` (Flutter)  
+**Project:** `furtail_app` (Flutter)  
 **Related:** `backend-api`, `vaccination_2026` (web booking reference), `bpa_web` (admin)  
 **Document type:** Implementation plan only — **no code in this phase**  
 **Date:** 2026-06-05  
@@ -34,7 +34,7 @@
 
 ## 1. Executive summary
 
-The BPA Flutter app already ships a **post-booking vaccination campaign module** (`lib/features/campaign/`) covering digital health records, certificates, QR, import/linking, and local vaccination reminders. It does **not** yet support:
+The Furtail Flutter app already ships a **post-booking vaccination campaign module** (`lib/features/campaign/`) covering digital health records, certificates, QR, import/linking, and local vaccination reminders. It does **not** yet support:
 
 - Home-screen campaign discovery banner
 - In-app booking creation (pet/location/date/slot/payment)
@@ -51,11 +51,11 @@ The backend (`backend-api`) already exposes a **mature public campaign API** use
 
 ## 2. Current state analysis
 
-### 2.1 Flutter app (`bpa_app`)
+### 2.1 Flutter app (`furtail_app`)
 
 | Area | Current state | Gap |
 |------|---------------|-----|
-| **Home screen** | `BPAHomeScreen` → `HomeContentAssembly`: floating `SliverAppBar` (HomeAppBar) → StorySection → ServiceGrid → FeedList | No campaign banner sliver |
+| **Home screen** | `FurtailHomeScreen` → `HomeContentAssembly`: floating `SliverAppBar` (HomeAppBar) → StorySection → ServiceGrid → FeedList | No campaign banner sliver |
 | **Campaign entry** | Service grid tile + drawer → `CampaignHubScreen` (post-booking hub) | No “Book Now” from home |
 | **Campaign API usage** | `campaign-link/*` only via `CampaignRepository` | `campaignPublicCampaigns()` defined in `api_endpoints.dart` but **unused** |
 | **Booking** | Read-only `CampaignBooking` models + `BookingTile` | No checkout/OTP/slot/payment methods |
@@ -204,7 +204,7 @@ lib/features/campaign/
 ### 5.1 User experience
 
 - One or more **premium campaign cards** appear on the home tab immediately below `HomeAppBar`, above `StorySection`.
-- Each card shows: hero image, title, short description, date range, primary location label, formatted price, remaining slots (when API provides), official BPA badge, vaccine icon, **Book Now** CTA.
+- Each card shows: hero image, title, short description, date range, primary location label, formatted price, remaining slots (when API provides), official Furtail badge, vaccine icon, **Book Now** CTA.
 - Multiple active campaigns → horizontal `PageView` carousel with page indicators; single campaign → full-width card.
 - Tap card body → `CampaignDetailScreen`; tap CTA → booking wizard (or detail if guest needs context first).
 - Pull-to-refresh on home re-fetches campaigns (respecting cache TTL).
@@ -349,11 +349,11 @@ Align with `vaccination_2026` for maintainability. Steps:
 
 | User state | Behavior |
 |------------|----------|
-| **Logged in with pets** | Multi-select from user's BPA pets; `catCount = selected.length`; store pet IDs in draft for post-booking `linkPet` |
+| **Logged in with pets** | Multi-select from user's Furtail pets; `catCount = selected.length`; store pet IDs in draft for post-booking `linkPet` |
 | **Logged in, no pets** | Cat count stepper (1..maxCats) + prompt to add pet profile after booking |
 | **Guest** | Cat count stepper; phone OTP optional for claim later |
 
-**Post-booking linking:** After success, if user logged in and selected BPA pets, call `POST /campaign-link/import` then map campaign pets to BPA pets via `POST /campaign-link/pet/:campaignPetId` (new UI in success screen).
+**Post-booking linking:** After success, if user logged in and selected Furtail pets, call `POST /campaign-link/import` then map campaign pets to Furtail pets via `POST /campaign-link/pet/:campaignPetId` (new UI in success screen).
 
 **Alternative (Phase 3+):** Implement OTP legacy flow (`POST /campaign/booking/`) for per-pet name/breed/age at booking time — heavier UX, only if operations require it.
 
@@ -376,7 +376,7 @@ Reuse web branching logic (port from `vaccination_2026/lib/bookingValidation.ts`
 
 | Concern | Solution |
 |---------|----------|
-| Return URLs | Pass mobile deep links: `bpa://campaign/checkout/success?checkoutId=` and `bpa://campaign/checkout/failed?checkoutId=` |
+| Return URLs | Pass mobile deep links: `furtail://campaign/checkout/success?checkoutId=` and `furtail://campaign/checkout/failed?checkoutId=` |
 | Status polling | `GET /public/checkout/:checkoutId/status` every 2s until terminal state (max 2 min) |
 | Free campaigns | `POST /public/checkout/confirm-free` |
 | Pay at venue | When `payAtVenueEnabled`, skip WebView; confirm booking directly |
@@ -447,7 +447,7 @@ flowchart LR
     SMS[Campaign SMS Queue]
   end
 
-  subgraph Mobile["bpa_app notifications"]
+  subgraph Mobile["furtail_app notifications"]
     FCMIn[FirebaseMessaging]
     NS[NotificationService]
     NC[NotificationController]
@@ -552,11 +552,11 @@ Wire drawer “Notifications” to list screen using existing API endpoints (`no
 
 ### 10.1 Design tokens (use existing)
 
-From `core/theme/bpa_design_tokens.dart`, `app_theme.dart`, `app_colors.dart`:
+From `core/theme/furtail_design_tokens.dart`, `app_theme.dart`, `app_colors.dart`:
 
 - Card radius: **16px** (match feed cards)
 - Primary CTA: `AppPrimaryButton` or filled button with `colorScheme.primary`
-- Gold accent: `BpaDesignTokens.accentGold` for price badge
+- Gold accent: `FurtailDesignTokens.accentGold` for price badge
 - Success green for “slots available”
 
 ### 10.2 Campaign banner visual spec
@@ -567,7 +567,7 @@ From `core/theme/bpa_design_tokens.dart`, `app_theme.dart`, `app_colors.dart`:
 | **Hero image** | `AspectRatio` ~16:9 top; `CachedNetworkImage` + placeholder gradient |
 | **Gradient overlay** | Linear: transparent → `Color(0xCC0A1628)` bottom 60% |
 | **Vaccine icon** | Top-left badge circle, `Icons.medical_services_outlined` or custom SVG |
-| **Official BPA badge** | Top-right “BPA Official” pill, white/10 background |
+| **Official Furtail badge** | Top-right “Furtail Official” pill, white/10 background |
 | **Title** | `titleLarge`, white, max 2 lines |
 | **Description** | `bodySmall`, white 85%, max 2 lines |
 | **Date row** | Calendar icon + formatted range (`intl` date formatting, en/bn via l10n) |
@@ -846,7 +846,7 @@ Mirror TypeScript type from web `campaignApi.ts`.
 
 | File | Change |
 |------|--------|
-| `lib/features/home/presentation/screens/bpa_home_screen.dart` | Insert banner sliver in `HomeContentAssembly` |
+| `lib/features/home/presentation/screens/furtail_home_screen.dart` | Insert banner sliver in `HomeContentAssembly` |
 | `lib/core/network/api_endpoints.dart` | New campaign public endpoints |
 | `lib/features/campaign/data/models/campaign_models.dart` | Zone booking nullable fields |
 | `lib/features/campaign/data/repositories/campaign_repository.dart` | Optional: delegate discovery |
@@ -965,7 +965,7 @@ Mirror TypeScript type from web `campaignApi.ts`.
 | Zone interest | Book without venue → shows “Pending assignment” |
 | Offline | Airplane mode → cached banner → booking blocked with message |
 | Logged out book | Guest flow with phone at checkout |
-| Deep link | Open `bpa://campaign/book/{slug}` |
+| Deep link | Open `furtail://campaign/book/{slug}` |
 | Analytics | Verify events in Firebase DebugView |
 | Push | Booking confirmed push opens booking detail |
 
@@ -1027,7 +1027,7 @@ Mirror TypeScript type from web `campaignApi.ts`.
 
 ### Design
 
-- [ ] Premium layout: large image, rounded corners, gradient, vaccine icon, slots indicator, price badge, BPA badge
+- [ ] Premium layout: large image, rounded corners, gradient, vaccine icon, slots indicator, price badge, Furtail badge
 
 ### Offline
 
@@ -1044,11 +1044,11 @@ Mirror TypeScript type from web `campaignApi.ts`.
 
 | Resource | Path |
 |----------|------|
-| Existing campaign module report | `bpa_app/docs/vaccination-campaign-2026/CAMPAIGN-MODULE-REPORT.md` |
-| Notification system doc | `bpa_app/docs/mobile/notification_system.md` |
-| Analytics catalog | `bpa_app/docs/mobile/analytics_events.md` |
-| Home screen assembly | `bpa_app/lib/features/home/presentation/screens/bpa_home_screen.dart` |
-| Campaign repository | `bpa_app/lib/features/campaign/data/repositories/campaign_repository.dart` |
+| Existing campaign module report | `furtail_app/docs/vaccination-campaign-2026/CAMPAIGN-MODULE-REPORT.md` |
+| Notification system doc | `furtail_app/docs/mobile/notification_system.md` |
+| Analytics catalog | `furtail_app/docs/mobile/analytics_events.md` |
+| Home screen assembly | `furtail_app/lib/features/home/presentation/screens/furtail_home_screen.dart` |
+| Campaign repository | `furtail_app/lib/features/campaign/data/repositories/campaign_repository.dart` |
 | Web booking wizard | `vaccination_2026/components/booking/BookingWizard.tsx` |
 | Web campaign API types | `vaccination_2026/lib/campaignApi.ts` |
 | Backend campaign routes | `backend-api/src/api/v1/modules/campaign/campaign.routes.ts` |

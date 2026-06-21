@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
-import 'package:bpa_app/core/widgets/fit_width_media.dart';
-import 'package:bpa_app/features/posts/presentation/screens/reels_player_screen.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
+import 'package:furtail_app/core/widgets/fit_width_media.dart';
+import 'package:furtail_app/features/posts/presentation/screens/reels_player_screen.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
 import '../../data/models/fundraising_models.dart';
 
 class FundraisingCard extends StatelessWidget {
@@ -41,7 +41,7 @@ class FundraisingCard extends StatelessWidget {
               ],
               Row(
                 children: [
-                  BpaNetworkAvatar(
+                  FurtailNetworkAvatar(
                     imageUrl: campaign.author.avatarUrl,
                     displayName: campaign.author.displayName,
                     radius: 16,

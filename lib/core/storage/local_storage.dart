@@ -11,9 +11,9 @@ class LocalStorage {
   static const _kLocale = 'locale'; // 'en' | 'bn'
   static const _kThemeMode = 'theme_mode'; // 'light' | 'dark' | 'system'
   /// Phase 5: Country code for API (X-Country-Code). e.g. BD, IN, US
-  static const _kCountryCode = 'bpa_country_code';
+  static const _kCountryCode = 'furtail_country_code';
   /// Phase 5: State/Province code for API (X-State-Code)
-  static const _kStateCode = 'bpa_state_code';
+  static const _kStateCode = 'furtail_state_code';
 
   static Future<void> saveAuth({
     required String token,
@@ -110,5 +110,68 @@ class LocalStorage {
   static Future<String?> getStateCode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_kStateCode);
+  }
+
+  static Future<void> migrateLegacyPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Country Code migration
+    if (prefs.containsKey('bpa_country_code') && !prefs.containsKey(_kCountryCode)) {
+      final value = prefs.getString('bpa_country_code');
+      if (value != null) {
+        await prefs.setString(_kCountryCode, value);
+      }
+      await prefs.remove('bpa_country_code');
+    } else if (prefs.containsKey('wpa_country_code') && !prefs.containsKey(_kCountryCode)) {
+      final value = prefs.getString('wpa_country_code');
+      if (value != null) {
+        await prefs.setString(_kCountryCode, value);
+      }
+      await prefs.remove('wpa_country_code');
+    }
+    
+    // State Code migration
+    if (prefs.containsKey('bpa_state_code') && !prefs.containsKey(_kStateCode)) {
+      final value = prefs.getString('bpa_state_code');
+      if (value != null) {
+        await prefs.setString(_kStateCode, value);
+      }
+      await prefs.remove('bpa_state_code');
+    } else if (prefs.containsKey('wpa_state_code') && !prefs.containsKey(_kStateCode)) {
+      final value = prefs.getString('wpa_state_code');
+      if (value != null) {
+        await prefs.setString(_kStateCode, value);
+      }
+      await prefs.remove('wpa_state_code');
+    }
+
+    // FCM Token migrations
+    if (prefs.containsKey('bpa_fcm_token') && !prefs.containsKey('furtail_fcm_token')) {
+      final tokenValue = prefs.getString('bpa_fcm_token');
+      if (tokenValue != null) {
+        await prefs.setString('furtail_fcm_token', tokenValue);
+      }
+      await prefs.remove('bpa_fcm_token');
+    } else if (prefs.containsKey('wpa_fcm_token') && !prefs.containsKey('furtail_fcm_token')) {
+      final tokenValue = prefs.getString('wpa_fcm_token');
+      if (tokenValue != null) {
+        await prefs.setString('furtail_fcm_token', tokenValue);
+      }
+      await prefs.remove('wpa_fcm_token');
+    }
+
+    if (prefs.containsKey('bpa_fcm_token_synced') && !prefs.containsKey('furtail_fcm_token_synced')) {
+      final syncedValue = prefs.getBool('bpa_fcm_token_synced');
+      if (syncedValue != null) {
+        await prefs.setBool('furtail_fcm_token_synced', syncedValue);
+      }
+      await prefs.remove('bpa_fcm_token_synced');
+    } else if (prefs.containsKey('wpa_fcm_token_synced') && !prefs.containsKey('furtail_fcm_token_synced')) {
+      final syncedValue = prefs.getBool('wpa_fcm_token_synced');
+      if (syncedValue != null) {
+        await prefs.setBool('furtail_fcm_token_synced', syncedValue);
+      }
+      await prefs.remove('wpa_fcm_token_synced');
+    }
   }
 }

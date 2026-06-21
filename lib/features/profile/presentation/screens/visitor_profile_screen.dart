@@ -1,7 +1,7 @@
-import 'package:bpa_app/core/analytics/analytics_provider.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../cubit/visitor_profile_cubit.dart';
@@ -9,9 +9,9 @@ import '../cubit/visitor_profile_state.dart';
 import '../widgets/visitor_profile_header_stack.dart';
 import '../widgets/profile_tab_gallery.dart';
 import '../widgets/profile_tab_videos.dart';
-import 'package:bpa_app/features/pets/presentation/screens/pet_profile_screen.dart';
-import 'package:bpa_app/core/services/share_service.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/features/pets/presentation/screens/pet_profile_screen.dart';
+import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
 
 /// Visitor profile should look almost identical to UserProfile,
 /// but without any edit options.

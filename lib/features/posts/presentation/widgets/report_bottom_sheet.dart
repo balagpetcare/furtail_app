@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import '../../../../core/services/report_service.dart';
 
 enum ReportTargetType { post, fundraising, user, pet }
@@ -159,7 +159,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thanks for helping keep BPA safe 🐾')),
+        const SnackBar(content: Text('Thanks for helping keep Furtail safe 🐾')),
       );
     } catch (e) {
       if (!mounted) return;

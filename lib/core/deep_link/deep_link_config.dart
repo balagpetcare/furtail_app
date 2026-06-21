@@ -1,17 +1,17 @@
 /// Deep link hosts and scheme configuration.
 abstract final class DeepLinkConfig {
-  static const String customScheme = 'bpa';
+  static const String customScheme = 'furtail';
 
   /// HTTPS hosts allowed for Universal / App Links (override via dart-define).
   static const String universalLinkHost = String.fromEnvironment(
     'DEEP_LINK_HOST',
-    defaultValue: 'app.bpa.global',
+    defaultValue: 'app.furtail.global',
   );
 
   static const List<String> defaultAllowedHosts = [
-    'app.bpa.global',
-    'www.bpa.global',
-    'bpa.global',
+    'app.furtail.global',
+    'www.furtail.global',
+    'furtail.global',
   ];
 
   static List<String> get allowedHosts {
@@ -33,7 +33,7 @@ abstract final class DeepLinkConfig {
     return allowedHosts.any((allowed) => h == allowed || h.endsWith('.$allowed'));
   }
 
-  /// Example universal link: https://app.bpa.global/campaign/42
+  /// Example universal link: https://app.furtail.global/campaign/42
   static Uri exampleUniversal(String type, String id) =>
       Uri.parse('https://$universalLinkHost/$type/$id');
 

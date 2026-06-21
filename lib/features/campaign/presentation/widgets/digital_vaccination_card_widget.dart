@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -85,7 +85,7 @@ class DigitalVaccinationCardWidget extends StatelessWidget {
               _row(context, 'Vaccine', record.vaccineType),
               _row(context, 'Given', administered),
               _row(context, 'Valid until', validUntil),
-              _row(context, 'Campaign', record.campaignName ?? 'BPA 2026'),
+              _row(context, 'Campaign', record.campaignName ?? 'Furtail 2026'),
               if (record.certificateToken != null) ...[
                 const SizedBox(height: 10),
                 Container(

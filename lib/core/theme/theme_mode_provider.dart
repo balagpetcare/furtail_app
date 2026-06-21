@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../storage/local_storage.dart';
 
-/// BPA always uses light theme — persisted value is ignored for UI mode.
+/// Furtail always uses light theme — persisted value is ignored for UI mode.
 final themeModeProvider =
     AsyncNotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
 

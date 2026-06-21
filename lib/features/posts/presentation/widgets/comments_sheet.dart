@@ -1,11 +1,11 @@
-import 'package:bpa_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_comment_model.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_comment_model.dart';
 
 class CommentsSheet extends StatefulWidget {
   final int postId;

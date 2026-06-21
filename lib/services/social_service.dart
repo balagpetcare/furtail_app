@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'api_client.dart';
 
 class SocialStatus {

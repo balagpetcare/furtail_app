@@ -1,9 +1,9 @@
-import 'package:bpa_app/core/analytics/analytics_events.dart';
-import 'package:bpa_app/core/analytics/analytics_service.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/features/notifications/presentation/providers/notification_controller.dart';
+import 'package:furtail_app/core/analytics/analytics_events.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/features/notifications/presentation/providers/notification_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -20,7 +20,7 @@ import '../widgets/auth_text_field.dart';
 import 'register_screen.dart';
 
 // ✅ আপনার প্রকৃত HomeScreen path দিন:
-import 'package:bpa_app/features/home/presentation/screens/bpa_home_screen.dart';
+import 'package:furtail_app/features/home/presentation/screens/furtail_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } catch (_) {}
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const BPAHomeScreen()),
+          MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
         );
       });
     } catch (e) {
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const BPAHomeScreen()),
+        MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
       );
     } catch (e) {
       if (!mounted) return;
@@ -182,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const BPAHomeScreen()),
+        MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
       );
     } catch (e) {
       if (!mounted) return;
@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   AuthHeader(
                     title: "Welcome Back!",
-                    subtitle: "Sign in to continue to BPA",
+                    subtitle: "Sign in to continue to Furtail",
                     titleColor: primary,
                     logoHeight: 120,
                   ),

@@ -1,6 +1,6 @@
-# BPA Mobile — Production Readiness Audit
+# Furtail Mobile — Production Readiness Audit
 
-**App:** `bpa_app` (Flutter)  
+**App:** `furtail_app` (Flutter)  
 **Audit date:** 2026-06-04  
 **Scope:** Client-side production readiness (security, storage, permissions, background work, media, memory, navigation, offline)
 
@@ -73,7 +73,7 @@
 ### Findings
 
 1. **JWT stored in plaintext** — extractable on rooted devices / backups (Android auto-backup not audited here).
-2. **Logout inconsistency:** Settings uses `SettingsRepository.logout()` (clears auth + FCM unregister); drawer logout only removes `token`, `userName`, `userEmail` (`bpa_home_screen.dart` ~312–317) — leaves `userId`, FCM registration, analytics/crashlytics IDs.
+2. **Logout inconsistency:** Settings uses `SettingsRepository.logout()` (clears auth + FCM unregister); drawer logout only removes `token`, `userName`, `userEmail` (`furtail_home_screen.dart` ~312–317) — leaves `userId`, FCM registration, analytics/crashlytics IDs.
 3. **No token expiry handling** on client.
 4. **No binding** of token to device attestation / biometrics.
 
@@ -209,7 +209,7 @@ Declared: `INTERNET`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTER
 | Issue | Location | Impact |
 |-------|----------|--------|
 | **Future recreated every build** | `PostDetailsByIdScreen` — `future: _ds.getPostById(...)` inside `build()` | Repeated API calls, memory churn, jank |
-| **IndexedStack** | `bpa_home_screen.dart` — 4 tabs kept alive | Shop, services, profile, home all in memory |
+| **IndexedStack** | `furtail_home_screen.dart` — 4 tabs kept alive | Shop, services, profile, home all in memory |
 | **Feed list + videos** | Many players if visibility not off-screen | Mitigated by lazy `_setup()` on visibility |
 | **CachedNetworkImage** | Default cache growth | Mitigated via settings cache clear |
 | **Global singletons** | `MediaPlaybackController`, `PostUploadManager` | Listeners must be removed (feed video does) |
@@ -239,7 +239,7 @@ Declared: `INTERNET`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTER
 3. **No auth guard** on wallet, fundraising create, post details by id.
 4. **`LoginScreen` not const** in router — minor.
 5. **Splash** uses `pushReplacement` without named routes — OK but duplicates login/home logic.
-6. **Risk of duplicate home routes** on stack when mixing `pushNamed('/home')` vs `MaterialPageRoute(BPAHomeScreen)`.
+6. **Risk of duplicate home routes** on stack when mixing `pushNamed('/home')` vs `MaterialPageRoute(FurtailHomeScreen)`.
 
 ### Recommendations
 
@@ -304,7 +304,7 @@ flutter build apk --release --dart-define-from-file=env/prod.json
 # Review minify rules for Flutter + Firebase
 
 # 6. App Links
-# Host assetlinks.json / AASA for app.bpa.global domains
+# Host assetlinks.json / AASA for app.furtail.global domains
 
 # 7. Manual QA
 # - Login / logout (drawer + settings) clears session
@@ -355,7 +355,7 @@ flutter build apk --release --dart-define-from-file=env/prod.json
 | Media policy | `lib/core/media/media_policy.dart` |
 | Video lifecycle | `lib/core/media/feed_video_player.dart` |
 | Navigation | `lib/app/router/app_router.dart`, `lib/core/deep_link/deep_link_navigator.dart` |
-| Home shell | `lib/features/home/presentation/screens/bpa_home_screen.dart` |
+| Home shell | `lib/features/home/presentation/screens/furtail_home_screen.dart` |
 
 ---
 

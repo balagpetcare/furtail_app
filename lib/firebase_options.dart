@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError('BPA mobile app does not target web for FCM.');
+      throw UnsupportedError('Furtail mobile app does not target web for FCM.');
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -26,16 +26,16 @@ class DefaultFirebaseOptions {
     apiKey: 'REPLACE_ME',
     appId: '1:000000000000:android:0000000000000000000000',
     messagingSenderId: '000000000000',
-    projectId: 'bpa-app-placeholder',
-    storageBucket: 'bpa-app-placeholder.appspot.com',
+    projectId: 'furtail-app-placeholder',
+    storageBucket: 'furtail-app-placeholder.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'REPLACE_ME',
     appId: '1:000000000000:ios:0000000000000000000000',
     messagingSenderId: '000000000000',
-    projectId: 'bpa-app-placeholder',
-    storageBucket: 'bpa-app-placeholder.appspot.com',
-    iosBundleId: 'com.example.bpaApp',
+    projectId: 'furtail-app-placeholder',
+    storageBucket: 'furtail-app-placeholder.appspot.com',
+    iosBundleId: 'com.example.furtailApp',
   );
 }

@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/theme/app_theme.dart';
+import 'package:furtail_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import '../features/legacy/presentation/screens/splash_screen.dart';
 

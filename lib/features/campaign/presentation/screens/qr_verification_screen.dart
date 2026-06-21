@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,7 +82,7 @@ class _QrVerificationScreenState extends ConsumerState<QrVerificationScreen> {
             controller: _controller,
             decoration: InputDecoration(
               labelText: 'Certificate token',
-              hintText: 'e.g. BPA-XXXXXXXX',
+              hintText: 'e.g. Furtail-XXXXXXXX',
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.paste_rounded),

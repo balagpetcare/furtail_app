@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "TEAMID.com.example.bpaApp",
+        "appID": "TEAMID.com.example.furtailApp",
         "paths": [
           "/campaign/*",
           "/post/*",

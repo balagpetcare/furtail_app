@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/analytics/analytics_service.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';

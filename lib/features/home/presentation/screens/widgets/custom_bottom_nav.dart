@@ -1,7 +1,7 @@
-import 'package:bpa_app/core/accessibility/a11y_widgets.dart';
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/accessibility/a11y_widgets.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 
 class CustomBottomNav extends StatelessWidget {

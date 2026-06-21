@@ -1,15 +1,15 @@
 {
   "project_info": {
     "project_number": "000000000000",
-    "project_id": "bpa-app-placeholder",
-    "storage_bucket": "bpa-app-placeholder.appspot.com"
+    "project_id": "furtail-app-placeholder",
+    "storage_bucket": "furtail-app-placeholder.appspot.com"
   },
   "client": [
     {
       "client_info": {
         "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
         "android_client_info": {
-          "package_name": "com.example.bpa_app"
+          "package_name": "com.example.furtail_app"
         }
       },
       "oauth_client": [],

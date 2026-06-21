@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import '../../../pets/data/models/pet_model.dart';
 
 class MyPetsFamilyWhite extends StatelessWidget {

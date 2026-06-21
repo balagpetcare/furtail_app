@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/analytics/analytics_events.dart';
-import 'package:bpa_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/analytics/analytics_events.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/datasources/auth_remote_datasource.dart';
@@ -131,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const AuthHeader(
                   title: "Create Account",
-                  subtitle: "Join the BPA community today",
+                  subtitle: "Join the Furtail community today",
                   titleColor: teal,
                   logoHeight: 120,
                 ),

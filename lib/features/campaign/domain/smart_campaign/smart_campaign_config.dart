@@ -1,10 +1,10 @@
-import 'bpa_campaign_type.dart';
+import 'furtail_campaign_type.dart';
 import 'campaign_geo_target.dart';
 import 'campaign_priority.dart';
 
 /// Type-agnostic smart campaign configuration (reusable across program types).
 class SmartCampaignConfig {
-  final BpaCampaignType campaignType;
+  final FurtailCampaignType campaignType;
   final CampaignPriority priority;
   final CampaignGeoTarget geoTarget;
   final String? abTestKey;
@@ -12,7 +12,7 @@ class SmartCampaignConfig {
   final bool countdownEnabled;
 
   const SmartCampaignConfig({
-    this.campaignType = BpaCampaignType.vaccination,
+    this.campaignType = FurtailCampaignType.vaccination,
     this.priority = CampaignPriority.medium,
     this.geoTarget = const CampaignGeoTarget(),
     this.abTestKey,
@@ -30,7 +30,7 @@ class SmartCampaignConfig {
     final variantsRaw = root['abVariants'];
 
     return SmartCampaignConfig(
-      campaignType: BpaCampaignType.fromCode(
+      campaignType: FurtailCampaignType.fromCode(
         root['campaignType']?.toString() ?? metadataJson['campaignType']?.toString(),
       ),
       priority: CampaignPriority.fromCode(root['priority']?.toString()),

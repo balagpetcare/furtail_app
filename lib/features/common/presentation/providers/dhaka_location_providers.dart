@@ -65,5 +65,5 @@ final dhakaLocationsProvider = FutureProvider.family<DhakaLocationsResponse, Str
   return DhakaLocationsResponse.fromJson(map);
 });
 
-// Helper: Dhaka District code in BPA seed data
+// Helper: Dhaka District code in Furtail seed data
 bool isDhakaDistrictCode(String? districtCode) => districtCode == 'DIS-47';

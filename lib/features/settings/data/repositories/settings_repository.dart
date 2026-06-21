@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:bpa_app/core/network/api_endpoints.dart';
-import 'package:bpa_app/core/storage/local_storage.dart';
-import 'package:bpa_app/features/notifications/data/repositories/notification_repository.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/core/storage/local_storage.dart';
+import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
+import 'package:furtail_app/services/api_client.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:path_provider/path_provider.dart';
 

@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:bpa_app/core/network/api_config.dart';
-import 'package:bpa_app/core/network/multipart_helper.dart';
-import 'package:bpa_app/core/media/media_url.dart';
+import 'package:furtail_app/core/network/api_config.dart';
+import 'package:furtail_app/core/network/multipart_helper.dart';
+import 'package:furtail_app/core/media/media_url.dart';
 import 'models/user_profile_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;

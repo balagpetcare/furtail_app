@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Legacy theme controller — BPA locks [ThemeMode.light] only.
+/// Legacy theme controller — Furtail locks [ThemeMode.light] only.
 @Deprecated('Use themeModeProvider / MaterialApp themeMode instead.')
 class ThemeController {
   ThemeController._();

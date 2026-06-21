@@ -1,9 +1,9 @@
 import 'dart:ui';
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile_model.dart';
@@ -27,7 +27,7 @@ class ProfileHeader extends StatelessWidget {
     final title = profile.name;
     final subtitle = profile.username?.isNotEmpty == true
         ? "@${profile.username}"
-        : (profile.email ?? profile.phone ?? "BPA Member");
+        : (profile.email ?? profile.phone ?? "Furtail Member");
 
     final cover = profile.coverUrl;
     final avatar = profile.photoUrl;
@@ -47,7 +47,7 @@ class ProfileHeader extends StatelessWidget {
             width: double.infinity,
             child: (cover == null || cover.isEmpty)
                 ? const _DefaultCover()
-                : BpaCachedImage(
+                : FurtailCachedImage(
                     imageUrl: cover,
                     width: double.infinity,
                     height: coverHeight,
@@ -214,7 +214,7 @@ class _AvatarWithRibbon extends StatelessWidget {
                       ),
                     ),
                   )
-                : BpaCachedImage(
+                : FurtailCachedImage(
                     imageUrl: photoUrl,
                     width: 84,
                     height: 84,
@@ -246,7 +246,7 @@ class _AvatarWithRibbon extends StatelessWidget {
                 Icon(Icons.pets, size: 16, color: Color(0xFF0B1220)),
                 SizedBox(width: 8),
                 Text(
-                  "BPA Legend",
+                  "Furtail Legend",
                   style: TextStyle(
                     color: Color(0xFF0B1220),
                     fontWeight: FontWeight.w900,

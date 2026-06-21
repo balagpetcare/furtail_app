@@ -1,11 +1,11 @@
 import 'dart:ui';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/services/share_service.dart';
-import 'package:bpa_app/features/campaign/presentation/screens/digital_health_card_screen.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/features/campaign/presentation/screens/digital_health_card_screen.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
 
 import '../../data/pet_service.dart';
 import '../../data/models/pet_profile_model.dart';

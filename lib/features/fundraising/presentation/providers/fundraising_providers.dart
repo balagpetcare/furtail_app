@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/services/api_client.dart';
 import '../../data/models/fundraising_models.dart';
 import '../../data/models/fundraising_payout_models.dart';
 import '../../data/repositories/fundraising_repository.dart';

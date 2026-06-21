@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/app_colors.dart';
 
-/// Central BPA typography scale (Facebook-style readability).
+/// Central Furtail typography scale (Facebook-style readability).
 abstract final class AppTypographyScale {
   static const double displayLarge = 28;
   static const double displayMedium = 24;

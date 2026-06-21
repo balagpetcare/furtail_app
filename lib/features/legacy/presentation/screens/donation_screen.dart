@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/features/fundraising/presentation/providers/fundraising_providers.dart';
-import 'package:bpa_app/features/fundraising/presentation/widgets/fundraising_card.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
+import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_card.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
 
 enum DonationSort {
   newest,

@@ -1,16 +1,16 @@
-import 'package:bpa_app/core/analytics/analytics_provider.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/core/services/share_service.dart';
-import 'package:bpa_app/core/storage/local_storage.dart';
+import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/core/storage/local_storage.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_preview_section.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_bottom_sheet.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_preview_section.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_bottom_sheet.dart';
 
 import '../../data/models/fundraising_models.dart';
 import '../providers/fundraising_providers.dart';

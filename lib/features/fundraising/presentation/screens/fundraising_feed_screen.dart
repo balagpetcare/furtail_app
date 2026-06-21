@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/fundraising_providers.dart';
 import '../widgets/fundraising_card.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_common_scaffold.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_common_scaffold.dart';
 import 'fundraising_details_screen.dart';
 
 class FundraisingFeedScreen extends ConsumerWidget {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/l10n/app_localizations.dart';
-import 'package:bpa_app/core/analytics/analytics_service.dart';
-import 'package:bpa_app/core/crash_reporting/crash_reporting_service.dart';
-import 'package:bpa_app/core/media/media_playback_controller.dart';
-import 'package:bpa_app/core/localization/locale_controller.dart';
-import 'package:bpa_app/features/auth/presentation/screens/login_screen.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/l10n/app_localizations.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
+import 'package:furtail_app/core/media/media_playback_controller.dart';
+import 'package:furtail_app/core/localization/locale_controller.dart';
+import 'package:furtail_app/features/auth/presentation/screens/login_screen.dart';
 
 import '../providers/settings_providers.dart';
 import '../widgets/settings_widgets.dart';
@@ -53,7 +53,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 style: AppTypography.menuTitle(context),
               ),
               subtitle: Text(
-                'BPA uses a consistent light theme on all devices. '
+                'Furtail uses a consistent light theme on all devices. '
                 'Screen brightness can still be adjusted in Android settings.',
                 style: AppTypography.drawerSubtitle(context),
               ),

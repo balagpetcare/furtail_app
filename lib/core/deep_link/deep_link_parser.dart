@@ -1,7 +1,7 @@
 import 'deep_link_config.dart';
 import 'deep_link_target.dart';
 
-/// Parses `bpa://` and HTTPS universal/app links into [DeepLinkTarget].
+/// Parses `furtail://` and HTTPS universal/app links into [DeepLinkTarget].
 abstract final class DeepLinkParser {
   static const _typeAliases = <String, DeepLinkKind>{
     'campaign': DeepLinkKind.campaign,
@@ -17,7 +17,7 @@ abstract final class DeepLinkParser {
     'user': DeepLinkKind.profile,
   };
 
-  /// Returns null when URI is not a recognized BPA deep link.
+  /// Returns null when URI is not a recognized Furtail deep link.
   static DeepLinkTarget? parse(Uri uri) {
     final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (uri.scheme == DeepLinkConfig.customScheme && uri.host.isNotEmpty) {
@@ -39,7 +39,7 @@ abstract final class DeepLinkParser {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
 
-    if (trimmed.startsWith('bpa://') ||
+    if (trimmed.startsWith('furtail://') ||
         trimmed.startsWith('https://') ||
         trimmed.startsWith('http://')) {
       return parse(Uri.parse(trimmed));

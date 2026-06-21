@@ -1,6 +1,6 @@
 {
-    "name": "bpa_app",
-    "short_name": "bpa_app",
+    "name": "furtail_app",
+    "short_name": "furtail_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

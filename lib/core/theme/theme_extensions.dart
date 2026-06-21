@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'bpa_design_tokens.dart';
+import 'furtail_design_tokens.dart';
 
 /// Theme-aware shortcuts (prefer over hardcoded colors).
 extension AppThemeContext on BuildContext {
@@ -8,7 +8,7 @@ extension AppThemeContext on BuildContext {
 
   ThemeData get appTheme => Theme.of(this);
 
-  /// BPA locks light theme — always false regardless of device setting.
+  /// Furtail locks light theme — always false regardless of device setting.
   bool get isDarkMode => false;
 
   Color get primaryColor => colorScheme.primary;
@@ -29,11 +29,11 @@ extension AppThemeContext on BuildContext {
   /// Secondary/muted text color (theme-aware).
   Color get mutedTextColor => colorScheme.onSurfaceVariant;
 
-  /// Elevated card surface (white in BPA light theme).
+  /// Elevated card surface (white in Furtail light theme).
   Color get bpaCardColor =>
       appTheme.cardTheme.color ?? colorScheme.surface;
 
-  Color get bpaSuccess => BpaDesignTokens.success;
+  Color get bpaSuccess => FurtailDesignTokens.success;
 
-  Color get bpaError => BpaDesignTokens.error;
+  Color get bpaError => FurtailDesignTokens.error;
 }

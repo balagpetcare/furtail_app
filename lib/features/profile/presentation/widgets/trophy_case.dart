@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 

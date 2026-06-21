@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/media/media_url.dart';
+import 'package:furtail_app/core/media/media_url.dart';
 class PetFamilyMemberModel {
   final int id;
   final String relation;

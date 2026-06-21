@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import 'package:bpa_app/core/media/fullscreen_gallery_viewer.dart';
-import 'package:bpa_app/core/media/fullscreen_video_player_screen.dart';
-import 'package:bpa_app/features/fundraising/data/models/fundraising_models.dart';
+import 'package:furtail_app/core/media/fullscreen_gallery_viewer.dart';
+import 'package:furtail_app/core/media/fullscreen_video_player_screen.dart';
+import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 
 class FundraisingMediaCarousel extends StatefulWidget {
   final List<FundraisingMediaItem> media;

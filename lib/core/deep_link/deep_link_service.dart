@@ -66,7 +66,7 @@ class DeepLinkService {
     return navigateTo(target);
   }
 
-  /// Handles string URLs from push payloads (`bpa://…`, `https://…`, `/post/1`).
+  /// Handles string URLs from push payloads (`furtail://…`, `https://…`, `/post/1`).
   Future<bool> handleString(String raw) async {
     final target = DeepLinkParser.parseString(raw);
     if (target == null) return false;

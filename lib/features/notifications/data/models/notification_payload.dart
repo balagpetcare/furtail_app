@@ -29,7 +29,7 @@ class NotificationPayload {
 
     final title = data['title'] ??
         nested['title']?.toString() ??
-        'BPA';
+        'Furtail';
     final body = data['body'] ??
         data['message'] ??
         nested['body']?.toString() ??

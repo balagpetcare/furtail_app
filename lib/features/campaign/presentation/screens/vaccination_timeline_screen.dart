@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

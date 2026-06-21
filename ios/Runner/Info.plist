@@ -24,7 +24,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Bpa App</string>
+		<string>Furtail</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -32,7 +32,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>bpa_app</string>
+		<string>furtail_app</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -45,10 +45,10 @@
 		<array>
 			<dict>
 				<key>CFBundleURLName</key>
-				<string>com.example.bpaApp</string>
+				<string>com.example.furtailApp</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>bpa</string>
+					<string>furtail</string>
 				</array>
 			</dict>
 		</array>

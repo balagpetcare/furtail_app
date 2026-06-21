@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/deep_link/deep_link_parser.dart';
-import 'package:bpa_app/core/deep_link/deep_link_target.dart';
+import 'package:furtail_app/core/deep_link/deep_link_parser.dart';
+import 'package:furtail_app/core/deep_link/deep_link_target.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -22,8 +22,8 @@ void main() {
       expect(t?.id, '42');
     });
 
-    test('bpa scheme campaign detail', () {
-      final t = DeepLinkParser.parse(Uri.parse('bpa://campaign/detail/my-slug'));
+    test('furtail scheme campaign detail', () {
+      final t = DeepLinkParser.parse(Uri.parse('furtail://campaign/detail/my-slug'));
       expect(t?.kind, DeepLinkKind.campaignDetail);
       expect(t?.id, 'my-slug');
     });

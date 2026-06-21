@@ -1,6 +1,6 @@
-# Digital Health Card — BPA App Campaign Integration
+# Digital Health Card — Furtail Campaign Integration
 
-**Project:** `D:\BPA_Data\bpa_app`  
+**Project:** `D:\BPA_Data\furtail_app`  
 **Date:** 2026-06-02  
 **API:** `backend-api` → `/api/v1/campaign-link/*`
 
@@ -160,14 +160,14 @@ From hub without `petId`: pet picker lists `GetPetsUsecase` results.
 | QR camera scan | Manual token entry only; add `mobile_scanner` for live scan (BUG-305 area). |
 | Push notifications | Reminders are local toggles; no FCM (BUG-112). |
 | Pet–booking link | Timeline filters bookings by pet **name** until API exposes `permanentPetId` on booking pets. |
-| Deep link `bpa://certificate/{token}` | Not wired; use `QrVerificationScreen(initialToken: …)` when added. |
+| Deep link `furtail://certificate/{token}` | Not wired; use `QrVerificationScreen(initialToken: …)` when added. |
 
 ---
 
 ## Verification
 
 ```bash
-cd D:\BPA_Data\bpa_app
+cd D:\BPA_Data\furtail_app
 flutter analyze lib/features/campaign
 flutter run
 ```
@@ -179,4 +179,4 @@ Navigate: **Home → Vaccination →** exercise hub tiles; **Pets → profile �
 ## Related docs
 
 - `docs/vaccination-campaign-2026/CAMPAIGN-MODULE-REPORT.md`
-- `backend-api/docs/vaccination-campaign-2026/16-bpa-app-linking.md`
+- `backend-api/docs/vaccination-campaign-2026/16-furtail-app-linking.md`

@@ -1,5 +1,5 @@
-import 'package:bpa_app/features/pets/data/models/pet_model.dart';
-import 'package:bpa_app/core/media/media_url.dart';
+import 'package:furtail_app/features/pets/data/models/pet_model.dart';
+import 'package:furtail_app/core/media/media_url.dart';
 
 class UserProfileModel {
   final int id;
@@ -133,7 +133,7 @@ class UserProfileModel {
 
     return UserProfileModel(
       id: _toInt(data["id"]),
-      name: displayName.isEmpty ? "BPA Member" : displayName,
+      name: displayName.isEmpty ? "Furtail Member" : displayName,
       email: auth["email"]?.toString() ?? data["email"]?.toString(),
       phone: auth["phone"]?.toString() ?? data["phone"]?.toString(),
       username: profile["username"]?.toString(),

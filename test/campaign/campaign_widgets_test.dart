@@ -1,6 +1,6 @@
-import 'package:bpa_app/features/campaign/data/models/campaign_public_models.dart';
-import 'package:bpa_app/features/campaign/widgets/campaign_hero_banner.dart';
-import 'package:bpa_app/features/campaign/widgets/campaign_mini_card.dart';
+import 'package:furtail_app/features/campaign/data/models/campaign_public_models.dart';
+import 'package:furtail_app/features/campaign/widgets/campaign_hero_banner.dart';
+import 'package:furtail_app/features/campaign/widgets/campaign_mini_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +9,7 @@ PublicCampaign _sampleCampaign() {
     'id': 1,
     'name': 'Cat Flu & Rabies 2026',
     'slug': 'cat-flu-2026',
-    'description': 'Official BPA vaccination drive',
+    'description': 'Official Furtail vaccination drive',
     'startDate': '2026-06-01',
     'endDate': '2026-12-31',
     'pricingType': 'PAID',
@@ -37,7 +37,7 @@ void main() {
 
     expect(find.text('Cat Flu & Rabies 2026'), findsOneWidget);
     expect(find.text('Book Now'), findsOneWidget);
-    expect(find.text('BPA Official'), findsOneWidget);
+    expect(find.text('Furtail Official'), findsOneWidget);
   });
 
   testWidgets('CampaignMiniCard is tappable', (tester) async {

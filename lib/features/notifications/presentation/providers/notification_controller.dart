@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/core/deep_link/deep_link_provider.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/core/deep_link/deep_link_provider.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 import '../../../campaign/data/models/campaign_models.dart';
 import '../../../campaign/data/services/campaign_notification_service.dart';

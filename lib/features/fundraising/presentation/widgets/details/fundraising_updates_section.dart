@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/features/fundraising/data/models/fundraising_models.dart';
-import 'package:bpa_app/features/fundraising/presentation/providers/fundraising_providers.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_update_editor_screen.dart';
-import 'package:bpa_app/features/fundraising/presentation/utils/fundraising_time_ago.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
+import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_update_editor_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/utils/fundraising_time_ago.dart';
 
 import 'fundraising_details_dialogs.dart';
 import 'read_more_text.dart';

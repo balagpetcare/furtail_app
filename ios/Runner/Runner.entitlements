@@ -4,9 +4,9 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:app.bpa.global</string>
-		<string>applinks:www.bpa.global</string>
-		<string>applinks:bpa.global</string>
+		<string>applinks:app.furtail.global</string>
+		<string>applinks:www.furtail.global</string>
+		<string>applinks:furtail.global</string>
 	</array>
 </dict>
 </plist>

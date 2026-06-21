@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 /// A small, reusable section title with optional trailing widget.
 ///
 /// Use across features to keep consistent spacing and typography.
-class BpaSectionTitle extends StatelessWidget {
+class FurtailSectionTitle extends StatelessWidget {
   final String title;
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
 
-  const BpaSectionTitle({
+  const FurtailSectionTitle({
     super.key,
     required this.title,
     this.trailing,

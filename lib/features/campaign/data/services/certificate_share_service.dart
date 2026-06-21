@@ -15,11 +15,11 @@ class CertificateShareService {
 
   Future<void> shareCertificateLink(CertificateData cert) async {
     final text = [
-      'BPA Vaccination Certificate',
+      'Furtail Vaccination Certificate',
       'Pet: ${cert.petName}',
       'Vaccine: ${cert.vaccineType}',
       'Token: ${cert.certificateToken}',
-      'Verify at your BPA app or campaign verify page.',
+      'Verify at your Furtail app or campaign verify page.',
     ].join('\n');
     await Share.share(text, subject: 'Vaccination certificate — ${cert.petName}');
   }
@@ -34,7 +34,7 @@ class CertificateShareService {
     await file.writeAsBytes(bytes);
     await Share.shareXFiles(
       [XFile(file.path)],
-      text: 'BPA vaccination certificate',
+      text: 'Furtail vaccination certificate',
       subject: pdf.filename,
     );
     return true;

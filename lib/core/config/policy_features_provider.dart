@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bpa_app/core/network/api_config.dart';
+import 'package:furtail_app/core/network/api_config.dart';
 
 /// Phase 5: Policy features (DONATION, ADS, PRODUCTS) for UI visibility.
 class PolicyFeatures {
@@ -24,7 +24,7 @@ class PolicyFeatures {
 final policyFeaturesProvider = FutureProvider<PolicyFeatures>((ref) async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString('bpa_country_code') ?? 'BD';
+    final code = prefs.getString('furtail_country_code') ?? 'BD';
     final url = '${ApiConfig.host}/api/v1/meta/features?countryCode=$code';
     final res = await http.get(
       Uri.parse(url),

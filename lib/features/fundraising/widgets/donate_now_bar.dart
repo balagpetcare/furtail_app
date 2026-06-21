@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// import 'package:bpa_app/core/constants/app_colors.dart';
+// import 'package:furtail_app/core/constants/app_colors.dart';
 
 class DonateNowBar extends StatelessWidget {
   final VoidCallback onDonate;

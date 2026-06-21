@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/analytics/analytics_events.dart';
-import 'package:bpa_app/core/analytics/analytics_provider.dart';
+import 'package:furtail_app/core/analytics/analytics_events.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:visibility_detector/visibility_detector.dart';

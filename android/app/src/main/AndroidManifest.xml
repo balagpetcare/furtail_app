@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.bpa_app">
+    package="com.example.furtail_app">
     <uses-permission
         android:name="android.permission.INTERNET"/>
     <uses-permission
@@ -31,7 +31,7 @@
     <application
         android:networkSecurityConfig="@xml/network_security_config"
         android:usesCleartextTraffic="true"
-        android:label="BPA"
+        android:label="Furtail"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
@@ -53,21 +53,21 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Custom URL scheme: bpa://campaign/{id} -->
+            <!-- Custom URL scheme: furtail://campaign/{id} -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="bpa"/>
+                <data android:scheme="furtail"/>
             </intent-filter>
             <!-- Android App Links (HTTPS) — host must match assetlinks.json -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="app.bpa.global"/>
-                <data android:scheme="https" android:host="www.bpa.global"/>
-                <data android:scheme="https" android:host="bpa.global"/>
+                <data android:scheme="https" android:host="app.furtail.global"/>
+                <data android:scheme="https" android:host="www.furtail.global"/>
+                <data android:scheme="https" android:host="furtail.global"/>
             </intent-filter>
         </activity>
         <meta-data

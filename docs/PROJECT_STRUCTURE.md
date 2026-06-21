@@ -1,4 +1,4 @@
-# BPA App – Project Structure (Baseline V11.0.1.0)
+# Furtail – Project Structure (Baseline V11.0.1.0)
 
 এই refactor-এর লক্ষ্য হলো **ফাইল খুঁজে পাওয়া**, **কম্পোনেন্ট reuse**, এবং **নতুন feature add করা** সহজ করা — কিন্তু existing functionality না ভেঙে।
 

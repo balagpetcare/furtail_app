@@ -1,11 +1,11 @@
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import '../providers/fundraising_providers.dart';
 
 class FundraisingAccountDocumentsScreen extends ConsumerStatefulWidget {

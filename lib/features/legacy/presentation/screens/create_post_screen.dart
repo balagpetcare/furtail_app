@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/core/utils/app_snackbar.dart';
-import 'package:bpa_app/core/media/video_edit_screen.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/core/utils/app_snackbar.dart';
+import 'package:furtail_app/core/media/video_edit_screen.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});

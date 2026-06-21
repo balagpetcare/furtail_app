@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/location/presentation/widgets/location_selector_widget.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/location/presentation/widgets/location_selector_widget.dart';
 
 import 'package:latlong2/latlong.dart';
-import 'package:bpa_app/features/location/presentation/location_picker_screen.dart';
+import 'package:furtail_app/features/location/presentation/location_picker_screen.dart';
 
 import '../providers/fundraising_providers.dart';
 import '../../data/models/fundraising_models.dart';

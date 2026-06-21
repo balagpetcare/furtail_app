@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import 'package:bpa_app/features/pets/data/pet_service.dart';
-import 'package:bpa_app/features/pets/data/models/pet_profile_model.dart';
-import 'package:bpa_app/features/pets/presentation/providers/pet_providers.dart';
+import 'package:furtail_app/features/pets/data/pet_service.dart';
+import 'package:furtail_app/features/pets/data/models/pet_profile_model.dart';
+import 'package:furtail_app/features/pets/presentation/providers/pet_providers.dart';
 
 import '../providers/campaign_providers.dart';
 import '../utils/campaign_health_utils.dart';
@@ -139,8 +139,8 @@ class _DigitalHealthCardScreenState extends ConsumerState<DigitalHealthCardScree
                       padding: const EdgeInsets.all(20),
                       child: Text(
                         _profile?.vaccinated == true
-                            ? 'Vaccination on file — campaign certificate will appear after BPA clinic visit or import.'
-                            : 'No digital vaccination cards for ${_profile?.name ?? "this pet"} yet. Complete a BPA campaign vaccination or import records.',
+                            ? 'Vaccination on file — campaign certificate will appear after Furtail clinic visit or import.'
+                            : 'No digital vaccination cards for ${_profile?.name ?? "this pet"} yet. Complete a Furtail campaign vaccination or import records.',
                         textAlign: TextAlign.center,
                       ),
                     ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/l10n/app_localizations.dart';
+import 'package:furtail_app/l10n/app_localizations.dart';
 import '../../data/pet_service.dart';
 import 'pet_edit_field_screen.dart';
 import 'pet_edit_photo_screen.dart';

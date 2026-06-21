@@ -1,4 +1,4 @@
-# BPA Flutter — Mobile UI Standardization Report
+# Furtail Flutter — Mobile UI Standardization Report
 
 **Date:** 2026-06-05  
 **Scope:** Application-wide typography, forced light theme, back navigation, drawer, responsive home shell
@@ -68,15 +68,15 @@
 
 ### Behavior
 
-- Android dark mode / system theme **does not** change BPA colors.
+- Android dark mode / system theme **does not** change Furtail colors.
 - `MediaQuery.platformBrightness` is **not** used for theming.
 - Device **screen brightness** (slider) is unaffected — OS setting only.
 
 ### Verification
 
 1. Enable Android dark mode.
-2. Open BPA → background, cards, drawer, feed remain light.
-3. Adjust brightness in quick settings → content dims/brights; colors stay BPA light palette.
+2. Open Furtail → background, cards, drawer, feed remain light.
+3. Adjust brightness in quick settings → content dims/brights; colors stay Furtail light palette.
 
 ---
 
@@ -92,7 +92,7 @@ No code blocks `Brightness` or screen brightness APIs. Only `ThemeData` colors a
 
 **File:** `lib/core/navigation/home_back_handler.dart`
 
-Wrapped around `BPAHomeScreen` scaffold.
+Wrapped around `FurtailHomeScreen` scaffold.
 
 | Step | Action |
 |------|--------|
@@ -124,7 +124,7 @@ Wrapped around `BPAHomeScreen` scaffold.
 |-------------|----------------|
 | Width 80–85% | `width = screenWidth * 0.825`, clamp 280–400 |
 | No overflow | `Wrap` action chips; `maxLines` + ellipsis on titles |
-| Profile header | Column layout; `BpaNetworkAvatar`; membership badge |
+| Profile header | Column layout; `FurtailNetworkAvatar`; membership badge |
 | Typography | Drawer section 13 / menu 16 / subtitle 12 |
 
 ---
@@ -141,11 +141,11 @@ Wrapped around `BPAHomeScreen` scaffold.
 | `lib/core/theme/theme_controller.dart` | Force light |
 | `lib/core/navigation/home_back_handler.dart` | **New** — back |
 | `lib/main.dart` | `ThemeMode.light` |
-| `lib/features/home/.../bpa_home_screen.dart` | Back handler + theme surfaces |
+| `lib/features/home/.../furtail_home_screen.dart` | Back handler + theme surfaces |
 | `lib/features/home/.../custom_drawer.dart` | Width, typography, layout |
 | `lib/features/settings/.../settings_screen.dart` | Appearance copy |
 | `lib/features/profile/.../profile_header.dart` | Typography import |
-| `lib/core/widgets/bpa_network_image.dart` | Caption scale |
+| `lib/core/widgets/furtail_network_image.dart` | Caption scale |
 | `lib/features/home/.../service_grid.dart` | Meta scale |
 | `docs/mobile_ui_standardization_report.md` | **This report** |
 
@@ -195,7 +195,7 @@ Prior UI pass (see `docs/ui_audit_report.md`): story section, bottom nav, feed a
 |-----------|-----|
 | Central typography | ✅ |
 | Drawer menu not oversized | ✅ |
-| Always BPA light theme | ✅ |
+| Always Furtail light theme | ✅ |
 | Device brightness unaffected | ✅ |
 | Professional back on home | ✅ |
 | Drawer 80–85% width | ✅ |
@@ -203,4 +203,4 @@ Prior UI pass (see `docs/ui_audit_report.md`): story section, bottom nav, feed a
 
 ---
 
-*Generated as part of BPA global UX standardization. Complements `docs/ui_audit_report.md`.*
+*Generated as part of Furtail global UX standardization. Complements `docs/ui_audit_report.md`.*

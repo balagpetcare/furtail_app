@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:intl/intl.dart';
 
 import '../utils/campaign_health_utils.dart';

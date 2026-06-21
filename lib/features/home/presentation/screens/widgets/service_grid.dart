@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
 // ✅ আপনার পেজগুলোর সঠিক ইমপোর্ট (ফোল্ডার স্ট্রাকচার অনুযায়ী)
 import '../../../../../features/legacy/presentation/screens/vet_screen.dart';
-import 'package:bpa_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
+import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 import '../../../../../features/legacy/presentation/screens/shop_screen.dart';
 import '../../../../../features/legacy/presentation/screens/donation_screen.dart';
 import '../../../../../features/legacy/presentation/screens/adoption_screen.dart';

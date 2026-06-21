@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -7,9 +7,9 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../providers/fundraising_providers.dart';
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import 'fundraising_account_setup_screen.dart';
-import 'package:bpa_app/features/location/presentation/widgets/location_selector_widget.dart';
+import 'package:furtail_app/features/location/presentation/widgets/location_selector_widget.dart';
 
 /// Fundraising create form (Phase A)
 /// - Entry points:

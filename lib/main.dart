@@ -1,3 +1,4 @@
+import 'core/storage/local_storage.dart';
 import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -5,7 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bpa_app/l10n/app_localizations.dart';
+import 'package:furtail_app/l10n/app_localizations.dart';
 import 'app/router/app_router.dart';
 import 'core/deep_link/deep_link_provider.dart';
 import 'core/localization/locale_controller.dart';
@@ -13,7 +14,7 @@ import 'core/navigation/app_navigator.dart';
 import 'core/theme/app_theme.dart';
 import 'core/accessibility/a11y_widgets.dart';
 import 'core/analytics/analytics_service.dart';
-import 'core/crash_reporting/bpa_crashlytics_provider_observer.dart';
+import 'core/crash_reporting/furtail_crashlytics_provider_observer.dart';
 import 'core/crash_reporting/crash_reporting_service.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import 'features/notifications/presentation/providers/notification_controller.dart';
@@ -26,6 +27,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LocalStorage.migrateLegacyPreferences();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -45,8 +47,8 @@ void main() async {
     () {
       runApp(
         ProviderScope(
-          observers: [BpaCrashlyticsProviderObserver()],
-          child: const BpaApp(),
+          observers: [FurtailCrashlyticsProviderObserver()],
+          child: const FurtailApp(),
         ),
       );
     },
@@ -54,14 +56,14 @@ void main() async {
   );
 }
 
-class BpaApp extends ConsumerStatefulWidget {
-  const BpaApp({super.key});
+class FurtailApp extends ConsumerStatefulWidget {
+  const FurtailApp({super.key});
 
   @override
-  ConsumerState<BpaApp> createState() => _BpaAppState();
+  ConsumerState<FurtailApp> createState() => _FurtailAppState();
 }
 
-class _BpaAppState extends ConsumerState<BpaApp> {
+class _FurtailAppState extends ConsumerState<FurtailApp> {
   @override
   void initState() {
     super.initState();
@@ -92,7 +94,7 @@ class _BpaAppState extends ConsumerState<BpaApp> {
       navigatorKey: AppNavigator.key,
       debugShowCheckedModeBanner: false,
       builder: AppAccessibilityBuilder.wrap,
-      title: 'BPA App',
+      title: 'Furtail',
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('bn')],
       localizationsDelegates: const [

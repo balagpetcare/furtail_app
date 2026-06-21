@@ -1,4 +1,4 @@
-/// Firebase Analytics event names and parameter keys (BPA catalog).
+/// Firebase Analytics event names and parameter keys (Furtail catalog).
 ///
 /// Event names: ≤40 chars, alphanumeric + underscore, start with letter.
 /// See [docs/mobile/analytics_events.md].

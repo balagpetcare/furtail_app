@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/network/api_endpoints.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 import '../../domain/vaccination_platform/campaign_analytics.dart';
 import '../../domain/vaccination_platform/campaign_booking_flow.dart';
@@ -206,8 +206,8 @@ class CampaignRepository {
       'campaignSlug': campaignSlug,
       'phone': draft.phone,
       'catCount': draft.catCount,
-      'returnUrl': 'bpa://campaign/checkout/success',
-      'cancelUrl': 'bpa://campaign/checkout/failed',
+      'returnUrl': 'furtail://campaign/checkout/success',
+      'cancelUrl': 'furtail://campaign/checkout/failed',
     };
     if (draft.hasLocationSelection) {
       body['cityCorporationCode'] = draft.cityCorporationCode;

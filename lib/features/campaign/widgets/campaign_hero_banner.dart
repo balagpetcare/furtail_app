@@ -172,7 +172,7 @@ class _HeroImage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'BPA Official',
+                'Furtail Official',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),

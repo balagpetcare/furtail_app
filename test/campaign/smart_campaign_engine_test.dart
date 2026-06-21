@@ -1,11 +1,11 @@
-import 'package:bpa_app/features/campaign/data/services/campaign_ab_testing_service.dart';
-import 'package:bpa_app/features/campaign/data/services/geo_targeting_service.dart';
-import 'package:bpa_app/features/campaign/data/services/user_geo_preferences_service.dart';
-import 'package:bpa_app/features/campaign/data/services/vaccination_reminder_engine.dart';
-import 'package:bpa_app/features/campaign/data/models/campaign_public_models.dart';
-import 'package:bpa_app/features/campaign/domain/smart_campaign/campaign_geo_target.dart';
-import 'package:bpa_app/features/campaign/domain/smart_campaign/campaign_priority.dart';
-import 'package:bpa_app/features/campaign/domain/smart_campaign/smart_campaign_config.dart';
+import 'package:furtail_app/features/campaign/data/services/campaign_ab_testing_service.dart';
+import 'package:furtail_app/features/campaign/data/services/geo_targeting_service.dart';
+import 'package:furtail_app/features/campaign/data/services/user_geo_preferences_service.dart';
+import 'package:furtail_app/features/campaign/data/services/vaccination_reminder_engine.dart';
+import 'package:furtail_app/features/campaign/data/models/campaign_public_models.dart';
+import 'package:furtail_app/features/campaign/domain/smart_campaign/campaign_geo_target.dart';
+import 'package:furtail_app/features/campaign/domain/smart_campaign/campaign_priority.dart';
+import 'package:furtail_app/features/campaign/domain/smart_campaign/smart_campaign_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

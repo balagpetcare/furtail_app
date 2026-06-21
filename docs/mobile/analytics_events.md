@@ -1,4 +1,4 @@
-# BPA Mobile — Analytics Event Catalog
+# Furtail Mobile — Analytics Event Catalog
 
 Firebase Analytics via [`AnalyticsService`](../../lib/core/analytics/analytics_service.dart).
 
@@ -68,7 +68,7 @@ Constants live in [`analytics_events.dart`](../../lib/core/analytics/analytics_e
 ## Usage
 
 ```dart
-import 'package:bpa_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
 
 await AnalyticsService.instance.logPetCreated(petId: 12);
 

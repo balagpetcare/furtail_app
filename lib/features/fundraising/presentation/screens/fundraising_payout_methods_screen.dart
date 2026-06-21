@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/fundraising_payout_models.dart';

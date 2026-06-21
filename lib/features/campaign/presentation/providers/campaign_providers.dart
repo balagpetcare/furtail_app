@@ -1,7 +1,7 @@
-import 'package:bpa_app/features/notifications/presentation/providers/notification_controller.dart';
+import 'package:furtail_app/features/notifications/presentation/providers/notification_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/services/api_client.dart';
 import '../../data/models/campaign_models.dart';
 import '../../data/repositories/campaign_repository.dart';
 import '../../data/services/certificate_share_service.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/features/fundraising/data/models/fundraising_models.dart';
+import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 
 class FundraisingDonationsPreview extends StatelessWidget {
   final FundraisingCampaign campaign;

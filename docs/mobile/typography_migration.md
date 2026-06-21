@@ -1,6 +1,6 @@
 # Typography Migration Report
 
-**Project:** `bpa_app`  
+**Project:** `furtail_app`  
 **Date:** 2026-06-04  
 **Scope:** Inter (Google Fonts) + Roboto fallback, Material 3 `TextTheme`, removal of hardcoded `fontSize` across `lib/`
 
@@ -122,7 +122,7 @@ Use `AppTypography.buildTextTheme()` static styles via deprecated `AppTextStyles
 - `campaign_benefits_screen.dart`, `certificate_viewer_screen.dart`
 
 ### Home (8)
-- `bpa_home_screen.dart` (if touched via theme)
+- `furtail_home_screen.dart` (if touched via theme)
 - `custom_drawer.dart`, `home_app_bar.dart`, `custom_bottom_nav.dart`
 - `service_grid.dart`, `cause_modules_section.dart`, `story_section.dart`
 - `feed_post_card.dart`, `feed_reels_strip.dart`, `feed_list.dart` (if applicable)
@@ -200,7 +200,7 @@ flutter analyze lib/core/theme/typography.dart
 
 ### Consumption stats (post-migration)
 
-- Files importing `package:bpa_app/core/theme/typography.dart`: **~58**
+- Files importing `package:furtail_app/core/theme/typography.dart`: **~58**
 - Uses of `context.appText` / `Theme.of(context).textTheme`: **~200+** style applications
 
 ---

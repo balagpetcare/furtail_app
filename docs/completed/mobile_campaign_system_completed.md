@@ -1,6 +1,6 @@
-# BPA Mobile Vaccination Campaign System — Implementation Complete
+# Furtail Mobile Vaccination Campaign System — Implementation Complete
 
-**Project:** `bpa_app`  
+**Project:** `furtail_app`  
 **Plan reference:** [mobile_campaign_system_plan.md](../planning/mobile_campaign_system_plan.md)  
 **Date:** 2026-06-05  
 **Status:** Implemented
@@ -9,7 +9,7 @@
 
 ## Summary
 
-The Flutter app now supports **end-to-end vaccination campaign discovery, home promotion, in-app booking, payment (WebView), and notification deep linking**, built on existing BPA backend `/api/v1/campaign/public/*` and `/campaign-link/*` APIs.
+The Flutter app now supports **end-to-end vaccination campaign discovery, home promotion, in-app booking, payment (WebView), and notification deep linking**, built on existing Furtail backend `/api/v1/campaign/public/*` and `/campaign-link/*` APIs.
 
 The prior post-booking hub (certificates, QR, import) remains unchanged and integrates after booking success via `importRecords()`.
 
@@ -66,7 +66,7 @@ lib/features/campaign/
 
 | Requirement | Implementation |
 |-------------|----------------|
-| Home campaign banner | `CampaignHomeSliver` in `bpa_home_screen.dart` — below app bar, above stories |
+| Home campaign banner | `CampaignHomeSliver` in `furtail_home_screen.dart` — below app bar, above stories |
 | Dynamic campaigns from API | `GET /campaign/public/campaigns` + `/discovery/upcoming` enrichment |
 | Multiple campaigns | `CampaignCarousel` with page indicators |
 | Booking flow | `CampaignBookingPage` → checkout init → payment WebView → success |
@@ -132,7 +132,7 @@ Notification tap uses `actionUrl` → `DeepLinkService` → `CampaignDetailsPage
 ## Tests
 
 ```bash
-cd bpa_app
+cd furtail_app
 flutter test test/campaign/
 ```
 
@@ -166,7 +166,7 @@ flutter test test/campaign/
 
 ## Touch points modified outside `campaign/`
 
-- `lib/features/home/presentation/screens/bpa_home_screen.dart` — home banner sliver
+- `lib/features/home/presentation/screens/furtail_home_screen.dart` — home banner sliver
 - `lib/core/network/api_endpoints.dart` — public campaign routes
 - `lib/core/analytics/analytics_events.dart` — funnel events
 - `lib/core/deep_link/deep_link_parser.dart` — campaign detail paths

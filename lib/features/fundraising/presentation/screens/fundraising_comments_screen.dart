@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_sheet.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_sheet.dart';
 
 class FundraisingCommentsScreen extends StatelessWidget {
   final int postId;

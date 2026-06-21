@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../storage/local_storage.dart';
 
-/// Riverpod-only locale controller (BPA rule).
+/// Riverpod-only locale controller (Furtail rule).
 /// - Loads saved locale from SharedPreferences.
 /// - Defaults to English if nothing selected.
 final localeControllerProvider = AsyncNotifierProvider<LocaleController, Locale>(

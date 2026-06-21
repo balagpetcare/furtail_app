@@ -1,4 +1,4 @@
-# BPA Flutter — Final Production Readiness Report
+# Furtail Flutter — Final Production Readiness Report
 
 **Date:** 2026-06-05  
 **Audit type:** Post–UX standardization completion pass  
@@ -14,7 +14,7 @@
 | **Theme (light lock)** | **98%** | Forced `ThemeMode.light`; device dark mode ignored |
 | **Navigation** | **92%** | Home double-back; stack routes standard |
 | **Responsive layout** | **90%** | Home shell + drawer verified; deep modules partial |
-| **Image / network UI** | **78%** | Core paths use `BpaCachedImage` / `BpaNetworkAvatar`; ~20 `NetworkImage` left |
+| **Image / network UI** | **78%** | Core paths use `FurtailCachedImage` / `FurtailNetworkAvatar`; ~20 `NetworkImage` left |
 | **Accessibility** | **85%** | Min touch targets on nav; contrast OK on light theme |
 | **Overall production readiness** | **89%** | **Ready for staged release** with P1 backlog |
 
@@ -87,7 +87,7 @@ Files still using raw `const TextStyle(...)` or `TextStyle(...)` without `AppTyp
 
 | File | Purpose |
 |------|---------|
-| `lib/core/theme/bpa_design_tokens.dart` | `BpaDesignTokens.success/error/...` |
+| `lib/core/theme/furtail_design_tokens.dart` | `FurtailDesignTokens.success/error/...` |
 | `lib/core/theme/theme_extensions.dart` | `bpaCardColor`, `bpaSuccess`, `bpaError`, `mutedTextColor` |
 
 ### Theme lock verification
@@ -125,7 +125,7 @@ Files still using raw `const TextStyle(...)` or `TextStyle(...)` without `AppTyp
 
 High-count files: `feed_post_card.dart` (~23), `pet_profile_screen.dart` (~29), `create_post_screen.dart` (~20), `reels_player_screen.dart` (~20), `profile_header_stack.dart` (~11).
 
-**Target:** `context.colorScheme.*` or `BpaDesignTokens.*` — not raw `Colors.black54`.
+**Target:** `context.colorScheme.*` or `FurtailDesignTokens.*` — not raw `Colors.black54`.
 
 ---
 
@@ -200,21 +200,21 @@ High-count files: `feed_post_card.dart` (~23), `pet_profile_screen.dart` (~29), 
 
 | Widget | Location |
 |--------|----------|
-| `BpaCachedImage` | `lib/core/widgets/bpa_network_image.dart` |
-| `BpaNetworkAvatar` | Same |
+| `FurtailCachedImage` | `lib/core/widgets/furtail_network_image.dart` |
+| `FurtailNetworkAvatar` | Same |
 | `FitWidthNetworkImage` | `lib/core/widgets/fit_width_media.dart` |
 
 ### Coverage
 
 | Area | Status |
 |------|--------|
-| Feed author avatar | `BpaNetworkAvatar` ✅ |
-| Feed donor rows | `BpaNetworkAvatar` ✅ |
-| Fundraising card author | `BpaNetworkAvatar` ✅ |
-| Fundraising details header | `BpaNetworkAvatar` ✅ |
-| Comments preview | `BpaNetworkAvatar` ✅ |
-| Profile header cover | `BpaCachedImage` ✅ |
-| Reels strip thumbs | `BpaCachedImage` ✅ |
+| Feed author avatar | `FurtailNetworkAvatar` ✅ |
+| Feed donor rows | `FurtailNetworkAvatar` ✅ |
+| Fundraising card author | `FurtailNetworkAvatar` ✅ |
+| Fundraising details header | `FurtailNetworkAvatar` ✅ |
+| Comments preview | `FurtailNetworkAvatar` ✅ |
+| Profile header cover | `FurtailCachedImage` ✅ |
+| Reels strip thumbs | `FurtailCachedImage` ✅ |
 
 ### Remaining `NetworkImage(` (~20 call sites)
 
@@ -230,11 +230,11 @@ High-count files: `feed_post_card.dart` (~23), `pet_profile_screen.dart` (~29), 
 | `my_pets_family_white.dart` | Pet thumbnails |
 | `edit_profile_screen.dart` | Profile photo |
 
-**P1:** Replace with `BpaNetworkAvatar` / `BpaCachedImage` — eliminates broken-image flash.
+**P1:** Replace with `FurtailNetworkAvatar` / `FurtailCachedImage` — eliminates broken-image flash.
 
 ### `Image.network` (no cache)
 
-Still in: `profile_gallery.dart`, `post_details_screen.dart`, `visitor_profile_screen.dart`, `fundraising_edit_screen.dart`, `pet_edit_photo_screen.dart` — migrate to `BpaCachedImage`.
+Still in: `profile_gallery.dart`, `post_details_screen.dart`, `visitor_profile_screen.dart`, `fundraising_edit_screen.dart`, `pet_edit_photo_screen.dart` — migrate to `FurtailCachedImage`.
 
 ---
 
@@ -254,7 +254,7 @@ Still in: `profile_gallery.dart`, `post_details_screen.dart`, `visitor_profile_s
 
 | File | Changes |
 |------|---------|
-| `lib/core/theme/bpa_design_tokens.dart` | **New** semantic colors |
+| `lib/core/theme/furtail_design_tokens.dart` | **New** semantic colors |
 | `lib/core/theme/theme_extensions.dart` | Card/success/error shortcuts |
 | `lib/features/auth/presentation/screens/login_screen.dart` | Typography + colors |
 | `lib/features/auth/presentation/widgets/auth_header.dart` | Muted text token |
@@ -287,7 +287,7 @@ Still in: `profile_gallery.dart`, `post_details_screen.dart`, `visitor_profile_s
 
 ### P2 polish
 
-1. `Image.network` → `BpaCachedImage` everywhere.
+1. `Image.network` → `FurtailCachedImage` everywhere.
 2. Golden tests + screenshot matrix.
 3. l10n for “Press back again to exit”.
 4. Tablet two-column feed.
@@ -319,7 +319,7 @@ flutter run --dart-define-from-file=env/dev.json
 |------|-----|
 | Central typography | ✅ |
 | No hardcoded `fontSize` | ✅ |
-| Forced BPA light theme | ✅ |
+| Forced Furtail light theme | ✅ |
 | Device brightness unaffected | ✅ |
 | Professional home back | ✅ |
 | Drawer responsive | ✅ |

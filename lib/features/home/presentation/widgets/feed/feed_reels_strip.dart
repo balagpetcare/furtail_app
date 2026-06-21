@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/posts/presentation/screens/reels_player_screen.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/posts/presentation/screens/reels_player_screen.dart';
 
 class ReelsStrip extends StatelessWidget {
   final List<PostModel> reels;
@@ -104,7 +104,7 @@ class ReelTile extends StatelessWidget {
                               color: context.colorScheme.onSurfaceVariant,
                             ),
                           )
-                        : BpaCachedImage(
+                        : FurtailCachedImage(
                             imageUrl: thumbUrl,
                             width: tileSize,
                             height: tileSize,

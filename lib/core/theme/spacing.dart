@@ -1,4 +1,4 @@
-/// BPA spacing scale — use these instead of arbitrary pixel values.
+/// Furtail spacing scale — use these instead of arbitrary pixel values.
 abstract final class AppSpacing {
   static const double xs = 4;
   static const double sm = 8;

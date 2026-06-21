@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_bottom_sheet.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_bottom_sheet.dart';
 
 /// Shows the latest comment inline + a "View All Comments" button.
 class FundraisingInlineCommentsPreview extends StatelessWidget {

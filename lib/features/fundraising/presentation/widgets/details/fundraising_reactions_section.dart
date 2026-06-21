@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/core/services/share_service.dart';
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_sheet.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_sheet.dart';
 
 /// Feed-style reactions (Paw/Comment/Share) to match Home feed UI.
 class FundraisingReactionsSection extends StatefulWidget {

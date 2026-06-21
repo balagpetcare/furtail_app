@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 class AchievementUiModel {
   final String name;
   final IconData icon;

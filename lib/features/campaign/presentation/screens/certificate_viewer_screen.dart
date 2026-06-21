@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bpa_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';

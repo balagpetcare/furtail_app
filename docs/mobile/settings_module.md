@@ -1,4 +1,4 @@
-# App Settings Module (BPA Mobile)
+# App Settings Module (Furtail Mobile)
 
 Complete settings experience under `lib/features/settings/` with **Riverpod** state and **SharedPreferences** persistence.
 

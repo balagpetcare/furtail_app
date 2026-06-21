@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/services/api_client.dart';
 
-import 'package:bpa_app/features/common/data/models/bd_location_models.dart';
-import 'package:bpa_app/features/common/data/repositories/bd_locations_repository.dart';
+import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
+import 'package:furtail_app/features/common/data/repositories/bd_locations_repository.dart';
 
-//D:\BPA_Data\Flutter APP\bpa_app\lib\services\api_client.dart
+//D:\BPA_Data\Flutter APP\furtail_app\lib\services\api_client.dart
 /// Repo provider
 final bdLocationsRepositoryProvider = Provider<BdLocationsRepository>((ref) {
   final client = ref.read(apiClientProvider);

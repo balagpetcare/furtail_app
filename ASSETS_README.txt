@@ -1,4 +1,4 @@
-BPA App - Updated assets (logo + splash)
+Furtail - Updated assets (logo + splash)
 
 What changed:
 - assets/images/logo.png (1024x1024) - for flutter_launcher_icons

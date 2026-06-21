@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/analytics/analytics_events.dart';
-import 'package:bpa_app/core/analytics/analytics_provider.dart';
+import 'package:furtail_app/core/analytics/analytics_events.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -39,10 +39,10 @@ class _CampaignPaymentPageState extends ConsumerState<CampaignPaymentPage> {
           onUrlChange: (change) {
             final url = change.url ?? '';
             if (url.contains('campaign/checkout/success') ||
-                url.startsWith('bpa://campaign/checkout/success')) {
+                url.startsWith('furtail://campaign/checkout/success')) {
               _onSuccess();
             } else if (url.contains('campaign/checkout/failed') ||
-                url.startsWith('bpa://campaign/checkout/failed')) {
+                url.startsWith('furtail://campaign/checkout/failed')) {
               _onFailed();
             }
           },

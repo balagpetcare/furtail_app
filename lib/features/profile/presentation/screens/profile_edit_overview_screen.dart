@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../data/profile_service.dart';
 import '../widgets/profile_media_upload_screen.dart';

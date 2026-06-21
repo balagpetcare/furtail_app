@@ -1,10 +1,10 @@
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/app/router/app_routes.dart';
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/posts/presentation/screens/post_details_screen.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/posts/presentation/screens/post_details_screen.dart';
 
 class ProfileTabVideos extends StatefulWidget {
   final int userId;

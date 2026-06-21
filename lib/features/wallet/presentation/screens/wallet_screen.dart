@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/wallet_providers.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_withdraw_hub_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_withdraw_hub_screen.dart';
 import 'wallet_withdraw_screen.dart';
 import 'wallet_withdraw_requests_screen.dart';
 

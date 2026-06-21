@@ -1,6 +1,6 @@
-import 'package:bpa_app/features/common/data/models/bd_location_models.dart';
-import 'package:bpa_app/features/location/data/location_repository.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
+import 'package:furtail_app/features/location/data/location_repository.dart';
+import 'package:furtail_app/services/api_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LocationSelectionState {

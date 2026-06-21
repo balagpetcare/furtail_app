@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/presentation/screens/post_details_screen.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/app/router/app_routes.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/presentation/screens/post_details_screen.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
 
 class ProfileTabGallery extends StatefulWidget {
   final int userId;

@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:bpa_app/features/auth/presentation/screens/login_screen.dart';
-import 'package:bpa_app/features/home/presentation/screens/bpa_home_screen.dart';
-import 'package:bpa_app/core/storage/local_storage.dart';
+import 'package:furtail_app/features/auth/presentation/screens/login_screen.dart';
+import 'package:furtail_app/features/home/presentation/screens/furtail_home_screen.dart';
+import 'package:furtail_app/core/storage/local_storage.dart';
 import 'dart:ui' as ui;
 
 class SplashScreen extends StatefulWidget {
@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (token != null && token.trim().isNotEmpty) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const BPAHomeScreen()),
+          MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
         );
       } else {
         Navigator.pushReplacement(
@@ -108,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
-                    "Bangladesh Pet Association",
+                    "Furtail",
                     textAlign: TextAlign.center,
                     style: context.appText.displayMedium!.copyWith(color: _deepGreen, fontWeight: FontWeight.w900, height: 1.2),
                   ),

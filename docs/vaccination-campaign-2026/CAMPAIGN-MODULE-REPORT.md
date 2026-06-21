@@ -1,14 +1,14 @@
-# BPA App — Vaccination Campaign Module Report
+# Furtail — Vaccination Campaign Module Report
 
-**Project:** `D:\BPA_Data\bpa_app`  
-**Design reference:** `backend-api/docs/vaccination-campaign-2026/16-bpa-app-linking.md`  
+**Project:** `D:\BPA_Data\furtail_app`  
+**Design reference:** `backend-api/docs/vaccination-campaign-2026/16-furtail-app-linking.md`  
 **Date:** June 2, 2026
 
 ---
 
 ## Summary
 
-Implemented the **2026 Vaccination Campaign** module in the BPA Flutter app as a dedicated feature under `lib/features/campaign/`, separate from the existing **fundraising** “campaign” module.
+Implemented the **2026 Vaccination Campaign** module in the Furtail Flutter app as a dedicated feature under `lib/features/campaign/`, separate from the existing **fundraising** “campaign” module.
 
 The module reuses existing auth (`ApiClient` + Bearer token), pet profile data, navigation (drawer + service grid), and the standard API layer pattern (`ApiEndpoints` → repository → Riverpod providers).
 
@@ -92,7 +92,7 @@ Phone is the primary link key; bookings match by `ownerUserId` or `ownerPhone`.
 | GET | `/campaign-link/upcoming` | Future appointments |
 | GET | `/campaign-link/benefits` | Campaign info + benefits |
 | POST | `/campaign-link/import` | Import unlinked records |
-| POST | `/campaign-link/pet/:id` | Link campaign pet to BPA pet |
+| POST | `/campaign-link/pet/:id` | Link campaign pet to Furtail pet |
 | POST | `/campaign-link/certificate/:token/claim` | Claim certificate |
 | GET | `/campaign-link/certificates/:token` | Certificate data (auth) |
 | GET | `/campaign-link/certificates/:token/pdf` | PDF download |
@@ -117,7 +117,7 @@ No new pub packages added (QR rendered from server base64 image or placeholder i
 
 ## Testing
 
-Run from `bpa_app`:
+Run from `furtail_app`:
 
 ```bash
 flutter analyze
@@ -130,5 +130,5 @@ Ensure backend is running with campaign-link routes mounted and user has a phone
 ## Notes
 
 - **Fundraising vs vaccination:** Fundraising remains at `lib/features/fundraising/`. Vaccination campaign uses `lib/features/campaign/` only.
-- **OTP booking flow:** Public campaign booking still uses OTP session APIs; the BPA app module uses BPA JWT via campaign-link.
+- **OTP booking flow:** Public campaign booking still uses OTP session APIs; the Furtail app module uses Furtail JWT via campaign-link.
 - **PDF download:** Depends on server Puppeteer; falls back with user message if unavailable.

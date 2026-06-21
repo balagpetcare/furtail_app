@@ -5,12 +5,12 @@ import '../accessibility/a11y_constants.dart';
 import 'app_typography.dart';
 import 'colors.dart';
 
-/// BPA application theme — **light mode only** (device dark mode ignored).
+/// Furtail application theme — **light mode only** (device dark mode ignored).
 abstract final class AppTheme {
   static ThemeData get light => _buildLight();
 
   /// Intentionally identical to [light] — app never uses dark styling.
-  @Deprecated('BPA uses light theme only. Use AppTheme.light.')
+  @Deprecated('Furtail uses light theme only. Use AppTheme.light.')
   static ThemeData get dark => light;
 
   static ThemeData _buildLight() {

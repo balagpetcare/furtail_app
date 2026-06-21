@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/network/api_endpoints.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 import '../models/fundraising_models.dart';
 import '../models/fundraising_payout_models.dart';

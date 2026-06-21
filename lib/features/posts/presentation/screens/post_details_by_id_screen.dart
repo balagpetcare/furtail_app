@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/datasources/posts_remote_ds.dart';

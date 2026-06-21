@@ -6,7 +6,7 @@ import '../theme/app_typography.dart';
 import '../theme/spacing.dart';
 
 /// Standard network image with loading and error states.
-class BpaCachedImage extends StatelessWidget {
+class FurtailCachedImage extends StatelessWidget {
   final String? imageUrl;
   final double? width;
   final double? height;
@@ -15,7 +15,7 @@ class BpaCachedImage extends StatelessWidget {
   final Widget? placeholder;
   final Widget? errorWidget;
 
-  const BpaCachedImage({
+  const FurtailCachedImage({
     super.key,
     required this.imageUrl,
     this.width,
@@ -77,7 +77,7 @@ class BpaCachedImage extends StatelessWidget {
 }
 
 /// Circular avatar with CachedNetworkImage, initials fallback, and optional badge.
-class BpaNetworkAvatar extends StatelessWidget {
+class FurtailNetworkAvatar extends StatelessWidget {
   final String? imageUrl;
   final String displayName;
   final double radius;
@@ -85,7 +85,7 @@ class BpaNetworkAvatar extends StatelessWidget {
   final Color? foregroundColor;
   final Widget? badge;
 
-  const BpaNetworkAvatar({
+  const FurtailNetworkAvatar({
     super.key,
     required this.imageUrl,
     required this.displayName,
@@ -118,7 +118,7 @@ class BpaNetworkAvatar extends StatelessWidget {
               ),
             )
           : ClipOval(
-              child: BpaCachedImage(
+              child: FurtailCachedImage(
                 imageUrl: url,
                 width: radius * 2,
                 height: radius * 2,
@@ -168,7 +168,7 @@ class BpaMembershipBadge extends StatelessWidget {
   const BpaMembershipBadge({
     super.key,
     required this.isMember,
-    this.label = 'BPA Member',
+    this.label = 'Furtail Member',
   });
 
   @override

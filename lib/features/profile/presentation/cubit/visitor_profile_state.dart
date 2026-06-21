@@ -1,5 +1,5 @@
 import '../../data/models/visitor_profile_model.dart';
-import 'package:bpa_app/services/social_service.dart';
+import 'package:furtail_app/services/social_service.dart';
 
 class VisitorProfileState {
   final bool loading;

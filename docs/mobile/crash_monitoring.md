@@ -1,4 +1,4 @@
-# BPA Mobile — Crash Monitoring
+# Furtail Mobile — Crash Monitoring
 
 Firebase **Crashlytics** via [`CrashReportingService`](../../lib/core/crash_reporting/crash_reporting_service.dart).
 
@@ -11,7 +11,7 @@ Firebase **Crashlytics** via [`CrashReportingService`](../../lib/core/crash_repo
    - `Firebase.initializeApp`
    - `CrashReportingService.instance.initialize()`
    - `CrashReportingService.instance.installGlobalHandlers()`
-   - `runZonedGuarded` + `ProviderScope(observers: [BpaCrashlyticsProviderObserver()])`
+   - `runZonedGuarded` + `ProviderScope(observers: [FurtailCrashlyticsProviderObserver()])`
 
 Collection is **disabled in debug** (`kDebugMode`) to avoid noise; enable locally with:
 
@@ -25,7 +25,7 @@ await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
 |----------|-----------|--------|---------------------------|
 | **Flutter errors** | `FlutterError.onError` → `recordFlutterFatalError` | Yes (framework) | `flutter` |
 | **Async errors** | `PlatformDispatcher.instance.onError` + `runZonedGuarded` | Yes | `async` |
-| **Riverpod errors** | `BpaCrashlyticsProviderObserver.providerDidFail` | No | `riverpod` |
+| **Riverpod errors** | `FurtailCrashlyticsProviderObserver.providerDidFail` | No | `riverpod` |
 | **Network errors** | `ApiClient` on HTTP failure / transport errors | No | `network` |
 
 Additional keys for network: `http_method`, `http_path`, `http_status`.  
@@ -42,7 +42,7 @@ Riverpod adds `riverpod_provider` with the provider name.
 | `recordError(error, stack, {source, fatal, reason})` | Generic non-fatal/fatal record |
 | `recordRiverpodError(...)` | Provider failure |
 | `recordNetworkError(...)` | API / transport failures |
-| `setUserId` / `setUserIdFromStorage` / `clearUserId` | Tie crashes to BPA user id |
+| `setUserId` / `setUserIdFromStorage` / `clearUserId` | Tie crashes to Furtail user id |
 | `log(message)` | Breadcrumb log line |
 | `setCustomKey(key, value)` | Arbitrary diagnostic key |
 
@@ -66,15 +66,15 @@ URLs are reduced to **path only** in custom keys (no query strings or tokens).
 lib/core/crash_reporting/
 ├── crash_source.dart
 ├── crash_reporting_service.dart
-├── bpa_crashlytics_provider_observer.dart
+├── furtail_crashlytics_provider_observer.dart
 └── crash_reporting_provider.dart
 ```
 
 ## Manual reporting
 
 ```dart
-import 'package:bpa_app/core/crash_reporting/crash_reporting_service.dart';
-import 'package:bpa_app/core/crash_reporting/crash_source.dart';
+import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
+import 'package:furtail_app/core/crash_reporting/crash_source.dart';
 
 try {
   await riskyOperation();

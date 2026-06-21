@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/config/app_config.dart';
+import 'package:furtail_app/core/config/app_config.dart';
 
 /// Normalizes media URLs coming from the backend/DB.
 ///
@@ -33,7 +33,7 @@ class MediaUrl {
           host == '127.0.0.1' ||
           host == '10.0.2.2' ||
           host.endsWith('.local') ||
-          host.contains('bpa-storage') ||
+          host.contains('furtail-storage') ||
           host.contains('minio');
 
       if (!looksLocal) return u;

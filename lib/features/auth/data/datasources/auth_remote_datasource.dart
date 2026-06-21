@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:bpa_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
 
 class AuthRemoteDataSource {
   bool _isEmail(String s) => s.contains('@');

@@ -39,6 +39,6 @@ class ShareService {
 
   static String _fallbackMessage({required String type, required int id}) {
     final t = type.toLowerCase();
-    return 'Check this on BPA\nhttps://bpa.app/$t/$id\nbpa://$t/$id';
+    return 'Check this on Furtail\nhttps://furtail.app/$t/$id\nfurtail://$t/$id';
   }
 }

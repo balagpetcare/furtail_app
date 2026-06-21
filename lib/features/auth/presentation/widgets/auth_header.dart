@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 class AuthHeader extends StatelessWidget {
   final String title;
   final String subtitle;

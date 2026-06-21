@@ -1,4 +1,4 @@
-import 'package:bpa_app/core/media/media_url.dart';
+import 'package:furtail_app/core/media/media_url.dart';
 
 class FundraisingAuthor {
   final int id;
@@ -22,7 +22,7 @@ class FundraisingAuthor {
         : const <String, dynamic>{};
     return FundraisingAuthor(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      displayName: (profile['displayName'] ?? 'BPA Member').toString(),
+      displayName: (profile['displayName'] ?? 'Furtail Member').toString(),
       username: profile['username']?.toString(),
       avatarUrl: (() {
         final u = avatarMedia['url']?.toString() ?? '';
@@ -97,7 +97,7 @@ class FundraisingDonor {
         : const <String, dynamic>{};
     return FundraisingDonor(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      name: (profile['displayName'] ?? 'BPA Member').toString(),
+      name: (profile['displayName'] ?? 'Furtail Member').toString(),
       avatarUrl: (() {
         final u = avatarMedia['url']?.toString() ?? '';
         if (u.trim().isEmpty) return null;

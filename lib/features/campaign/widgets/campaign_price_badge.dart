@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/models/campaign_public_models.dart';
-import 'package:bpa_app/core/theme/bpa_design_tokens.dart';
+import 'package:furtail_app/core/theme/furtail_design_tokens.dart';
 
 class CampaignPriceBadge extends StatelessWidget {
   final PublicCampaign campaign;
@@ -14,10 +14,10 @@ class CampaignPriceBadge extends StatelessWidget {
     final isFree = campaign.isFree;
     final bg = isFree
         ? Theme.of(context).colorScheme.primaryContainer
-        : BpaDesignTokens.accentGold.withValues(alpha: 0.15);
+        : FurtailDesignTokens.accentGold.withValues(alpha: 0.15);
     final fg = isFree
         ? Theme.of(context).colorScheme.onPrimaryContainer
-        : BpaDesignTokens.accentGold;
+        : FurtailDesignTokens.accentGold;
 
     return Container(
       padding: EdgeInsets.symmetric(

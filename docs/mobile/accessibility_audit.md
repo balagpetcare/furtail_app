@@ -1,7 +1,7 @@
-# BPA Mobile — Accessibility Audit
+# Furtail Mobile — Accessibility Audit
 
 Audit date: 2026-06-04  
-Scope: `bpa_app` Flutter client (`lib/`)  
+Scope: `furtail_app` Flutter client (`lib/`)  
 Standards reference: WCAG 2.1 AA (where applicable), Material 3 accessibility guidance
 
 ## Executive summary
@@ -51,7 +51,7 @@ Standards reference: WCAG 2.1 AA (where applicable), Material 3 accessibility gu
 |----------|--------|
 | `custom_bottom_nav.dart` | `MinTouchTarget` + `Semantics` (tab name, selected state) |
 | `home_app_bar.dart` | “Open navigation menu”, search field label, `AccessibleIconButton` for notifications |
-| `bpa_home_screen.dart` | FAB: “Create new post” |
+| `furtail_home_screen.dart` | FAB: “Create new post” |
 | `settings_widgets.dart` | `SettingsNavTile` semantics |
 | `settings_screen.dart` | Theme radio tiles: combined label + selected |
 | `app_primary_button.dart` | Button semantics + enabled state |
@@ -137,7 +137,7 @@ lib/core/accessibility/
 | File | Change |
 |------|--------|
 | `settings_widgets.dart` | `cardSurface` instead of `Colors.white` |
-| `bpa_home_screen.dart` | RefreshIndicator + FAB use `colorScheme` |
+| `furtail_home_screen.dart` | RefreshIndicator + FAB use `colorScheme` |
 | `custom_bottom_nav.dart` | `cs.surface` for bar |
 | `home_app_bar.dart` | Full `colorScheme` for search + notification |
 | `visitor_profile_screen.dart` | Scaffold, app bar, tabs, stats, award cards |
@@ -192,7 +192,7 @@ lib/core/accessibility/
 | `lib/main.dart` | `AppAccessibilityBuilder` |
 | `lib/features/home/.../custom_bottom_nav.dart` | Nav semantics + touch |
 | `lib/features/home/.../home_app_bar.dart` | Header semantics + theme |
-| `lib/features/home/.../bpa_home_screen.dart` | FAB + refresh colors |
+| `lib/features/home/.../furtail_home_screen.dart` | FAB + refresh colors |
 | `lib/features/settings/.../settings_widgets.dart` | Card + nav semantics |
 | `lib/features/settings/.../settings_screen.dart` | Theme radio semantics |
 | `lib/features/profile/.../visitor_profile_screen.dart` | Dark mode surfaces |

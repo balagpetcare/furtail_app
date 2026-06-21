@@ -1,6 +1,6 @@
 # Material 3 Theme Implementation
 
-**Project:** `bpa_app`  
+**Project:** `furtail_app`  
 **Date:** 2026-06-04  
 **Status:** Implemented
 

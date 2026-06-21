@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/services/share_service.dart';
+import 'package:furtail_app/core/services/share_service.dart';
 
 import '../../data/models/user_profile_model.dart';
 import '../../data/profile_service.dart';

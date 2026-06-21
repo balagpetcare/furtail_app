@@ -1,6 +1,6 @@
-# BPA App — Design System Standardization Plan
+# Furtail — Design System Standardization Plan
 
-**Project:** `bpa_app` (Flutter)  
+**Project:** `furtail_app` (Flutter)  
 **Scope:** Full `lib/` audit (237 Dart files, 132 presentation-layer files, 66 `*screen*.dart` routes/widgets)  
 **Status:** Planning only — **no code changes applied**  
 **Date:** 2026-06-04
@@ -9,7 +9,7 @@
 
 ## 1. Executive summary
 
-The BPA mobile app has **partial** design primitives (`lib/core/constants/app_colors.dart`, `app_text_styles.dart`, `lib/core/theme/app_theme.dart`) but they are **largely unused**. `main.dart` applies a generic `ThemeData(primarySwatch: Colors.blue)` and does **not** wire `appTheme`. UI code relies on **inline** `Color(0x…)`, `Colors.*`, `fontSize`, `EdgeInsets`, `BorderRadius`, and icon `size` values spread across **~100+ files**.
+The Furtail mobile app has **partial** design primitives (`lib/core/constants/app_colors.dart`, `app_text_styles.dart`, `lib/core/theme/app_theme.dart`) but they are **largely unused**. `main.dart` applies a generic `ThemeData(primarySwatch: Colors.blue)` and does **not** wire `appTheme`. UI code relies on **inline** `Color(0x…)`, `Colors.*`, `fontSize`, `EdgeInsets`, `BorderRadius`, and icon `size` values spread across **~100+ files**.
 
 This plan defines centralized tokens under `lib/core/theme/`, maps today’s de-facto brand values to semantic roles, and provides a **phased migration** so screens can be updated incrementally without visual regressions.
 
@@ -314,7 +314,7 @@ ThemeData buildAppTheme() {
 | P3 | `lib/features/legacy/presentation/screens/create_post_screen.dart` | 0 | 18 | 3 | 6 | |
 | P3 | `lib/features/legacy/presentation/screens/edit_post_screen.dart` | 0 | 17 | — | 6 | |
 | P3 | `lib/features/posts/presentation/screens/reels_player_screen.dart` | 0 | 21 | 3 | 2 | Video overlay exceptions |
-| P3 | `lib/features/home/presentation/screens/bpa_home_screen.dart` | 5 | 6 | — | 1 | |
+| P3 | `lib/features/home/presentation/screens/furtail_home_screen.dart` | 5 | 6 | — | 1 | |
 | P3 | `lib/features/profile/presentation/screens/visitor_profile_screen.dart` | 3 | 8 | 5 | 4 | |
 | P3 | `lib/features/fundraising/presentation/screens/fundraising_withdraw_hub_screen.dart` | 10 | 9 | 2 | 6 | |
 | P4 | Remaining ~80 presentation files | — | — | — | — | Batch by feature PR |
@@ -412,7 +412,7 @@ Use this table in PR descriptions (`[ ]` → `[x]` when done).
 - [ ] `register_screen.dart`
 
 ### Home
-- [ ] `bpa_home_screen.dart`
+- [ ] `furtail_home_screen.dart`
 - [ ] `custom_drawer.dart`, `home_app_bar.dart`, `custom_bottom_nav.dart`
 - [ ] `feed_post_card.dart`, `feed_reels_strip.dart`, `feed_list.dart`
 - [ ] `service_grid.dart`, `cause_modules_section.dart`, `story_section.dart`

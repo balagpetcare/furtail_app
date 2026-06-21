@@ -1,5 +1,5 @@
-import 'package:bpa_app/features/campaign/data/models/campaign_public_models.dart';
-import 'package:bpa_app/features/campaign/domain/campaign_notification_category.dart';
+import 'package:furtail_app/features/campaign/data/models/campaign_public_models.dart';
+import 'package:furtail_app/features/campaign/domain/campaign_notification_category.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

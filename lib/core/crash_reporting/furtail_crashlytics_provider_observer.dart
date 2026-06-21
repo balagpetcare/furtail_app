@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'crash_reporting_service.dart';
 
 /// Reports Riverpod provider failures to [CrashReportingService].
-class BpaCrashlyticsProviderObserver extends ProviderObserver {
+class FurtailCrashlyticsProviderObserver extends ProviderObserver {
   @override
   void providerDidFail(
     ProviderBase<Object?> provider,

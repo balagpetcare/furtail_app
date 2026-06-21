@@ -1,4 +1,4 @@
-import 'package:bpa_app/features/campaign/presentation/widgets/campaign_state_views.dart';
+import 'package:furtail_app/features/campaign/presentation/widgets/campaign_state_views.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

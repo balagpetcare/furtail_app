@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_typography.dart';
 
-/// Facebook-style root back behavior for [BPAHomeScreen].
+/// Facebook-style root back behavior for [FurtailHomeScreen].
 ///
 /// - Closes drawer if open
 /// - Switches to home tab when another tab is selected

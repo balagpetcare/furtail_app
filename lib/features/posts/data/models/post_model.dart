@@ -1,5 +1,5 @@
-import 'package:bpa_app/core/media/media_url.dart';
-import 'package:bpa_app/features/fundraising/data/models/fundraising_models.dart';
+import 'package:furtail_app/core/media/media_url.dart';
+import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 
 /// Small embedded fundraising campaign summary for rendering fundraising posts
 /// inside the general home feed.

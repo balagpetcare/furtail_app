@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/home/presentation/widgets/feed/feed_post_card.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/home/presentation/widgets/feed/feed_post_card.dart';
 
 /// Simple profile posts tab (client-side filter from feed).
 /// Now backed by: GET /posts/user/:userId

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/storage/local_storage.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/storage/local_storage.dart';
 
 /// Phase 5: First-launch country selection. Persists choice and applies to API (X-Country-Code).
 class CountryPickerScreen extends StatelessWidget {

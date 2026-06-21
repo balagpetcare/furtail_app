@@ -1,20 +1,20 @@
-import 'package:bpa_app/core/analytics/analytics_service.dart';
+import 'package:furtail_app/core/analytics/analytics_service.dart';
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/core/widgets/fit_width_media.dart';
-import 'package:bpa_app/app/router/app_routes.dart';
-import 'package:bpa_app/core/storage/local_storage.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/widgets/fit_width_media.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
+import 'package:furtail_app/core/storage/local_storage.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_preview_section.dart';
-import 'package:bpa_app/features/posts/presentation/screens/reels_player_screen.dart';
-import 'package:bpa_app/core/media/fullscreen_gallery_viewer.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_bottom_sheet.dart';
-import 'package:bpa_app/core/services/share_service.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_preview_section.dart';
+import 'package:furtail_app/features/posts/presentation/screens/reels_player_screen.dart';
+import 'package:furtail_app/core/media/fullscreen_gallery_viewer.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_bottom_sheet.dart';
+import 'package:furtail_app/core/services/share_service.dart';
 
 class PostDetailsScreen extends StatefulWidget {
   final PostModel post;

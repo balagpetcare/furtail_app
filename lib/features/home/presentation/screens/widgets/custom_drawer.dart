@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 /// ===========================
-/// BPA Drawer Destination Enum
+/// Furtail Drawer Destination Enum
 /// ===========================
 enum BPADrawerDestination {
   home,
@@ -35,7 +35,7 @@ enum BPADrawerDestination {
 }
 
 /// =====================================
-/// Premium BPA Drawer (Glass + Sections)
+/// Premium Furtail Drawer (Glass + Sections)
 /// =====================================
 class BPACustomDrawer extends StatelessWidget {
   final String? userName;
@@ -64,11 +64,11 @@ class BPACustomDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = context.colorScheme.primary;
     final name = (userName == null || userName!.trim().isEmpty)
-        ? (isLoggedIn ? "BPA Member" : "Guest")
+        ? (isLoggedIn ? "Furtail Member" : "Guest")
         : userName!.trim();
 
     final email = (userEmail == null || userEmail!.trim().isEmpty)
-        ? (isLoggedIn ? "member@bpa.app" : "Login to unlock features")
+        ? (isLoggedIn ? "member@furtail.app" : "Login to unlock features")
         : userEmail!.trim();
 
     final drawerWidth = MediaQuery.sizeOf(context).width * 0.825;
@@ -256,7 +256,7 @@ class BPACustomDrawer extends StatelessWidget {
                   _drawerTile(
                     context,
                     icon: Icons.info_rounded,
-                    title: "About BPA",
+                    title: "About Furtail",
                     onTap: () => onSelect(BPADrawerDestination.about),
                   ),
 
@@ -286,7 +286,7 @@ class BPACustomDrawer extends StatelessWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "BPA Super App • Premium Pet Community",
+                      "Furtail Super App • Premium Pet Community",
                       style: AppTypography.meta(context).copyWith(
                         color: context.colorScheme.onSurfaceVariant,
                       ),
@@ -511,7 +511,7 @@ class _DrawerHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              BpaNetworkAvatar(
+              FurtailNetworkAvatar(
                 imageUrl: avatarUrl,
                 displayName: name,
                 radius: 30,

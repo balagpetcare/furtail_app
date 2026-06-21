@@ -1,6 +1,6 @@
-import 'package:bpa_app/features/common/data/models/bd_location_models.dart';
-import 'package:bpa_app/core/theme/typography.dart';
-import 'package:bpa_app/features/location/presentation/providers/location_provider.dart';
+import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
+import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/features/location/presentation/providers/location_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

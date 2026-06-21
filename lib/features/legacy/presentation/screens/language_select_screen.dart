@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/l10n/app_localizations.dart';
-import 'package:bpa_app/core/localization/locale_controller.dart';
+import 'package:furtail_app/l10n/app_localizations.dart';
+import 'package:furtail_app/core/localization/locale_controller.dart';
 
 class LanguageSelectScreen extends ConsumerWidget {
   final VoidCallback onContinue;

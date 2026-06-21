@@ -1,4 +1,4 @@
-# BPA Flutter App – Professional Setup (Play Store Ready)
+# Furtail Flutter App – Professional Setup (Play Store Ready)
 
 > এই ZIP এ শুধুমাত্র `lib/`, `assets/` এবং `pubspec.yaml` আছে (আপনার মূল Flutter project এর ভিতরে এগুলো replace/copy করতে হবে)।
 

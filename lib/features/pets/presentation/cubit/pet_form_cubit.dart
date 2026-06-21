@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:bpa_app/core/analytics/analytics_provider.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
 
 import '../../domain/entities/pet_entity.dart';
 import '../providers/pet_providers.dart';

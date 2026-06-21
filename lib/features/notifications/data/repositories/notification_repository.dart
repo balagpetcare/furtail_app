@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bpa_app/core/network/api_endpoints.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/services/api_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,8 +12,8 @@ class NotificationRepository {
 
   final ApiClient _api;
 
-  static const _kFcmToken = 'bpa_fcm_token';
-  static const _kFcmTokenSynced = 'bpa_fcm_token_synced';
+  static const _kFcmToken = 'furtail_fcm_token';
+  static const _kFcmTokenSynced = 'furtail_fcm_token_synced';
 
   Future<String?> getCachedFcmToken() async {
     final prefs = await SharedPreferences.getInstance();

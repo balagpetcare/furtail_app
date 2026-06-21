@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:bpa_app/core/network/api_endpoints.dart';
-import 'package:bpa_app/features/common/data/models/bd_location_models.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/core/network/api_endpoints.dart';
+import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
+import 'package:furtail_app/services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _CacheBox<T> {

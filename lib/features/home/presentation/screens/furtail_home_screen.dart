@@ -1,11 +1,11 @@
-import 'package:bpa_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bpa_app/core/config/policy_features_provider.dart';
+import 'package:furtail_app/core/config/policy_features_provider.dart';
 
 // উইজেট ইমপোর্ট
-import 'package:bpa_app/features/campaign/widgets/campaign_home_section.dart';
+import 'package:furtail_app/features/campaign/widgets/campaign_home_section.dart';
 import 'widgets/home_app_bar.dart';
 import 'widgets/story_section.dart';
 import 'widgets/service_grid.dart';
@@ -14,35 +14,35 @@ import 'widgets/custom_bottom_nav.dart';
 import 'widgets/custom_drawer.dart';
 
 // স্ক্রিন ইমপোর্ট
-import 'package:bpa_app/features/auth/presentation/screens/login_screen.dart'
+import 'package:furtail_app/features/auth/presentation/screens/login_screen.dart'
     hide HomeAppBar;
-import 'package:bpa_app/features/legacy/presentation/screens/create_post_screen.dart';
-import 'package:bpa_app/features/legacy/presentation/screens/shop_screen.dart';
-import 'package:bpa_app/features/legacy/presentation/screens/services_screen.dart';
-import 'package:bpa_app/features/profile/presentation/screens/user_profile_screen.dart';
+import 'package:furtail_app/features/legacy/presentation/screens/create_post_screen.dart';
+import 'package:furtail_app/features/legacy/presentation/screens/shop_screen.dart';
+import 'package:furtail_app/features/legacy/presentation/screens/services_screen.dart';
+import 'package:furtail_app/features/profile/presentation/screens/user_profile_screen.dart';
 
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_feed_screen.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_payout_methods_screen.dart';
-import 'package:bpa_app/features/wallet/presentation/screens/wallet_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_feed_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_payout_methods_screen.dart';
+import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 
-import 'package:bpa_app/core/navigation/home_back_handler.dart';
-import 'package:bpa_app/core/utils/app_snackbar.dart';
-import 'package:bpa_app/app/router/app_routes.dart';
+import 'package:furtail_app/core/navigation/home_back_handler.dart';
+import 'package:furtail_app/core/utils/app_snackbar.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
 
 // ✅ Pet create screen import (আপনার path অনুযায়ী ঠিক করুন)
 
-import 'package:bpa_app/features/pets/presentation/pet_create_screen.dart';
-import 'package:bpa_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
+import 'package:furtail_app/features/pets/presentation/pet_create_screen.dart';
+import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 
-class BPAHomeScreen extends StatefulWidget {
-  const BPAHomeScreen({super.key});
+class FurtailHomeScreen extends StatefulWidget {
+  const FurtailHomeScreen({super.key});
 
   @override
-  State<BPAHomeScreen> createState() => _BPAHomeScreenState();
+  State<FurtailHomeScreen> createState() => _FurtailHomeScreenState();
 }
 
-class _BPAHomeScreenState extends State<BPAHomeScreen> {
+class _FurtailHomeScreenState extends State<FurtailHomeScreen> {
   int _selectedIndex = 0;
 
   // ✅ Rebuild/refresh tokens for each tab (IndexedStack keeps state; tokens force reload)

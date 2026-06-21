@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/spacing.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
 /// Dummy (static) modules that must appear on the home feed.
 ///
 /// Includes: Adoption, Donation/Fund Collection, Campaign.

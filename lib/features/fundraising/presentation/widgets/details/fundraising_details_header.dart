@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
-import 'package:bpa_app/features/fundraising/data/models/fundraising_models.dart';
-import 'package:bpa_app/features/fundraising/presentation/utils/fundraising_time_ago.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
+import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
+import 'package:furtail_app/features/fundraising/presentation/utils/fundraising_time_ago.dart';
 
 class FundraisingDetailsHeader extends StatelessWidget {
   final FundraisingAuthor author;
@@ -42,7 +42,7 @@ class FundraisingDetailsHeader extends StatelessWidget {
       child: Row(
         children: [
           IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBack),
-          BpaNetworkAvatar(
+          FurtailNetworkAvatar(
             imageUrl: author.avatarUrl,
             displayName: author.displayName,
             radius: 18,

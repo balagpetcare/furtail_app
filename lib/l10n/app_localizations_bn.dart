@@ -9,7 +9,7 @@ class AppLocalizationsBn extends AppLocalizations {
   AppLocalizationsBn([String locale = 'bn']) : super(locale);
 
   @override
-  String get appTitle => 'BPA অ্যাপ';
+  String get appTitle => 'Furtail অ্যাপ';
 
   @override
   String get settings => 'সেটিংস';

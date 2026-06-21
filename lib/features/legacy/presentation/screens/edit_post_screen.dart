@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:bpa_app/core/media/video_trim_screen.dart';
-import 'package:bpa_app/core/utils/app_snackbar.dart';
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/core/media/video_trim_screen.dart';
+import 'package:furtail_app/core/utils/app_snackbar.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';

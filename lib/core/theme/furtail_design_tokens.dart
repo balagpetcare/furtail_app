@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'colors.dart';
 
-/// Semantic BPA design tokens — use instead of raw [Colors.*] in UI code.
-abstract final class BpaDesignTokens {
+/// Semantic Furtail design tokens — use instead of raw [Colors.*] in UI code.
+abstract final class FurtailDesignTokens {
   static Color cardBackground(BuildContext context) =>
       Theme.of(context).cardTheme.color ?? AppPalette.lightBackground;
 

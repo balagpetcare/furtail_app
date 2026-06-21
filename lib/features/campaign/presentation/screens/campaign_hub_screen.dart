@@ -1,6 +1,6 @@
-import 'package:bpa_app/core/analytics/analytics_provider.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -405,7 +405,7 @@ class _ImportBanner extends StatelessWidget {
 
             Text(
 
-              'We found ${summary.unlinkedBookings} booking(s) linked to your phone. Import them into BPA.',
+              'We found ${summary.unlinkedBookings} booking(s) linked to your phone. Import them into Furtail.',
 
             ),
 

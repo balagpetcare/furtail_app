@@ -1,6 +1,6 @@
-# BPA Mobile Vaccination Campaign System v2 — Smart Campaign Engine
+# Furtail Mobile Vaccination Campaign System v2 — Smart Campaign Engine
 
-**Project:** `bpa_app`  
+**Project:** `furtail_app`  
 **Prior version:** [mobile_campaign_system_completed.md](./mobile_campaign_system_completed.md)  
 **Plan reference:** [mobile_campaign_system_plan.md](../planning/mobile_campaign_system_plan.md)  
 **Date:** 2026-06-05  
@@ -12,7 +12,7 @@
 
 Version 2 adds the **Smart Campaign Engine** — a reusable orchestration layer on top of the v1 discovery/booking stack. It delivers geo-targeted notifications, vaccine-specific reminder schedules, live countdown on the home banner, emergency broadcast handling, priority-based homepage placement, A/B testing, and a local performance dashboard.
 
-The architecture is **program-type agnostic** via `BpaCampaignType` and `SmartCampaignConfig`, so future Deworming, Sterilization, Health Checkup, and Adoption campaigns reuse the same engine with different metadata.
+The architecture is **program-type agnostic** via `FurtailCampaignType` and `SmartCampaignConfig`, so future Deworming, Sterilization, Health Checkup, and Adoption campaigns reuse the same engine with different metadata.
 
 ---
 
@@ -27,7 +27,7 @@ The architecture is **program-type agnostic** via `BpaCampaignType` and `SmartCa
 | 5 | Dynamic homepage priority | `CampaignPriority` HIGH/MEDIUM/LOW + `GeoTargetingService.sortByPriority` | `SmartCampaignEngine.prepareHomeCampaigns` |
 | 6 | A/B testing | `CampaignAbTestingService` stable variant per user | Analytics + `CampaignPerformanceTracker` |
 | 7 | Performance dashboard | `CampaignPerformanceDashboardPage` | Hub → Performance |
-| 8 | Reusable architecture | `BpaCampaignType`, `SmartCampaignConfig` | Admin `metadataJson.mobile` |
+| 8 | Reusable architecture | `FurtailCampaignType`, `SmartCampaignConfig` | Admin `metadataJson.mobile` |
 
 ---
 
@@ -57,7 +57,7 @@ PublicCampaign
 ```
 lib/features/campaign/
 ├── domain/smart_campaign/
-│   ├── bpa_campaign_type.dart
+│   ├── furtail_campaign_type.dart
 │   ├── campaign_priority.dart
 │   ├── campaign_geo_target.dart
 │   ├── campaign_ab_variant.dart
@@ -209,7 +209,7 @@ Metrics stored locally in SharedPreferences (`bpa_campaign_perf_v1_{slug}`). Ser
 
 ## 8. Reusable program types
 
-`BpaCampaignType` enum:
+`FurtailCampaignType` enum:
 
 | Code | Label |
 |------|-------|
@@ -258,7 +258,7 @@ Set via admin metadata: `metadataJson.mobile.campaignType`. Same engine powers h
 ## Tests
 
 ```bash
-cd bpa_app
+cd furtail_app
 flutter test test/campaign/
 ```
 
@@ -307,7 +307,7 @@ Campaign Hub new tiles:
 - [x] HIGH priority campaigns sort first
 - [x] A/B variant stable + logged
 - [x] Performance dashboard shows CTR/booking/conversion
-- [x] Reusable `BpaCampaignType` + `SmartCampaignConfig`
+- [x] Reusable `FurtailCampaignType` + `SmartCampaignConfig`
 - [x] Emergency FCM types mapped to channels
 - [x] Unit tests pass
 

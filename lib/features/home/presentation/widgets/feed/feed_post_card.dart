@@ -1,28 +1,28 @@
-import 'package:bpa_app/core/theme/app_typography.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/app_typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:bpa_app/core/constants/app_colors.dart';
-import 'package:bpa_app/core/media/feed_video_player.dart';
-import 'package:bpa_app/core/media/fullscreen_gallery_viewer.dart';
-import 'package:bpa_app/core/services/share_service.dart';
-import 'package:bpa_app/core/widgets/bpa_network_image.dart';
-import 'package:bpa_app/core/widgets/fit_width_media.dart';
-import 'package:bpa_app/app/router/app_routes.dart';
+import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/core/media/feed_video_player.dart';
+import 'package:furtail_app/core/media/fullscreen_gallery_viewer.dart';
+import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
+import 'package:furtail_app/core/widgets/fit_width_media.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
 
-import 'package:bpa_app/features/posts/data/datasources/posts_remote_ds.dart';
-import 'package:bpa_app/features/posts/data/models/post_model.dart';
-import 'package:bpa_app/features/posts/presentation/screens/post_details_screen.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/comments_sheet.dart';
-import 'package:bpa_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
+import 'package:furtail_app/features/posts/presentation/screens/post_details_screen.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/comments_sheet.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
 
-import 'package:bpa_app/features/legacy/presentation/screens/edit_post_screen.dart';
-import 'package:bpa_app/features/legacy/presentation/screens/donation_screen.dart';
-import 'package:bpa_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
+import 'package:furtail_app/features/legacy/presentation/screens/edit_post_screen.dart';
+import 'package:furtail_app/features/legacy/presentation/screens/donation_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -182,7 +182,7 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     final post = _post;
-    final isVerified = post.author.name.toLowerCase().contains('bpa');
+    final isVerified = post.author.name.toLowerCase().contains('furtail');
 
     final meId = widget.meId;
     final canEdit = meId != null && post.author.id == meId;
@@ -208,7 +208,7 @@ class _PostCardState extends State<PostCard> {
               horizontal: 14,
               vertical: 6,
             ),
-            leading: BpaNetworkAvatar(
+            leading: FurtailNetworkAvatar(
               imageUrl: post.author.avatarUrl,
               displayName: post.author.name,
               radius: 20,
@@ -592,7 +592,7 @@ class _FundraisingEmbedBlock extends StatelessWidget {
       ),
       child: Row(
         children: [
-          BpaNetworkAvatar(
+          FurtailNetworkAvatar(
             imageUrl: avatar,
             displayName: name,
             radius: 16,

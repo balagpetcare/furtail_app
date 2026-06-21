@@ -1,6 +1,6 @@
-# BPA Mobile — Deep Linking System
+# Furtail Mobile — Deep Linking System
 
-**Project:** `bpa_app`  
+**Project:** `furtail_app`  
 **Date:** 2026-06-04  
 **Package:** `app_links`  
 **Entry service:** `DeepLinkService` (`lib/core/deep_link/`)
@@ -13,19 +13,19 @@ The app supports deep links from:
 
 | Source | Example |
 |--------|---------|
-| **Custom scheme** | `bpa://post/42` |
-| **Universal / App Links (HTTPS)** | `https://app.bpa.global/post/42` |
-| **Push `actionUrl`** | `bpa://post/42`, `/post/42`, `post/42` |
+| **Custom scheme** | `furtail://post/42` |
+| **Universal / App Links (HTTPS)** | `https://app.furtail.global/post/42` |
+| **Push `actionUrl`** | `furtail://post/42`, `/post/42`, `post/42` |
 
 ### Supported routes
 
 | Pattern | Screen |
 |---------|--------|
-| `bpa://campaign/{id}` | `CampaignHubScreen` (id in route args; detail screen TBD) |
-| `bpa://post/{id}` | `PostDetailsByIdScreen` → `PostDetailsScreen` |
-| `bpa://pet/{id}` | `PetProfileScreen` |
-| `bpa://fundraising/{id}` | `FundraisingDetailsScreen` |
-| `bpa://profile/{id}` | `VisitorProfileScreen` |
+| `furtail://campaign/{id}` | `CampaignHubScreen` (id in route args; detail screen TBD) |
+| `furtail://post/{id}` | `PostDetailsByIdScreen` → `PostDetailsScreen` |
+| `furtail://pet/{id}` | `PetProfileScreen` |
+| `furtail://fundraising/{id}` | `FundraisingDetailsScreen` |
+| `furtail://profile/{id}` | `VisitorProfileScreen` |
 
 Aliases: `posts`, `pets`, `user`, `donation`, `fundraise`, `campaigns`.
 
@@ -69,34 +69,34 @@ Feature screen
 
 ## 3. URL formats
 
-### Custom scheme (`bpa://`)
+### Custom scheme (`furtail://`)
 
 ```
-bpa://campaign/12
-bpa://post/99
-bpa://pet/3
-bpa://fundraising/7
-bpa://profile/1001
+furtail://campaign/12
+furtail://post/99
+furtail://pet/3
+furtail://fundraising/7
+furtail://profile/1001
 ```
 
-Parsed as: `scheme=bpa`, `host=<type>`, `path=/<id>`.
+Parsed as: `scheme=furtail`, `host=<type>`, `path=/<id>`.
 
 ### HTTPS (Universal / App Links)
 
 ```
-https://app.bpa.global/campaign/12
-https://app.bpa.global/post/99
+https://app.furtail.global/campaign/12
+https://app.furtail.global/post/99
 ```
 
 Parsed as: allowed host + `pathSegments[0]=type`, `pathSegments[1]=id`.
 
-**Default allowed hosts:** `app.bpa.global`, `www.bpa.global`, `bpa.global`
+**Default allowed hosts:** `app.furtail.global`, `www.furtail.global`, `furtail.global`
 
 **Override at build:**
 
 ```bash
 flutter run --dart-define=DEEP_LINK_HOST=app.yourdomain.com
-flutter run --dart-define=DEEP_LINK_HOSTS=staging.bpa.global,app.bpa.global
+flutter run --dart-define=DEEP_LINK_HOSTS=staging.furtail.global,app.furtail.global
 ```
 
 ---
@@ -107,14 +107,14 @@ flutter run --dart-define=DEEP_LINK_HOSTS=staging.bpa.global,app.bpa.global
 
 `android/app/src/main/AndroidManifest.xml` (inside `MainActivity`):
 
-- Intent filter: `bpa` scheme
+- Intent filter: `furtail` scheme
 - Intent filter: `https` + hosts with `android:autoVerify="true"`
 
 **Digital Asset Links** (required for verified App Links):
 
 Host at:
 
-`https://app.bpa.global/.well-known/assetlinks.json`
+`https://app.furtail.global/.well-known/assetlinks.json`
 
 See template: [`assetlinks.json.example`](assetlinks.json.example)
 
@@ -123,29 +123,29 @@ See template: [`assetlinks.json.example`](assetlinks.json.example)
 keytool -list -v -keystore your-release.keystore -alias your-alias
 ```
 
-Package name must match: `com.example.bpa_app` (update when applicationId changes).
+Package name must match: `com.example.furtail_app` (update when applicationId changes).
 
 Verify:
 
 ```bash
-adb shell pm get-app-links com.example.bpa_app
+adb shell pm get-app-links com.example.furtail_app
 ```
 
 ### iOS — URL scheme + Universal Links
 
 | File | Purpose |
 |------|---------|
-| `ios/Runner/Info.plist` | `CFBundleURLSchemes` → `bpa` |
-| `ios/Runner/Runner.entitlements` | `applinks:app.bpa.global` (+ www, root) |
+| `ios/Runner/Info.plist` | `CFBundleURLSchemes` → `furtail` |
+| `ios/Runner/Runner.entitlements` | `applinks:app.furtail.global` (+ www, root) |
 | `ios/Runner.xcodeproj` | `CODE_SIGN_ENTITLEMENTS` |
 
 **Apple App Site Association** (no file extension):
 
-`https://app.bpa.global/.well-known/apple-app-site-association`
+`https://app.furtail.global/.well-known/apple-app-site-association`
 
 Template: [`apple-app-site-association.example`](apple-app-site-association.example)
 
-Replace `TEAMID` with your Apple Developer Team ID and bundle `com.example.bpaApp`.
+Replace `TEAMID` with your Apple Developer Team ID and bundle `com.example.furtailApp`.
 
 Enable **Associated Domains** capability in Xcode (Signing & Capabilities).
 
@@ -154,15 +154,15 @@ Enable **Associated Domains** capability in Xcode (Signing & Capabilities).
 ## 5. API usage (Dart)
 
 ```dart
-import 'package:bpa_app/core/deep_link/deep_link_provider.dart';
+import 'package:furtail_app/core/deep_link/deep_link_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Initialize (done in main.dart post-frame)
 await ref.read(deepLinkServiceProvider).initialize();
 
 // Handle programmatically
-await ref.read(deepLinkServiceProvider).handleString('bpa://post/12');
-await ref.read(deepLinkServiceProvider).handleUri(Uri.parse('https://app.bpa.global/pet/3'));
+await ref.read(deepLinkServiceProvider).handleString('furtail://post/12');
+await ref.read(deepLinkServiceProvider).handleUri(Uri.parse('https://app.furtail.global/pet/3'));
 
 // Pending cold-start link
 await ref.read(deepLinkServiceProvider).flushPending();
@@ -175,7 +175,7 @@ Set FCM data field:
 ```json
 {
   "type": "comment",
-  "actionUrl": "bpa://post/456"
+  "actionUrl": "furtail://post/456"
 }
 ```
 
@@ -188,25 +188,25 @@ Supported `actionUrl` shapes: full URI, path `/post/456`, or `post/456`.
 ### Android (custom scheme)
 
 ```bash
-adb shell am start -a android.intent.action.VIEW -d "bpa://post/1" com.example.bpa_app
+adb shell am start -a android.intent.action.VIEW -d "furtail://post/1" com.example.furtail_app
 ```
 
 ### Android (HTTPS)
 
 ```bash
-adb shell am start -a android.intent.action.VIEW -d "https://app.bpa.global/fundraising/2" com.example.bpa_app
+adb shell am start -a android.intent.action.VIEW -d "https://app.furtail.global/fundraising/2" com.example.furtail_app
 ```
 
 ### iOS Simulator (custom scheme)
 
 ```bash
-xcrun simctl openurl booted "bpa://pet/5"
+xcrun simctl openurl booted "furtail://pet/5"
 ```
 
 ### Parser (unit-style manual check)
 
 ```dart
-DeepLinkParser.parse(Uri.parse('bpa://campaign/10'));
+DeepLinkParser.parse(Uri.parse('furtail://campaign/10'));
 DeepLinkParser.parseString('/post/12');
 ```
 
@@ -214,13 +214,13 @@ DeepLinkParser.parseString('/post/12');
 
 ## 7. Integration checklist
 
-- [ ] Replace `com.example.bpa_app` / `com.example.bpaApp` with production bundle IDs everywhere
+- [ ] Replace `com.example.furtail_app` / `com.example.furtailApp` with production bundle IDs everywhere
 - [ ] Publish `assetlinks.json` on each HTTPS host
 - [ ] Publish `apple-app-site-association` on each HTTPS host
 - [ ] Add release SHA-256 to asset links
 - [ ] Enable Associated Domains in Apple Developer portal
 - [ ] QA cold start + warm start + background tap from push
-- [ ] Align backend/share links with `https://app.bpa.global/...`
+- [ ] Align backend/share links with `https://app.furtail.global/...`
 
 ---
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bpa_app/core/theme/theme_extensions.dart';
-import 'package:bpa_app/core/theme/typography.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 
 class SettingsSectionTitle extends StatelessWidget {
   const SettingsSectionTitle(this.text, {super.key});

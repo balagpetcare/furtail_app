@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:bpa_app/features/notifications/data/repositories/notification_repository.dart';
-import 'package:bpa_app/services/api_client.dart';
+import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 import '../../data/models/blocked_user.dart';
 import '../../data/models/notification_preferences.dart';
