@@ -1,0 +1,6 @@
+Donation & Post Management System: COMPLETED
+- Unified detail page
+- Media slider + fullscreen
+- Owner updates CRUD
+- Donation flow with anonymous option
+- Profanity filtering (BN + EN)

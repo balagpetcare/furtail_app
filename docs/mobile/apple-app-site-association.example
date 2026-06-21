@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.example.bpaApp",
+        "paths": [
+          "/campaign/*",
+          "/post/*",
+          "/posts/*",
+          "/pet/*",
+          "/pets/*",
+          "/fundraising/*",
+          "/profile/*",
+          "/user/*"
+        ]
+      }
+    ]
+  }
+}

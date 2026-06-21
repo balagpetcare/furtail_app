@@ -1,0 +1,113 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:bpa_app/core/network/api_endpoints.dart';
+import 'package:bpa_app/services/api_client.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Persists FCM token and syncs with backend (when API is available).
+class NotificationRepository {
+  NotificationRepository(this._api);
+
+  final ApiClient _api;
+
+  static const _kFcmToken = 'bpa_fcm_token';
+  static const _kFcmTokenSynced = 'bpa_fcm_token_synced';
+
+  Future<String?> getCachedFcmToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kFcmToken);
+  }
+
+  Future<void> cacheFcmToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kFcmToken, token);
+    await prefs.remove(_kFcmTokenSynced);
+  }
+
+  Future<void> clearFcmToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kFcmToken);
+    await prefs.remove(_kFcmTokenSynced);
+  }
+
+  /// Registers device token with API. Fails silently until backend endpoint ships.
+  Future<bool> registerDeviceToken({
+    required String token,
+    required String platform,
+  }) async {
+    await cacheFcmToken(token);
+    try {
+      await _api.post(
+        ApiEndpoints.registerDeviceToken(),
+        {
+          'token': token,
+          'platform': platform,
+          'provider': 'fcm',
+        },
+        auth: true,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kFcmTokenSynced, token);
+      return true;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationRepository] registerDeviceToken: $e');
+        debugPrint('$st');
+      }
+      return false;
+    }
+  }
+
+  Future<bool> unregisterDeviceToken() async {
+    final cached = await getCachedFcmToken();
+    if (cached == null) return true;
+    try {
+      await _api.delete(
+        ApiEndpoints.unregisterDeviceToken(),
+        auth: true,
+      );
+    } catch (_) {
+      // Best-effort when endpoint missing.
+    }
+    await clearFcmToken();
+    return true;
+  }
+
+  Future<Map<String, dynamic>?> fetchNotificationPrefs() async {
+    try {
+      final res = await _api.get(ApiEndpoints.notificationSettings(), auth: true);
+      if (res is Map && res['data'] is Map) {
+        return Map<String, dynamic>.from(res['data'] as Map);
+      }
+      if (res is Map) return Map<String, dynamic>.from(res);
+    } catch (_) {}
+    return null;
+  }
+
+  static String platformLabel() {
+    if (Platform.isAndroid) return 'android';
+    if (Platform.isIOS) return 'ios';
+    return 'unknown';
+  }
+
+  Future<void> savePendingTapPayload(Map<String, String> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('bpa_pending_notification_tap', jsonEncode(data));
+  }
+
+  Future<Map<String, String>?> consumePendingTapPayload() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('bpa_pending_notification_tap');
+    if (raw == null) return null;
+    await prefs.remove('bpa_pending_notification_tap');
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return decoded.map((k, v) => MapEntry(k.toString(), v.toString()));
+      }
+    } catch (_) {}
+    return null;
+  }
+}
