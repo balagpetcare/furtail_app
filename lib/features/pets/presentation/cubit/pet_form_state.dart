@@ -5,40 +5,56 @@ class PetFormState {
   final bool loading;
   final bool success;
   final String? error;
-
   final int step;
 
   // create/edit
   final int? petId;
   bool get editMode => petId != null;
 
-  // basic
+  // ── Step 1: Basic Info ────────────────────────────────────────────────────
   final String name;
-
   final List<Map<String, dynamic>> animalTypes;
   final int? animalTypeId;
-  final XFile? photo; // 🔥 ADD THIS
   final List<Map<String, dynamic>> breeds;
   final int? breedId;
-
+  final String? customBreedText;
   final DateTime? dob;
   final int? ageYears;
-
-  // details
-  final String sex; // "MALE" | "FEMALE" | "UNKNOWN"
-  final String microchipNumber; // UI input string (empty allowed)
-  final bool isRescue;
-  final bool isNeutered;
-
-  final String foodHabits;
-  final String healthDisorders;
-  final String notes;
-
-  final double? weightKg;
-
-  // photo
+  final String sex;
+  final XFile? photo;
   final File? photoFile;
   final bool photoChanged;
+
+  // ── Step 2: Appearance ───────────────────────────────────────────────────
+  final int? colorId;
+  final int? coatPatternId;
+  final int? sizeId;
+  final String? customColorText;
+
+  // ── Step 3: Health ───────────────────────────────────────────────────────
+  final String microchipNumber;
+  final bool isRescue;
+  final bool isNeutered;
+  final String? bloodType;
+  final String healthDisorders;
+  final String allergiesText; // comma-separated for UI
+
+  // ── Step 4: Lifestyle ────────────────────────────────────────────────────
+  final String foodHabits;
+  final String notes;
+  final double? weightKg;
+
+  // ── Step 5: Public Profile ───────────────────────────────────────────────
+  final bool isPublicProfileEnabled;
+  final String slug;
+  final String bio;
+  final File? coverPhotoFile;
+  final bool coverPhotoChanged;
+  final XFile? coverPhoto;
+  final int? coverMediaId;
+  final String? coverMediaUrl;
+
+  static const int totalSteps = 6;
 
   const PetFormState({
     required this.loading,
@@ -51,51 +67,80 @@ class PetFormState {
     required this.animalTypeId,
     required this.breeds,
     required this.breedId,
+    required this.customBreedText,
     required this.dob,
     required this.ageYears,
     required this.sex,
+    required this.photo,
+    required this.photoFile,
+    required this.photoChanged,
+    required this.colorId,
+    required this.coatPatternId,
+    required this.sizeId,
+    required this.customColorText,
     required this.microchipNumber,
     required this.isRescue,
     required this.isNeutered,
-    required this.foodHabits,
+    required this.bloodType,
     required this.healthDisorders,
+    required this.allergiesText,
+    required this.foodHabits,
     required this.notes,
     required this.weightKg,
-    required this.photoFile,
-    required this.photoChanged,
-    this.photo, // 🔥 ADD THIS
+    required this.isPublicProfileEnabled,
+    required this.slug,
+    required this.bio,
+    required this.coverPhotoFile,
+    required this.coverPhotoChanged,
+    required this.coverPhoto,
+    required this.coverMediaId,
+    required this.coverMediaUrl,
   });
 
-  // ✅ Use THIS in Cubit super()
   factory PetFormState.initial({int? petId}) {
-    return PetFormState(
+    return const PetFormState(
       loading: false,
       success: false,
       error: null,
       step: 0,
-      petId: petId,
+      petId: null,
       name: "",
-      animalTypes: const [],
+      animalTypes: [],
       animalTypeId: null,
-      breeds: const [],
+      breeds: [],
       breedId: null,
+      customBreedText: null,
       dob: null,
       ageYears: null,
       sex: "UNKNOWN",
+      photo: null,
+      photoFile: null,
+      photoChanged: false,
+      colorId: null,
+      coatPatternId: null,
+      sizeId: null,
+      customColorText: null,
       microchipNumber: "",
       isRescue: false,
       isNeutered: false,
-      foodHabits: "",
+      bloodType: null,
       healthDisorders: "",
+      allergiesText: "",
+      foodHabits: "",
       notes: "",
       weightKg: null,
-      photoFile: null,
-      photoChanged: false,
-    );
+      isPublicProfileEnabled: false,
+      slug: "",
+      bio: "",
+      coverPhotoFile: null,
+      coverPhotoChanged: false,
+      coverPhoto: null,
+      coverMediaId: null,
+      coverMediaUrl: null,
+    ).copyWith(petId: petId);
   }
 
-  bool get basicValid =>
-      name.trim().isNotEmpty && animalTypeId != null;
+  bool get basicValid => name.trim().isNotEmpty && animalTypeId != null;
 
   PetFormState copyWith({
     bool? loading,
@@ -108,19 +153,34 @@ class PetFormState {
     int? animalTypeId,
     List<Map<String, dynamic>>? breeds,
     int? breedId,
+    String? customBreedText,
     DateTime? dob,
     int? ageYears,
     String? sex,
+    XFile? photo,
+    File? photoFile,
+    bool? photoChanged,
+    int? colorId,
+    int? coatPatternId,
+    int? sizeId,
+    String? customColorText,
     String? microchipNumber,
     bool? isRescue,
     bool? isNeutered,
-    String? foodHabits,
+    String? bloodType,
     String? healthDisorders,
+    String? allergiesText,
+    String? foodHabits,
     String? notes,
     double? weightKg,
-    File? photoFile,
-    bool? photoChanged,
-    XFile? photo, // 🔥 ADD THIS
+    bool? isPublicProfileEnabled,
+    String? slug,
+    String? bio,
+    File? coverPhotoFile,
+    bool? coverPhotoChanged,
+    XFile? coverPhoto,
+    int? coverMediaId,
+    String? coverMediaUrl,
   }) {
     return PetFormState(
       loading: loading ?? this.loading,
@@ -133,19 +193,34 @@ class PetFormState {
       animalTypeId: animalTypeId ?? this.animalTypeId,
       breeds: breeds ?? this.breeds,
       breedId: breedId ?? this.breedId,
+      customBreedText: customBreedText ?? this.customBreedText,
       dob: dob ?? this.dob,
       ageYears: ageYears ?? this.ageYears,
       sex: sex ?? this.sex,
+      photo: photo ?? this.photo,
+      photoFile: photoFile ?? this.photoFile,
+      photoChanged: photoChanged ?? this.photoChanged,
+      colorId: colorId ?? this.colorId,
+      coatPatternId: coatPatternId ?? this.coatPatternId,
+      sizeId: sizeId ?? this.sizeId,
+      customColorText: customColorText ?? this.customColorText,
       microchipNumber: microchipNumber ?? this.microchipNumber,
       isRescue: isRescue ?? this.isRescue,
       isNeutered: isNeutered ?? this.isNeutered,
-      foodHabits: foodHabits ?? this.foodHabits,
+      bloodType: bloodType ?? this.bloodType,
       healthDisorders: healthDisorders ?? this.healthDisorders,
+      allergiesText: allergiesText ?? this.allergiesText,
+      foodHabits: foodHabits ?? this.foodHabits,
       notes: notes ?? this.notes,
       weightKg: weightKg ?? this.weightKg,
-      photoFile: photoFile ?? this.photoFile,
-      photoChanged: photoChanged ?? this.photoChanged,
-      photo: photo ?? this.photo, // 🔥 ADD THIS
+      isPublicProfileEnabled: isPublicProfileEnabled ?? this.isPublicProfileEnabled,
+      slug: slug ?? this.slug,
+      bio: bio ?? this.bio,
+      coverPhotoFile: coverPhotoFile ?? this.coverPhotoFile,
+      coverPhotoChanged: coverPhotoChanged ?? this.coverPhotoChanged,
+      coverPhoto: coverPhoto ?? this.coverPhoto,
+      coverMediaId: coverMediaId ?? this.coverMediaId,
+      coverMediaUrl: coverMediaUrl ?? this.coverMediaUrl,
     );
   }
 }

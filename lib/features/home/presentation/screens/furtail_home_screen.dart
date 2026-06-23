@@ -367,6 +367,7 @@ class _FurtailHomeScreenState extends State<FurtailHomeScreen> {
       selectedTabIndex: _selectedIndex,
       onSelectHomeTab: (index) => setState(() => _selectedIndex = index),
       child: Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Theme.of(context).colorScheme.surface,
 
       // ✅ Updated drawer (required parameters). Phase 5: donationEnabled from policy

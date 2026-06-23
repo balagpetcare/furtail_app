@@ -17,8 +17,10 @@ import '../../features/legacy/presentation/screens/create_post_screen.dart';
 import '../../features/legacy/presentation/screens/edit_post_screen.dart';
 import 'package:furtail_app/features/posts/presentation/screens/post_details_screen.dart';
 import 'package:furtail_app/features/posts/presentation/screens/reels_player_screen.dart';
+import 'package:furtail_app/features/posts/presentation/screens/saved_posts_screen.dart';
 import 'package:furtail_app/features/pets/presentation/pet_create_screen.dart';
 import 'package:furtail_app/features/pets/presentation/screens/pet_profile_screen.dart';
+import 'package:furtail_app/features/pets/presentation/screens/pet_public_profile_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
@@ -58,6 +60,9 @@ class AppRouter {
       case AppRoutes.createPost:
         return MaterialPageRoute(builder: (_) => const CreatePostScreen());
 
+      case AppRoutes.savedPosts:
+        return MaterialPageRoute(builder: (_) => const SavedPostsScreen());
+
       case AppRoutes.postDetails:
         final args = (settings.arguments as Map?) ?? {};
         final post = args['post'];
@@ -96,6 +101,13 @@ class AppRouter {
         final petId = (args['petId'] as int?) ?? 0;
         return MaterialPageRoute(
           builder: (_) => PetProfileScreen(petId: petId),
+        );
+
+      case AppRoutes.petPublicProfile:
+        final args = (settings.arguments as Map?) ?? {};
+        final petId = (args['petId'] as int?) ?? 0;
+        return MaterialPageRoute(
+          builder: (_) => PetPublicProfileScreen(petId: petId),
         );
 
       case AppRoutes.donation:

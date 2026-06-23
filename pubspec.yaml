@@ -47,7 +47,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   flutter_timezone: ^3.0.1
   timezone: ^0.9.4
-  app_links: ^6.3.3
+  app_links: 6.4.1
   webview_flutter: ^4.10.0
 
 dev_dependencies:

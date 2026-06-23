@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 
 import 'package:furtail_app/core/services/share_service.dart';
 
@@ -11,7 +12,6 @@ import 'edit_about_details_screen.dart';
 
 import '../widgets/achievements_section.dart';
 import '../widgets/my_pets_family_white.dart';
-import '../widgets/posts_placeholder.dart';
 import '../widgets/profile_completion_card.dart';
 import '../widgets/profile_header_stack.dart';
 import '../widgets/profile_highlights.dart';
@@ -22,6 +22,7 @@ import '../widgets/profile_tab_posts.dart';
 import '../widgets/profile_tab_gallery.dart';
 import '../widgets/profile_tab_more.dart';
 import '../widgets/profile_tab_videos.dart';
+import '../../../posts/presentation/screens/saved_posts_screen.dart';
 
 /// New User Profile screen (white UI, stack header, achievements, tabs).
 /// All UI text is in English.
@@ -47,7 +48,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _load();
   }
 
@@ -267,6 +268,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   ),
                 ),
                 ProfileTabVideos(userId: _profile?.id ?? 0, canManage: true),
+                const SavedPostsList(),
                 const ProfileTabMore(),
               ],
             ),
@@ -392,14 +394,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           ),
         ),
 
-        const SizedBox(height: 12),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: PostsPlaceholder(onEditProfile: _openEditProfile),
-        ),
-
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
       ],
     );
   }
@@ -407,24 +402,29 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
-      // বাম পাশের প্যাডিং ০ করে দিলে একদম স্ক্রিনের মাথা থেকে শুরু হবে
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
-        // এই লাইনটি ট্যাবগুলোকে বাম দিক থেকে শুরু করতে বাধ্য করবে
         tabAlignment: TabAlignment.start,
-        labelColor: Colors.black,
-        unselectedLabelColor: Colors.black54,
-        indicatorColor: Colors.black,
-        indicatorWeight: 2,
-        // ট্যাবগুলোর মাঝের বাড়তি গ্যাপ কমাতে চাইলে labelPadding ব্যবহার করতে পারেন
+        labelColor: Theme.of(context).colorScheme.primary,
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        indicatorColor: Theme.of(context).colorScheme.primary,
+        indicatorWeight: 3,
+        indicatorSize: TabBarIndicatorSize.label,
         labelPadding: const EdgeInsets.symmetric(horizontal: 16),
+        labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+        unselectedLabelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.normal,
+            ),
         tabs: const [
           Tab(text: 'Posts'),
           Tab(text: 'About'),
           Tab(text: 'Galleries'),
           Tab(text: 'Videos'),
+          Tab(text: 'Saved'),
           Tab(text: 'More'),
         ],
       ),
@@ -440,7 +440,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           child: Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.black54),
+            style: AppTypography.bodyRegular(context, color: Colors.black54),
           ),
         ),
       ),

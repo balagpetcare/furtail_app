@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -180,13 +181,83 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
     }
   }
 
+  Widget _buildUploadPlaceholder() {
+    final isAvatar = widget.cropStyle == ProfileCropStyle.avatar;
+    return GestureDetector(
+      onTap: _isUploading ? null : _pickFromGallery,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F8FC),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isAvatar
+                    ? Icons.account_circle_outlined
+                    : Icons.image_outlined,
+                size: 56,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              isAvatar ? 'Select profile photo' : 'Select cover photo',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                isAvatar
+                    ? 'Choose a photo from your gallery. It will be cropped to a square.'
+                    : 'Choose a wide image for your cover header. You can crop it before uploading.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.black54,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _pickFromGallery,
+              icon: const Icon(Icons.photo_library_outlined),
+              label: const Text('Choose from Gallery'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPreview() {
     final file = _selectedCroppedFile;
     if (file == null) {
       return Container(
         color: const Color(0xFFF2F2F2),
         child: const Center(
-          child: Text('No image selected / কোনো ছবি সিলেক্ট করা হয়নি'),
+          child: Text('No image selected'),
         ),
       );
     }
@@ -196,7 +267,6 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
         final ar = _croppedAspectRatio;
         final maxW = constraints.maxWidth;
 
-        // If we can't read dimensions, fallback to fitWidth without forcing a square.
         if (ar == null || ar <= 0) {
           return Image.file(
             file,
@@ -208,8 +278,6 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
 
         final computedHeight = maxW / ar;
 
-        // Real aspect ratio preview:
-        // width = 100% screen, height = based on cropped dimensions
         return SingleChildScrollView(
           child: SizedBox(
             width: double.infinity,
@@ -231,60 +299,110 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
     final title = widget.title;
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            OutlinedButton.icon(
-              onPressed: _isUploading ? null : _pickFromGallery,
-              icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Choose from Gallery'),
-            ),
-            if (_hasImage) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isUploading ? null : _reCrop,
-                      icon: const Icon(Icons.crop),
-                      label: const Text('Re-crop'),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              if (_hasImage) ...[
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE6E6E6)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: _buildPreview(),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isUploading ? null : _reset,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Reset'),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isUploading ? null : _reCrop,
+                        icon: const Icon(Icons.crop_outlined),
+                        label: const Text('Adjust Crop'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                          foregroundColor: Theme.of(context).colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _isUploading ? null : _reset,
+                        icon: const Icon(Icons.refresh_outlined),
+                        label: const Text('Remove'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isUploading ? null : _upload,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isUploading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text('Upload & Apply', style: AppTypography.menuTitle(context).copyWith(fontWeight: FontWeight.bold)),
                   ),
-                ],
-              ),
+                ),
+              ] else ...[
+                Expanded(child: _buildUploadPlaceholder()),
+              ],
             ],
-            const SizedBox(height: 16),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: _buildPreview(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isUploading ? null : _upload,
-                child: _isUploading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Upload'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

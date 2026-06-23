@@ -8,6 +8,7 @@ class AppRoutes {
   static const services = '/services';
   static const profile = '/profile';
   static const visitorProfile = '/user/profile';
+  static const savedPosts = '/saved-posts';
 
   static const createPost = '/create-post';
   static const postDetails = '/posts/details'; // args: {post}
@@ -17,6 +18,7 @@ class AppRoutes {
   static const petCreate = '/pets/create';
   static const petList = '/pets';
   static const petProfile = '/pets/profile'; // args: {petId}
+  static const petPublicProfile = '/pets/public-profile'; // args: {petId}
 
   static const adoption = '/adoption';
   static const donation = '/donation';

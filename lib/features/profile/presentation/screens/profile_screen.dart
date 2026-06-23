@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 
 import '../../data/models/user_profile_model.dart';
 import '../../data/profile_service.dart';
@@ -182,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 msg,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: AppTypography.bodyRegular(context).copyWith(
                   color: Colors.white.withOpacity(0.80),
                   fontWeight: FontWeight.w700,
                 ),

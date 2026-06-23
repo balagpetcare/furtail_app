@@ -8,7 +8,6 @@ import 'package:furtail_app/core/network/api_config.dart';
 import 'package:furtail_app/core/network/multipart_helper.dart';
 import 'models/pet_model.dart';
 import 'models/pet_profile_model.dart';
-import 'package:image_picker/image_picker.dart';
 
 class PetService {
   Future<String?> _token() async {
@@ -17,17 +16,23 @@ class PetService {
   }
 
   Map<String, String> _authHeaders(String token) => {
-    "Authorization": "Bearer $token",
-    "Accept": "application/json",
-  };
+        "Authorization": "Bearer $token",
+        "Accept": "application/json",
+      };
 
   Map<String, String> _jsonHeaders(String token) => {
-    "Authorization": "Bearer $token",
-    "Content-Type": "application/json",
-    "Accept": "application/json",
-  };
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
 
-  /// ✅ GET /user/pets/all (supports your older shape too)
+  Map<String, String> _optionalAuthHeaders(String? token) => {
+        if (token != null) "Authorization": "Bearer $token",
+        "Accept": "application/json",
+      };
+
+  // ── Owner: My Pets ─────────────────────────────────────────────────────────
+
   Future<List<PetModel>> getMyPets() async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
@@ -40,7 +45,6 @@ class PetService {
     if (res.statusCode != 200) throw Exception(res.body);
 
     final data = jsonDecode(res.body);
-
     final list = (data["data"] is List)
         ? data["data"]
         : (data["pets"] ?? data["data"]?["pets"] ?? []);
@@ -50,7 +54,6 @@ class PetService {
         .toList();
   }
 
-  /// ✅ GET /user/pets/:id/profile (aggregated for profile UI)
   Future<PetProfileModel> getPetProfile(int petId) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
@@ -62,10 +65,10 @@ class PetService {
 
     if (res.statusCode != 200) throw Exception(res.body);
     final data = jsonDecode(res.body);
-    return PetProfileModel.fromJson((data["data"] ?? {}) as Map<String, dynamic>);
+    return PetProfileModel.fromJson(
+        (data["data"] ?? {}) as Map<String, dynamic>);
   }
 
-  /// ✅ GET /user/pets/:id (raw pet record for edit screens)
   Future<Map<String, dynamic>> getPet(int petId) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
@@ -80,7 +83,53 @@ class PetService {
     return (data["data"] ?? {}) as Map<String, dynamic>;
   }
 
-  /// ✅ POST /media/upload (multipart, field: file) -> returns mediaId
+  Future<Map<String, dynamic>> registerPet(
+      Map<String, dynamic> payload) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.post(
+      Uri.parse("${ApiConfig.apiV1}/user/pets/register"),
+      headers: _jsonHeaders(token),
+      body: jsonEncode(payload),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception(res.body);
+    }
+
+    return jsonDecode(res.body) as Map<String, dynamic>;
+  }
+
+  Future<void> updatePet(int petId, Map<String, dynamic> payload) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.patch(
+      Uri.parse("${ApiConfig.apiV1}/user/pets/$petId"),
+      headers: _jsonHeaders(token),
+      body: jsonEncode(payload),
+    );
+
+    if (res.statusCode != 200) throw Exception(res.body);
+  }
+
+  Future<void> deletePet(int petId) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.delete(
+      Uri.parse("${ApiConfig.apiV1}/user/pets/$petId"),
+      headers: _authHeaders(token),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception(res.body);
+    }
+  }
+
+  // ── Media upload ──────────────────────────────────────────────────────────
+
   Future<int> uploadMedia(File file) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
@@ -107,53 +156,135 @@ class PetService {
     return (mediaId as num).toInt();
   }
 
-  /// ✅ POST /user/pets/register (JSON)
-  Future<Map<String, dynamic>> registerPet(Map<String, dynamic> payload) async {
+  // ── Public pet profile ────────────────────────────────────────────────────
+
+  Future<PetModel> getPublicPet(int petId) async {
     final token = await _token();
-    if (token == null) throw Exception("No token found");
-
-    final res = await http.post(
-      Uri.parse("${ApiConfig.apiV1}/user/pets/register"),
-      headers: _jsonHeaders(token),
-      body: jsonEncode(payload),
+    final res = await http.get(
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId"),
+      headers: _optionalAuthHeaders(token),
     );
-
-    if (res.statusCode != 200 && res.statusCode != 201) {
-      throw Exception(res.body);
-    }
-
-    return jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 200) throw Exception(res.body);
+    final data = jsonDecode(res.body);
+    return PetModel.fromJson((data["data"] ?? {}) as Map<String, dynamic>);
   }
 
-  /// ✅ PATCH /user/pets/:petId
-  Future<void> updatePet(int petId, Map<String, dynamic> payload) async {
+  Future<PetModel> getPetBySlug(String slug) async {
+    final token = await _token();
+    final res = await http.get(
+      Uri.parse("${ApiConfig.apiV1}/pets/slug/$slug"),
+      headers: _optionalAuthHeaders(token),
+    );
+    if (res.statusCode != 200) throw Exception(res.body);
+    final data = jsonDecode(res.body);
+    return PetModel.fromJson((data["data"] ?? {}) as Map<String, dynamic>);
+  }
+
+  // ── Pet public profile update (owner) ─────────────────────────────────────
+
+  Future<void> updatePetPublicProfile(
+      int petId, Map<String, dynamic> payload) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
 
     final res = await http.patch(
-      Uri.parse("${ApiConfig.apiV1}/user/pets/$petId"),
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/profile"),
       headers: _jsonHeaders(token),
       body: jsonEncode(payload),
     );
 
-    if (res.statusCode != 200) {
-      throw Exception(res.body);
-    }
+    if (res.statusCode != 200) throw Exception(res.body);
   }
 
-  /// ✅ DELETE /user/pets/:petId
-  /// Backend recommended to soft-delete.
-  Future<void> deletePet(int petId) async {
+  // ── Pet social actions ────────────────────────────────────────────────────
+
+  Future<void> followPet(int petId) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.post(
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/follow"),
+      headers: _authHeaders(token),
+    );
+    if (res.statusCode != 200) throw Exception(res.body);
+  }
+
+  Future<void> unfollowPet(int petId) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
 
     final res = await http.delete(
-      Uri.parse("${ApiConfig.apiV1}/user/pets/$petId"),
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/follow"),
       headers: _authHeaders(token),
     );
+    if (res.statusCode != 200) throw Exception(res.body);
+  }
 
-    if (res.statusCode != 200 && res.statusCode != 204) {
+  Future<void> likePet(int petId) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.post(
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/like"),
+      headers: _authHeaders(token),
+    );
+    if (res.statusCode != 200) throw Exception(res.body);
+  }
+
+  Future<void> unlikePet(int petId) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.delete(
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/like"),
+      headers: _authHeaders(token),
+    );
+    if (res.statusCode != 200) throw Exception(res.body);
+  }
+
+  Future<Map<String, dynamic>> getPetSocialStatus(int petId) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.get(
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/social-status"),
+      headers: _authHeaders(token),
+    );
+    if (res.statusCode != 200) throw Exception(res.body);
+    final data = jsonDecode(res.body);
+    return (data["data"] ?? {}) as Map<String, dynamic>;
+  }
+
+  // ── Pet posts ─────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getPetPosts(int petId,
+      {int? cursor, int limit = 20}) async {
+    final token = await _token();
+    final params = {
+      "limit": "$limit",
+      if (cursor != null) "cursor": "$cursor",
+    };
+    final uri = Uri.parse("${ApiConfig.apiV1}/pets/$petId/posts")
+        .replace(queryParameters: params);
+    final res = await http.get(uri, headers: _optionalAuthHeaders(token));
+    if (res.statusCode != 200) throw Exception(res.body);
+    final data = jsonDecode(res.body);
+    return ((data["data"] ?? []) as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> createPetPost(
+      int petId, Map<String, dynamic> payload) async {
+    final token = await _token();
+    if (token == null) throw Exception("No token found");
+
+    final res = await http.post(
+      Uri.parse("${ApiConfig.apiV1}/pets/$petId/posts"),
+      headers: _jsonHeaders(token),
+      body: jsonEncode(payload),
+    );
+    if (res.statusCode != 200 && res.statusCode != 201) {
       throw Exception(res.body);
     }
+    return (jsonDecode(res.body)["data"] ?? {}) as Map<String, dynamic>;
   }
 }

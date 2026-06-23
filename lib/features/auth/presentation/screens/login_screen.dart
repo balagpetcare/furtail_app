@@ -77,25 +77,15 @@ class _LoginScreenState extends State<LoginScreen> {
       await AnalyticsService.instance.logLogin(method: AnalyticsAuthMethod.email);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Login Successful!'),
-          backgroundColor: context.bpaSuccess,
-        ),
+      try {
+        ProviderScope.containerOf(context)
+            .read(notificationControllerProvider.notifier)
+            .registerPushAfterAuth();
+      } catch (_) {}
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
       );
-
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!mounted) return;
-        try {
-          ProviderScope.containerOf(context)
-              .read(notificationControllerProvider.notifier)
-              .registerPushAfterAuth();
-        } catch (_) {}
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
-        );
-      });
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString().contains('Exception')

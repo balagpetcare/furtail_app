@@ -8,6 +8,8 @@ import '../../domain/usecases/get_breeds_usecase.dart';
 import '../../domain/usecases/get_pets_usecase.dart';
 import '../../domain/usecases/update_pet_usecase.dart';
 import '../../domain/usecases/upload_pet_photo_usecase.dart';
+import '../../domain/usecases/update_pet_public_profile_usecase.dart';
+import '../../domain/usecases/upload_pet_cover_photo_usecase.dart';
 
 final _petRemoteDsProvider = Provider<PetRemoteDs>((ref) => PetRemoteDs());
 
@@ -37,4 +39,14 @@ final updatePetUsecaseProvider = Provider<UpdatePetUsecase>(
 
 final uploadPetPhotoUsecaseProvider = Provider<UpdatePetPhotoUsecase>(
   (ref) => UpdatePetPhotoUsecase(ref.watch(_petRepositoryProvider)),
+);
+
+final updatePetPublicProfileUsecaseProvider =
+    Provider<UpdatePetPublicProfileUsecase>(
+  (ref) => UpdatePetPublicProfileUsecase(ref.watch(_petRepositoryProvider)),
+);
+
+final uploadPetCoverPhotoUsecaseProvider =
+    Provider<UploadPetCoverPhotoUsecase>(
+  (ref) => UploadPetCoverPhotoUsecase(ref.watch(_petRepositoryProvider)),
 );

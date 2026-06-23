@@ -4,9 +4,12 @@ import '../../domain/entities/pet_entity.dart';
 import '../../domain/repositories/pet_repository.dart';
 import '../datasources/pet_remote_ds.dart';
 import '../models/pet_model.dart';
+import '../pet_service.dart';
 
 class PetRepositoryImpl implements PetRepository {
   final PetRemoteDs remote;
+  final PetService _service = PetService();
+
   PetRepositoryImpl(this.remote);
 
   @override
@@ -29,32 +32,12 @@ class PetRepositoryImpl implements PetRepository {
       name: pet.name,
       animalTypeId: pet.animalTypeId,
       breedId: pet.breedId,
-      dateOfBirth: pet.dateOfBirth,
-      sex: pet.sex,
-      microchipNumber: pet.microchipNumber,
-      isRescue: pet.isRescue,
-      isNeutered: pet.isNeutered,
-      foodHabits: pet.foodHabits,
-      healthDisorders: pet.healthDisorders,
-      notes: pet.notes,
-      weightKg: pet.weightKg,
-      profilePicId: pet.profilePicId, // old flow support
-    ).toPayload();
-
-    // ✅ NEW: photo pass through (single request pet+photo)
-    return remote.registerPetWithOptionalPhoto(
-      payload: payload,
-      photoFile: pet.photo, // ✅ PetEntity.photo (File?)
-    );
-  }
-
-  @override
-  Future<void> updatePet(int petId, PetEntity pet) {
-    final payload = PetModel(
-      id: petId,
-      name: pet.name,
-      animalTypeId: pet.animalTypeId,
-      breedId: pet.breedId,
+      subBreedId: pet.subBreedId,
+      colorId: pet.colorId,
+      coatPatternId: pet.coatPatternId,
+      sizeId: pet.sizeId,
+      customBreedText: pet.customBreedText,
+      customColorText: pet.customColorText,
       dateOfBirth: pet.dateOfBirth,
       sex: pet.sex,
       microchipNumber: pet.microchipNumber,
@@ -65,21 +48,93 @@ class PetRepositoryImpl implements PetRepository {
       notes: pet.notes,
       weightKg: pet.weightKg,
       profilePicId: pet.profilePicId,
+      bloodType: pet.bloodType,
+      allergies: pet.allergies,
+    ).toPayload();
+
+    return remote.registerPetWithOptionalPhoto(
+      payload: payload,
+      photoFile: pet.photo,
+    );
+  }
+
+  @override
+  Future<void> updatePet(int petId, PetEntity pet) {
+    final payload = PetModel(
+      id: petId,
+      name: pet.name,
+      animalTypeId: pet.animalTypeId,
+      breedId: pet.breedId,
+      subBreedId: pet.subBreedId,
+      colorId: pet.colorId,
+      coatPatternId: pet.coatPatternId,
+      sizeId: pet.sizeId,
+      customBreedText: pet.customBreedText,
+      customColorText: pet.customColorText,
+      dateOfBirth: pet.dateOfBirth,
+      sex: pet.sex,
+      microchipNumber: pet.microchipNumber,
+      isRescue: pet.isRescue,
+      isNeutered: pet.isNeutered,
+      foodHabits: pet.foodHabits,
+      healthDisorders: pet.healthDisorders,
+      notes: pet.notes,
+      weightKg: pet.weightKg,
+      profilePicId: pet.profilePicId,
+      bloodType: pet.bloodType,
+      allergies: pet.allergies,
     ).toPayload();
 
     return remote.updatePet(petId, payload);
   }
 
-  // upload only photo -> returns mediaId (still supported)
   @override
-  Future<int> uploadPetPhoto(File file) {
-    return remote.uploadMedia(file);
-  }
+  Future<int> uploadPetPhoto(File file) => remote.uploadMedia(file);
 
-  // upload photo + update pet (still supported)
   @override
   Future<void> updatePetPhoto(int petId, File file) async {
     final mediaId = await remote.uploadMedia(file);
     await remote.updatePet(petId, {"profilePicId": mediaId});
   }
+
+  @override
+  Future<void> updatePetPublicProfile(
+      int petId, Map<String, dynamic> data) async {
+    await _service.updatePetPublicProfile(petId, data);
+  }
+
+  @override
+  Future<void> uploadPetCoverPhoto(int petId, File file) async {
+    final mediaId = await remote.uploadMedia(file);
+    await _service.updatePetPublicProfile(petId, {"coverMediaId": mediaId});
+  }
+
+  @override
+  Future<PetEntity> getPublicPet(int petId) =>
+      _service.getPublicPet(petId);
+
+  @override
+  Future<Map<String, dynamic>> getPetSocialStatus(int petId) =>
+      _service.getPetSocialStatus(petId);
+
+  @override
+  Future<void> followPet(int petId) => _service.followPet(petId);
+
+  @override
+  Future<void> unfollowPet(int petId) => _service.unfollowPet(petId);
+
+  @override
+  Future<void> likePet(int petId) => _service.likePet(petId);
+
+  @override
+  Future<void> unlikePet(int petId) => _service.unlikePet(petId);
+
+  @override
+  Future<List<Map<String, dynamic>>> getPetPosts(int petId, {int? cursor}) =>
+      _service.getPetPosts(petId, cursor: cursor);
+
+  @override
+  Future<Map<String, dynamic>> createPetPost(
+          int petId, Map<String, dynamic> payload) =>
+      _service.createPetPost(petId, payload);
 }

@@ -340,7 +340,7 @@ class _AwardCard extends StatelessWidget {
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: AppTypography.cardTitle(context).copyWith(fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -366,17 +366,17 @@ class _VisitorTabAbout extends StatelessWidget {
       children: [
         Text('About', style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900)),
         const SizedBox(height: 10),
-        _row('Bio', bio.isEmpty ? 'No bio added yet.' : bio),
-        _row('Education', (profile.education ?? 'Not set').toString()),
-        _row('Place live', (profile.placeLive ?? 'Not set').toString()),
-        _row('Fans and friends', (profile.fansAndFriends ?? 'Not set').toString()),
-        _row('From', (profile.from ?? 'Not set').toString()),
-        _row('Profile type', (profile.profileType ?? 'Not set').toString()),
-        _row('Work status', (profile.workStatus ?? 'Not set').toString()),
-        _row('Religious status', (profile.religiousStatus ?? 'Not set').toString()),
-        _row('Gender', (profile.gender ?? 'Not set').toString()),
-        _row('Birthdate', _fmtDate(profile.birthdate)),
-        _row('Marital status', (profile.maritalStatus ?? 'Not set').toString()),
+        _row(context, 'Bio', bio.isEmpty ? 'No bio added yet.' : bio),
+        _row(context, 'Education', (profile.education ?? 'Not set').toString()),
+        _row(context, 'Place live', (profile.placeLive ?? 'Not set').toString()),
+        _row(context, 'Fans and friends', (profile.fansAndFriends ?? 'Not set').toString()),
+        _row(context, 'From', (profile.from ?? 'Not set').toString()),
+        _row(context, 'Profile type', (profile.profileType ?? 'Not set').toString()),
+        _row(context, 'Work status', (profile.workStatus ?? 'Not set').toString()),
+        _row(context, 'Religious status', (profile.religiousStatus ?? 'Not set').toString()),
+        _row(context, 'Gender', (profile.gender ?? 'Not set').toString()),
+        _row(context, 'Birthdate', _fmtDate(profile.birthdate)),
+        _row(context, 'Marital status', (profile.maritalStatus ?? 'Not set').toString()),
         const SizedBox(height: 16),
         Text('Pets', style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900)),
         const SizedBox(height: 10),
@@ -391,13 +391,13 @@ class _VisitorTabAbout extends StatelessWidget {
     );
   }
 
-  Widget _row(String k, String v) {
+  Widget _row(BuildContext context, String k, String v) {
     final vv = v.trim().isEmpty ? 'Not set' : v;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(k, style: const TextStyle(fontWeight: FontWeight.w700))),
+          Expanded(child: Text(k, style: AppTypography.bodyRegular(context).copyWith(fontWeight: FontWeight.w700))),
           const SizedBox(width: 10),
           Expanded(child: Text(vv, textAlign: TextAlign.right)),
         ],
