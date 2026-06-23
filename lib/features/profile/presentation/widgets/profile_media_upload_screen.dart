@@ -20,16 +20,19 @@ class ProfileMediaUploadResult {
   });
 }
 
-/// Gallery pick + crop + upload (used by cover + avatar buttons).
+/// Gallery/camera pick + crop + upload (used by cover + avatar buttons).
 /// Returns [ProfileMediaUploadResult] so caller can instantly update UI.
 class ProfileMediaUploadScreen extends StatefulWidget {
   final String title;
   final ProfileCropStyle cropStyle;
+  /// When set, auto-opens the picker for this source on screen open.
+  final ImageSource? initialSource;
 
   const ProfileMediaUploadScreen({
     super.key,
     required this.title,
     required this.cropStyle,
+    this.initialSource,
   });
 
   @override
@@ -47,6 +50,37 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
   bool _isUploading = false;
 
   bool get _hasImage => _selectedCroppedFile != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialSource != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pickFromSource(widget.initialSource!);
+      });
+    }
+  }
+
+  Future<void> _pickFromSource(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      await _pickFromCamera();
+    } else {
+      await _pickFromGallery();
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 92,
+    );
+    if (picked == null) return;
+
+    _originalPickedPath = picked.path;
+    final cropped = await _cropImage(picked.path);
+    if (cropped == null) return;
+    await _setCroppedFile(File(cropped.path));
+  }
 
   Future<void> _pickFromGallery() async {
     final picked = await _imagePicker.pickImage(

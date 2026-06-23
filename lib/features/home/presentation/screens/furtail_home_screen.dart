@@ -390,7 +390,9 @@ class _FurtailHomeScreenState extends State<FurtailHomeScreen> {
         child: IndexedStack(index: _selectedIndex, children: pages),
       ),
 
-      floatingActionButton: Semantics(
+      floatingActionButton: _selectedIndex == 3
+          ? null
+          : Semantics(
         label: 'Create new post',
         button: true,
         child: FloatingActionButton(
@@ -436,7 +438,7 @@ class _FurtailHomeScreenState extends State<FurtailHomeScreen> {
           size: 30,
         ),
       ),
-      ),
+          ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       bottomNavigationBar: CustomBottomNav(

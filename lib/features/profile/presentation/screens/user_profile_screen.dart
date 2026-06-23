@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
 import 'package:furtail_app/core/theme/typography.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:furtail_app/core/services/share_service.dart';
 
@@ -25,7 +27,6 @@ import '../widgets/profile_tab_videos.dart';
 import '../../../posts/presentation/screens/saved_posts_screen.dart';
 
 /// New User Profile screen (white UI, stack header, achievements, tabs).
-/// All UI text is in English.
 class UserProfileScreen extends StatefulWidget {
   final Future<void> Function()? onPetChanged;
 
@@ -80,93 +81,181 @@ class _UserProfileScreenState extends State<UserProfileScreen>
     }
   }
 
-  /// ✅ FIX: `_refresh()` was missing. Use it everywhere you need quick reload.
-  Future<void> _refresh() async {
-    await _load();
+  Future<void> _refresh() async => _load();
+
+  // ── Photo options bottom sheet ────────────────────────────────────────────
+
+  Future<String?> _showPhotoOptions({required bool hasExisting}) {
+    return showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.of(ctx).pop('camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.of(ctx).pop('gallery'),
+            ),
+            if (hasExisting)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Remove Photo',
+                    style: TextStyle(color: Colors.red)),
+                onTap: () => Navigator.of(ctx).pop('remove'),
+              ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.close),
+              title: const Text('Cancel'),
+              onTap: () => Navigator.of(ctx).pop(null),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _changeAvatar() async {
+    final hasExisting = (_profile?.photoUrl ?? '').trim().isNotEmpty;
+    final choice = await _showPhotoOptions(hasExisting: hasExisting);
+    if (choice == null || !mounted) return;
+
+    if (choice == 'remove') {
+      try {
+        final updated =
+            await _profileService.updateProfile({'avatarMediaId': null});
+        if (!mounted) return;
+        setState(() => _profile = updated);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+      return;
+    }
+
+    final source =
+        choice == 'camera' ? ImageSource.camera : ImageSource.gallery;
     final result = await Navigator.push<ProfileMediaUploadResult>(
       context,
       MaterialPageRoute(
-        builder: (_) => const ProfileMediaUploadScreen(
+        builder: (_) => ProfileMediaUploadScreen(
           title: 'Update Profile Photo',
           cropStyle: ProfileCropStyle.avatar,
+          initialSource: source,
         ),
       ),
     );
     if (result == null) return;
 
-    // ✅ Optimistic preview (local file)
-    setState(() => _profile = _profile?.copyWith(photoUrl: result.previewUrl));
+    setState(() =>
+        _profile = _profile?.copyWith(photoUrl: result.previewUrl));
 
     try {
-      final updated = await _profileService.updateProfile({
-        'avatarMediaId': result.mediaId,
-      });
+      final updated = await _profileService
+          .updateProfile({'avatarMediaId': result.mediaId});
       if (!mounted) return;
-      // ✅ Immediately update state with server response (with cache bust)
       setState(() => _profile = updated);
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Profile photo update failed / প্রোফাইল ছবি আপডেট ব্যর্থ হয়েছে\n$msg',
-          ),
-        ),
+            content: Text(
+                'Profile photo update failed: ${e.toString().replaceAll('Exception: ', '')}')),
       );
       await _load();
     }
   }
 
   Future<void> _changeCover() async {
+    final hasExisting = (_profile?.coverUrl ?? '').trim().isNotEmpty;
+    final choice = await _showPhotoOptions(hasExisting: hasExisting);
+    if (choice == null || !mounted) return;
+
+    if (choice == 'remove') {
+      try {
+        final updated =
+            await _profileService.updateProfile({'coverMediaId': null});
+        if (!mounted) return;
+        setState(() => _profile = updated);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+      return;
+    }
+
+    final source =
+        choice == 'camera' ? ImageSource.camera : ImageSource.gallery;
     final result = await Navigator.push<ProfileMediaUploadResult>(
       context,
       MaterialPageRoute(
-        builder: (_) => const ProfileMediaUploadScreen(
+        builder: (_) => ProfileMediaUploadScreen(
           title: 'Update Cover Photo',
           cropStyle: ProfileCropStyle.cover,
+          initialSource: source,
         ),
       ),
     );
     if (result == null) return;
 
-    // ✅ Optimistic preview (local file)
-    setState(() => _profile = _profile?.copyWith(coverUrl: result.previewUrl));
+    setState(() =>
+        _profile = _profile?.copyWith(coverUrl: result.previewUrl));
 
     try {
-      final updated = await _profileService.updateProfile({
-        'coverMediaId': result.mediaId,
-      });
+      final updated = await _profileService
+          .updateProfile({'coverMediaId': result.mediaId});
       if (!mounted) return;
-      // ✅ Immediately update state with server response (with cache bust)
       setState(() => _profile = updated);
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceAll('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Cover photo update failed / কভার ছবি আপডেট ব্যর্থ হয়েছে\n$msg',
-          ),
-        ),
+            content: Text(
+                'Cover photo update failed: ${e.toString().replaceAll('Exception: ', '')}')),
       );
       await _load();
     }
   }
 
   void _openEditProfile() {
-    final p =
-        _profile; // আপনার state-এ যে UserProfileModel? আছে (বা profile/currentProfile)
-    if (p == null) return; // বা একটা snackbar দেখাতে পারেন
-
+    final p = _profile;
+    if (p == null) return;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ProfileEditOverviewScreen(initial: p)),
+      MaterialPageRoute(
+          builder: (_) => ProfileEditOverviewScreen(initial: p)),
     );
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -175,10 +264,12 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.maybePop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                onPressed: () => Navigator.maybePop(context),
+              )
+            : null,
         actions: [
           IconButton(
             tooltip: 'Share profile',
@@ -205,7 +296,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                 case 'add_pet':
                   final ok = await Navigator.push<bool>(
                     context,
-                    MaterialPageRoute(builder: (_) => const PetCreateScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const PetCreateScreen()),
                   );
                   if (ok == true) {
                     await widget.onPetChanged?.call();
@@ -217,11 +309,25 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               }
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: _MenuRow(icon: Icons.edit_rounded, label: 'Edit Profile')),
-              PopupMenuItem(value: 'avatar', child: _MenuRow(icon: Icons.account_circle_rounded, label: 'Change Profile Photo')),
-              PopupMenuItem(value: 'cover', child: _MenuRow(icon: Icons.image_rounded, label: 'Change Cover Photo')),
+              PopupMenuItem(
+                  value: 'edit',
+                  child: _MenuRow(
+                      icon: Icons.edit_rounded, label: 'Edit Profile')),
+              PopupMenuItem(
+                  value: 'avatar',
+                  child: _MenuRow(
+                      icon: Icons.account_circle_rounded,
+                      label: 'Change Profile Photo')),
+              PopupMenuItem(
+                  value: 'cover',
+                  child: _MenuRow(
+                      icon: Icons.image_rounded,
+                      label: 'Change Cover Photo')),
               PopupMenuDivider(),
-              PopupMenuItem(value: 'add_pet', child: _MenuRow(icon: Icons.pets_rounded, label: 'Add a Pet')),
+              PopupMenuItem(
+                  value: 'add_pet',
+                  child: _MenuRow(
+                      icon: Icons.pets_rounded, label: 'Add a Pet')),
             ],
           ),
           const SizedBox(width: 4),
@@ -236,42 +342,43 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               SliverToBoxAdapter(child: _buildHeader(context)),
               SliverPersistentHeader(
                 pinned: true,
-                delegate: _TabBarHeaderDelegate(child: _buildTabBar()),
+                delegate:
+                    _TabBarHeaderDelegate(child: _buildTabBar()),
               ),
             ],
-            body: TabBarView(
-              controller: _tabController,
-              physics: const BouncingScrollPhysics(),
-              children: [
-                ProfileTabPosts(userId: _profile?.id ?? 0),
-                ProfileTabAbout(
-                  profile: _profile!,
-                  onSeeMore: () async {
-                    final ok = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            EditAboutDetailsScreen(initial: _profile!),
+            body: _profile == null
+                ? const SizedBox()
+                : TabBarView(
+                    controller: _tabController,
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      ProfileTabPosts(userId: _profile!.id),
+                      ProfileTabAbout(
+                        profile: _profile!,
+                        onSeeMore: () async {
+                          final ok = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditAboutDetailsScreen(
+                                  initial: _profile!),
+                            ),
+                          );
+                          if (ok == true) await _refresh();
+                        },
                       ),
-                    );
-                    if (ok == true) {
-                      await _refresh();
-                    }
-                  },
-                ),
-                // Gallery widget is not scrollable by itself (Column) → wrap.
-                SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: ProfileTabGallery(
-                    userId: _profile?.id ?? 0,
-                    canManage: true,
+                      SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: ProfileTabGallery(
+                          userId: _profile!.id,
+                          canManage: true,
+                        ),
+                      ),
+                      ProfileTabVideos(
+                          userId: _profile!.id, canManage: true),
+                      const SavedPostsList(),
+                      const ProfileTabMore(),
+                    ],
                   ),
-                ),
-                ProfileTabVideos(userId: _profile?.id ?? 0, canManage: true),
-                const SavedPostsList(),
-                const ProfileTabMore(),
-              ],
-            ),
           ),
         ),
       ),
@@ -302,13 +409,27 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       children: [
         ProfileHeaderStack(
           profile: p,
-          batchText: "Tier: ${p.tier ?? 'N/A'}",
+          batchText: 'Tier: ${p.tier ?? 'N/A'}',
           bioText: _bioOrDefault(p),
           onTapCoverCamera: _changeCover,
           onTapAvatarCamera: _changeAvatar,
           followerPreviewUrls: p.followerPreviewUrls,
           followersCount: p.followers,
           followingCount: p.following,
+          onEditProfile: _openEditProfile,
+          onAddPet: () async {
+            final ok = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const PetCreateScreen()),
+            );
+            if (ok == true) {
+              await widget.onPetChanged?.call();
+              await _load();
+            }
+          },
+          onCreatePost: () =>
+              Navigator.pushNamed(context, AppRoutes.createPost),
         ),
 
         const SizedBox(height: 12),
@@ -316,19 +437,13 @@ class _UserProfileScreenState extends State<UserProfileScreen>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: ProfileHighlights(
-            onTapPinned: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Pinned posts coming soon.')),
-              );
-            },
-            onTapFeaturedPhotos: () {
-              _tabController.animateTo(1);
-            },
-            onTapInsights: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Insights coming soon.')),
-              );
-            },
+            onTapPinned: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Pinned posts coming soon.')),
+            ),
+            onTapFeaturedPhotos: () => _tabController.animateTo(2),
+            onTapInsights: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Insights coming soon.')),
+            ),
           ),
         ),
 
@@ -371,20 +486,21 @@ class _UserProfileScreenState extends State<UserProfileScreen>
               if (id == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Pet ID missing. Please refresh.'),
-                  ),
+                      content: Text('Pet ID missing. Please refresh.')),
                 );
                 return;
               }
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => PetProfileScreen(petId: id)),
+                MaterialPageRoute(
+                    builder: (_) => PetProfileScreen(petId: id)),
               );
             },
             onAddNew: () async {
               final ok = await Navigator.push<bool>(
                 context,
-                MaterialPageRoute(builder: (_) => const PetCreateScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const PetCreateScreen()),
               );
               if (ok == true) {
                 await widget.onPetChanged?.call();
@@ -402,27 +518,30 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 0),
+      padding: EdgeInsets.zero,
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         labelColor: Theme.of(context).colorScheme.primary,
-        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        unselectedLabelColor:
+            Theme.of(context).colorScheme.onSurfaceVariant,
         indicatorColor: Theme.of(context).colorScheme.primary,
         indicatorWeight: 3,
         indicatorSize: TabBarIndicatorSize.label,
         labelPadding: const EdgeInsets.symmetric(horizontal: 16),
-        labelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-        unselectedLabelStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.normal,
-            ),
+        labelStyle: Theme.of(context)
+            .textTheme
+            .titleSmall
+            ?.copyWith(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: Theme.of(context)
+            .textTheme
+            .titleSmall
+            ?.copyWith(fontWeight: FontWeight.normal),
         tabs: const [
           Tab(text: 'Posts'),
           Tab(text: 'About'),
-          Tab(text: 'Galleries'),
+          Tab(text: 'Gallery'),
           Tab(text: 'Videos'),
           Tab(text: 'Saved'),
           Tab(text: 'More'),
@@ -437,25 +556,34 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyRegular(context, color: Colors.black54),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style:
+                    AppTypography.bodyRegular(context, color: Colors.black54),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _load,
+                child: const Text('Retry'),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // -----------------------
-  // Helpers (client-side)
-  // -----------------------
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   static const int pMax = 1 << 30;
 
   static int _computeProfileCompletion(UserProfileModel p) {
     int score = 0;
-    if ((p.name).trim().isNotEmpty) score += 20;
+    if (p.name.trim().isNotEmpty) score += 20;
     if ((p.username ?? '').trim().isNotEmpty) score += 10;
     if ((p.photoUrl ?? '').trim().isNotEmpty) score += 15;
     if ((p.coverUrl ?? '').trim().isNotEmpty) score += 10;
@@ -474,47 +602,32 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   static int _nextLevelPoints(int level) {
     switch (level) {
-      case 1:
-        return 1;
-      case 2:
-        return 50;
-      case 3:
-        return 150;
-      case 4:
-        return 400;
-      default:
-        return 800;
+      case 1: return 1;
+      case 2: return 50;
+      case 3: return 150;
+      case 4: return 400;
+      default: return 800;
     }
-  }
-
-  static String _defaultBioIfMissing(UserProfileModel p) {
-    return "Hi! I'm ${p.name}. I love sharing moments, learning new things, and connecting with pet lovers. "
-        "Follow along to see updates, celebrate achievements, and make every day a little better.";
   }
 
   static String _bioOrDefault(UserProfileModel p) {
     final b = (p.bio ?? '').trim();
     if (b.isNotEmpty) return b;
-    return _defaultBioIfMissing(p);
+    return "Hi! I'm ${p.name}. I love sharing moments and connecting with pet lovers.";
   }
 }
+
+// ─── Tab bar delegate ─────────────────────────────────────────────────────────
 
 class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   _TabBarHeaderDelegate({required this.child});
 
-  @override
-  double get minExtent => 48;
+  @override double get minExtent => 48;
+  @override double get maxExtent => 48;
 
   @override
-  double get maxExtent => 48;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Material(color: Colors.white, child: child);
   }
 
@@ -522,10 +635,11 @@ class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _TabBarHeaderDelegate oldDelegate) => false;
 }
 
+// ─── Popup menu row ───────────────────────────────────────────────────────────
+
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String label;
-
   const _MenuRow({required this.icon, required this.label});
 
   @override

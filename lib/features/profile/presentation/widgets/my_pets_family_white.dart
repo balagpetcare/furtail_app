@@ -43,7 +43,39 @@ class MyPetsFamilyWhite extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           if (pets.isEmpty)
-            const Text('No pets added yet.')
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  Icon(Icons.pets_rounded, size: 40, color: Colors.black12),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'No pets yet',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Add your first pet to get started!',
+                    style: TextStyle(color: Colors.black38, fontSize: 12.5),
+                  ),
+                  const SizedBox(height: 14),
+                  ElevatedButton.icon(
+                    onPressed: onAddNew,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Add Pet'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
+              ),
+            )
           else
             SizedBox(
               height: 130,
@@ -78,7 +110,7 @@ class MyPetsFamilyWhite extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            pet.name ?? 'Pet',
+                            pet.name.isEmpty ? 'Pet' : pet.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontWeight: FontWeight.w800),
@@ -87,7 +119,7 @@ class MyPetsFamilyWhite extends StatelessWidget {
                           Text(
                             (pet.breedName ?? '').isEmpty
                                 ? 'Tap to view'
-                                : pet.breedName!,
+                                : pet.breedName ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: context.appText.bodySmall!.copyWith(color: Colors.black54),

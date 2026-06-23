@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Extra feature: quick highlights (Pinned posts, Featured photos, Insights).
+/// Highlights card — shown on the owner profile.
+/// Feature is not yet implemented; shows a polished empty/coming-soon state.
 class ProfileHighlights extends StatelessWidget {
+  // Callbacks kept for API compatibility; they are not used until feature ships.
   final VoidCallback onTapPinned;
   final VoidCallback onTapFeaturedPhotos;
   final VoidCallback onTapInsights;
@@ -15,81 +17,48 @@ class ProfileHighlights extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE6E6E6)),
+        border: Border.all(color: const Color(0xFFE8EAED)),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'Highlights',
-            style: TextStyle(fontWeight: FontWeight.w900),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: cs.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.auto_awesome_outlined, color: cs.primary, size: 22),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 120,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _tile(
-                  icon: Icons.push_pin_outlined,
-                  title: 'Pinned Posts',
-                  subtitle: 'Show your best',
-                  onTap: onTapPinned,
+                const Text(
+                  'Highlights',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                 ),
-                const SizedBox(width: 12),
-                _tile(
-                  icon: Icons.collections_outlined,
-                  title: 'Featured Photos',
-                  subtitle: 'Top moments',
-                  onTap: onTapFeaturedPhotos,
-                ),
-                const SizedBox(width: 12),
-                _tile(
-                  icon: Icons.insights_outlined,
-                  title: 'Insights',
-                  subtitle: 'Views & visits',
-                  onTap: onTapInsights,
+                const SizedBox(height: 3),
+                Text(
+                  'Pin posts, feature photos & view insights — coming soon.',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          Icon(Icons.lock_clock_outlined, size: 18, color: Colors.black26),
         ],
-      ),
-    );
-  }
-
-  Widget _tile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFFF6F8FC),
-          border: Border.all(color: const Color(0x11000000)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon),
-            const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: Colors.black54)),
-          ],
-        ),
       ),
     );
   }
