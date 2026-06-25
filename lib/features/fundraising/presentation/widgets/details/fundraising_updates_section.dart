@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 
 import 'package:furtail_app/core/constants/app_colors.dart';
 import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
@@ -179,18 +180,19 @@ class FundraisingUpdateCard extends ConsumerWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: update.media.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
                   final m = update.media[i];
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: CachedNetworkImage(
                       imageUrl: m.url,
+                      cacheManager: FurtailImageCacheManager(),
                       width: 120,
                       height: 92,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: Colors.black12, width: 120, height: 92),
-                      errorWidget: (_, __, ___) => Container(
+                      placeholder: (_, _) => Container(color: Colors.black12, width: 120, height: 92),
+                      errorWidget: (_, _, _) => Container(
                         color: Colors.black12,
                         width: 120,
                         height: 92,

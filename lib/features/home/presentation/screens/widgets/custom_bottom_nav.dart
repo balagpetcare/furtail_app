@@ -19,42 +19,57 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.colorScheme;
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8.0,
-      color: cs.brightness == Brightness.light ? cs.surface : cs.surface,
+    return Material(
+      color: cs.surface,
       elevation: 10,
-      child: SizedBox(
-        height: 60,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final fabGap = constraints.maxWidth < 360 ? 44.0 : 52.0;
-            return Row(
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            child: Row(
               children: [
-                Expanded(child: _buildNavItem(context, Icons.home, 'Home', 0)),
                 Expanded(
                   child: _buildNavItem(
                     context,
-                    Icons.shopping_bag_outlined,
-                    'Shop',
+                    Icons.home_outlined,
+                    Icons.home_rounded,
+                    'Home',
+                    0,
+                  ),
+                ),
+                Expanded(
+                  child: _buildNavItem(
+                    context,
+                    Icons.play_circle_outline_rounded,
+                    Icons.play_circle_fill_rounded,
+                    'Videos',
                     1,
                   ),
                 ),
-                SizedBox(width: fabGap),
+                Expanded(child: _buildCreateItem(context)),
                 Expanded(
-                  child: _buildNavItem(context, Icons.pets, 'Services', 2),
+                  child: _buildNavItem(
+                    context,
+                    Icons.medical_services_outlined,
+                    Icons.medical_services_rounded,
+                    'Services',
+                    3,
+                  ),
                 ),
                 Expanded(
                   child: _buildNavItem(
                     context,
-                    Icons.person_outline,
+                    Icons.person_outline_rounded,
+                    Icons.person_rounded,
                     'Profile',
-                    3,
+                    4,
                   ),
                 ),
               ],
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
@@ -63,6 +78,7 @@ class CustomBottomNav extends StatelessWidget {
   Widget _buildNavItem(
     BuildContext context,
     IconData icon,
+    IconData selectedIcon,
     String label,
     int index,
   ) {
@@ -77,7 +93,7 @@ class CustomBottomNav extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            icon,
+            isSelected ? selectedIcon : icon,
             color: isSelected ? cs.primary : cs.onSurfaceVariant,
             size: 24,
           ),
@@ -89,6 +105,40 @@ class CustomBottomNav extends StatelessWidget {
               maxLines: 1,
               style: context.appText.bodySmall!.copyWith(
                 color: isSelected ? cs.primary : cs.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateItem(BuildContext context) {
+    final cs = context.colorScheme;
+    return MinTouchTarget(
+      semanticLabel: 'Create',
+      onTap: onFabPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 42,
+            height: 34,
+            decoration: BoxDecoration(
+              color: cs.primary,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(Icons.add_rounded, color: cs.onPrimary, size: 26),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Create',
+              maxLines: 1,
+              style: context.appText.bodySmall!.copyWith(
+                color: cs.onSurfaceVariant,
               ),
             ),
           ),

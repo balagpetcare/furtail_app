@@ -2,12 +2,20 @@ import 'api_config.dart';
 
 class ApiEndpoints {
   // ---------- NOTIFICATIONS / PUSH ----------
-  /// Forward-compatible device token registration (backend TBD).
-  static String registerDeviceToken() => "${ApiConfig.apiV1}/me/device-tokens";
-  static String unregisterDeviceToken() => "${ApiConfig.apiV1}/me/device-tokens";
+  /// Register FCM device token with backend.
+  static String registerDeviceToken() => "${ApiConfig.apiV1}/notifications/device-token";
+  /// Unregister / deactivate device token on logout.
+  static String unregisterDeviceToken() => "${ApiConfig.apiV1}/notifications/device-token";
   static String notificationSettings() => "${ApiConfig.apiV1}/notifications/settings";
-  static String notificationsList({int limit = 20}) =>
-      "${ApiConfig.apiV1}/notifications?limit=$limit";
+  static String notificationsList({int limit = 20, int? cursor}) {
+    String url = "${ApiConfig.apiV1}/notifications?limit=$limit";
+    if (cursor != null) url += "&cursor=$cursor";
+    return url;
+  }
+  static String markNotificationRead(int id) =>
+      "${ApiConfig.apiV1}/notifications/$id/read";
+  static String markAllNotificationsRead() =>
+      "${ApiConfig.apiV1}/notifications/read-all";
   static String notificationsUnreadCount() =>
       "${ApiConfig.apiV1}/notifications/unread-count";
 
@@ -173,6 +181,8 @@ class ApiEndpoints {
   // ---------- SOCIAL ----------
   static String visitorProfile(int userId) =>
       "${ApiConfig.userApi}/$userId"; // GET
+  static String visitorProfileByUsername(String username) =>
+      "${ApiConfig.userApi}/by-username/${Uri.encodeComponent(username)}";
   static String socialStatus(int userId) =>
       "${ApiConfig.apiV1}/social/status/$userId";
   static String followUser(int userId) =>
@@ -200,10 +210,12 @@ class ApiEndpoints {
   }) {
     final qp = <String, String>{'limit': '$limit'};
     if (verified != null) qp['verified'] = verified.toString();
-    if (category != null && category.trim().isNotEmpty)
+    if (category != null && category.trim().isNotEmpty) {
       qp['category'] = category.trim();
-    if (location != null && location.trim().isNotEmpty)
+    }
+    if (location != null && location.trim().isNotEmpty) {
       qp['location'] = location.trim();
+    }
     if (sort != null && sort.trim().isNotEmpty) qp['sort'] = sort.trim();
     final query = qp.entries
         .map(
@@ -312,6 +324,31 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/reports/reasons?type=${Uri.encodeQueryComponent(type)}";
   static String createReport() => "${ApiConfig.apiV1}/reports";
 
+  // ---------- COMMENTS (Phase 1: Edit, Delete, Cursor) ----------
+  /// PATCH /api/v1/posts/:postId/comments/:commentId — edit a comment
+  static String postsCommentEdit({
+    required int postId,
+    required int commentId,
+  }) => "${ApiConfig.apiV1}/posts/$postId/comments/$commentId";
+  /// DELETE /api/v1/posts/:postId/comments/:commentId — delete a comment
+  static String postsCommentDelete({
+    required int postId,
+    required int commentId,
+  }) => "${ApiConfig.apiV1}/posts/$postId/comments/$commentId";
+
+  // ---------- POST SHARE & VIEW (Phase 1) ----------
+  /// POST /api/v1/posts/:postId/share — record a share
+  static String postsShare({required int postId}) =>
+      "${ApiConfig.apiV1}/posts/$postId/share";
+  /// POST /api/v1/posts/:postId/view — record a view
+  static String postsView({required int postId}) =>
+      "${ApiConfig.apiV1}/posts/$postId/view";
+
+  // ---------- BOOKMARKS ----------
+  static String bookmarkPost({required int postId}) => "${ApiConfig.apiV1}/posts/$postId/bookmark";
+  static String unbookmarkPost({required int postId}) => "${ApiConfig.apiV1}/posts/$postId/bookmark";
+  static String bookmarkedPosts({int limit = 50}) => "${ApiConfig.apiV1}/posts/bookmarked?limit=$limit";
+
   // ---------- VACCINATION CAMPAIGN (2026) ----------
   static String campaignLinkSummary() => "${ApiConfig.apiV1}/campaign-link/summary";
   static String campaignLinkMyBookings() => "${ApiConfig.apiV1}/campaign-link/my-bookings";
@@ -367,4 +404,17 @@ class ApiEndpoints {
   }
   static String campaignTicketQr(String ticketToken) =>
       "${ApiConfig.apiV1}/campaign/public/tickets/${Uri.encodeComponent(ticketToken)}/qr";
+
+  // ---------- STORIES / MY DAY ----------
+  /// GET /api/v1/stories/feed — story feed (own + friends)
+  static String storiesFeed({int limit = 50}) =>
+      "${ApiConfig.apiV1}/stories/feed?limit=$limit";
+  /// POST /api/v1/stories — create a story
+  static String storiesCreate() => "${ApiConfig.apiV1}/stories";
+  /// POST /api/v1/stories/:id/view — mark as viewed
+  static String storiesView(int storyId) =>
+      "${ApiConfig.apiV1}/stories/$storyId/view";
+  /// DELETE /api/v1/stories/:id — delete a story
+  static String storiesDelete(int storyId) =>
+      "${ApiConfig.apiV1}/stories/$storyId";
 }

@@ -6,11 +6,15 @@ class VisitorProfileState {
   final String? error;
   final VisitorProfileModel? profile;
   final SocialStatus? status;
-  final bool actionInProgress;
+  final bool isFollowLoading;
+  final bool isFriendLoading;
+  final bool isMessageLoading;
 
   const VisitorProfileState({
     required this.loading,
-    required this.actionInProgress,
+    this.isFollowLoading = false,
+    this.isFriendLoading = false,
+    this.isMessageLoading = false,
     this.error,
     this.profile,
     this.status,
@@ -18,22 +22,26 @@ class VisitorProfileState {
 
   factory VisitorProfileState.initial() => const VisitorProfileState(
         loading: true,
-        actionInProgress: false,
       );
 
   VisitorProfileState copyWith({
     bool? loading,
-    bool? actionInProgress,
+    bool? isFollowLoading,
+    bool? isFriendLoading,
+    bool? isMessageLoading,
     String? error,
     VisitorProfileModel? profile,
     SocialStatus? status,
   }) {
     return VisitorProfileState(
       loading: loading ?? this.loading,
-      actionInProgress: actionInProgress ?? this.actionInProgress,
+      isFollowLoading: isFollowLoading ?? this.isFollowLoading,
+      isFriendLoading: isFriendLoading ?? this.isFriendLoading,
+      isMessageLoading: isMessageLoading ?? this.isMessageLoading,
       error: error,
       profile: profile ?? this.profile,
       status: status ?? this.status,
     );
   }
 }
+

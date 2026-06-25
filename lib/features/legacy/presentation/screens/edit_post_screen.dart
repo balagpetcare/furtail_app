@@ -5,12 +5,14 @@ import 'package:furtail_app/core/utils/app_snackbar.dart';
 import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import 'package:furtail_app/features/posts/data/models/post_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
+import 'package:furtail_app/core/services/post_upload_manager.dart';
 
 /// Edit post:
 /// - Update caption
@@ -42,6 +44,17 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
   bool get _busy => _saving || _processingMedia;
 
+  bool get _hasUnsavedChanges {
+    if (_captionCtrl.text != (widget.post.caption ?? '')) return true;
+    if (_drafts.length != widget.post.media.length) return true;
+    for (int i = 0; i < _drafts.length; i++) {
+      final d = _drafts[i];
+      if (d.file != null) return true;
+      if (d.existingId != widget.post.media[i].id) return true;
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,39 +75,30 @@ class _EditPostScreenState extends State<EditPostScreen> {
   Future<void> _save() async {
     if (_saving) return;
     setState(() => _saving = true);
-    try {
-      final caption = _captionCtrl.text.trim();
 
-      final mediaIds = <int>[];
-      for (final d in _drafts) {
-        if (d.existingId != null) {
-          mediaIds.add(d.existingId!);
-          continue;
-        }
-        if (d.file == null) continue;
-        final id = await _ds.uploadMedia(d.file!);
-        mediaIds.add(id);
-      }
+    final caption = _captionCtrl.text.trim();
+    final drafts = _drafts.map((d) => PostUploadDraft(
+      existingId: d.existingId,
+      file: d.file,
+      type: d.type,
+    )).toList();
 
-      final updated = await _ds.updatePost(
-        postId: widget.post.id,
-        caption: caption,
-        mediaIds: mediaIds,
-      );
+    final task = PostUploadTask(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: widget.post.type,
+      caption: caption,
+      drafts: drafts,
+      editPostId: widget.post.id,
+    );
 
-      if (!mounted) return;
-      widget.onSave?.call(updated);
-      Navigator.pop(context, updated);
-    } catch (e) {
-      if (!mounted) return;
-      showAppSnackBar(
-        context,
-        e.toString().replaceFirst('Exception: ', ''),
-        isError: true,
-      );
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+    // Run task in background asynchronously
+    PostUploadManager.instance.start(task).catchError((err) {
+      debugPrint('[EditPostScreen] background edit error: $err');
+    });
+
+    final optimisticPost = widget.post.copyWith(caption: caption);
+    widget.onSave?.call(optimisticPost);
+    Navigator.pop(context, optimisticPost);
   }
 
   // -----------------------
@@ -256,7 +260,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
   Widget _iconPill({required IconData icon, required VoidCallback? onTap}) {
     return Material(
-      color: Colors.black.withOpacity(0.55),
+      color: Colors.black.withValues(alpha: 0.55),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -283,7 +287,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
       // IMAGE
       final img = d.file != null
           ? Image.file(d.file!, fit: BoxFit.cover)
-          : CachedNetworkImage(imageUrl: d.existingUrl!, fit: BoxFit.cover);
+          : CachedNetworkImage(imageUrl: d.existingUrl!, cacheManager: FurtailImageCacheManager(), fit: BoxFit.cover);
 
       return Padding(
         key: ValueKey(d.key),
@@ -370,8 +374,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black.withOpacity(0.08)),
-        color: Colors.grey.withOpacity(0.06),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+        color: Colors.grey.withValues(alpha: 0.06),
       ),
       child: Row(
         children: [
@@ -401,6 +405,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Post'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
         actions: [
           TextButton(
             onPressed: _busy ? null : _save,
@@ -410,13 +417,50 @@ class _EditPostScreenState extends State<EditPostScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Save'),
+                : Text(
+                    'Save',
+                    style: TextStyle(
+                      color: _busy ? Colors.grey.shade400 : Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          ListView(
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (_busy) return;
+          if (!_hasUnsavedChanges) {
+            Navigator.pop(context);
+            return;
+          }
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Discard Changes?'),
+              content: const Text('Are you sure you want to discard your changes?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Keep Editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && context.mounted) {
+            Navigator.pop(context);
+          }
+        },
+        child: Stack(
+          children: [
+            ListView(
             padding: const EdgeInsets.all(16),
             children: [
               TextField(
@@ -482,10 +526,11 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
           if (_processingMedia)
             Container(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],
+      ),
       ),
     );
   }
@@ -502,7 +547,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.black.withOpacity(0.12)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.12)),
           color: Colors.white,
         ),
         child: Row(

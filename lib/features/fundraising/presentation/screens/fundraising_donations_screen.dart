@@ -27,7 +27,7 @@ class FundraisingDonationsScreen extends ConsumerWidget {
           }
           return ListView.separated(
             itemCount: list.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (_, i) {
               final d = list[i];
               return ListTile(

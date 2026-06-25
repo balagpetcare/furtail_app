@@ -25,6 +25,7 @@ class PetListScreen extends ConsumerWidget {
       backgroundColor: const Color(0xFFF8F9FB),
       appBar: AppBar(
         backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
         elevation: 0,
         centerTitle: true,
         title: const Text(
@@ -144,7 +145,7 @@ class _PetCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -176,7 +177,7 @@ class _PetCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF4C6EF5).withOpacity(0.1),
+                              color: const Color(0xFF4C6EF5).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text('Public',
@@ -249,7 +250,7 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return CircleAvatar(
       radius: 34,
-      backgroundColor: const Color(0xFF4C6EF5).withOpacity(0.1),
+      backgroundColor: const Color(0xFF4C6EF5).withValues(alpha: 0.1),
       backgroundImage:
           photoUrl != null ? NetworkImage(photoUrl!) : null,
       child: photoUrl == null
@@ -295,7 +296,7 @@ class _EmptyPets extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: const Color(0xFF4C6EF5).withOpacity(0.08),
+                color: const Color(0xFF4C6EF5).withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.pets,

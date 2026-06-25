@@ -16,8 +16,8 @@ class AppDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // controller না, initialValue ব্যবহার → memory leak safe
     return TextFormField(
+      key: ValueKey(valueText),
       readOnly: true,
       onTap: onTap,
       initialValue: valueText,

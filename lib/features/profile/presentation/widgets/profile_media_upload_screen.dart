@@ -225,7 +225,7 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
           color: const Color(0xFFF6F8FC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
             width: 2,
           ),
         ),
@@ -235,7 +235,7 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -359,7 +359,7 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
                       border: Border.all(color: const Color(0xFFE6E6E6)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

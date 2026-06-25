@@ -184,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 msg,
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyRegular(context).copyWith(
-                  color: Colors.white.withOpacity(0.80),
+                  color: Colors.white.withValues(alpha: 0.80),
                   fontWeight: FontWeight.w700,
                 ),
               ),

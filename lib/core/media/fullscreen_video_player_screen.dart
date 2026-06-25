@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
+import 'furtail_cache_manager.dart';
 
 class FullscreenVideoPlayerScreen extends StatefulWidget {
   final String url;
@@ -32,40 +36,76 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
   Timer? _hide;
   int _token = 0;
   bool _wakelockHeld = false;
+  String? _activeFilePath;
 
   @override
   void initState() {
     super.initState();
     final int token = ++_token;
     _muted = widget.startMuted;
-    final c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    _c = c;
-    _init = c.initialize().then((_) async {
-      if (!mounted || token != _token) return;
-      if (widget.startAt > Duration.zero) {
+    _init = _initializeVideo(token);
+    _autoHide();
+  }
+
+  Future<void> _initializeVideo(int token) async {
+    try {
+      // Cache-first: try disk cache, fall back to network
+      File? file;
+      try {
+        file = await VideoCacheService.instance.getVideoFile(widget.url);
+      } catch (e) {
+        debugPrint('[FullscreenPlayer] Cache load failed, fallback to network: $e');
         try {
-          await c.seekTo(widget.startAt);
+          await VideoCacheService.instance.removeFile(widget.url);
         } catch (_) {}
       }
-      c.setLooping(true);
+
+      if (!mounted || token != _token) return;
+
+      late final VideoPlayerController c;
+      if (file != null) {
+        _activeFilePath = file.path;
+        VideoCacheService.instance.registerActivePath(_activeFilePath!);
+        c = VideoPlayerController.file(file);
+      } else {
+        c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      }
+      _c = c;
+
+      await c.initialize();
+
+      if (!mounted || token != _token) {
+        c.dispose();
+        return;
+      }
+
+      // On mobile data, start muted
       try {
-        c.setVolume(_muted ? 0.0 : 1.0);
+        final connectivityList = await Connectivity().checkConnectivity();
+        if (connectivityList.contains(ConnectivityResult.mobile)) {
+          _muted = true;
+        }
       } catch (_) {}
+
+      if (widget.startAt > Duration.zero) {
+        try { await c.seekTo(widget.startAt); } catch (_) {}
+      }
+      c.setLooping(true);
+      try { c.setVolume(_muted ? 0.0 : 1.0); } catch (_) {}
+
       if (widget.autoplay) {
-        try {
-          await c.play();
-        } catch (_) {}
+        try { await c.play(); } catch (_) {}
         if (!_wakelockHeld) {
           _wakelockHeld = true;
           WakelockPlus.enable();
         }
       }
+
       if (!mounted || token != _token) return;
       setState(() {});
-    }).catchError((e) {
+    } catch (e) {
       debugPrint('Fullscreen video init failed: $e');
-    });
-    _autoHide();
+    }
   }
 
   @override
@@ -73,6 +113,10 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
     _hide?.cancel();
     final c = _c;
     _c = null;
+    if (_activeFilePath != null) {
+      VideoCacheService.instance.unregisterActivePath(_activeFilePath!);
+      _activeFilePath = null;
+    }
     try {
       c?.pause();
     } catch (_) {}
@@ -170,7 +214,7 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                   bottom: 10,
                   child: ValueListenableBuilder<VideoPlayerValue>(
                     valueListenable: c,
-                    builder: (_, v, __) {
+                    builder: (_, v, _) {
                       final dur = v.duration;
                       final pos = v.position;
                       final maxMs = dur.inMilliseconds > 0
@@ -183,7 +227,7 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.45),
+                          color: Colors.black.withValues(alpha: 0.45),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(

@@ -1,3 +1,5 @@
+enum CommentPermission { everyone, followersOnly, noOne }
+
 /// Privacy-related preferences (persisted locally).
 class PrivacySettings {
   final bool profileVisibleToEveryone;
@@ -5,6 +7,7 @@ class PrivacySettings {
   final bool allowMessagesFromFollowersOnly;
   final bool showActivityInFeed;
   final bool allowTagging;
+  final CommentPermission whoCanComment;
 
   const PrivacySettings({
     this.profileVisibleToEveryone = true,
@@ -12,6 +15,7 @@ class PrivacySettings {
     this.allowMessagesFromFollowersOnly = false,
     this.showActivityInFeed = true,
     this.allowTagging = true,
+    this.whoCanComment = CommentPermission.everyone,
   });
 
   PrivacySettings copyWith({
@@ -20,6 +24,7 @@ class PrivacySettings {
     bool? allowMessagesFromFollowersOnly,
     bool? showActivityInFeed,
     bool? allowTagging,
+    CommentPermission? whoCanComment,
   }) {
     return PrivacySettings(
       profileVisibleToEveryone:
@@ -29,6 +34,7 @@ class PrivacySettings {
           allowMessagesFromFollowersOnly ?? this.allowMessagesFromFollowersOnly,
       showActivityInFeed: showActivityInFeed ?? this.showActivityInFeed,
       allowTagging: allowTagging ?? this.allowTagging,
+      whoCanComment: whoCanComment ?? this.whoCanComment,
     );
   }
 
@@ -38,6 +44,7 @@ class PrivacySettings {
         'allowMessagesFromFollowersOnly': allowMessagesFromFollowersOnly,
         'showActivityInFeed': showActivityInFeed,
         'allowTagging': allowTagging,
+        'whoCanComment': whoCanComment.name,
       };
 
   factory PrivacySettings.fromJson(Map<String, dynamic> json) {
@@ -48,6 +55,10 @@ class PrivacySettings {
       allowMessagesFromFollowersOnly: json['allowMessagesFromFollowersOnly'] == true,
       showActivityInFeed: b('showActivityInFeed'),
       allowTagging: b('allowTagging'),
+      whoCanComment: CommentPermission.values.firstWhere(
+        (e) => e.name == json['whoCanComment'],
+        orElse: () => CommentPermission.everyone,
+      ),
     );
   }
 }

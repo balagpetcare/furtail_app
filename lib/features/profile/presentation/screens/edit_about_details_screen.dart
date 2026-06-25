@@ -112,22 +112,78 @@ class _EditAboutDetailsScreenState extends State<EditAboutDetailsScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges {
+    final p = widget.initial;
+    if (_education.text != (p.education ?? '')) return true;
+    if (_placeLive.text != (p.placeLive ?? '')) return true;
+    if (_fansAndFriends.text != (p.fansAndFriends ?? '')) return true;
+    if (_from.text != (p.from ?? '')) return true;
+    if (_profileType.text != (p.profileType ?? '')) return true;
+    if (_workStatus.text != (p.workStatus ?? '')) return true;
+    if (_religiousStatus.text != (p.religiousStatus ?? '')) return true;
+    if (_gender.text != (p.gender ?? '')) return true;
+    if (_maritalStatus.text != (p.maritalStatus ?? '')) return true;
+    if (_birthdate != p.birthdate) return true;
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit About Details'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
+        leading: const _GreyBackButton(),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                : Text(
+                    'Save',
+                    style: TextStyle(
+                      color: _saving ? Colors.grey : Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           )
         ],
       ),
-      body: SafeArea(
-        child: ListView(
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (_saving) return;
+          if (!_hasUnsavedChanges) {
+            Navigator.pop(context);
+            return;
+          }
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Discard Changes?'),
+              content: const Text('Are you sure you want to discard your changes?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Keep Editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && context.mounted) {
+            Navigator.pop(context);
+          }
+        },
+        child: SafeArea(
+          child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _field('Education', _education),
@@ -148,12 +204,11 @@ class _EditAboutDetailsScreenState extends State<EditAboutDetailsScreen> {
             ),
             _field('Marital status', _maritalStatus),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: const Text('Save Changes'),
-            ),
+            // Bottom save removed — AppBar "Save" is the primary action.
+            SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
           ],
         ),
+      ),
       ),
     );
   }
@@ -167,6 +222,29 @@ class _EditAboutDetailsScreenState extends State<EditAboutDetailsScreen> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
+      ),
+    );
+  }
+}
+
+/// Standard back button for white-background screens:
+/// light grey circular background + dark icon.
+class _GreyBackButton extends StatelessWidget {
+  const _GreyBackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.maybePop(context),
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Color(0xFFE8EAED),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1A1A2E)),
       ),
     );
   }

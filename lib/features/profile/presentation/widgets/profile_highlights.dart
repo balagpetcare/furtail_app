@@ -30,7 +30,7 @@ class ProfileHighlights extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: cs.primary.withOpacity(0.08),
+              color: cs.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.auto_awesome_outlined, color: cs.primary, size: 22),

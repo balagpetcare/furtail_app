@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 
 import 'package:furtail_app/core/media/fullscreen_gallery_viewer.dart';
 import 'package:furtail_app/core/media/fullscreen_video_player_screen.dart';
@@ -78,8 +79,9 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                             else
                               CachedNetworkImage(
                                 imageUrl: m.url,
+                                cacheManager: FurtailImageCacheManager(),
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(
+                                placeholder: (_, _) => Container(
                                   color: const Color(0xFFF2F2F2),
                                   child: const Center(
                                     child: CircularProgressIndicator(
@@ -87,7 +89,7 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                                     ),
                                   ),
                                 ),
-                                errorWidget: (_, __, ___) => Container(
+                                errorWidget: (_, _, _) => Container(
                                   color: const Color(0xFFF2F2F2),
                                   child: const Icon(
                                     Icons.broken_image_outlined,
@@ -120,7 +122,7 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.black.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -143,7 +145,7 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: total,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (ctx, i) {
                 final m = widget.media[i];
                 final isVideo = m.type.toUpperCase().contains('VIDEO');
@@ -177,6 +179,7 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                           else
                             CachedNetworkImage(
                               imageUrl: m.url,
+                              cacheManager: FurtailImageCacheManager(),
                               fit: BoxFit.cover,
                             ),
                           if (isVideo)

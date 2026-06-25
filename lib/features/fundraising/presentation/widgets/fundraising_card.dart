@@ -175,8 +175,8 @@ class _LastDonorsRow extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
-                  color: Colors.grey.withOpacity(0.10),
-                  border: Border.all(color: Colors.black.withOpacity(0.06)),
+                  color: Colors.grey.withValues(alpha: 0.10),
+                  border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                 ),
                 child: Text(
                   d.amount == null ? d.name : '${d.name} (${d.amount})',

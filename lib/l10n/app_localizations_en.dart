@@ -231,4 +231,229 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get save => 'Save';
+
+  @override
+  String get comingSoon => 'Coming soon';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get accountDesc => 'Profile, email, password, sessions';
+
+  @override
+  String get accountSettings => 'Account settings';
+
+  @override
+  String get editProfile => 'Edit profile';
+
+  @override
+  String get editProfileDesc => 'Name, bio, avatar, cover photo';
+
+  @override
+  String get changeEmail => 'Change email';
+
+  @override
+  String get changeEmailDesc => 'Update your email address';
+
+  @override
+  String get changePassword => 'Change password';
+
+  @override
+  String get changePasswordDesc => 'Update your login password';
+
+  @override
+  String get connectedAccounts => 'Connected accounts';
+
+  @override
+  String get connectedAccountsDesc => 'Google, Facebook and other links';
+
+  @override
+  String get activeSessions => 'Active sessions';
+
+  @override
+  String get activeSessionsDesc => 'Devices currently signed in';
+
+  @override
+  String get downloadMyData => 'Download my data';
+
+  @override
+  String get downloadMyDataDesc => 'Get a copy of your Furtail data';
+
+  @override
+  String get deactivateAccount => 'Deactivate account';
+
+  @override
+  String get deactivateAccountDesc => 'Temporarily hide your account';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountDesc => 'Permanently delete all your data';
+
+  @override
+  String get helpAndSupport => 'Help & support';
+
+  @override
+  String get faq => 'FAQ';
+
+  @override
+  String get faqDesc => 'Frequently asked questions';
+
+  @override
+  String get contactSupport => 'Contact support';
+
+  @override
+  String get contactSupportDesc => 'Get help from the Furtail team';
+
+  @override
+  String get reportBug => 'Report a bug';
+
+  @override
+  String get reportBugDesc => 'Help us improve the app';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get communityGuidelines => 'Community guidelines';
+
+  @override
+  String get communityGuidelinesDesc => 'Rules for a safe, kind community';
+
+  @override
+  String get communityGuidelinesShort => 'Guidelines';
+
+  @override
+  String get termsOfService => 'Terms of service';
+
+  @override
+  String get termsOfServiceDesc => 'Legal terms for using Furtail';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get privacyPolicyDesc => 'How we handle your data';
+
+  @override
+  String get appVersion => 'App version';
+
+  @override
+  String get mediaAndStorage => 'Media & storage';
+
+  @override
+  String get mediaAndStorageDesc => 'Upload quality, auto-play, cache';
+
+  @override
+  String get uploadQuality => 'Upload quality';
+
+  @override
+  String get uploadQualityDataSaver => 'Data saver';
+
+  @override
+  String get uploadQualityStandard => 'Standard';
+
+  @override
+  String get uploadQualityHigh => 'High quality';
+
+  @override
+  String get autoPlayVideos => 'Auto-play videos';
+
+  @override
+  String get autoPlayAlways => 'Always';
+
+  @override
+  String get autoPlayWifiOnly => 'Wi-Fi only';
+
+  @override
+  String get autoPlayNever => 'Never';
+
+  @override
+  String get compressImages => 'Compress images';
+
+  @override
+  String get compressImagesDesc => 'Reduce image size before uploading';
+
+  @override
+  String get compressVideos => 'Compress videos';
+
+  @override
+  String get compressVideosDesc => 'Reduce video size before uploading';
+
+  @override
+  String get saveUploadedMedia => 'Save uploaded media to device';
+
+  @override
+  String get saveUploadedMediaDesc => 'Keep a local copy after posting';
+
+  @override
+  String get clearMediaCache => 'Clear media cache';
+
+  @override
+  String get clearMediaCacheDesc => 'Free up storage used by cached media';
+
+  @override
+  String get mediaCacheCleared => 'Media cache cleared';
+
+  @override
+  String get whoCanComment => 'Who can comment';
+
+  @override
+  String get whoCanCommentDesc => 'Control who can reply to your posts';
+
+  @override
+  String get everyone => 'Everyone';
+
+  @override
+  String get followersOnly => 'Followers only';
+
+  @override
+  String get noOne => 'No one';
+
+  @override
+  String get mentionsNotif => 'Mentions';
+
+  @override
+  String get messagesNotif => 'Direct messages';
+
+  @override
+  String get marketingNotif => 'Promotions & tips';
+
+  @override
+  String get marketingNotifDesc => 'Product updates and helpful tips';
+
+  @override
+  String get reportAProblem => 'Report a problem';
+
+  @override
+  String get reportAProblemDesc => 'Flag harmful or inappropriate content';
+
+  @override
+  String get somethingWentWrong => 'Something went wrong';
+
+  @override
+  String get tryAgain => 'Try again';
+
+  @override
+  String get noContentYet => 'Nothing here yet';
+
+  @override
+  String get youAreOffline => 'You are offline';
+
+  @override
+  String get offlineDesc => 'Check your internet connection';
+
+  @override
+  String get interactions => 'Interactions';
+
+  @override
+  String get safety => 'Safety';
+
+  @override
+  String get uploadPreferences => 'Upload preferences';
+
+  @override
+  String get dangerZone => 'Danger zone';
 }

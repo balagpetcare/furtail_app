@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -8,6 +9,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'fullscreen_video_player_screen.dart';
 import 'media_playback_controller.dart';
+import 'furtail_cache_manager.dart';
 
 /// Premium feed video player:
 /// - Auto play when >=70% visible
@@ -20,6 +22,9 @@ class FeedVideoPlayer extends StatefulWidget {
   final String visibilityKey;
   final bool startMuted;
   final bool enableAutoplay;
+  final double aspectRatio;
+  final BoxFit fit;
+  final VoidCallback? onFullscreenPressed;
 
   const FeedVideoPlayer({
     super.key,
@@ -27,6 +32,9 @@ class FeedVideoPlayer extends StatefulWidget {
     required this.visibilityKey,
     this.startMuted = false,
     this.enableAutoplay = true,
+    this.aspectRatio = 16 / 9,
+    this.fit = BoxFit.cover,
+    this.onFullscreenPressed,
   });
 
   @override
@@ -46,6 +54,20 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
   Timer? _visDebounce;
   int _setupToken = 0;
   bool _wakelockHeld = false;
+  String? _activeFilePath;
+
+  Future<bool> _shouldAutoplay() async {
+    if (!widget.enableAutoplay) return false;
+    if (_media.playOneByOneWifiOnly.value) {
+      try {
+        final connectivityList = await Connectivity().checkConnectivity();
+        if (connectivityList.contains(ConnectivityResult.mobile)) {
+          return false;
+        }
+      } catch (_) {}
+    }
+    return true;
+  }
 
   void _applyVolume() {
     final c = _c;
@@ -92,6 +114,10 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
     final c = _c;
     _c = null;
     _init = null;
+    if (_activeFilePath != null) {
+      VideoCacheService.instance.unregisterActivePath(_activeFilePath!);
+      _activeFilePath = null;
+    }
     try {
       c?.pause();
     } catch (_) {}
@@ -104,15 +130,54 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
 
   void _setup() {
     final int token = ++_setupToken;
-    final c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-    _c = c;
-    _init = c.initialize().then((_) {
-      if (!mounted || token != _setupToken) return;
-      c.setLooping(true);
-      c.setVolume((_muted ? 0.0 : _media.volume.value).clamp(0.0, 1.0).toDouble());
+    _init = Future(() async {
+      VideoPlayerController? controller;
+      try {
+        final file = await VideoCacheService.instance.getVideoFile(widget.url);
+        if (!mounted || token != _setupToken) return;
+
+        if (_activeFilePath != null && _activeFilePath != file.path) {
+          VideoCacheService.instance.unregisterActivePath(_activeFilePath!);
+        }
+        _activeFilePath = file.path;
+        VideoCacheService.instance.registerActivePath(_activeFilePath!);
+
+        controller = VideoPlayerController.file(file);
+        _c = controller;
+        await controller.initialize();
+      } catch (e) {
+        debugPrint('[FeedPlayer] Cache load failed, unlinking key and falling back to network: $e');
+        if (_activeFilePath != null) {
+          VideoCacheService.instance.unregisterActivePath(_activeFilePath!);
+          _activeFilePath = null;
+        }
+        try {
+          await VideoCacheService.instance.removeFile(widget.url);
+        } catch (_) {}
+
+        if (!mounted || token != _setupToken) return;
+
+        controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+        _c = controller;
+        await controller.initialize();
+      }
+
+      if (!mounted || token != _setupToken || controller == null) {
+        controller?.dispose();
+        return;
+      }
+
+      controller.setLooping(true);
+      controller.setVolume((_muted ? 0.0 : _media.volume.value).clamp(0.0, 1.0).toDouble());
+
+      final allowed = await _shouldAutoplay();
+      if (allowed && widget.enableAutoplay) {
+        try {
+          await controller.play();
+        } catch (_) {}
+      }
+
       if (mounted) setState(() {});
-    }).catchError((e) {
-      debugPrint('Feed video init failed: $e');
     });
   }
 
@@ -213,13 +278,17 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
         final c = _c;
         if (c == null) return;
         if (!c.value.isPlaying) {
-          try {
-            c.play();
-          } catch (_) {}
-          if (!_wakelockHeld) {
-            _wakelockHeld = true;
-            WakelockPlus.enable();
-          }
+          _shouldAutoplay().then((allowed) {
+            if (allowed && mounted && !c.value.isPlaying) {
+              try {
+                c.play();
+              } catch (_) {}
+              if (!_wakelockHeld) {
+                _wakelockHeld = true;
+                WakelockPlus.enable();
+              }
+            }
+          });
         }
       } else {
         final c = _c;
@@ -247,7 +316,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
       key: Key('feed-video-${widget.visibilityKey}'),
       onVisibilityChanged: (info) => _handleVisibility(info.visibleFraction),
       child: AspectRatio(
-        aspectRatio: 16 / 9,
+        aspectRatio: widget.aspectRatio,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(0),
           child: Stack(
@@ -270,7 +339,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
                       fit: StackFit.expand,
                       children: [
                         FittedBox(
-                          fit: BoxFit.cover,
+                          fit: widget.fit,
                           child: SizedBox(
                             width: c.value.size.width,
                             height: c.value.size.height,
@@ -295,7 +364,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: _toggleControls,
-                  onDoubleTap: _openFullscreen,
+                  onDoubleTap: widget.onFullscreenPressed ?? _openFullscreen,
                 ),
               ),
 
@@ -312,7 +381,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
                       controller: _c!,
                       muted: _muted,
                       onToggleMute: _toggleMute,
-                      onFullscreen: _openFullscreen,
+                      onFullscreen: widget.onFullscreenPressed ?? _openFullscreen,
                     ),
                   ),
                 ),
@@ -365,7 +434,7 @@ class _FeedControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<VideoPlayerValue>(
       valueListenable: controller,
-      builder: (_, v, __) {
+      builder: (_, v, _) {
         final dur = v.duration;
         final pos = v.position;
         final maxMs = dur.inMilliseconds > 0 ? dur.inMilliseconds.toDouble() : 1.0;
@@ -374,7 +443,7 @@ class _FeedControls extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.38),
+            color: Colors.black.withValues(alpha: 0.38),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(

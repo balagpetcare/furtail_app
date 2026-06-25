@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/fundraising_payout_models.dart';
 import '../providers/fundraising_providers.dart';
-import '../../data/repositories/fundraising_repository.dart';
-
 import 'fundraising_common_scaffold.dart';
 
 /// Fundraiser payout methods manager (bkash/nagad/bank, etc.)
@@ -78,7 +76,7 @@ class FundraisingPayoutMethodsScreen extends ConsumerWidget {
                   return ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final m = items[index];
                       return _PayoutMethodCard(method: m);

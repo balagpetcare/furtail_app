@@ -98,16 +98,32 @@ class PostMediaModel {
   final int id;
   final String url;
   final String type; // IMAGE / VIDEO
+  final String status; // PENDING / PROCESSING / READY / FAILED
+  final String? thumbnailUrl;
+  final int? width;
+  final int? height;
 
-  PostMediaModel({required this.id, required this.url, required this.type});
+  PostMediaModel({
+    required this.id,
+    required this.url,
+    required this.type,
+    this.status = 'READY',
+    this.thumbnailUrl,
+    this.width,
+    this.height,
+  });
+
+  bool get isPending => status == 'PENDING' || status == 'PROCESSING';
+  bool get isFailed => status == 'FAILED';
+  bool get isReady => status == 'READY';
 
   factory PostMediaModel.fromJson(Map<String, dynamic> json) {
-    bool _looksLikeVideo(String url) {
+    bool looksLikeVideo(String url) {
       final u = url.toLowerCase();
       return RegExp(r'\.(mp4|mov|m4v|webm|mkv|avi)(\?|$)').hasMatch(u);
     }
 
-    bool _looksLikeImage(String url) {
+    bool looksLikeImage(String url) {
       final u = url.toLowerCase();
       return RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(u);
     }
@@ -120,21 +136,27 @@ class PostMediaModel {
     final rawType = (json['type'] ?? '').toString().trim();
     final mime =
         (json['mimeType'] ?? json['mimetype'] ?? '').toString().toLowerCase();
+    final rawStatus = (json['status'] ?? 'READY').toString().toUpperCase();
+    final thumbRaw = json['thumbnailUrl']?.toString();
 
     return PostMediaModel(
       id: (json['id'] as num).toInt(),
       url: normalizeUrl((json['url'] ?? '').toString()),
+      status: rawStatus,
+      thumbnailUrl: thumbRaw != null && thumbRaw.isNotEmpty ? MediaUrl.normalize(thumbRaw) : null,
+      width: (json['width'] as num?)?.toInt(),
+      height: (json['height'] as num?)?.toInt(),
       type: () {
         final url = normalizeUrl((json['url'] ?? '').toString());
         final t = rawType.toUpperCase();
-        final isVideo = mime.startsWith('video/') || _looksLikeVideo(url);
-        final isImage = mime.startsWith('image/') || _looksLikeImage(url);
+        final isVideo = mime.startsWith('video/') || looksLikeVideo(url);
+        final isImage = mime.startsWith('image/') || looksLikeImage(url);
 
         if (isVideo) return 'VIDEO';
         if (isImage) return 'IMAGE';
         if (t.isEmpty) return 'FILE';
         // If backend returns FILE for video, upgrade it.
-        if (t == 'FILE' && _looksLikeVideo(url)) return 'VIDEO';
+        if (t == 'FILE' && looksLikeVideo(url)) return 'VIDEO';
         return t;
       }(),
     );
@@ -182,6 +204,23 @@ class PostModel {
   final int likeCount;
   final int commentCount;
   final bool isLikedByMe;
+  final bool isBookmarkedByMe;
+  final String privacy;
+  final String? backgroundStyle;
+
+  // ── Phase 1: Premium social fields ──────────────────────────────────────
+  /// Number of shares (backend key variants: sharesCount, shareCount).
+  final int shareCount;
+  /// Number of views (backend key variants: viewsCount, viewCount).
+  final int viewCount;
+  /// Whether the current user has already reported this post.
+  final bool isReportedByMe;
+  /// Whether the current user follows the post author.
+  final bool isFollowingAuthor;
+  /// Optional sponsored/promoted label (e.g. "Sponsored", "Paid partnership").
+  final String? sponsoredLabel;
+  /// Optional location tag string (e.g. "Dhaka, Bangladesh").
+  final String? locationTag;
 
   PostModel({
     required this.id,
@@ -197,6 +236,15 @@ class PostModel {
     required this.likeCount,
     required this.commentCount,
     required this.isLikedByMe,
+    this.isBookmarkedByMe = false,
+    this.privacy = 'PUBLIC',
+    this.backgroundStyle,
+    this.shareCount = 0,
+    this.viewCount = 0,
+    this.isReportedByMe = false,
+    this.isFollowingAuthor = false,
+    this.sponsoredLabel,
+    this.locationTag,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -241,6 +289,17 @@ class PostModel {
       likeCount: ((countJson['likes'] as num?) ?? 0).toInt(),
       commentCount: ((countJson['comments'] as num?) ?? 0).toInt(),
       isLikedByMe: (json['isLikedByMe'] as bool?) ?? false,
+      isBookmarkedByMe: (json['isBookmarkedByMe'] as bool?) ?? false,
+      privacy: (json['privacy'] ?? 'PUBLIC').toString(),
+      // Suggested field name: backgroundStyle
+      backgroundStyle: json['backgroundStyle']?.toString(),
+      // ── Phase 1: Premium social fields with backward-compatible parsing ──
+      shareCount: ((json['shareCount'] ?? json['sharesCount'] as num?) ?? 0).toInt(),
+      viewCount: ((json['viewCount'] ?? json['viewsCount'] as num?) ?? 0).toInt(),
+      isReportedByMe: (json['isReportedByMe'] as bool?) ?? false,
+      isFollowingAuthor: (json['isFollowingAuthor'] as bool?) ?? false,
+      sponsoredLabel: json['sponsoredLabel']?.toString(),
+      locationTag: json['locationTag']?.toString(),
     );
   }
 
@@ -248,4 +307,54 @@ class PostModel {
       type == 'VIDEO' ||
       type == 'REEL' ||
       media.any((m) => m.type.toUpperCase() == 'VIDEO');
+
+  PostModel copyWith({
+    int? id,
+    String? type,
+    String? category,
+    int? fundraisingCampaignId,
+    FundraisingEmbedModel? fundraisingEmbed,
+    String? caption,
+    String? context,
+    DateTime? createdAt,
+    PostAuthorModel? author,
+    List<PostMediaModel>? media,
+    int? likeCount,
+    int? commentCount,
+    bool? isLikedByMe,
+    bool? isBookmarkedByMe,
+    String? privacy,
+    String? backgroundStyle,
+    int? shareCount,
+    int? viewCount,
+    bool? isReportedByMe,
+    bool? isFollowingAuthor,
+    String? sponsoredLabel,
+    String? locationTag,
+  }) {
+    return PostModel(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      category: category ?? this.category,
+      fundraisingCampaignId: fundraisingCampaignId ?? this.fundraisingCampaignId,
+      fundraisingEmbed: fundraisingEmbed ?? this.fundraisingEmbed,
+      caption: caption ?? this.caption,
+      context: context ?? this.context,
+      createdAt: createdAt ?? this.createdAt,
+      author: author ?? this.author,
+      media: media ?? this.media,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      isLikedByMe: isLikedByMe ?? this.isLikedByMe,
+      isBookmarkedByMe: isBookmarkedByMe ?? this.isBookmarkedByMe,
+      privacy: privacy ?? this.privacy,
+      backgroundStyle: backgroundStyle ?? this.backgroundStyle,
+      shareCount: shareCount ?? this.shareCount,
+      viewCount: viewCount ?? this.viewCount,
+      isReportedByMe: isReportedByMe ?? this.isReportedByMe,
+      isFollowingAuthor: isFollowingAuthor ?? this.isFollowingAuthor,
+      sponsoredLabel: sponsoredLabel ?? this.sponsoredLabel,
+      locationTag: locationTag ?? this.locationTag,
+    );
+  }
 }

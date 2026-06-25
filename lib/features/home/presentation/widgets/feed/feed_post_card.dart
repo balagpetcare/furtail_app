@@ -2,27 +2,27 @@ import 'package:furtail_app/core/theme/app_typography.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:furtail_app/core/constants/app_colors.dart';
-import 'package:furtail_app/core/media/feed_video_player.dart';
-import 'package:furtail_app/core/media/fullscreen_gallery_viewer.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/post_media_grid.dart';
 import 'package:furtail_app/core/services/share_service.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
-import 'package:furtail_app/core/widgets/fit_width_media.dart';
 import 'package:furtail_app/app/router/app_routes.dart';
+import 'package:furtail_app/core/navigation/profile_navigation.dart';
+import 'package:furtail_app/features/settings/data/datasources/settings_local_datasource.dart';
+import 'package:furtail_app/features/settings/data/models/blocked_user.dart';
 
 import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import 'package:furtail_app/features/posts/data/models/post_model.dart';
 import 'package:furtail_app/features/posts/presentation/screens/post_details_screen.dart';
 import 'package:furtail_app/features/posts/presentation/widgets/comments_sheet.dart';
-import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/post_action_sheet.dart';
 
-import 'package:furtail_app/features/legacy/presentation/screens/edit_post_screen.dart';
-import 'package:furtail_app/features/legacy/presentation/screens/donation_screen.dart';
-import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/post_background_style.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/post_card_header.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/post_card_actions.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/post_card_comment_preview.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -43,6 +43,7 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   final _ds = PostsRemoteDs();
   late PostModel _post;
+  bool _hidden = false;
 
   @override
   void initState() {
@@ -126,8 +127,47 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  void _openReport() {
-    ReportBottomSheet.showPost(context, postId: _post.id);
+  Future<void> _openEdit(PostModel post) async {
+    final updated = await Navigator.pushNamed(
+      context,
+      AppRoutes.postEdit,
+      arguments: {'post': post},
+    );
+    if (updated != null) widget.onNeedRefresh?.call();
+  }
+
+  Future<void> _deletePost(PostModel post) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete post?'),
+        content: const Text('This will remove the post from the feed.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await PostsRemoteDs().deletePost(postId: post.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Post deleted ✅')),
+      );
+      widget.onNeedRefresh?.call();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
   }
 
   // ---- Comment preview helpers (runtime-safe) ----
@@ -179,8 +219,48 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  Future<void> _blockUser() async {
+    final post = _post;
+    final authorId = post.author.id;
+    if (authorId <= 0) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Block user?'),
+        content: Text(
+          'Posts from ${post.author.name} will no longer appear in your feed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await SettingsLocalDatasource().blockUser(
+      BlockedUser(
+        userId: authorId,
+        displayName: post.author.name,
+        blockedAt: DateTime.now(),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _hidden = true);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${post.author.name} blocked')));
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_hidden) return const SizedBox.shrink();
+
     final post = _post;
     final isVerified = post.author.name.toLowerCase().contains('furtail');
 
@@ -192,7 +272,7 @@ class _PostCardState extends State<PostCard> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -203,131 +283,27 @@ class _PostCardState extends State<PostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 6,
-            ),
-            leading: FurtailNetworkAvatar(
-              imageUrl: post.author.avatarUrl,
-              displayName: post.author.name,
-              radius: 20,
-              backgroundColor: const Color(0xFFEFEFEF),
-              foregroundColor: Colors.black45,
-            ),
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    post.author.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                ),
-                if (isVerified) ...[
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.verified,
-                    size: 16,
-                    color: context.colorScheme.primary,
-                  ),
-                ],
-              ],
-            ),
-            subtitle: Text(
-              _timeAgo(post.createdAt),
-              style: context.appText.bodySmall!.copyWith(color: Colors.black54),
-            ),
-            trailing: PopupMenuButton<String>(
-              onSelected: (v) {
-                if (v == 'edit') {
-                  // Extra safety even though menu only shows for canEdit
-                  if (!canEdit) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('You can only edit your own post.'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.postEdit,
-                    arguments: {'post': post},
-                  ).then((updated) {
-                    if (updated != null) widget.onNeedRefresh?.call();
-                  });
-                }
-
-                if (v == 'delete') {
-                  if (!canEdit) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('You can only delete your own post.'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Delete post?'),
-                      content: const Text(
-                        'This will remove the post from the feed.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Delete'),
-                        ),
-                      ],
-                    ),
-                  ).then((ok) async {
-                    if (ok != true) return;
-                    try {
-                      await PostsRemoteDs().deletePost(postId: post.id);
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Post deleted ✅')),
-                      );
-                      widget.onNeedRefresh?.call();
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            e.toString().replaceAll('Exception: ', ''),
-                          ),
-                        ),
-                      );
-                    }
-                  });
-                }
-
-                if (v == 'report') _openReport();
-              },
-              itemBuilder: (_) => [
-                if (canEdit)
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                if (canEdit)
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                const PopupMenuItem(value: 'report', child: Text('Report')),
-              ],
-            ),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.visitorProfile,
-                arguments: {'userId': post.author.id},
-              );
+          PostCardHeader(
+            post: _post,
+            isVerified: isVerified,
+            onProfileTap: () {
+              final uid = post.author.id;
+              if (uid <= 0) return;
+              ProfileNavigation.openUserProfile(context, uid);
             },
+            onMoreMenu: () => PostActionSheet.show(
+              context,
+              post: _post,
+              isOwn: canEdit,
+              onEdit: canEdit ? () => _openEdit(post) : null,
+              onDelete: canEdit ? () => _deletePost(post) : null,
+              onHide: canEdit ? null : () => setState(() => _hidden = true),
+              onBlock: canEdit ? null : _blockUser,
+              onPostChanged: (updated) {
+                if (!mounted) return;
+                setState(() => _post = updated);
+              },
+            ),
           ),
           InkWell(
             onTap: () {
@@ -354,14 +330,46 @@ class _PostCardState extends State<PostCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if ((post.caption ?? '').isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-                    child: _ReadMoreText(
-                      text: post.caption!,
-                      trimLines: 3,
-                      style: context.appText.bodyLarge!.copyWith(height: 1.35),
-                    ),
-                  ),
+                  () {
+                    final textLength = post.caption!.length;
+                    final isTextOnly = post.media.isEmpty;
+                    final isShort = textLength <= 160;
+                    final styleId = post.backgroundStyle;
+                    final hasStyle = styleId != null && styleId != 'none';
+
+                    if (isTextOnly && isShort && hasStyle) {
+                      final style = PostBackgroundStyle.find(styleId);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
+                        ),
+                        child: ShortPostBackgroundBox(
+                          caption: post.caption!,
+                          style: style,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PostDetailsScreen(post: post),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                      child: _ReadMoreText(
+                        text: post.caption!,
+                        trimLines: 3,
+                        style: context.appText.bodyLarge!.copyWith(
+                          height: 1.35,
+                        ),
+                      ),
+                    );
+                  }(),
                 if (post.media.isNotEmpty) _MediaBlock(post: post),
 
                 if (post.category.toUpperCase() == 'FUNDRAISING')
@@ -370,122 +378,34 @@ class _PostCardState extends State<PostCard> {
                     child: _FundraisingEmbedBlock(post: post),
                   ),
 
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
-                  child: Text(
-                    '${post.likeCount} Paws · ${post.commentCount} comments · 0 shares',
-                    style: context.appText.bodySmall!.copyWith(color: Colors.black54),
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 0, 6, 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _ReactionButton(
-                          icon: post.isLikedByMe
-                              ? Icons.pets
-                              : Icons.pets_outlined,
-                          label: 'Paw',
-                          selected: post.isLikedByMe,
-                          onTap: _toggleLike,
-                        ),
-                      ),
-                      Expanded(
-                        child: _ReactionButton(
-                          icon: Icons.comment_outlined,
-                          label: 'Comment',
-                          onTap: _openComments,
-                        ),
-                      ),
-                      Expanded(
-                        child: _ReactionButton(
-                          icon: Icons.share_outlined,
-                          label: 'Share',
-                          onTap: () {
-                            final fundraisingId = post.fundraisingCampaignId;
-                            if (fundraisingId != null) {
-                              ShareService.share(
-                                context,
-                                type: 'fundraising',
-                                id: fundraisingId,
-                              );
-                            } else {
-                              ShareService.share(
-                                context,
-                                type: 'post',
-                                id: post.id,
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Builder(
-                  builder: (context) {
-                    final recent = _safeRecentComments(post);
-                    if (recent.isEmpty) return const SizedBox.shrink();
-
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 2, 14, 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...recent.take(3).map((c) {
-                            final author = _commentAuthor(c);
-                            final text = _commentText(c);
-                            final replies = _replyCount(c);
-
-                            if (text.isEmpty) return const SizedBox.shrink();
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: RichText(
-                                text: TextSpan(
-                                  style: context.appText.bodySmall!.copyWith(color: Colors.black87),
-                                  children: [
-                                    TextSpan(
-                                      text: '$author  ',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    TextSpan(text: text),
-                                    if (replies > 0)
-                                      TextSpan(
-                                        text: '  ·  $replies replies',
-                                        style: const TextStyle(
-                                          color: Colors.black54,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              onPressed: _openComments,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(0, 32),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: const Text('View all comments'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                PostCardActions(
+                  post: post,
+                  onLike: _toggleLike,
+                  onOpenComments: _openComments,
+                  onShare: () {
+                    final fundraisingId = post.fundraisingCampaignId;
+                    if (fundraisingId != null) {
+                      ShareService.share(
+                        context,
+                        type: 'fundraising',
+                        id: fundraisingId,
+                      );
+                    } else {
+                      ShareService.share(
+                        context,
+                        type: 'post',
+                        id: post.id,
+                      );
+                    }
                   },
+                ),
+
+                PostCardCommentPreview(
+                  recentComments: _safeRecentComments(post),
+                  onViewAll: _openComments,
+                  commentAuthor: _commentAuthor,
+                  commentText: _commentText,
+                  replyCount: _replyCount,
                 ),
 
                 // Donate CTA is now inside _FundraisingEmbedBlock to keep
@@ -577,7 +497,11 @@ class _FundraisingEmbedBlock extends StatelessWidget {
     }
   }
 
-  Widget _donorRow(BuildContext context, {required String title, required dynamic donor}) {
+  Widget _donorRow(
+    BuildContext context, {
+    required String title,
+    required dynamic donor,
+  }) {
     final name = _donorName(donor);
     final amount = _donorAmount(donor);
     final when = _whenText(_donorWhen(donor));
@@ -616,13 +540,17 @@ class _FundraisingEmbedBlock extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.appText.labelLarge!.copyWith(fontWeight: FontWeight.w800),
+                  style: context.appText.labelLarge!.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 if (when.isNotEmpty) ...[
                   const SizedBox(height: 1),
                   Text(
                     when,
-                    style: context.appText.labelMedium!.copyWith(color: Colors.black45),
+                    style: context.appText.labelMedium!.copyWith(
+                      color: Colors.black45,
+                    ),
                   ),
                 ],
               ],
@@ -631,7 +559,9 @@ class _FundraisingEmbedBlock extends StatelessWidget {
           const SizedBox(width: 10),
           Text(
             amount > 0 ? '৳${_money(amount)}' : '',
-            style: const TextStyle(fontWeight: FontWeight.w900),
+            style: context.appText.bodyLarge!.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -706,12 +636,18 @@ class _FundraisingEmbedBlock extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: context.appText.titleMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               if (embed?.isAccountVerified == true) ...[
                 const SizedBox(width: 8),
-                Icon(Icons.verified, size: 16, color: context.colorScheme.primary),
+                Icon(
+                  Icons.verified,
+                  size: 16,
+                  color: context.colorScheme.primary,
+                ),
               ],
             ],
           ),
@@ -768,14 +704,16 @@ class _FundraisingEmbedBlock extends StatelessWidget {
             const SizedBox(height: 6),
 
             // Priority: API-provided donors (top/first/last). Fallback: last3Donors list.
-            _donorRow(context,
+            _donorRow(
+              context,
               title: 'Top donor',
               donor:
                   _embedDonor(embed, 'top') ??
                   (donors.isNotEmpty ? donors.first : null),
             ),
             const SizedBox(height: 6),
-            _donorRow(context,
+            _donorRow(
+              context,
               title: 'First donor',
               donor:
                   _embedDonor(embed, 'first') ??
@@ -784,7 +722,8 @@ class _FundraisingEmbedBlock extends StatelessWidget {
                       : (donors.isNotEmpty ? donors.first : null)),
             ),
             const SizedBox(height: 6),
-            _donorRow(context,
+            _donorRow(
+              context,
               title: 'Latest donor',
               donor:
                   _embedDonor(embed, 'last') ??
@@ -868,43 +807,6 @@ class _MiniPill extends StatelessWidget {
   }
 }
 
-class _ReactionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  const _ReactionButton({
-    required this.icon,
-    required this.label,
-    this.selected = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? context.colorScheme.primary : Colors.black54;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MediaBlock extends StatelessWidget {
   final PostModel post;
   const _MediaBlock({required this.post});
@@ -917,104 +819,24 @@ class _MediaBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final list = post.media;
-    final images = list.where((m) => m.type.toUpperCase() == 'IMAGE').toList();
+    final mediaList = list.where((m) => m.type.toUpperCase() == 'IMAGE' || m.type.toUpperCase() == 'VIDEO').toList();
     final files = list
         .where((m) => m.type.toUpperCase() == 'FILE')
         .where((m) => !_looksLikeVideoUrl(m.url))
         .toList();
 
-    if (post.isVideo) {
-      final video = list.firstWhere(
-        (m) => m.type.toUpperCase() == 'VIDEO',
-        orElse: () => list.first,
-      );
-      return FeedVideoPlayer(
-        url: video.url,
-        visibilityKey: 'post-${post.id}',
-        startMuted: true,
-        enableAutoplay: true,
-      );
-    }
-
-    Widget? imageBlock;
-    if (images.length == 1) {
-      final urls = images.map((e) => e.url).toList();
-      final tagPrefix = 'post-${post.id}-img';
-      imageBlock = InkWell(
-        onTap: () {
-          Navigator.push(
+    Widget? mediaGrid;
+    if (mediaList.isNotEmpty) {
+      mediaGrid = PostMediaGrid(
+        media: mediaList,
+        onTap: (index) {
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (_) => FullscreenGalleryViewer(
-                urls: urls,
-                initialIndex: 0,
-                heroTagPrefix: tagPrefix,
-              ),
-            ),
-          );
-        },
-        child: Hero(
-          tag: '$tagPrefix-0',
-          child: FitWidthNetworkImage(url: urls.first),
-        ),
-      );
-    } else if (images.length > 1) {
-      final urls = images.map((e) => e.url).toList();
-      final tagPrefix = 'post-${post.id}-img';
-      final count = urls.length.clamp(2, 4);
-      imageBlock = GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        itemCount: count,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
-          childAspectRatio: 1,
-        ),
-        itemBuilder: (itemContext, i) {
-          final isLastVisible = i == 3 && urls.length > 4;
-          final remaining = urls.length - 4;
-          return InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FullscreenGalleryViewer(
-                    urls: urls,
-                    initialIndex: i,
-                    heroTagPrefix: tagPrefix,
-                  ),
-                ),
-              );
+            AppRoutes.postMediaDetail,
+            arguments: {
+              'post': post,
+              'initialIndex': index,
             },
-            child: Hero(
-              tag: '$tagPrefix-$i',
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Opacity(
-                    opacity: isLastVisible ? 0.55 : 1,
-                    child: CachedNetworkImage(
-                      imageUrl: urls[i],
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  if (isLastVisible)
-                    Container(
-                      color: Colors.black.withOpacity(0.15),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '+$remaining',
-                        style: itemContext.appText.displayMedium!.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
           );
         },
       );
@@ -1030,9 +852,9 @@ class _MediaBlock extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.06),
+                color: Colors.grey.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.black.withOpacity(0.08)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
               ),
               child: Row(
                 children: [
@@ -1072,11 +894,11 @@ class _MediaBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (imageBlock != null) imageBlock,
-        if (imageBlock == null && fileBlock != null)
+        if (mediaGrid != null) mediaGrid,
+        if (mediaGrid == null && fileBlock != null)
           Container(
             height: 140,
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             child: const Center(
               child: Icon(
                 Icons.insert_drive_file_outlined,
@@ -1089,14 +911,6 @@ class _MediaBlock extends StatelessWidget {
       ],
     );
   }
-}
-
-String _timeAgo(DateTime dt) {
-  final diff = DateTime.now().difference(dt);
-  if (diff.inMinutes < 1) return 'Just now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
 }
 
 /// Read-more helper for any long text in posts.

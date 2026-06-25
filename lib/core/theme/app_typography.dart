@@ -24,7 +24,12 @@ abstract final class AppTypographyScale {
 
 /// Builds Material [TextTheme] and semantic styles for the whole app.
 abstract final class AppTypography {
-  static const List<String> fontFamilyFallback = ['Roboto'];
+  static const List<String> fontFamilyFallback = [
+    'Roboto',
+    'Kohinoor Bangla',
+    'Noto Sans Bengali',
+    'system-ui',
+  ];
 
   static TextStyle _inter({
     required double fontSize,

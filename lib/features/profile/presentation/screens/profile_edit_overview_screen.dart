@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:furtail_app/core/theme/typography.dart';
+
 import '../../data/models/user_profile_model.dart';
 import '../../data/profile_service.dart';
-import '../widgets/profile_media_upload_screen.dart';
 
 /// Profile edit overview...
 class ProfileEditOverviewScreen extends StatefulWidget {
@@ -26,38 +29,75 @@ class _ProfileEditOverviewScreenState extends State<ProfileEditOverviewScreen> {
     _p = widget.initial;
   }
 
-  Future<void> _updateCover() async {
-    final result = await Navigator.push<ProfileMediaUploadResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ProfileMediaUploadScreen(
-          title: 'Update Cover Photo',
-          cropStyle: ProfileCropStyle.cover,
+  Future<void> _pickCropAndApply({
+    required bool isAvatar,
+    required Future<UserProfileModel> Function(int mediaId) onUpdate,
+  }) async {
+    final picker = ImagePicker();
+    final x = await picker.pickImage(source: ImageSource.gallery, imageQuality: 92);
+    if (x == null) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: x.path,
+      compressQuality: 92,
+      aspectRatio: isAvatar
+          ? const CropAspectRatio(ratioX: 1, ratioY: 1)
+          : null,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: isAvatar ? 'Crop Photo' : 'Crop Cover',
+          toolbarColor: Colors.black,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: isAvatar,
+          initAspectRatio: isAvatar
+              ? CropAspectRatioPreset.square
+              : CropAspectRatioPreset.original,
+          aspectRatioPresets: isAvatar
+              ? const [CropAspectRatioPreset.square]
+              : const [
+                  CropAspectRatioPreset.ratio16x9,
+                  CropAspectRatioPreset.ratio3x2,
+                  CropAspectRatioPreset.original,
+                ],
         ),
-      ),
+        IOSUiSettings(
+          title: isAvatar ? 'Crop Photo' : 'Crop Cover',
+          aspectRatioLockEnabled: isAvatar,
+        ),
+      ],
     );
-    if (result == null) return;
-    setState(() => _p = _p.copyWith(coverUrl: result.previewUrl));
-    await _svc.updateProfile({"coverMediaId": result.mediaId});
-    if (!mounted) return;
-    Navigator.pop(context, true);
+    if (cropped == null || !mounted) return;
+
+    final file = File(cropped.path);
+    try {
+      final mediaId = await _svc.uploadMedia(file: file);
+      if (!mounted) return;
+      final updated = await onUpdate(mediaId);
+      if (!mounted) return;
+      setState(() => _p = updated);
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
   }
 
   Future<void> _updateAvatar() async {
-    final result = await Navigator.push<ProfileMediaUploadResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ProfileMediaUploadScreen(
-          title: 'Update Profile Photo',
-          cropStyle: ProfileCropStyle.avatar,
-        ),
-      ),
+    await _pickCropAndApply(
+      isAvatar: true,
+      onUpdate: (mediaId) => _svc.updateProfile({'avatarMediaId': mediaId}),
     );
-    if (result == null) return;
-    setState(() => _p = _p.copyWith(photoUrl: result.previewUrl));
-    await _svc.updateProfile({"avatarMediaId": result.mediaId});
-    if (!mounted) return;
-    Navigator.pop(context, true);
+  }
+
+  Future<void> _updateCover() async {
+    await _pickCropAndApply(
+      isAvatar: false,
+      onUpdate: (mediaId) => _svc.updateProfile({'coverMediaId': mediaId}),
+    );
   }
 
   Future<void> _editBio() async {
@@ -150,7 +190,13 @@ class _ProfileEditOverviewScreenState extends State<ProfileEditOverviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
+        leading: const _GreyBackButton(),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -186,6 +232,29 @@ class _ProfileEditOverviewScreenState extends State<ProfileEditOverviewScreen> {
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+}
+
+/// Standard back button for white-background screens:
+/// light grey circular background + dark icon.
+class _GreyBackButton extends StatelessWidget {
+  const _GreyBackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.maybePop(context),
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Color(0xFFE8EAED),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1A1A2E)),
+      ),
     );
   }
 }

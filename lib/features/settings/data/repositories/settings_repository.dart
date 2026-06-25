@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'package:furtail_app/core/storage/local_storage.dart';
 import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
@@ -83,6 +84,8 @@ class SettingsRepository {
 
   Future<StorageUsageInfo> calculateStorageUsage() async {
     int cacheBytes = 0;
+    int imageCacheBytes = 0;
+    int videoCacheBytes = 0;
     int tempBytes = 0;
 
     try {
@@ -96,23 +99,50 @@ class SettingsRepository {
     } catch (_) {}
 
     try {
-      // Default cache manager store (images).
+      imageCacheBytes = await FurtailImageCacheManager().getCacheSizeBytes();
+    } catch (_) {}
+
+    try {
+      videoCacheBytes = await FurtailVideoCacheManager().getCacheSizeBytes();
+    } catch (_) {}
+
+    try {
+      // Default cache manager store (legacy images).
       final libCache = await getApplicationDocumentsDirectory();
-      final imageCache = Directory('${libCache.path}/libCachedImageData');
-      if (await imageCache.exists()) {
-        cacheBytes += await _dirSize(imageCache);
+      final legacyImageCache = Directory('${libCache.path}/libCachedImageData');
+      if (await legacyImageCache.exists()) {
+        cacheBytes += await _dirSize(legacyImageCache);
       }
     } catch (_) {}
 
+    final totalCache = cacheBytes + imageCacheBytes + videoCacheBytes;
     return StorageUsageInfo(
-      cacheBytes: cacheBytes,
+      cacheBytes: totalCache,
+      imageCacheBytes: imageCacheBytes,
+      videoCacheBytes: videoCacheBytes,
       tempBytes: tempBytes,
-      totalBytes: cacheBytes + tempBytes,
+      totalBytes: totalCache + tempBytes,
     );
   }
 
   Future<int> clearCache() async {
     int freed = 0;
+
+    // Clear image cache
+    try {
+      final imgSize = await FurtailImageCacheManager().getCacheSizeBytes();
+      await FurtailImageCacheManager().emptyCache();
+      freed += imgSize;
+    } catch (_) {}
+
+    // Clear video cache
+    try {
+      final vidSize = await FurtailVideoCacheManager().getCacheSizeBytes();
+      await FurtailVideoCacheManager().emptyCache();
+      freed += vidSize;
+    } catch (_) {}
+
+    // Legacy DefaultCacheManager
     try {
       await DefaultCacheManager().emptyCache();
     } catch (_) {}

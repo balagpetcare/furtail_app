@@ -27,6 +27,14 @@ class PostCommentModel {
   final bool isLikedByMe;
   final int? parentId;
 
+  // ── Phase 1: Premium comment fields ─────────────────────────────────────
+  /// Whether the comment has been edited after creation.
+  final bool isEdited;
+  /// Optional media attachment URL (image/video) attached to the comment.
+  final String? attachmentUrl;
+  /// Number of replies to this comment (useful for paginated replies).
+  final int replyCount;
+
   PostCommentModel({
     required this.id,
     required this.text,
@@ -35,6 +43,9 @@ class PostCommentModel {
     this.likeCount = 0,
     this.isLikedByMe = false,
     this.parentId,
+    this.isEdited = false,
+    this.attachmentUrl,
+    this.replyCount = 0,
   });
 
   factory PostCommentModel.fromJson(Map<String, dynamic> json) {
@@ -46,6 +57,9 @@ class PostCommentModel {
       likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
       isLikedByMe: (json['isLikedByMe'] as bool?) ?? false,
       parentId: (json['parentId'] as num?)?.toInt(),
+      isEdited: (json['isEdited'] as bool?) ?? false,
+      attachmentUrl: (json['attachmentUrl'] as String?)?.trim(),
+      replyCount: ((json['replyCount'] as num?) ?? 0).toInt(),
     );
   }
 
@@ -57,6 +71,9 @@ class PostCommentModel {
     int? likeCount,
     bool? isLikedByMe,
     int? parentId,
+    bool? isEdited,
+    String? attachmentUrl,
+    int? replyCount,
   }) {
     return PostCommentModel(
       id: id ?? this.id,
@@ -66,6 +83,9 @@ class PostCommentModel {
       likeCount: likeCount ?? this.likeCount,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,
       parentId: parentId ?? this.parentId,
+      isEdited: isEdited ?? this.isEdited,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      replyCount: replyCount ?? this.replyCount,
     );
   }
 }

@@ -96,6 +96,18 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges {
+    if (widget.type == EditFieldType.date) {
+      final initialDate = _tryParse(widget.initialValue);
+      return _selectedDate != initialDate;
+    } else if (widget.type == EditFieldType.gender) {
+      final initialGender = (widget.initialValue.trim().toUpperCase() == 'FEMALE') ? 'FEMALE' : 'MALE';
+      return _gender != initialGender;
+    } else {
+      return _c.text != widget.initialValue;
+    }
+  }
+
   Widget _genderPicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,9 +142,45 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
     final isDate = widget.type == EditFieldType.date;
     final isGender = widget.type == EditFieldType.gender;
     return Scaffold(
-      appBar: AppBar(title: Text('Edit ${widget.label}')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      appBar: AppBar(
+        title: Text('Edit ${widget.label}'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
+      ),
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (_saving) return;
+          if (!_hasUnsavedChanges) {
+            Navigator.pop(context);
+            return;
+          }
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Discard Changes?'),
+              content: const Text('Are you sure you want to discard your changes?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Keep Editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && context.mounted) {
+            Navigator.pop(context);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             if (isDate)
@@ -177,6 +225,7 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

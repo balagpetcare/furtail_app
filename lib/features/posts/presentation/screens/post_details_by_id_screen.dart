@@ -29,7 +29,11 @@ class _PostDetailsByIdScreenState extends State<PostDetailsByIdScreen> {
         }
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF1A1A2E),
+              elevation: 0,
+            ),
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),

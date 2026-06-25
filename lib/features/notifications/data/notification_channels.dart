@@ -6,7 +6,13 @@ import '../domain/notification_type.dart';
 abstract final class NotificationChannels {
   static const String _prefix = 'bpa_';
 
-  static String idFor(AppNotificationType type) => '$_prefix${type.code}';
+  /// Dedicated channel for all social interactions.
+  static const String socialChannelId = 'social_notifications';
+
+  static String idFor(AppNotificationType type) {
+    if (type.isSocial) return socialChannelId;
+    return '$_prefix${type.code}';
+  }
 
   static List<AndroidNotificationChannel> androidChannels() {
     return [
@@ -93,6 +99,15 @@ abstract final class NotificationChannels {
         'General',
         'Other notifications',
         Importance.defaultImportance,
+      ),
+      // Social interactions channel (shared by all social types)
+      AndroidNotificationChannel(
+        socialChannelId,
+        'Social notifications',
+        description: 'Friend requests, follows, and pet interactions',
+        importance: Importance.defaultImportance,
+        playSound: true,
+        enableVibration: true,
       ),
     ];
   }

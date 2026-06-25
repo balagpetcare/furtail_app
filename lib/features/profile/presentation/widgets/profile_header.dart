@@ -69,8 +69,8 @@ class ProfileHeader extends StatelessWidget {
               ),
               gradient: LinearGradient(
                 colors: [
-                  Colors.black.withOpacity(0.05),
-                  const Color(0xFF0B1220).withOpacity(0.80),
+                  Colors.black.withValues(alpha: 0.05),
+                  const Color(0xFF0B1220).withValues(alpha: 0.80),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -156,8 +156,8 @@ class _TopIcon extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.10),
-              border: Border.all(color: Colors.white.withOpacity(0.16)),
+              color: Theme.of(context).colorScheme.primary,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Icon(icon, color: Colors.white, size: 18),
@@ -194,7 +194,7 @@ class _AvatarWithRibbon extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFFD700).withOpacity(0.18),
+                color: const Color(0xFFFFD700).withValues(alpha: 0.18),
                 blurRadius: 18,
                 spreadRadius: 2,
               ),
@@ -203,7 +203,7 @@ class _AvatarWithRibbon extends StatelessWidget {
           child: ClipOval(
             child: (photoUrl == null || photoUrl!.isEmpty)
                 ? Container(
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                     child: Center(
                       child: Text(
                         initial,
@@ -234,7 +234,7 @@ class _AvatarWithRibbon extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFFD700).withOpacity(0.25),
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.25),
                   blurRadius: 14,
                   spreadRadius: 1,
                 ),
@@ -278,7 +278,7 @@ class _DefaultCover extends StatelessWidget {
         child: Icon(
           Icons.pets,
           size: 56,
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withValues(alpha: 0.15),
         ),
       ),
     );

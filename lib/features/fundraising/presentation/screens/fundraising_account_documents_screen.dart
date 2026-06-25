@@ -110,15 +110,15 @@ class _FundraisingAccountDocumentsScreenState extends ConsumerState<FundraisingA
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: a.documents.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final d = a.documents[i];
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.black.withOpacity(0.08)),
-                  color: Colors.grey.withOpacity(0.06),
+                  border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                  color: Colors.grey.withValues(alpha: 0.06),
                 ),
                 child: Row(
                   children: [

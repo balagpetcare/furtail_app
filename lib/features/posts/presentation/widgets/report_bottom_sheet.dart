@@ -4,7 +4,7 @@ import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import '../../../../core/services/report_service.dart';
 
-enum ReportTargetType { post, fundraising, user, pet }
+enum ReportTargetType { post, fundraising, user, pet, comment }
 
 extension _ReportTargetTypeX on ReportTargetType {
   String get apiType {
@@ -17,6 +17,8 @@ extension _ReportTargetTypeX on ReportTargetType {
         return 'USER';
       case ReportTargetType.pet:
         return 'PET';
+      case ReportTargetType.comment:
+        return 'COMMENT';
     }
   }
 
@@ -30,6 +32,8 @@ extension _ReportTargetTypeX on ReportTargetType {
         return 'Report user';
       case ReportTargetType.pet:
         return 'Report pet profile';
+      case ReportTargetType.comment:
+        return 'Report comment';
     }
   }
 }
@@ -128,6 +132,12 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
       {'code': 'SPAM', 'label': 'Spam'},
       {'code': 'OTHER', 'label': 'Other'},
     ],
+    ReportTargetType.comment: [
+      {'code': 'SPAM', 'label': 'Spam'},
+      {'code': 'INAPPROPRIATE', 'label': 'Inappropriate comment'},
+      {'code': 'HARASSMENT', 'label': 'Harassment or hate speech'},
+      {'code': 'OTHER', 'label': 'Other'},
+    ],
   };
 
   String? _selectedCode;
@@ -203,7 +213,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
             ),
             const SizedBox(height: 12),
             ...(_reasonCatalog[widget.targetType] ?? const [])
-                .map((item) {
+                .map<Widget>((item) {
               final code = item['code'] ?? '';
               final label = item['label'] ?? code;
               final selected = _selectedCode == code;
@@ -222,7 +232,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                             : const Color(0xFFE6E6E6),
                       ),
                       color: selected
-                          ? context.colorScheme.primary.withOpacity(0.06)
+                          ? context.colorScheme.primary.withValues(alpha: 0.06)
                           : Colors.white,
                     ),
                     child: Row(
@@ -254,8 +264,7 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
                   ),
                 ),
               );
-            })
-                .toList(),
+            }),
             TextField(
               controller: _details,
               minLines: 1,

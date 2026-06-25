@@ -37,8 +37,8 @@ class _Action extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
+              color: Colors.white.withValues(alpha: 0.06),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Row(

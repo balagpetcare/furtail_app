@@ -6,6 +6,7 @@ class PetFormState {
   final bool success;
   final String? error;
   final int step;
+  final bool showStep1Errors;
 
   // create/edit
   final int? petId;
@@ -61,6 +62,7 @@ class PetFormState {
     required this.success,
     required this.error,
     required this.step,
+    required this.showStep1Errors,
     required this.petId,
     required this.name,
     required this.animalTypes,
@@ -103,6 +105,7 @@ class PetFormState {
       success: false,
       error: null,
       step: 0,
+      showStep1Errors: false,
       petId: null,
       name: "",
       animalTypes: [],
@@ -147,6 +150,7 @@ class PetFormState {
     bool? success,
     String? error,
     int? step,
+    bool? showStep1Errors,
     int? petId,
     String? name,
     List<Map<String, dynamic>>? animalTypes,
@@ -187,6 +191,7 @@ class PetFormState {
       success: success ?? this.success,
       error: error,
       step: step ?? this.step,
+      showStep1Errors: showStep1Errors ?? this.showStep1Errors,
       petId: petId ?? this.petId,
       name: name ?? this.name,
       animalTypes: animalTypes ?? this.animalTypes,

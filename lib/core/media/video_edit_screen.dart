@@ -156,7 +156,7 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                     Container(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.55),
+                        color: Colors.black.withValues(alpha: 0.55),
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                       ),
                       child: Column(

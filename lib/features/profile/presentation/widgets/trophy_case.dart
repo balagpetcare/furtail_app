@@ -15,8 +15,8 @@ class TrophyCase extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
-            border: Border.all(color: Colors.white.withOpacity(0.14)),
+            color: Colors.white.withValues(alpha: 0.08),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
@@ -60,8 +60,8 @@ class _Chip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withOpacity(0.08),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
+        color: Colors.white.withValues(alpha: 0.08),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

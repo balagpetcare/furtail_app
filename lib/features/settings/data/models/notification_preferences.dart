@@ -8,8 +8,11 @@ class NotificationPreferences {
   final bool comments;
   final bool likes;
   final bool follows;
+  final bool mentions;
+  final bool messages;
   final bool announcements;
   final bool emergency;
+  final bool marketing;
   final bool allowEmail;
   final bool allowSms;
 
@@ -22,8 +25,11 @@ class NotificationPreferences {
     this.comments = true,
     this.likes = true,
     this.follows = true,
+    this.mentions = true,
+    this.messages = true,
     this.announcements = true,
     this.emergency = true,
+    this.marketing = false,
     this.allowEmail = true,
     this.allowSms = false,
   });
@@ -37,8 +43,11 @@ class NotificationPreferences {
     bool? comments,
     bool? likes,
     bool? follows,
+    bool? mentions,
+    bool? messages,
     bool? announcements,
     bool? emergency,
+    bool? marketing,
     bool? allowEmail,
     bool? allowSms,
   }) {
@@ -51,8 +60,11 @@ class NotificationPreferences {
       comments: comments ?? this.comments,
       likes: likes ?? this.likes,
       follows: follows ?? this.follows,
+      mentions: mentions ?? this.mentions,
+      messages: messages ?? this.messages,
       announcements: announcements ?? this.announcements,
       emergency: emergency ?? this.emergency,
+      marketing: marketing ?? this.marketing,
       allowEmail: allowEmail ?? this.allowEmail,
       allowSms: allowSms ?? this.allowSms,
     );
@@ -67,8 +79,11 @@ class NotificationPreferences {
         'comments': comments,
         'likes': likes,
         'follows': follows,
+        'mentions': mentions,
+        'messages': messages,
         'announcements': announcements,
         'emergency': emergency,
+        'marketing': marketing,
         'allowEmail': allowEmail,
         'allowSms': allowSms,
       };
@@ -84,8 +99,11 @@ class NotificationPreferences {
       comments: b('comments'),
       likes: b('likes'),
       follows: b('follows'),
+      mentions: b('mentions'),
+      messages: b('messages'),
       announcements: b('announcements'),
       emergency: b('emergency', fallback: true),
+      marketing: json['marketing'] == true,
       allowEmail: b('allowEmail'),
       allowSms: json['allowSms'] == true,
     );

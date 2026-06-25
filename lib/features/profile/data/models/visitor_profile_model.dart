@@ -34,6 +34,10 @@ class VisitorProfileModel {
   final List<PetModel> pets;
   final List<VisitorAward> awards;
   final List<String> galleryUrls;
+  final List<String> followerPreviewUrls;
+
+  final bool canViewFullProfile;
+  final bool isProfileLocked;
 
   const VisitorProfileModel({
     required this.id,
@@ -58,7 +62,66 @@ class VisitorProfileModel {
     required this.pets,
     required this.awards,
     required this.galleryUrls,
+    this.followerPreviewUrls = const [],
+    this.canViewFullProfile = true,
+    this.isProfileLocked = false,
   });
+
+  VisitorProfileModel copyWith({
+    int? id,
+    String? displayName,
+    String? username,
+    String? bio,
+    String? education,
+    String? placeLive,
+    String? fansAndFriends,
+    String? from,
+    String? profileType,
+    String? workStatus,
+    String? religiousStatus,
+    String? gender,
+    DateTime? birthdate,
+    String? maritalStatus,
+    String? avatarUrl,
+    String? coverUrl,
+    int? followersCount,
+    int? followingCount,
+    int? petsCount,
+    List<PetModel>? pets,
+    List<VisitorAward>? awards,
+    List<String>? galleryUrls,
+    List<String>? followerPreviewUrls,
+    bool? canViewFullProfile,
+    bool? isProfileLocked,
+  }) {
+    return VisitorProfileModel(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      username: username ?? this.username,
+      bio: bio ?? this.bio,
+      education: education ?? this.education,
+      placeLive: placeLive ?? this.placeLive,
+      fansAndFriends: fansAndFriends ?? this.fansAndFriends,
+      from: from ?? this.from,
+      profileType: profileType ?? this.profileType,
+      workStatus: workStatus ?? this.workStatus,
+      religiousStatus: religiousStatus ?? this.religiousStatus,
+      gender: gender ?? this.gender,
+      birthdate: birthdate ?? this.birthdate,
+      maritalStatus: maritalStatus ?? this.maritalStatus,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+      petsCount: petsCount ?? this.petsCount,
+      pets: pets ?? this.pets,
+      awards: awards ?? this.awards,
+      galleryUrls: galleryUrls ?? this.galleryUrls,
+      followerPreviewUrls: followerPreviewUrls ?? this.followerPreviewUrls,
+      canViewFullProfile: canViewFullProfile ?? this.canViewFullProfile,
+      isProfileLocked: isProfileLocked ?? this.isProfileLocked,
+    );
+  }
 
   /// ---------------------------------------------------------------------------
   /// Compatibility getters (UI expects these fields)
@@ -73,18 +136,17 @@ class VisitorProfileModel {
   bool? get liked => null;
 
   factory VisitorProfileModel.fromApi(Map<String, dynamic> root) {
-    // API: { success, data: { user: { id, profile, stats }, pets, achievements, galleryItems } }
+    // API: GET /api/v1/user/:id returns
+    // { success, data: { id, status, profile: { displayName, username, avatarMedia, coverMedia },
+    //                    pets, galleryItems, followersCount, followingCount, followerPreviewUrls } }
+    // User fields are spread directly under data — there is no data['user'] wrapper.
     final data = (root['data'] is Map)
         ? Map<String, dynamic>.from(root['data'])
         : root;
-    final user = (data['user'] is Map)
-        ? Map<String, dynamic>.from(data['user'])
-        : const <String, dynamic>{};
-    final profile = (user['profile'] is Map)
-        ? Map<String, dynamic>.from(user['profile'])
-        : const <String, dynamic>{};
-    final stats = (user['stats'] is Map)
-        ? Map<String, dynamic>.from(user['stats'])
+
+    // Profile sub-object lives at data['profile'], not data['user']['profile'].
+    final profile = (data['profile'] is Map)
+        ? Map<String, dynamic>.from(data['profile'])
         : const <String, dynamic>{};
 
     final avatarMedia = (profile['avatarMedia'] is Map)
@@ -124,32 +186,102 @@ class VisitorProfileModel {
         .map((e) => Map<String, dynamic>.from(e))
         .map((item) {
           final media = item['media'];
-          if (media is Map) return media['url']?.toString();
+          if (media is Map) {
+            final raw = media['url']?.toString() ?? '';
+            if (raw.trim().isEmpty) return null;
+            return MediaUrl.normalize(raw);
+          }
           return null;
         })
         .whereType<String>()
         .where((u) => u.trim().isNotEmpty)
         .toList();
 
+    // Helper: try multiple keys, return first non-nullish string trimmed (or null).
+    String? strVal(String key, [List<String>? altKeys]) {
+      final allKeys = [key, ...?altKeys];
+      for (final k in allKeys) {
+        final v = profile[k];
+        if (v != null) {
+          final s = v.toString().trim();
+          if (s.isNotEmpty) return s;
+        }
+      }
+      return null;
+    }
+
+    // Display name: profile.displayName is the canonical field.
+    final rawDisplayName = (profile['displayName'] ?? profile['name'] ?? '').toString().trim();
+    final rawUsername = (profile['username'] ?? '').toString().trim();
+    final rawBio = (profile['bio'] ?? '').toString().trim();
+    final rawAvatar = (avatarMedia['url'] ?? profile['avatarUrl'] ?? '').toString().trim();
+    final rawCover = (coverMedia['url'] ?? profile['coverUrl'] ?? '').toString().trim();
+
+    // Intro/about fields (camelCase preferred, snake_case fallback)
+    final parsedEducation  = strVal('education');
+    final parsedPlaceLive  = strVal('placeLive', ['place_live', 'place_live']);
+    final parsedFrom       = strVal('from');
+    final parsedProfileType = strVal('profileType', ['profile_type']);
+    final parsedWorkStatus = strVal('workStatus', ['work_status']);
+    final parsedFansAndFriends = strVal('fansAndFriends', ['fans_and_friends']);
+    final parsedReligiousStatus = strVal('religiousStatus', ['religious_status']);
+    final parsedGender     = strVal('gender');
+    final parsedMarital    = strVal('maritalStatus', ['marital_status']);
+    // Birthdate — may come as ISO string or timestamp
+    DateTime? parsedBirthdate;
+    final bdRaw = profile['birthdate'] ?? profile['birthDate'] ?? profile['birthday'];
+    if (bdRaw is String && bdRaw.trim().isNotEmpty) {
+      parsedBirthdate = DateTime.tryParse(bdRaw.trim());
+    } else if (bdRaw is num) {
+      // Unix timestamp in seconds or milliseconds
+      final ts = bdRaw.toInt();
+      parsedBirthdate = DateTime.fromMillisecondsSinceEpoch(ts > 1e12 ? ts : ts * 1000);
+    }
+
+    // followersCount/followingCount are at data level, not nested under stats.
+    final followersCount = (data['followersCount'] is num)
+        ? (data['followersCount'] as num).toInt()
+        : 0;
+    final followingCount = (data['followingCount'] is num)
+        ? (data['followingCount'] as num).toInt()
+        : 0;
+
+    final rawPreviews = (data['followerPreviewUrls'] as List?) ?? const [];
+    final followerPreviewUrls = rawPreviews
+        .whereType<String>()
+        .where((u) => u.trim().isNotEmpty)
+        .map(MediaUrl.normalize)
+        .toList();
+
+    final canViewFullProfile = (data['canViewFullProfile'] as bool?) ?? true;
+    final isProfileLocked = (data['isProfileLocked'] as bool?) ?? false;
+
     return VisitorProfileModel(
-      id: (user['id'] is num) ? (user['id'] as num).toInt() : 0,
-      displayName: (profile['displayName'] ?? 'Furtail Member').toString(),
-      username: profile['username']?.toString(),
-      bio: profile['bio']?.toString(),
-      avatarUrl: MediaUrl.normalize((avatarMedia['url']?.toString() ?? '').toString()),
-      coverUrl: MediaUrl.normalize((coverMedia['url']?.toString() ?? '').toString()),
-      followersCount: (stats['followersCount'] is num)
-          ? (stats['followersCount'] as num).toInt()
-          : 0,
-      followingCount: (stats['followingCount'] is num)
-          ? (stats['followingCount'] as num).toInt()
-          : 0,
-      petsCount: (stats['petsCount'] is num)
-          ? (stats['petsCount'] as num).toInt()
-          : pets.length,
+      id: (data['id'] is num) ? (data['id'] as num).toInt() : 0,
+      displayName: rawDisplayName.isEmpty ? 'Unknown User' : rawDisplayName,
+      username: rawUsername.isEmpty ? null : rawUsername,
+      bio: rawBio.isEmpty ? null : rawBio,
+      education: parsedEducation,
+      placeLive: parsedPlaceLive,
+      from: parsedFrom,
+      profileType: parsedProfileType,
+      workStatus: parsedWorkStatus,
+      fansAndFriends: parsedFansAndFriends,
+      religiousStatus: parsedReligiousStatus,
+      gender: parsedGender,
+      maritalStatus: parsedMarital,
+      birthdate: parsedBirthdate,
+      avatarUrl: rawAvatar.isEmpty ? null : MediaUrl.normalize(rawAvatar),
+      coverUrl: rawCover.isEmpty ? null : MediaUrl.normalize(rawCover),
+      followersCount: followersCount,
+      followingCount: followingCount,
+      petsCount: pets.length,
       pets: pets,
       awards: awards,
       galleryUrls: galleryUrls,
+      followerPreviewUrls: followerPreviewUrls,
+      canViewFullProfile: canViewFullProfile,
+      isProfileLocked: isProfileLocked,
     );
   }
 }

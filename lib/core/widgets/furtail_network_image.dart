@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import '../media/furtail_cache_manager.dart';
 import '../theme/app_typography.dart';
 import '../theme/spacing.dart';
 
@@ -37,11 +38,12 @@ class FurtailCachedImage extends StatelessWidget {
     } else {
       child = CachedNetworkImage(
         imageUrl: url,
+        cacheManager: FurtailImageCacheManager(),
         width: width,
         height: height,
         fit: fit,
-        placeholder: (_, __) => placeholder ?? _defaultPlaceholder(context),
-        errorWidget: (_, __, ___) => errorWidget ?? _defaultError(context),
+        placeholder: (_, _) => placeholder ?? _defaultPlaceholder(context),
+        errorWidget: (_, _, _) => errorWidget ?? _defaultError(context),
       );
     }
 

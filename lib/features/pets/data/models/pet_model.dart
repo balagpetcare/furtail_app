@@ -1,5 +1,6 @@
 import '../../domain/entities/pet_entity.dart';
 import 'package:flutter/foundation.dart';
+import 'package:furtail_app/core/media/media_url.dart';
 
 class PetModel extends PetEntity {
   const PetModel({
@@ -43,7 +44,10 @@ class PetModel extends PetEntity {
     super.isLiked,
     super.isOwner,
     super.canManage,
+    this.canViewFullProfile = true,
   });
+
+  final bool canViewFullProfile;
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
     debugPrint("PET JSON: $json");
@@ -60,12 +64,14 @@ class PetModel extends PetEntity {
         : (json["breedNameSnapshot"] ?? breed?.toString());
 
     final profilePic = json["profilePic"];
-    final photoUrl = (profilePic is Map)
+    final rawPhotoUrl = (profilePic is Map)
         ? profilePic["url"]?.toString()
         : json["photoUrl"]?.toString();
+    final photoUrl = rawPhotoUrl != null ? MediaUrl.normalize(rawPhotoUrl) : null;
 
     final coverMedia = json["coverMedia"];
-    final coverMediaUrl = (coverMedia is Map) ? coverMedia["url"]?.toString() : null;
+    final rawCoverUrl = (coverMedia is Map) ? coverMedia["url"]?.toString() : null;
+    final coverMediaUrl = rawCoverUrl != null ? MediaUrl.normalize(rawCoverUrl) : null;
 
     // Resolve latest weight from nested weights array
     double? weightKg;
@@ -125,6 +131,7 @@ class PetModel extends PetEntity {
       isLiked: json["isLiked"] as bool?,
       isOwner: json["isOwner"] as bool?,
       canManage: json["canManage"] as bool?,
+      canViewFullProfile: json["canViewFullProfile"] as bool? ?? true,
     );
   }
 

@@ -28,7 +28,7 @@ class BlockedUsersScreen extends ConsumerWidget {
       ),
       body: listAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(child: Text(t.refresh)),
+        error: (e, s) => Center(child: Text(t.refresh)),
         data: (users) {
           if (users.isEmpty) {
             return Center(
@@ -54,7 +54,7 @@ class BlockedUsersScreen extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(14),
             itemCount: users.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final user = users[index];
               return SettingsCard(

@@ -1,5 +1,5 @@
 {
-  "API_BASE_URL": "https://YOUR_DOMAIN",
-  "MEDIA_BASE_URL": "https://YOUR_CDN_OR_MINIO_DOMAIN",
-  "SOCKET_URL": "https://YOUR_DOMAIN"
+  "API_BASE_URL": "https://api.furtail.world",
+  "MEDIA_BASE_URL": "https://api.furtail.world",
+  "SOCKET_URL": "https://api.furtail.world"
 }

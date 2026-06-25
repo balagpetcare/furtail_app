@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 import '../../../ui/components/inputs/app_text_field.dart';
 import '../../../ui/components/inputs/app_dropdown.dart';
@@ -11,6 +12,7 @@ import '../../../ui/components/feedback/app_snackbar.dart';
 
 import 'cubit/pet_form_cubit.dart';
 import 'cubit/pet_form_state.dart';
+import 'screens/pet_cover_edit_screen.dart';
 
 class PetProfileWizardScreen extends ConsumerStatefulWidget {
   final int? petId;
@@ -31,6 +33,12 @@ class _PetProfileWizardScreenState
     'Public Profile',
     'Review',
   ];
+
+  bool _isPickingCover = false;
+
+  File? _pendingPhotoFile;
+  File? _originalPhotoFile;
+  bool _isPickingPhoto = false;
 
   late final TextEditingController _nameCtrl;
   late final TextEditingController _microCtrl;
@@ -83,6 +91,293 @@ class _PetProfileWizardScreenState
     sync(_slugCtrl, s.slug);
     sync(_bioCtrl, s.bio);
     sync(_weightCtrl, s.weightKg != null ? s.weightKg!.toString() : '');
+  }
+
+  Future<void> _pickCoverPhoto(PetFormController ctrl) async {
+    if (_isPickingCover) return;
+    setState(() => _isPickingCover = true);
+    try {
+      final result = await Navigator.push<PetCoverEditResult>(
+        context,
+        MaterialPageRoute(builder: (_) => const PetCoverEditScreen()),
+      );
+      if (result != null && mounted) {
+        ctrl.setCoverPhotoFile(result.file);
+      }
+    } finally {
+      if (mounted) setState(() => _isPickingCover = false);
+    }
+  }
+
+  Future<void> _showPhotoPickerFlow(PetFormController ctrl) async {
+    if (_isPickingPhoto) return;
+    setState(() => _isPickingPhoto = true);
+
+    try {
+      final source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Take Photo from Camera'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose Photo from Gallery'),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.pop(ctx, null),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null || !mounted) return;
+
+      final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+      if (picked == null || !mounted) return;
+
+      final originalFile = File(picked.path);
+
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: originalFile.path,
+        compressQuality: 92,
+        aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Pet Photo',
+            toolbarColor: Colors.black,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+            initAspectRatio: CropAspectRatioPreset.square,
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+          ),
+          IOSUiSettings(
+            title: 'Crop Pet Photo',
+            aspectRatioLockEnabled: true,
+          ),
+        ],
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _originalPhotoFile = originalFile;
+        _pendingPhotoFile = cropped != null ? File(cropped.path) : originalFile;
+      });
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.show(context, 'Error picking photo: $e', success: false);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingPhoto = false);
+      }
+    }
+  }
+
+  Future<void> _adjustCropFlow() async {
+    final orig = _originalPhotoFile;
+    if (orig == null) return;
+
+    try {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: orig.path,
+        compressQuality: 92,
+        aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Pet Photo',
+            toolbarColor: Colors.black,
+            toolbarWidgetColor: Colors.white,
+            lockAspectRatio: true,
+            initAspectRatio: CropAspectRatioPreset.square,
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+          ),
+          IOSUiSettings(
+            title: 'Crop Pet Photo',
+            aspectRatioLockEnabled: true,
+          ),
+        ],
+      );
+
+      if (cropped != null && mounted) {
+        setState(() {
+          _pendingPhotoFile = File(cropped.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.show(context, 'Error cropping photo: $e', success: false);
+      }
+    }
+  }
+
+  Widget _buildModernPhotoPicker(BuildContext ctx, PetFormState s, PetFormController ctrl) {
+    final displayFile = _pendingPhotoFile ?? s.photoFile;
+
+    if (displayFile == null) {
+      return Center(
+        child: GestureDetector(
+          onTap: () => _showPhotoPickerFlow(ctrl),
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F2FF),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF4C6EF5).withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_a_photo_outlined, size: 36, color: Color(0xFF4C6EF5)),
+                SizedBox(height: 6),
+                Text(
+                  'Add Photo',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4C6EF5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final isPending = _pendingPhotoFile != null;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 130,
+            height: 130,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isPending ? Colors.orange : const Color(0xFF4C6EF5),
+                width: 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.file(
+                displayFile,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (isPending)
+            Text(
+              'Unsaved Photo Preview',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange.shade800,
+              ),
+            ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              if (_originalPhotoFile != null)
+                OutlinedButton.icon(
+                  onPressed: _adjustCropFlow,
+                  icon: const Icon(Icons.crop_rotate_rounded, size: 16),
+                  label: const Text('Crop/Adjust', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              OutlinedButton.icon(
+                onPressed: () => _showPhotoPickerFlow(ctrl),
+                icon: const Icon(Icons.cached_rounded, size: 16),
+                label: const Text('Change', style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              if (isPending)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ctrl.setPhoto(XFile(_pendingPhotoFile!.path));
+                    setState(() {
+                      _pendingPhotoFile = null;
+                    });
+                  },
+                  icon: const Icon(Icons.check_rounded, size: 16),
+                  label: const Text('Use This Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4C6EF5),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                ),
+              if (!isPending)
+                OutlinedButton.icon(
+                  onPressed: () {
+                    ctrl.removePhoto();
+                    setState(() {
+                      _pendingPhotoFile = null;
+                      _originalPhotoFile = null;
+                    });
+                  },
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
+                  label: const Text('Remove', style: TextStyle(fontSize: 12, color: Colors.red)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   String _dateText(DateTime? d) =>
@@ -201,21 +496,14 @@ class _PetProfileWizardScreenState
       title: 'Basic Information',
       subtitle: 'Tell us about your pet',
       children: [
-        _PhotoPicker(
-          file: s.photoFile,
-          onPick: () async {
-            final x = await ImagePicker()
-                .pickImage(source: ImageSource.gallery, imageQuality: 80);
-            if (x != null) ctrl.setPhoto(x);
-          },
-          onRemove: ctrl.removePhoto,
-        ),
+        _buildModernPhotoPicker(ctx, s, ctrl),
         const SizedBox(height: 20),
         _FieldLabel('Pet Name', required: true),
         AppTextField(
           label: 'e.g. Buddy, Luna',
           controller: _nameCtrl,
           onChanged: ctrl.setName,
+          errorText: s.showStep1Errors && s.name.trim().isEmpty ? 'Name is required' : null,
         ),
         const SizedBox(height: 14),
         _FieldLabel('Animal Type', required: true),
@@ -229,6 +517,7 @@ class _PetProfileWizardScreenState
                   ))
               .toList(),
           onChanged: (v) => ctrl.setAnimalType(v),
+          errorText: s.showStep1Errors && s.animalTypeId == null ? 'Animal type is required' : null,
         ),
         const SizedBox(height: 14),
         _FieldLabel('Breed'),
@@ -454,13 +743,9 @@ class _PetProfileWizardScreenState
           _CoverPhotoPicker(
             file: s.coverPhotoFile,
             existingUrl: s.coverMediaUrl,
-            onPick: () async {
-              final x = await ImagePicker().pickImage(
-                source: ImageSource.gallery,
-                imageQuality: 80,
-              );
-              if (x != null) ctrl.setCoverPhoto(x);
-            },
+            onPick: _isPickingCover
+                ? null
+                : () => _pickCoverPhoto(ctrl),
             onRemove: ctrl.removeCoverPhoto,
           ),
         ],
@@ -526,7 +811,7 @@ class _PetProfileWizardScreenState
           decoration: BoxDecoration(
             color: const Color(0xFFEFF9F0),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -570,7 +855,7 @@ class _WizardCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -622,7 +907,7 @@ class _WizardProgress extends StatelessWidget {
                     color: done
                         ? const Color(0xFF4C6EF5)
                         : current
-                            ? const Color(0xFF4C6EF5).withOpacity(0.4)
+                            ? const Color(0xFF4C6EF5).withValues(alpha: 0.4)
                             : const Color(0xFFE0E0E0),
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -715,76 +1000,12 @@ class _WizardFooter extends StatelessWidget {
   }
 }
 
-class _PhotoPicker extends StatelessWidget {
-  final File? file;
-  final VoidCallback onPick;
-  final VoidCallback onRemove;
 
-  const _PhotoPicker({
-    required this.file,
-    required this.onPick,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Stack(
-        children: [
-          GestureDetector(
-            onTap: onPick,
-            child: Container(
-              width: 110,
-              height: 110,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFFF0F2FF),
-                border: Border.all(
-                    color: const Color(0xFF4C6EF5).withOpacity(0.3), width: 2),
-              ),
-              child: file == null
-                  ? const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.pets, size: 32, color: Color(0xFF4C6EF5)),
-                        SizedBox(height: 4),
-                        Text('Add Photo',
-                            style: TextStyle(
-                                fontSize: 11, color: Color(0xFF4C6EF5))),
-                      ],
-                    )
-                  : ClipOval(
-                      child: Image.file(file!, fit: BoxFit.cover,
-                          width: 110, height: 110),
-                    ),
-            ),
-          ),
-          if (file != null)
-            Positioned(
-              right: 0,
-              top: 0,
-              child: GestureDetector(
-                onTap: onRemove,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.red,
-                  ),
-                  child: const Icon(Icons.close, size: 14, color: Colors.white),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 class _CoverPhotoPicker extends StatelessWidget {
   final File? file;
   final String? existingUrl;
-  final VoidCallback onPick;
+  final VoidCallback? onPick;
   final VoidCallback onRemove;
 
   const _CoverPhotoPicker({
@@ -808,7 +1029,7 @@ class _CoverPhotoPicker extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               color: const Color(0xFFF0F2FF),
               border: Border.all(
-                  color: const Color(0xFF4C6EF5).withOpacity(0.3)),
+                  color: const Color(0xFF4C6EF5).withValues(alpha: 0.3)),
             ),
             child: hasImage
                 ? ClipRRect(
@@ -837,7 +1058,7 @@ class _CoverPhotoPicker extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child:
@@ -871,19 +1092,19 @@ class _SwitchTile extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: highlight && value
-            ? const Color(0xFF4C6EF5).withOpacity(0.06)
+            ? const Color(0xFF4C6EF5).withValues(alpha: 0.06)
             : const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: highlight && value
-              ? const Color(0xFF4C6EF5).withOpacity(0.3)
+              ? const Color(0xFF4C6EF5).withValues(alpha: 0.3)
               : Colors.transparent,
         ),
       ),
       child: SwitchListTile(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF4C6EF5),
+        activeThumbColor: const Color(0xFF4C6EF5),
         title:
             Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle,

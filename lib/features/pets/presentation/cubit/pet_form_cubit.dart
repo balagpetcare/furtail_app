@@ -88,10 +88,22 @@ class PetFormController
   }
 
   // ── Wizard navigation ─────────────────────────────────────────────────────
-  void next() =>
-      state = state.copyWith(step: state.step + 1, error: null);
-  void back() =>
-      state = state.copyWith(step: (state.step - 1).clamp(0, 999), error: null);
+  void next() {
+    if (state.step == 0) {
+      if (state.name.trim().isEmpty || state.animalTypeId == null) {
+        state = state.copyWith(
+          showStep1Errors: true,
+          error: "Name and Animal Type are required",
+        );
+        return;
+      }
+    }
+    state = state.copyWith(step: state.step + 1, error: null, showStep1Errors: false);
+  }
+
+  void back() {
+    state = state.copyWith(step: (state.step - 1).clamp(0, 999), error: null);
+  }
 
   // ── Step 1: Basic Info ────────────────────────────────────────────────────
   void setName(String v) => state = state.copyWith(name: v, error: null);
@@ -161,6 +173,13 @@ class PetFormController
     state = state.copyWith(
         coverPhoto: file,
         coverPhotoFile: File(file.path),
+        coverPhotoChanged: true);
+  }
+
+  void setCoverPhotoFile(File file) {
+    state = state.copyWith(
+        coverPhoto: null,
+        coverPhotoFile: file,
         coverPhotoChanged: true);
   }
   void removeCoverPhoto() => state = state.copyWith(

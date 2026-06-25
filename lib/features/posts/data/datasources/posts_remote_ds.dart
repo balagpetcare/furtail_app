@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:async' show EventSink, StreamTransformer, unawaited;
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,6 +12,7 @@ import '../../../../core/network/multipart_helper.dart';
 
 import '../models/post_comment_model.dart';
 import '../models/post_model.dart';
+import '../services/feed_cache_service.dart';
 
 class PostsRemoteDs {
   Future<String?> _token() async {
@@ -37,6 +38,9 @@ class PostsRemoteDs {
     if (res.statusCode != 200) {
       throw Exception('Feed failed (${res.statusCode}): ${res.body}');
     }
+
+    // Persist raw response for offline-first display; no auth data is included.
+    unawaited(FeedCacheService().saveRawJson(res.body));
 
     final decoded = jsonDecode(res.body);
     final list = (decoded['data'] as List?) ?? const [];
@@ -176,6 +180,8 @@ class PostsRemoteDs {
     required String type,
     String? caption,
     List<int> mediaIds = const [],
+    String? privacy,
+    String? backgroundStyle,
   }) async {
     final res = await http.post(
       Uri.parse(ApiEndpoints.postsCreate()),
@@ -184,6 +190,9 @@ class PostsRemoteDs {
         'type': type,
         'caption': caption,
         'mediaIds': mediaIds,
+        if (privacy != null) 'privacy': privacy,
+        // TODO: Backend does not support backgroundStyle yet.
+        // Once backend database supports it, send: 'backgroundStyle': backgroundStyle
       }),
     );
 
@@ -272,6 +281,96 @@ class PostsRemoteDs {
     return list
         .map((e) => PostCommentModel.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  // ── Phase 1: Cursor-based comment pagination ────────────────────────────
+  /// Fetch comments with cursor-based pagination.
+  /// Returns a tuple-like map with `items` (List<PostCommentModel>) and `nextCursor` (String?).
+  Future<Map<String, dynamic>> listCommentsCursor(
+    int postId, {
+    int limit = 30,
+    String? cursor,
+  }) async {
+    String url = '${ApiEndpoints.postsComments(postId: postId, limit: limit)}';
+    if (cursor != null && cursor.isNotEmpty) {
+      url += '&cursor=${Uri.encodeQueryComponent(cursor)}';
+    }
+    final res = await http.get(
+      Uri.parse(url),
+      headers: await _authHeaders(json: false),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Comments cursor failed (${res.statusCode}): ${res.body}');
+    }
+    final decoded = jsonDecode(res.body);
+    final data = decoded['data'] as Map<String, dynamic>? ?? {};
+    final items = (data['items'] as List?) ?? (data as List?) ?? const [];
+    return <String, dynamic>{
+      'items': items
+          .map((e) => PostCommentModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      'nextCursor': data['nextCursor']?.toString(),
+    };
+  }
+
+  // ── Phase 1: Edit comment ──────────────────────────────────────────────
+  /// Edit an existing comment's text.
+  Future<PostCommentModel> editComment({
+    required int postId,
+    required int commentId,
+    required String text,
+  }) async {
+    final res = await http.patch(
+      Uri.parse(ApiEndpoints.postsCommentEdit(postId: postId, commentId: commentId)),
+      headers: await _authHeaders(json: true),
+      body: jsonEncode({'text': text}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Edit comment failed (${res.statusCode}): ${res.body}');
+    }
+    final decoded = jsonDecode(res.body);
+    return PostCommentModel.fromJson(decoded['data'] as Map<String, dynamic>);
+  }
+
+  // ── Phase 1: Delete comment ────────────────────────────────────────────
+  /// Delete a comment by id.
+  Future<void> deleteComment({
+    required int postId,
+    required int commentId,
+  }) async {
+    final res = await http.delete(
+      Uri.parse(ApiEndpoints.postsCommentDelete(postId: postId, commentId: commentId)),
+      headers: await _authHeaders(json: false),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Delete comment failed (${res.statusCode}): ${res.body}');
+    }
+  }
+
+  // ── Phase 1: Share post ─────────────────────────────────────────────────
+  /// Record a share of a post. Returns response data (e.g., updated shareCount).
+  Future<Map<String, dynamic>> sharePost(int postId) async {
+    final res = await http.post(
+      Uri.parse(ApiEndpoints.postsShare(postId: postId)),
+      headers: await _authHeaders(json: false),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Share post failed (${res.statusCode}): ${res.body}');
+    }
+    return (jsonDecode(res.body)['data'] as Map?)?.cast<String, dynamic>() ?? {};
+  }
+
+  // ── Phase 1: Record post view ──────────────────────────────────────────
+  /// Record a view of a post. Returns response data (e.g., updated viewCount).
+  Future<Map<String, dynamic>> recordView(int postId) async {
+    final res = await http.post(
+      Uri.parse(ApiEndpoints.postsView(postId: postId)),
+      headers: await _authHeaders(json: false),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('Record view failed (${res.statusCode}): ${res.body}');
+    }
+    return (jsonDecode(res.body)['data'] as Map?)?.cast<String, dynamic>() ?? {};
   }
 
   Future<PostCommentModel> addComment(int postId, String text) async {
@@ -374,6 +473,44 @@ class PostsRemoteDs {
     final decoded = jsonDecode(res.body) as Map<String, dynamic>;
     final data = (decoded['data'] as Map<String, dynamic>? ) ?? const {};
     return PostModel.fromJson(data);
+  }
+
+  Future<void> bookmarkPost({required int postId}) async {
+    final res = await http.post(
+      Uri.parse(ApiEndpoints.bookmarkPost(postId: postId)),
+      headers: await _authHeaders(json: false),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception('Bookmark failed (${res.statusCode}): ${res.body}');
+    }
+  }
+
+  Future<void> unbookmarkPost({required int postId}) async {
+    final res = await http.delete(
+      Uri.parse(ApiEndpoints.unbookmarkPost(postId: postId)),
+      headers: await _authHeaders(json: false),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Unbookmark failed (${res.statusCode}): ${res.body}');
+    }
+  }
+
+  Future<List<PostModel>> getBookmarkedPosts({int limit = 50, String? cursor}) async {
+    final uri = Uri.parse(ApiEndpoints.bookmarkedPosts(limit: limit) +
+        (cursor != null ? "&cursor=$cursor" : ""));
+    final res = await http.get(uri, headers: await _authHeaders(json: false));
+
+    if (res.statusCode != 200) {
+      throw Exception('Get bookmarked posts failed (${res.statusCode}): ${res.body}');
+    }
+
+    final decoded = jsonDecode(res.body);
+    final list = (decoded['data']?['items'] as List?) ?? const [];
+    return list
+        .map((e) => PostModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
 }

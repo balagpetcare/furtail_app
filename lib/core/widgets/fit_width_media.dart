@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../media/furtail_cache_manager.dart';
+
 /// Full-width image renderer.
 ///
 /// Requirement:
@@ -23,6 +25,7 @@ class FitWidthNetworkImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final child = CachedNetworkImage(
       imageUrl: url,
+      cacheManager: FurtailImageCacheManager(),
       imageBuilder: (context, provider) {
         return Image(
           image: provider,
@@ -31,7 +34,7 @@ class FitWidthNetworkImage extends StatelessWidget {
           alignment: Alignment.topCenter,
         );
       },
-      placeholder: (_, __) => Container(
+      placeholder: (_, _) => Container(
         width: double.infinity,
         color: Colors.black12,
         child: const AspectRatio(
@@ -39,7 +42,7 @@ class FitWidthNetworkImage extends StatelessWidget {
           child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       ),
-      errorWidget: (_, __, ___) => Container(
+      errorWidget: (_, _, _) => Container(
         width: double.infinity,
         color: Colors.black12,
         child: const AspectRatio(

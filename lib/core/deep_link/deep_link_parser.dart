@@ -15,6 +15,9 @@ abstract final class DeepLinkParser {
     'donation': DeepLinkKind.fundraising,
     'profile': DeepLinkKind.profile,
     'user': DeepLinkKind.profile,
+    'friend-requests': DeepLinkKind.friendRequests,
+    'friend_request': DeepLinkKind.friendRequests,
+    'friendRequests': DeepLinkKind.friendRequests,
   };
 
   /// Returns null when URI is not a recognized Furtail deep link.
@@ -45,6 +48,11 @@ abstract final class DeepLinkParser {
       return parse(Uri.parse(trimmed));
     }
 
+    // @username shorthand: bare "@handle" string (no slash) → profile
+    if (trimmed.startsWith('@') && !trimmed.contains('/') && trimmed.length > 1) {
+      return DeepLinkTarget(kind: DeepLinkKind.profile, id: trimmed);
+    }
+
     if (trimmed.startsWith('/')) {
       return parse(Uri(path: trimmed));
     }
@@ -54,6 +62,10 @@ abstract final class DeepLinkParser {
   }
 
   static DeepLinkTarget? _fromSegments(List<String> parts) {
+    // /@username path: single segment starting with @, e.g. furtail.com/@johndoe
+    if (parts.length == 1 && parts[0].startsWith('@') && parts[0].length > 1) {
+      return DeepLinkTarget(kind: DeepLinkKind.profile, id: parts[0]);
+    }
     if (parts.length >= 3 &&
         parts[0].toLowerCase() == 'campaign' &&
         parts[1].toLowerCase() == 'detail') {

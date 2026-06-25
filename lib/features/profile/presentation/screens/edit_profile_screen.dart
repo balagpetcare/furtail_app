@@ -1,23 +1,25 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:furtail_app/core/providers/current_user_provider.dart';
 import '../../data/profile_service.dart';
 import '../../data/models/user_profile_model.dart';
 
 /// Edit own profile (English UI labels)
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget {
   final UserProfileModel initial;
   const EditProfileScreen({super.key, required this.initial});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _svc = ProfileService();
   final _picker = ImagePicker();
 
@@ -38,7 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _displayName = TextEditingController(text: widget.initial.name);
     _username = TextEditingController(text: widget.initial.username ?? "");
-    _bio = TextEditingController();
+    _bio = TextEditingController(text: widget.initial.bio ?? "");
     _email = TextEditingController(text: widget.initial.email ?? "");
     _phone = TextEditingController(text: widget.initial.phone ?? "");
   }
@@ -51,6 +53,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _email.dispose();
     _phone.dispose();
     super.dispose();
+  }
+
+  bool get _hasUnsavedChanges {
+    if (_avatarFile != null || _coverFile != null) return true;
+    if (_displayName.text.trim() != widget.initial.name) return true;
+    if (_username.text.trim() != (widget.initial.username ?? "")) return true;
+    if (_bio.text.trim() != (widget.initial.bio ?? "")) return true;
+    if (_email.text.trim() != (widget.initial.email ?? "")) return true;
+    if (_phone.text.trim() != (widget.initial.phone ?? "")) return true;
+    return false;
   }
 
   Future<void> _pickAvatar() async {
@@ -96,6 +108,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return null;
   }
 
+  static Widget _secLabel(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: Colors.grey,
+        letterSpacing: 0.9,
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (_saving) return;
     // Avoid "Null check operator used on a null value" if the Form isn't mounted yet.
@@ -127,13 +151,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       final updated = await _svc.updateProfile(payload);
 
-      // Keep Home header + drawer avatar in sync
+      // Keep Home header + drawer avatar in sync (SharedPreferences + reactive provider).
       final sp = await SharedPreferences.getInstance();
       await sp.setString('userName', updated.name);
       await sp.setString('userEmail', updated.email ?? "");
       if ((updated.photoUrl ?? "").trim().isNotEmpty) {
         await sp.setString('avatarUrl', updated.photoUrl!.trim());
       }
+      // Notify the reactive provider so UI rebuilds immediately.
+      await ref.read(currentUserProvider.notifier).reloadFromPrefs();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -156,96 +182,211 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
+        leading: const _GreyBackButton(),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save'),
+                : Text(
+                    'Save',
+                    style: TextStyle(
+                      color: _saving ? Colors.grey : Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (_saving) return;
+          if (!_hasUnsavedChanges) {
+            Navigator.pop(context);
+            return;
+          }
+          final discard = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Discard Changes?'),
+              content: const Text('Are you sure you want to discard your changes?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Keep Editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (discard == true && context.mounted) {
+            Navigator.pop(context);
+          }
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Photos ───────────────────────────────────────────────────
+              _secLabel('Photos'),
+              const SizedBox(height: 10),
               Row(
                 children: [
-                  InkWell(
-                    onTap: _pickAvatar,
-                    borderRadius: BorderRadius.circular(999),
-                    child: CircleAvatar(
-                      radius: 34,
-                      backgroundImage: _avatarFile != null
-                          ? FileImage(_avatarFile!)
-                          : ((widget.initial.photoUrl ?? '').trim().isNotEmpty
-                              ? NetworkImage(widget.initial.photoUrl!)
-                              : null) as ImageProvider<Object>?,
-                      child: (_avatarFile == null && (widget.initial.photoUrl ?? '').trim().isEmpty)
-                          ? const Icon(Icons.person, size: 34)
-                          : null,
-                    ),
+                  Stack(
+                    children: [
+                      InkWell(
+                        onTap: _pickAvatar,
+                        borderRadius: BorderRadius.circular(999),
+                        child: CircleAvatar(
+                          radius: 34,
+                          backgroundImage: _avatarFile != null
+                              ? FileImage(_avatarFile!)
+                              : ((widget.initial.photoUrl ?? '').trim().isNotEmpty
+                                  ? NetworkImage(widget.initial.photoUrl!)
+                                  : null) as ImageProvider<Object>?,
+                          child: (_avatarFile == null &&
+                                  (widget.initial.photoUrl ?? '').trim().isEmpty)
+                              ? const Icon(Icons.person, size: 34)
+                              : null,
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.camera_alt, size: 14),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _pickCover,
                       icon: const Icon(Icons.image_outlined),
-                      label: Text(_coverFile == null ? 'Change cover photo' : 'Cover selected'),
+                      label: Text(
+                          _coverFile == null ? 'Change cover photo' : 'Cover selected ✓'),
                     ),
-                  )
+                  ),
                 ],
               ),
-              const SizedBox(height: 18),
+
+              const SizedBox(height: 24),
+
+              // ── Profile Basics ────────────────────────────────────────────
+              _secLabel('Profile Basics'),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _displayName,
                 validator: _required,
-                decoration: const InputDecoration(labelText: 'Display name'),
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Display name',
+                  helperText: 'Your full name or nickname',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _username,
-                decoration: const InputDecoration(labelText: 'Username (optional)'),
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  hintText: 'e.g. pawlover99',
+                  helperText: 'Optional — letters, numbers, underscores',
+                  prefixIcon: Icon(Icons.alternate_email),
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _bio,
                 maxLines: 3,
+                maxLength: 200,
                 validator: (v) {
                   final t = (v ?? '').trim();
-                  if (t.isEmpty) return null;
-                  final words = t.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
-                  if (words < 120 || words > 160) {
-                    return 'Bio must be 120–160 words';
-                  }
+                  if (t.length > 200) return 'Bio must be 200 characters or less';
                   return null;
                 },
-                decoration: const InputDecoration(labelText: 'Bio (120–160 words)'),
+                decoration: const InputDecoration(
+                  labelText: 'Bio',
+                  hintText: 'Tell people a little about yourself...',
+                  helperText: 'Up to 200 characters',
+                  counterText: '',
+                  prefixIcon: Icon(Icons.notes_rounded),
+                ),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 24),
+
+              // ── Contact ───────────────────────────────────────────────────
+              _secLabel('Contact'),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _email,
-                decoration: const InputDecoration(labelText: 'Email (optional)'),
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Optional',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _phone,
-                decoration: const InputDecoration(labelText: 'Phone (optional)'),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  child: const Text('Save Changes'),
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone',
+                  hintText: 'Optional',
+                  prefixIcon: Icon(Icons.phone_outlined),
                 ),
               ),
+
+              const SizedBox(height: 28),
+              // Bottom save removed — AppBar "Save" is the primary action.
+              SizedBox(height: MediaQuery.paddingOf(context).bottom + 24),
             ],
           ),
         ),
+      ),
+    ),
+  );
+  }
+}
+
+/// Standard back button for white-background screens:
+/// light grey circular background + dark icon.
+class _GreyBackButton extends StatelessWidget {
+  const _GreyBackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.maybePop(context),
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Color(0xFFE8EAED),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1A1A2E)),
       ),
     );
   }

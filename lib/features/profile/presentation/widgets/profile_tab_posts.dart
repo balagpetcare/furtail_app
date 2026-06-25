@@ -76,7 +76,7 @@ class _ProfileTabPostsState extends State<ProfileTabPosts> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 16),
         itemCount: _items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final p = _items[index];
           return PostCard(post: p, meId: _meId, onNeedRefresh: _load);

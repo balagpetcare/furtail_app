@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:furtail_app/core/constants/app_colors.dart';
-import 'package:furtail_app/core/theme/app_typography.dart';
-import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
-/// ===========================
-/// Furtail Drawer Destination Enum
-/// ===========================
+
+// ================================================================
+//  Navigation Destinations
+// ================================================================
 enum BPADrawerDestination {
   home,
   petList,
@@ -32,25 +30,36 @@ enum BPADrawerDestination {
   help,
   about,
   logout,
+  // v2 — expandable section destinations
+  savedItems,
+  dashboard,
+  helpCenter,
+  contactSupport,
+  reportProblem,
+  safetyGuidelines,
+  privacy,
+  security,
+  notificationSettings,
+  language,
+  furtailMember,
+  petCensus,
+  campaigns,
+  aboutFurtail,
 }
 
-/// =====================================
-/// Premium Furtail Drawer (Glass + Sections)
-/// =====================================
-class BPACustomDrawer extends StatelessWidget {
+// ================================================================
+//  FurtailAppDrawer — Facebook-style social drawer
+// ================================================================
+class FurtailAppDrawer extends StatefulWidget {
   final String? userName;
   final String? userEmail;
-  final String? avatarUrl; // optional
+  final String? avatarUrl;
   final bool isLoggedIn;
-  /// Phase 5: Hide Donation/Wallet/Fundraising when policy disables DONATION
   final bool donationEnabled;
-
-  /// Drawer item click handling parent screen এ করবেন
+  final int unreadCount;
   final void Function(BPADrawerDestination destination) onSelect;
 
-  static const Color _gold = Color(0xFFFFD700);
-
-  const BPACustomDrawer({
+  const FurtailAppDrawer({
     super.key,
     required this.onSelect,
     this.userName,
@@ -58,540 +67,858 @@ class BPACustomDrawer extends StatelessWidget {
     this.avatarUrl,
     this.isLoggedIn = false,
     this.donationEnabled = true,
+    this.unreadCount = 0,
   });
 
   @override
+  State<FurtailAppDrawer> createState() => _FurtailAppDrawerState();
+}
+
+class _FurtailAppDrawerState extends State<FurtailAppDrawer> {
+  bool _helpExpanded = false;
+  bool _settingsPrivacyExpanded = false;
+  bool _moreExpanded = false;
+
+  String get _name {
+    final n = widget.userName?.trim() ?? '';
+    if (n.isEmpty) return widget.isLoggedIn ? 'Furtail User' : 'Guest';
+    return n;
+  }
+
+  String get _email {
+    final e = widget.userEmail?.trim() ?? '';
+    if (e.isEmpty) return widget.isLoggedIn ? '' : 'Login to unlock features';
+    return e;
+  }
+
+  void _onTap(BPADrawerDestination dest) {
+    Navigator.pop(context);
+    widget.onSelect(dest);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final primary = context.colorScheme.primary;
-    final name = (userName == null || userName!.trim().isEmpty)
-        ? (isLoggedIn ? "Furtail Member" : "Guest")
-        : userName!.trim();
-
-    final email = (userEmail == null || userEmail!.trim().isEmpty)
-        ? (isLoggedIn ? "member@furtail.app" : "Login to unlock features")
-        : userEmail!.trim();
-
-    final drawerWidth = MediaQuery.sizeOf(context).width * 0.825;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final drawerWidth = (screenWidth * 0.84).clamp(280.0, 400.0);
+    final cs = Theme.of(context).colorScheme;
 
     return Drawer(
-      width: drawerWidth.clamp(280.0, 400.0),
-      backgroundColor: context.colorScheme.surfaceContainerHighest,
+      width: drawerWidth,
+      backgroundColor: cs.surface,
+      elevation: 2,
       child: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _DrawerHeader(
-              name: name,
-              email: email,
-              avatarUrl: avatarUrl,
-              isLoggedIn: isLoggedIn,
+            // ── Profile Card ─────────────────────────────────────
+            DrawerProfileCard(
+              name: _name,
+              email: _email,
+              avatarUrl: widget.avatarUrl,
+              isLoggedIn: widget.isLoggedIn,
+              unreadCount: widget.unreadCount,
+              onProfileTap: () => _onTap(BPADrawerDestination.profile),
+              onNotificationTap: () =>
+                  _onTap(BPADrawerDestination.notifications),
             ),
+
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: cs.outlineVariant.withValues(alpha: 0.5),
+            ),
+
+            // ── Shortcuts ─────────────────────────────────────────
+            DrawerShortcutList(onTap: _onTap, isLoggedIn: widget.isLoggedIn),
+
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: cs.outlineVariant.withValues(alpha: 0.5),
+            ),
+
+            // ── Scrollable Menu ───────────────────────────────────
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 children: [
-                  _sectionTitle(context, "MAIN"),
-                  _drawerTile(
-                    context,
+                  DrawerMenuItem(
                     icon: Icons.home_rounded,
-                    title: "Home",
-                    onTap: () => onSelect(BPADrawerDestination.home),
+                    title: 'News Feed',
+                    onTap: () => _onTap(BPADrawerDestination.home),
                   ),
-                  _drawerTile(
-                    context,
-                    icon: Icons.notifications_rounded,
-                    title: "Notifications",
-                    trailing: _badge(context, "3"),
-                    onTap: () => onSelect(BPADrawerDestination.notifications),
+                  DrawerMenuItem(
+                    icon: Icons.people_alt_rounded,
+                    title: 'Friends & Community',
+                    onTap: () => _onTap(BPADrawerDestination.community),
                   ),
-
-                  const SizedBox(height: 14),
-                  _sectionTitle(context, "PETS"),
-                  _drawerTile(
-                    context,
+                  DrawerMenuItem(
                     icon: Icons.pets_rounded,
-                    title: "My Pets (Pet List)",
-                    onTap: () => onSelect(BPADrawerDestination.petList),
+                    title: 'My Pets',
+                    onTap: () => _onTap(BPADrawerDestination.petList),
                   ),
-
-                  _drawerTile(
-                    context,
-                    icon: Icons.add_circle_rounded,
-                    title: "Register New Pet",
-                    subtitle: "Create pet profile + ",
-                    onTap: () => onSelect(BPADrawerDestination.petRegister),
-                  ),
-
-                  const SizedBox(height: 14),
-                  _sectionTitle(context, "SERVICES"),
-                  _expansionCard(
-                    context,
-                    title: "All Services",
-                    subtitle: "Vet • Grooming • Training • More",
+                  DrawerMenuItem(
                     icon: Icons.medical_services_rounded,
+                    title: 'Pet Care',
+                    onTap: () => _onTap(BPADrawerDestination.services),
+                  ),
+                  if (widget.isLoggedIn)
+                    DrawerMenuItem(
+                      icon: Icons.account_balance_wallet_rounded,
+                      title: 'Wallet',
+                      onTap: () => _onTap(BPADrawerDestination.wallet),
+                    ),
+                  DrawerMenuItem(
+                    icon: Icons.favorite_rounded,
+                    title: 'Adoption',
+                    onTap: () => _onTap(BPADrawerDestination.adoption),
+                  ),
+                  DrawerMenuItem(
+                    icon: Icons.volunteer_activism_rounded,
+                    title: 'Fund Raising',
+                    onTap: () => _onTap(BPADrawerDestination.startFundraising),
+                  ),
+                  DrawerMenuItem(
+                    icon: Icons.bookmark_rounded,
+                    title: 'Saved Items',
+                    onTap: () => _onTap(BPADrawerDestination.savedItems),
+                  ),
+                  DrawerMenuItem(
+                    icon: Icons.notifications_rounded,
+                    title: 'Notifications',
+                    badge: widget.unreadCount > 0
+                        ? (widget.unreadCount > 99
+                              ? '99+'
+                              : '${widget.unreadCount}')
+                        : null,
+                    onTap: () => _onTap(BPADrawerDestination.notifications),
+                  ),
+
+                  // Settings removed from main list — it lives under Settings & Privacy below.
+                  const _DrawerDivider(),
+
+                  // ── Help & Support ────────────────────────────
+                  DrawerExpandableSection(
+                    icon: Icons.help_outline_rounded,
+                    title: 'Help & Support',
+                    isExpanded: _helpExpanded,
+                    onToggle: () =>
+                        setState(() => _helpExpanded = !_helpExpanded),
                     children: [
-                      _drawerTile(
-                        context,
+                      DrawerMenuItem(
+                        icon: Icons.menu_book_rounded,
+                        title: 'Help Center',
                         dense: true,
-                        icon: Icons.local_hospital_rounded,
-                        title: "Vet Service",
-                        onTap: () => onSelect(BPADrawerDestination.vet),
+                        onTap: () => _onTap(BPADrawerDestination.helpCenter),
                       ),
-                      _drawerTile(
-                        context,
+                      DrawerMenuItem(
+                        icon: Icons.support_agent_rounded,
+                        title: 'Contact Support',
                         dense: true,
-                        icon: Icons.vaccines_rounded,
-                        title: "Vaccination Campaign",
-                        onTap: () => onSelect(BPADrawerDestination.vaccinationCampaign),
+                        onTap: () =>
+                            _onTap(BPADrawerDestination.contactSupport),
                       ),
-                      _drawerTile(
-                        context,
+                      DrawerMenuItem(
+                        icon: Icons.flag_rounded,
+                        title: 'Report a Problem',
                         dense: true,
-                        icon: Icons.cut_rounded,
-                        title: "Grooming",
-                        onTap: () => onSelect(BPADrawerDestination.grooming),
+                        onTap: () => _onTap(BPADrawerDestination.reportProblem),
                       ),
-                      _drawerTile(
-                        context,
+                      DrawerMenuItem(
+                        icon: Icons.shield_rounded,
+                        title: 'Safety & Guidelines',
                         dense: true,
-                        icon: Icons.school_rounded,
-                        title: "Training",
-                        onTap: () => onSelect(BPADrawerDestination.training),
-                      ),
-                      _drawerTile(
-                        context,
-                        dense: true,
-                        icon: Icons.grid_view_rounded,
-                        title: "Browse Services",
-                        onTap: () => onSelect(BPADrawerDestination.services),
+                        onTap: () =>
+                            _onTap(BPADrawerDestination.safetyGuidelines),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 14),
-                  _sectionTitle(context, "COMMUNITY"),
-                  _drawerTile(
-                    context,
-                    icon: Icons.people_alt_rounded,
-                    title: "Community Feed",
-                    onTap: () => onSelect(BPADrawerDestination.community),
-                  ),
-                  _drawerTile(
-                    context,
-                    icon: Icons.event_rounded,
-                    title: "Events",
-                    onTap: () => onSelect(BPADrawerDestination.events),
-                  ),
-                  _drawerTile(
-                    context,
-                    icon: Icons.chat_bubble_rounded,
-                    title: "Messages",
-                    onTap: () => onSelect(BPADrawerDestination.messages),
-                  ),
-
-                  const SizedBox(height: 14),
-                  _sectionTitle(context, "SHOP & CAUSES"),
-                  _drawerTile(
-                    context,
-                    icon: Icons.storefront_rounded,
-                    title: "Pet Shop",
-                    onTap: () => onSelect(BPADrawerDestination.shop),
-                  ),
-                  if (donationEnabled) ...[
-                    _drawerTile(
-                      context,
-                      icon: Icons.volunteer_activism_rounded,
-                      title: "Donation",
-                      subtitle: "Support rescues & shelters",
-                      trailing: _pill(context, "New"),
-                      onTap: () => onSelect(BPADrawerDestination.donation),
+                  // ── Settings & Privacy ────────────────────────
+                  DrawerExpandableSection(
+                    icon: Icons.lock_outline_rounded,
+                    title: 'Settings & Privacy',
+                    isExpanded: _settingsPrivacyExpanded,
+                    onToggle: () => setState(
+                      () =>
+                          _settingsPrivacyExpanded = !_settingsPrivacyExpanded,
                     ),
-                    if (isLoggedIn)
-                      _drawerTile(
-                        context,
-                        icon: Icons.account_balance_wallet_rounded,
-                        title: "Wallet",
-                        subtitle: "Balance • Activity",
-                        onTap: () => onSelect(BPADrawerDestination.wallet),
+                    children: [
+                      DrawerMenuItem(
+                        icon: Icons.settings_rounded,
+                        title: 'Settings',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.settings),
                       ),
-                    _drawerTile(
-                      context,
-                      icon: Icons.add_rounded,
-                      title: "Start Fund Raising",
-                      subtitle: "Create a donation request",
-                      onTap: () =>
-                          onSelect(BPADrawerDestination.startFundraising),
-                    ),
-                    if (isLoggedIn)
-                      _drawerTile(
-                        context,
-                        icon: Icons.account_balance_wallet_rounded,
-                        title: "Payout Methods",
-                        subtitle: "Manage bKash • Nagad • Bank",
+                      DrawerMenuItem(
+                        icon: Icons.privacy_tip_rounded,
+                        title: 'Privacy',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.privacy),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.security_rounded,
+                        title: 'Security',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.security),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.notifications_active_rounded,
+                        title: 'Notification Settings',
+                        dense: true,
                         onTap: () =>
-                            onSelect(BPADrawerDestination.payoutMethods),
+                            _onTap(BPADrawerDestination.notificationSettings),
                       ),
-                  ],
-                  _drawerTile(
-                    context,
-                    icon: Icons.favorite_rounded,
-                    title: "Adoption",
-                    subtitle: "Find a new friend",
-                    onTap: () => onSelect(BPADrawerDestination.adoption),
+                      DrawerMenuItem(
+                        icon: Icons.language_rounded,
+                        title: 'Language',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.language),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: 14),
-                  _sectionTitle(context, "APP"),
-                  _drawerTile(
-                    context,
-                    icon: Icons.settings_rounded,
-                    title: "Settings",
-                    onTap: () => onSelect(BPADrawerDestination.settings),
-                  ),
-                  _drawerTile(
-                    context,
-                    icon: Icons.help_rounded,
-                    title: "Help & Support",
-                    onTap: () => onSelect(BPADrawerDestination.help),
-                  ),
-                  _drawerTile(
-                    context,
-                    icon: Icons.info_rounded,
-                    title: "About Furtail",
-                    onTap: () => onSelect(BPADrawerDestination.about),
+                  // ── More from Furtail ─────────────────────────
+                  DrawerExpandableSection(
+                    icon: Icons.apps_rounded,
+                    title: 'More from Furtail',
+                    isExpanded: _moreExpanded,
+                    onToggle: () =>
+                        setState(() => _moreExpanded = !_moreExpanded),
+                    children: [
+                      DrawerMenuItem(
+                        icon: Icons.workspace_premium_rounded,
+                        title: 'Furtail Member',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.furtailMember),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.format_list_numbered_rounded,
+                        title: 'Pet Census',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.petCensus),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.volunteer_activism_rounded,
+                        title: 'Donation',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.donation),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.campaign_rounded,
+                        title: 'Campaigns',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.campaigns),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.dashboard_rounded,
+                        title: 'Dashboard',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.dashboard),
+                      ),
+                      DrawerMenuItem(
+                        icon: Icons.info_rounded,
+                        title: 'About Furtail',
+                        dense: true,
+                        onTap: () => _onTap(BPADrawerDestination.aboutFurtail),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: 12),
-                  _divider(),
+                  const _DrawerDivider(),
 
-                  // Logout / Login
-                  _drawerTile(
-                    context,
-                    icon: isLoggedIn
+                  // ── Logout / Login ────────────────────────────
+                  DrawerMenuItem(
+                    icon: widget.isLoggedIn
                         ? Icons.logout_rounded
                         : Icons.login_rounded,
-                    title: isLoggedIn ? "Logout" : "Login",
-                    titleColor: isLoggedIn ? Colors.redAccent : primary,
-                    onTap: () => onSelect(BPADrawerDestination.logout),
+                    title: widget.isLoggedIn ? 'Logout' : 'Login',
+                    titleColor: widget.isLoggedIn ? cs.error : null,
+                    iconColor: widget.isLoggedIn ? cs.error : null,
+                    onTap: () => _onTap(BPADrawerDestination.logout),
                   ),
+
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
 
-            // footer
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: Row(
-                children: [
-                  Icon(Icons.pets, size: 16, color: Colors.black54),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "Furtail Super App • Premium Pet Community",
-                      style: AppTypography.meta(context).copyWith(
-                        color: context.colorScheme.onSurfaceVariant,
-                      ),
+            // ── Footer ────────────────────────────────────────────
+            const DrawerFooter(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ================================================================
+//  DrawerProfileCard
+// ================================================================
+class DrawerProfileCard extends StatelessWidget {
+  final String name;
+  final String email;
+  final String? avatarUrl;
+  final bool isLoggedIn;
+  final int unreadCount;
+  final VoidCallback onProfileTap;
+  final VoidCallback onNotificationTap;
+
+  const DrawerProfileCard({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.avatarUrl,
+    required this.isLoggedIn,
+    required this.unreadCount,
+    required this.onProfileTap,
+    required this.onNotificationTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surface,
+      child: InkWell(
+        onTap: onProfileTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 4, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Avatar
+              FurtailNetworkAvatar(
+                imageUrl: avatarUrl,
+                displayName: name,
+                radius: 28,
+              ),
+              const SizedBox(width: 12),
+
+              // Identity column
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    if (email.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    if (isLoggedIn) ...[
+                      const SizedBox(height: 6),
+                      _MemberBadge(themeCs: cs),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Notification bell
+              Semantics(
+                label: 'Open notifications',
+                button: true,
+                child: InkWell(
+                  onTap: onNotificationTap,
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(
+                          Icons.notifications_outlined,
+                          size: 26,
+                          color: cs.onSurfaceVariant,
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            right: -4,
+                            top: -4,
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: cs.error,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                unreadCount > 99 ? '99+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =========================
-  // UI helpers
-  // =========================
-
-  Widget _sectionTitle(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: AppSpacing.sm, bottom: AppSpacing.sm),
-      child: Text(
-        text,
-        style: AppTypography.drawerSection(context),
-      ),
-    );
-  }
-
-  Widget _divider() => Container(
-    height: 1,
-    margin: const EdgeInsets.symmetric(vertical: 10),
-    color: Colors.black12,
-  );
-
-  Widget _badge(BuildContext context, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: context.colorScheme.primary,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: context.appText.labelMedium!.copyWith(color: context.colorScheme.onPrimary, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _pill(BuildContext context, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: _gold.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: _gold.withOpacity(0.45)),
-      ),
-      child: Text(
-        text,
-        style: context.appText.labelMedium!.copyWith(color: Color(0xFF8A6A00), fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-
-  Widget _expansionCard(
-    BuildContext context, {
-    required String title,
-    String? subtitle,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: context.bpaCardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 18,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          leading: Icon(icon, color: context.colorScheme.primary),
-          title: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.drawerMenu(context),
-          ),
-          subtitle: (subtitle == null)
-              ? null
-              : Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.drawerSubtitle(context),
                 ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(children: children),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _drawerTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    Widget? trailing,
-    Color? titleColor,
-    bool dense = false,
-    required VoidCallback onTap,
-  }) {
+class _MemberBadge extends StatelessWidget {
+  final ColorScheme themeCs;
+  const _MemberBadge({required this.themeCs});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: context.bpaCardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 18,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
+        color: themeCs.primaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: themeCs.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.workspace_premium_rounded,
+            size: 12,
+            color: themeCs.primary,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              'Furtail Member',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: themeCs.primary,
+              ),
+            ),
           ),
         ],
       ),
-      child: ListTile(
-        dense: dense,
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: context.colorScheme.primary.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: context.colorScheme.primary),
-        ),
-        title: Text(
-          title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.drawerMenu(
-            context,
-            color: titleColor ?? context.colorScheme.onSurface,
-          ),
-        ),
-        subtitle: subtitle == null
-            ? null
-            : Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.drawerSubtitle(context),
-              ),
-        trailing: trailing ?? const Icon(Icons.chevron_right_rounded),
-        onTap: () {
-          Navigator.pop(context); // drawer close
-          onTap();
+    );
+  }
+}
+
+// ================================================================
+//  DrawerShortcutList
+// ================================================================
+class _ShortcutItemData {
+  final IconData icon;
+  final String label;
+  final BPADrawerDestination destination;
+  final Color color;
+
+  const _ShortcutItemData({
+    required this.icon,
+    required this.label,
+    required this.destination,
+    required this.color,
+  });
+}
+
+class DrawerShortcutList extends StatelessWidget {
+  final void Function(BPADrawerDestination) onTap;
+  final bool isLoggedIn;
+
+  const DrawerShortcutList({
+    super.key,
+    required this.onTap,
+    required this.isLoggedIn,
+  });
+
+  static const _shortcuts = <_ShortcutItemData>[
+    _ShortcutItemData(
+      icon: Icons.pets_rounded,
+      label: 'My Pets',
+      destination: BPADrawerDestination.petList,
+      color: Color(0xFF4CAF50),
+    ),
+    _ShortcutItemData(
+      icon: Icons.person_rounded,
+      label: 'Profile',
+      destination: BPADrawerDestination.profile,
+      color: Color(0xFF1565C0),
+    ),
+    _ShortcutItemData(
+      icon: Icons.account_balance_wallet_rounded,
+      label: 'Wallet',
+      destination: BPADrawerDestination.wallet,
+      color: Color(0xFF7B1FA2),
+    ),
+    _ShortcutItemData(
+      icon: Icons.medical_services_rounded,
+      label: 'Pet Care',
+      destination: BPADrawerDestination.services,
+      color: Color(0xFFE64A19),
+    ),
+    _ShortcutItemData(
+      icon: Icons.favorite_rounded,
+      label: 'Adoption',
+      destination: BPADrawerDestination.adoption,
+      color: Color(0xFFC2185B),
+    ),
+    _ShortcutItemData(
+      icon: Icons.volunteer_activism_rounded,
+      label: 'Fund Raising',
+      destination: BPADrawerDestination.startFundraising,
+      color: Color(0xFFE65100),
+    ),
+    _ShortcutItemData(
+      icon: Icons.bookmark_rounded,
+      label: 'Saved',
+      destination: BPADrawerDestination.savedItems,
+      color: Color(0xFF37474F),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 94,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        itemCount: _shortcuts.length,
+        itemBuilder: (context, i) {
+          final item = _shortcuts[i];
+          return _ShortcutTile(
+            item: item,
+            onTap: () => onTap(item.destination),
+          );
         },
       ),
     );
   }
 }
 
-/// Drawer profile header — avatar, identity, membership, action chips.
-class _DrawerHeader extends StatelessWidget {
-  final String name;
-  final String email;
-  final String? avatarUrl;
-  final bool isLoggedIn;
+class _ShortcutTile extends StatelessWidget {
+  final _ShortcutItemData item;
+  final VoidCallback onTap;
 
-  const _DrawerHeader({
-    required this.name,
-    required this.email,
-    required this.avatarUrl,
-    required this.isLoggedIn,
+  const _ShortcutTile({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: item.label,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 72,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: item.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(item.icon, color: item.color, size: 24),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  item.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ================================================================
+//  DrawerMenuItem
+// ================================================================
+class DrawerMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? badge;
+  final Color? titleColor;
+  final Color? iconColor;
+  final bool dense;
+  final VoidCallback onTap;
+
+  const DrawerMenuItem({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.badge,
+    this.titleColor,
+    this.iconColor,
+    this.dense = false,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final primary = context.colorScheme.primary;
+    final onSurface = context.colorScheme.onSurface;
+    final effectiveIconColor = iconColor ?? primary;
+    final leftPad = dense ? 32.0 : 16.0;
+    final verticalPad = dense ? 9.0 : 11.0;
+    final iconBox = dense ? 34.0 : 40.0;
+    final iconInner = dense ? 18.0 : 22.0;
+    final titleSize = dense ? 13.5 : 15.0;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.md,
-      ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppSpacing.xl),
-        gradient: LinearGradient(
-          colors: [primary, primary.withValues(alpha: 0.88)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(leftPad, verticalPad, 16, verticalPad),
+        child: Row(
+          children: [
+            Container(
+              width: iconBox,
+              height: iconBox,
+              decoration: BoxDecoration(
+                color: effectiveIconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(dense ? 10 : 12),
+              ),
+              child: Icon(icon, color: effectiveIconColor, size: iconInner),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w500,
+                  color: titleColor ?? onSurface,
+                ),
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: context.colorScheme.error,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  badge!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FurtailNetworkAvatar(
-                imageUrl: avatarUrl,
-                displayName: name,
-                radius: 30,
-                backgroundColor: Colors.white.withValues(alpha: 0.18),
-                foregroundColor: Colors.white,
-                badge: Container(
-                  padding: const EdgeInsets.all(AppSpacing.xs),
+    );
+  }
+}
+
+// ================================================================
+//  DrawerExpandableSection
+// ================================================================
+class DrawerExpandableSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+  final List<Widget> children;
+
+  const DrawerExpandableSection({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.isExpanded,
+    required this.onToggle,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = context.colorScheme.primary;
+    final onSurface = context.colorScheme.onSurface;
+    final onSurfaceVariant = context.colorScheme.onSurfaceVariant;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Section header
+        InkWell(
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 11, 16, 11),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: isLoggedIn
-                        ? AppColors.accentGold
-                        : Colors.white.withValues(alpha: 0.25),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white70, width: 2),
+                    color: primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(icon, color: primary, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: onSurface,
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  duration: const Duration(milliseconds: 200),
+                  turns: isExpanded ? 0.25 : 0,
                   child: Icon(
-                    isLoggedIn
-                        ? Icons.workspace_premium_rounded
-                        : Icons.lock_outline_rounded,
-                    size: 14,
-                    color: isLoggedIn
-                        ? const Color(0xFF5B4300)
-                        : Colors.white,
+                    Icons.chevron_right_rounded,
+                    color: onSurfaceVariant,
+                    size: 22,
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.pageTitle(context).copyWith(
-                        color: context.bpaCardColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      email,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.drawerSubtitle(context).copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    BpaMembershipBadge(isMember: isLoggedIn),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              BpaActionChip(
-                icon: Icons.pets_rounded,
-                label: 'Pet Care',
-                onTap: () => Navigator.pop(context),
+        ),
+
+        // Expanded children
+        if (isExpanded)
+          Container(
+            margin: const EdgeInsets.only(left: 16, right: 16, bottom: 6),
+            decoration: BoxDecoration(
+              color: context.colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: children,
               ),
-              BpaActionChip(
-                icon: Icons.favorite_rounded,
-                label: 'Community',
-                onTap: () => Navigator.pop(context),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ================================================================
+//  DrawerFooter
+// ================================================================
+class DrawerFooter extends StatelessWidget {
+  const DrawerFooter({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.pets, size: 14, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Furtail Super App • Premium Pet Community',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w400,
               ),
-              if (isLoggedIn)
-                BpaActionChip(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: 'Wallet',
-                  onTap: () => Navigator.pop(context),
-                ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+// ================================================================
+//  Internal helpers
+// ================================================================
+class _DrawerDivider extends StatelessWidget {
+  const _DrawerDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 20,
+      thickness: 1,
+      indent: 16,
+      endIndent: 16,
+      color: Theme.of(
+        context,
+      ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+    );
+  }
+}
+
+// ================================================================
+//  Back-compat alias — home screen still references BPACustomDrawer
+// ================================================================
+class BPACustomDrawer extends FurtailAppDrawer {
+  const BPACustomDrawer({
+    super.key,
+    required super.onSelect,
+    super.userName,
+    super.userEmail,
+    super.avatarUrl,
+    super.isLoggedIn,
+    super.donationEnabled,
+    super.unreadCount,
+  });
 }

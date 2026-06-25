@@ -36,10 +36,10 @@ class CityCorporationAreaPicker extends ConsumerWidget {
         const SizedBox(height: 8),
         corpsAsync.when(
           loading: () => const LinearProgressIndicator(),
-          error: (_, __) => const Text('Could not load city corporations.'),
+          error: (_, _) => const Text('Could not load city corporations.'),
           data: (corps) {
             return DropdownButtonFormField<String>(
-              value: cityCorporationCode.isEmpty ? null : cityCorporationCode,
+              initialValue: cityCorporationCode.isEmpty ? null : cityCorporationCode,
               decoration: InputDecoration(
                 labelText: 'Select corporation',
                 errorText: corpError,
@@ -66,7 +66,7 @@ class CityCorporationAreaPicker extends ConsumerWidget {
         const SizedBox(height: 8),
         areasAsync.when(
           loading: () => const LinearProgressIndicator(),
-          error: (_, __) => const Text('Could not load areas.'),
+          error: (_, _) => const Text('Could not load areas.'),
           data: (areas) {
             if (cityCorporationCode.isEmpty) {
               return const Text('Select a city corporation first.');
@@ -75,7 +75,7 @@ class CityCorporationAreaPicker extends ConsumerWidget {
               return const Text('No areas available for this corporation.');
             }
             return DropdownButtonFormField<int>(
-              value: bdAreaId,
+              initialValue: bdAreaId,
               decoration: InputDecoration(
                 labelText: 'Select your area',
                 errorText: areaError,

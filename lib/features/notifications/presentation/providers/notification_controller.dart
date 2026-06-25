@@ -7,6 +7,7 @@ import 'package:furtail_app/services/api_client.dart';
 import '../../../campaign/data/models/campaign_models.dart';
 import '../../../campaign/data/services/campaign_notification_service.dart';
 import '../../../campaign/data/services/reminder_storage.dart';
+import '../../data/models/notification_item.dart';
 import '../../data/models/notification_payload.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/services/notification_service.dart';
@@ -22,6 +23,173 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   );
   ref.onDispose(service.dispose);
   return service;
+});
+
+/// Provider that exposes notification-controller methods to screens
+/// without requiring a full rebuild on bootstrap state changes.
+final notificationActionsProvider = Provider<NotificationController>((ref) {
+  return ref.read(notificationControllerProvider.notifier);
+});
+
+/// Holds the in-app notification list (from GET /api/v1/notifications).
+class NotificationsListState {
+  final List<NotificationItem> items;
+  final bool loading;
+  final bool loadingMore;
+  final bool hasMore;
+  final int? nextCursor;
+  final int unreadCount;
+  final String? error;
+
+  const NotificationsListState({
+    this.items = const [],
+    this.loading = false,
+    this.loadingMore = false,
+    this.hasMore = false,
+    this.nextCursor,
+    this.unreadCount = 0,
+    this.error,
+  });
+
+  NotificationsListState copyWith({
+    List<NotificationItem>? items,
+    bool? loading,
+    bool? loadingMore,
+    bool? hasMore,
+    int? nextCursor,
+    int? unreadCount,
+    String? error,
+  }) {
+    return NotificationsListState(
+      items: items ?? this.items,
+      loading: loading ?? this.loading,
+      loadingMore: loadingMore ?? this.loadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      nextCursor: nextCursor ?? this.nextCursor,
+      unreadCount: unreadCount ?? this.unreadCount,
+      error: error ?? this.error,
+    );
+  }
+}
+
+final notificationsListProvider =
+    NotifierProvider<NotificationsListNotifier, NotificationsListState>(
+  NotificationsListNotifier.new,
+);
+
+class NotificationsListNotifier extends Notifier<NotificationsListState> {
+  @override
+  NotificationsListState build() => const NotificationsListState();
+
+  Future<void> load() async {
+    state = state.copyWith(loading: true, error: null);
+    try {
+      final repo = ref.read(notificationRepositoryProvider);
+      final res = await repo.fetchNotifications();
+      state = state.copyWith(
+        items: res.items,
+        loading: false,
+        hasMore: res.hasMore,
+        nextCursor: res.nextCursor,
+        unreadCount: res.unreadCount,
+      );
+    } catch (e, st) {
+      state = state.copyWith(
+        loading: false,
+        error: e.toString(),
+      );
+      if (kDebugMode) {
+        debugPrint('[NotificationsList] load error: $e\n$st');
+      }
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.loadingMore || !state.hasMore) return;
+    state = state.copyWith(loadingMore: true);
+    try {
+      final repo = ref.read(notificationRepositoryProvider);
+      final res = await repo.fetchNotifications(cursor: state.nextCursor);
+      state = state.copyWith(
+        items: [...state.items, ...res.items],
+        loadingMore: false,
+        hasMore: res.hasMore,
+        nextCursor: res.nextCursor,
+        unreadCount: res.unreadCount,
+      );
+    } catch (_) {
+      state = state.copyWith(loadingMore: false);
+    }
+  }
+
+  Future<void> markAsRead(int notificationId) async {
+    final repo = ref.read(notificationRepositoryProvider);
+    final ok = await repo.markAsRead(notificationId);
+    if (ok) {
+      state = state.copyWith(
+        items: state.items.map((n) {
+          if (n.id == notificationId && !n.isRead) {
+            return NotificationItem(
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              body: n.body,
+              actorName: n.actorName,
+              actorAvatarUrl: n.actorAvatarUrl,
+              actorId: n.actorId,
+              deepLink: n.deepLink,
+              createdAt: n.createdAt,
+              readAt: DateTime.now(),
+            );
+          }
+          return n;
+        }).toList(),
+        unreadCount: (state.unreadCount - 1).clamp(0, state.unreadCount),
+      );
+      ref.invalidate(notificationsUnreadCountProvider);
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    final repo = ref.read(notificationRepositoryProvider);
+    final ok = await repo.markAllAsRead();
+    if (ok) {
+      state = state.copyWith(
+        items: state.items.map((n) {
+          if (!n.isRead) {
+            return NotificationItem(
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              body: n.body,
+              actorName: n.actorName,
+              actorAvatarUrl: n.actorAvatarUrl,
+              actorId: n.actorId,
+              deepLink: n.deepLink,
+              createdAt: n.createdAt,
+              readAt: DateTime.now(),
+            );
+          }
+          return n;
+        }).toList(),
+        unreadCount: 0,
+      );
+      ref.invalidate(notificationsUnreadCountProvider);
+    }
+  }
+
+  void prependItem(NotificationItem item) {
+    state = state.copyWith(
+      items: [item, ...state.items],
+      unreadCount: state.unreadCount + 1,
+    );
+  }
+}
+
+/// Simple provider that refreshes the unread count on demand.
+final notificationsUnreadCountProvider = FutureProvider<int>((ref) async {
+  final repo = ref.read(notificationRepositoryProvider);
+  return repo.fetchUnreadCount();
 });
 
 class NotificationBootstrapState {
@@ -141,9 +309,32 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
       debugPrint('[NotificationController] tap: ${payload.type.code} ${payload.actionUrl}');
     }
     ref.read(notificationRepositoryProvider).savePendingTapPayload(payload.data);
+
+    // Prefer actionUrl from backend; fall back to type-based routing.
     final url = payload.actionUrl;
     if (url != null && url.isNotEmpty) {
       ref.read(deepLinkServiceProvider).handleString(url);
+      return;
+    }
+
+    // Type-based fallback navigation.
+    final deepLink = ref.read(deepLinkServiceProvider);
+    switch (payload.type) {
+      case AppNotificationType.friendRequestReceived:
+      case AppNotificationType.friendRequestAccepted:
+      case AppNotificationType.userFollowed:
+        if (payload.data['actorId'] != null) {
+          deepLink.handleString('/profile/${payload.data['actorId']}');
+        }
+        break;
+      case AppNotificationType.petFollowed:
+      case AppNotificationType.petLiked:
+        if (payload.data['petId'] != null) {
+          deepLink.handleString('/pet/${payload.data['petId']}');
+        }
+        break;
+      default:
+        break;
     }
   }
 

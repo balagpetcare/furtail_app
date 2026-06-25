@@ -1,5 +1,6 @@
 import 'core/storage/local_storage.dart';
 import 'dart:async';
+import 'dart:developer' as dev;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -18,6 +19,9 @@ import 'core/crash_reporting/furtail_crashlytics_provider_observer.dart';
 import 'core/crash_reporting/crash_reporting_service.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import 'features/notifications/presentation/providers/notification_controller.dart';
+import 'core/services/post_upload_manager.dart';
+import 'core/media/furtail_cache_manager.dart' show VideoCacheService;
+import 'core/network/api_config.dart';
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -27,6 +31,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  dev.log('[AppConfig] API_BASE_URL=${ApiConfig.apiV1}', name: 'AppConfig');
   await LocalStorage.migrateLegacyPreferences();
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -81,6 +86,11 @@ class _FurtailAppState extends ConsumerState<FurtailApp> {
     if (actionUrl != null && actionUrl.isNotEmpty) {
       await ref.read(deepLinkServiceProvider).handleString(actionUrl);
     }
+    try {
+      PostUploadManager.instance.checkAndProcessPendingRetry();
+    } catch (_) {}
+    // Remove temp files left by video_compress from previous sessions.
+    VideoCacheService.clearStaleTempFiles().ignore();
   }
 
   @override

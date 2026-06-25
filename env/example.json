@@ -1,5 +1,5 @@
 {
-  "API_BASE_URL": "http://YOUR_HOST:3000",
+  "API_BASE_URL": "http://YOUR_HOST:7200/api/v1",
   "MEDIA_BASE_URL": "http://YOUR_HOST:9000",
-  "SOCKET_URL": "http://YOUR_HOST:3000"
+  "SOCKET_URL": "http://YOUR_HOST:7200"
 }

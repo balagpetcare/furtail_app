@@ -178,7 +178,7 @@ class _ProfileTabVideosState extends State<ProfileTabVideos> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _videos.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (_, i) {
           final p = _videos[i];
           final thumb = p.media

@@ -62,7 +62,7 @@ class FundraisingFeedScreen extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: list.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final c = list[index];
               return FundraisingCard(
@@ -86,8 +86,9 @@ class FundraisingFeedScreen extends ConsumerWidget {
   static String _querySummary(FundraisingFeedQuery q) {
     final parts = <String>[];
     parts.add('Sort: ${q.sort.name}');
-    if (q.verified != null)
+    if (q.verified != null) {
       parts.add(q.verified == true ? 'Verified only' : 'Non-verified only');
+    }
     if ((q.category ?? '').isNotEmpty) parts.add('Category: ${q.category}');
     if ((q.location ?? '').isNotEmpty) parts.add('Location: ${q.location}');
     return parts.isEmpty ? '' : parts.join(' • ');

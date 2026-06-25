@@ -535,6 +535,456 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get save;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get comingSoon;
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @accountDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile, email, password, sessions'**
+  String get accountDesc;
+
+  /// No description provided for @accountSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Account settings'**
+  String get accountSettings;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfile;
+
+  /// No description provided for @editProfileDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, bio, avatar, cover photo'**
+  String get editProfileDesc;
+
+  /// No description provided for @changeEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get changeEmail;
+
+  /// No description provided for @changeEmailDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your email address'**
+  String get changeEmailDesc;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get changePassword;
+
+  /// No description provided for @changePasswordDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your login password'**
+  String get changePasswordDesc;
+
+  /// No description provided for @connectedAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected accounts'**
+  String get connectedAccounts;
+
+  /// No description provided for @connectedAccountsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Google, Facebook and other links'**
+  String get connectedAccountsDesc;
+
+  /// No description provided for @activeSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Active sessions'**
+  String get activeSessions;
+
+  /// No description provided for @activeSessionsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices currently signed in'**
+  String get activeSessionsDesc;
+
+  /// No description provided for @downloadMyData.
+  ///
+  /// In en, this message translates to:
+  /// **'Download my data'**
+  String get downloadMyData;
+
+  /// No description provided for @downloadMyDataDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Get a copy of your Furtail data'**
+  String get downloadMyDataDesc;
+
+  /// No description provided for @deactivateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate account'**
+  String get deactivateAccount;
+
+  /// No description provided for @deactivateAccountDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporarily hide your account'**
+  String get deactivateAccountDesc;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete all your data'**
+  String get deleteAccountDesc;
+
+  /// No description provided for @helpAndSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & support'**
+  String get helpAndSupport;
+
+  /// No description provided for @faq.
+  ///
+  /// In en, this message translates to:
+  /// **'FAQ'**
+  String get faq;
+
+  /// No description provided for @faqDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently asked questions'**
+  String get faqDesc;
+
+  /// No description provided for @contactSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact support'**
+  String get contactSupport;
+
+  /// No description provided for @contactSupportDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Get help from the Furtail team'**
+  String get contactSupportDesc;
+
+  /// No description provided for @reportBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a bug'**
+  String get reportBug;
+
+  /// No description provided for @reportBugDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Help us improve the app'**
+  String get reportBugDesc;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @communityGuidelines.
+  ///
+  /// In en, this message translates to:
+  /// **'Community guidelines'**
+  String get communityGuidelines;
+
+  /// No description provided for @communityGuidelinesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules for a safe, kind community'**
+  String get communityGuidelinesDesc;
+
+  /// No description provided for @communityGuidelinesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Guidelines'**
+  String get communityGuidelinesShort;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of service'**
+  String get termsOfService;
+
+  /// No description provided for @termsOfServiceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal terms for using Furtail'**
+  String get termsOfServiceDesc;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'How we handle your data'**
+  String get privacyPolicyDesc;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get appVersion;
+
+  /// No description provided for @mediaAndStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Media & storage'**
+  String get mediaAndStorage;
+
+  /// No description provided for @mediaAndStorageDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload quality, auto-play, cache'**
+  String get mediaAndStorageDesc;
+
+  /// No description provided for @uploadQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload quality'**
+  String get uploadQuality;
+
+  /// No description provided for @uploadQualityDataSaver.
+  ///
+  /// In en, this message translates to:
+  /// **'Data saver'**
+  String get uploadQualityDataSaver;
+
+  /// No description provided for @uploadQualityStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get uploadQualityStandard;
+
+  /// No description provided for @uploadQualityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High quality'**
+  String get uploadQualityHigh;
+
+  /// No description provided for @autoPlayVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-play videos'**
+  String get autoPlayVideos;
+
+  /// No description provided for @autoPlayAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always'**
+  String get autoPlayAlways;
+
+  /// No description provided for @autoPlayWifiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi only'**
+  String get autoPlayWifiOnly;
+
+  /// No description provided for @autoPlayNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get autoPlayNever;
+
+  /// No description provided for @compressImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Compress images'**
+  String get compressImages;
+
+  /// No description provided for @compressImagesDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce image size before uploading'**
+  String get compressImagesDesc;
+
+  /// No description provided for @compressVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Compress videos'**
+  String get compressVideos;
+
+  /// No description provided for @compressVideosDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce video size before uploading'**
+  String get compressVideosDesc;
+
+  /// No description provided for @saveUploadedMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Save uploaded media to device'**
+  String get saveUploadedMedia;
+
+  /// No description provided for @saveUploadedMediaDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a local copy after posting'**
+  String get saveUploadedMediaDesc;
+
+  /// No description provided for @clearMediaCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear media cache'**
+  String get clearMediaCache;
+
+  /// No description provided for @clearMediaCacheDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Free up storage used by cached media'**
+  String get clearMediaCacheDesc;
+
+  /// No description provided for @mediaCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Media cache cleared'**
+  String get mediaCacheCleared;
+
+  /// No description provided for @whoCanComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can comment'**
+  String get whoCanComment;
+
+  /// No description provided for @whoCanCommentDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Control who can reply to your posts'**
+  String get whoCanCommentDesc;
+
+  /// No description provided for @everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get everyone;
+
+  /// No description provided for @followersOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Followers only'**
+  String get followersOnly;
+
+  /// No description provided for @noOne.
+  ///
+  /// In en, this message translates to:
+  /// **'No one'**
+  String get noOne;
+
+  /// No description provided for @mentionsNotif.
+  ///
+  /// In en, this message translates to:
+  /// **'Mentions'**
+  String get mentionsNotif;
+
+  /// No description provided for @messagesNotif.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages'**
+  String get messagesNotif;
+
+  /// No description provided for @marketingNotif.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotions & tips'**
+  String get marketingNotif;
+
+  /// No description provided for @marketingNotifDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updates and helpful tips'**
+  String get marketingNotifDesc;
+
+  /// No description provided for @reportAProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a problem'**
+  String get reportAProblem;
+
+  /// No description provided for @reportAProblemDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Flag harmful or inappropriate content'**
+  String get reportAProblemDesc;
+
+  /// No description provided for @somethingWentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get somethingWentWrong;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgain;
+
+  /// No description provided for @noContentYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet'**
+  String get noContentYet;
+
+  /// No description provided for @youAreOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline'**
+  String get youAreOffline;
+
+  /// No description provided for @offlineDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection'**
+  String get offlineDesc;
+
+  /// No description provided for @interactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Interactions'**
+  String get interactions;
+
+  /// No description provided for @safety.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get safety;
+
+  /// No description provided for @uploadPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload preferences'**
+  String get uploadPreferences;
+
+  /// No description provided for @dangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get dangerZone;
 }
 
 class _AppLocalizationsDelegate

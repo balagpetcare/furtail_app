@@ -54,7 +54,7 @@ class CampaignPerformanceDashboardPage extends ConsumerWidget {
             const SizedBox(height: 24),
             campaignsAsync.when(
               loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
               data: (state) {
                 if (state.campaigns.isEmpty) return const SizedBox.shrink();
                 return Column(

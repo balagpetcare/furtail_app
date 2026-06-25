@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sheet.dart';
+import 'package:furtail_app/core/media/media_url.dart';
+
 import '../../data/pet_service.dart';
 import '../../data/models/pet_model.dart';
 import '../pet_profile_wizard_screen.dart';
@@ -19,6 +23,9 @@ class _PetPublicState {
   final bool isLiked;
   final bool isOwner;
   final String activeTab;
+  final int followersCount;
+  final int likesCount;
+  final bool actionInProgress;
 
   const _PetPublicState({
     this.pet,
@@ -30,6 +37,9 @@ class _PetPublicState {
     this.isLiked = false,
     this.isOwner = false,
     this.activeTab = 'posts',
+    this.followersCount = 0,
+    this.likesCount = 0,
+    this.actionInProgress = false,
   });
 
   _PetPublicState copyWith({
@@ -42,6 +52,9 @@ class _PetPublicState {
     bool? isLiked,
     bool? isOwner,
     String? activeTab,
+    int? followersCount,
+    int? likesCount,
+    bool? actionInProgress,
   }) =>
       _PetPublicState(
         pet: pet ?? this.pet,
@@ -53,6 +66,9 @@ class _PetPublicState {
         isLiked: isLiked ?? this.isLiked,
         isOwner: isOwner ?? this.isOwner,
         activeTab: activeTab ?? this.activeTab,
+        followersCount: followersCount ?? this.followersCount,
+        likesCount: likesCount ?? this.likesCount,
+        actionInProgress: actionInProgress ?? this.actionInProgress,
       );
 }
 
@@ -72,10 +88,11 @@ class _PetPublicNotifier extends StateNotifier<_PetPublicState> {
       } catch (_) {}
 
       state = state.copyWith(
-        pet: pet as PetModel,
+        pet: pet,
         loading: false,
-        isFollowing:
-            (socialStatus['isFollowing'] ?? pet.isFollowing) == true,
+        followersCount: pet.followersCount ?? 0,
+        likesCount: pet.likesCount ?? 0,
+        isFollowing: (socialStatus['isFollowing'] ?? pet.isFollowing) == true,
         isLiked: (socialStatus['isLiked'] ?? pet.isLiked) == true,
         isOwner: (socialStatus['isOwner'] ?? pet.isOwner) == true,
       );
@@ -96,26 +113,48 @@ class _PetPublicNotifier extends StateNotifier<_PetPublicState> {
   }
 
   Future<void> toggleFollow() async {
+    if (state.actionInProgress) return;
     final was = state.isFollowing;
-    state = state.copyWith(isFollowing: !was);
+    final prevCount = state.followersCount;
+    final nextCount = (prevCount + (was ? -1 : 1)).clamp(0, 999999999);
+    state = state.copyWith(
+      isFollowing: !was,
+      followersCount: nextCount,
+      actionInProgress: true,
+    );
     try {
-      was
-          ? await _petService.unfollowPet(petId)
-          : await _petService.followPet(petId);
+      was ? await _petService.unfollowPet(petId) : await _petService.followPet(petId);
+      state = state.copyWith(actionInProgress: false);
     } catch (e) {
-      state = state.copyWith(isFollowing: was, error: e.toString());
+      state = state.copyWith(
+        isFollowing: was,
+        followersCount: prevCount,
+        actionInProgress: false,
+        error: e.toString(),
+      );
     }
   }
 
   Future<void> toggleLike() async {
+    if (state.actionInProgress) return;
     final was = state.isLiked;
-    state = state.copyWith(isLiked: !was);
+    final prevCount = state.likesCount;
+    final nextCount = (prevCount + (was ? -1 : 1)).clamp(0, 999999999);
+    state = state.copyWith(
+      isLiked: !was,
+      likesCount: nextCount,
+      actionInProgress: true,
+    );
     try {
-      was
-          ? await _petService.unlikePet(petId)
-          : await _petService.likePet(petId);
+      was ? await _petService.unlikePet(petId) : await _petService.likePet(petId);
+      state = state.copyWith(actionInProgress: false);
     } catch (e) {
-      state = state.copyWith(isLiked: was, error: e.toString());
+      state = state.copyWith(
+        isLiked: was,
+        likesCount: prevCount,
+        actionInProgress: false,
+        error: e.toString(),
+      );
     }
   }
 
@@ -136,6 +175,29 @@ class PetPublicProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (petId <= 0) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.pets_outlined, size: 72, color: Colors.grey.shade400),
+              const SizedBox(height: 20),
+              const Text('Pet profile not available',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 24),
+              TextButton.icon(
+                onPressed: () => Navigator.maybePop(context),
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: const Text('Go back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final state = ref.watch(_petPublicProvider(petId));
     final notifier = ref.read(_petPublicProvider(petId).notifier);
 
@@ -144,31 +206,198 @@ class PetPublicProfileScreen extends ConsumerWidget {
     }
 
     if (state.error != null && state.pet == null) {
+      final isNotFound = state.error!.contains('404') ||
+          state.error!.toLowerCase().contains('not found');
       return Scaffold(
         appBar: AppBar(),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(state.error!,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isNotFound ? Icons.pets_outlined : Icons.error_outline,
+                  size: 72,
+                  color: isNotFound ? Colors.grey.shade400 : Colors.red,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  isNotFound ? 'Pet profile not found' : 'Something went wrong',
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                if (!isNotFound) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    state.error!.replaceAll('Exception: ', ''),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red)),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                  onPressed: notifier.refresh,
-                  child: const Text('Retry')),
-            ],
+                    style: TextStyle(
+                        color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ],
+                const SizedBox(height: 28),
+                if (isNotFound)
+                  TextButton.icon(
+                    onPressed: () => Navigator.maybePop(context),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    label: const Text('Go back'),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: notifier.refresh,
+                    child: const Text('Retry'),
+                  ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     final pet = state.pet!;
+    if (!pet.canViewFullProfile) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F9FB),
+        body: RefreshIndicator(
+          onRefresh: notifier.refresh,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // ── Cover + Avatar ──────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 250,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        height: 200,
+                        child: pet.coverMediaUrl != null
+                            ? Image.network(pet.coverMediaUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    _GradientCover(name: pet.name))
+                            : _GradientCover(name: pet.name),
+                      ),
+                      Positioned(
+                        top: 48,
+                        left: 16,
+                        child: _TransparentIconButton(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          tooltip: 'Back',
+                          onTap: () => Navigator.pop(context),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 20,
+                        child: _AvatarBadge(photoUrl: pet.photoUrl),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Name + Subtitle + Slug ──────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 56, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(pet.name,
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1A1A2E))),
+                      if (_petSubtitle(pet).isNotEmpty)
+                        Text(_petSubtitle(pet),
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey[600])),
+                      if (pet.slug != null)
+                        Text('@${pet.slug}',
+                            style: const TextStyle(
+                                fontSize: 13, color: Color(0xFF4C6EF5))),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Private Gate ───────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 64,
+                          color: Color(0xFF4C6EF5),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'This Pet Profile is Private',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          pet.visibility == 'FOLLOWERS_ONLY'
+                              ? 'Follow this pet to see their posts and details.'
+                              : 'Only followers and authorized accounts can view this profile.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (pet.visibility == 'FOLLOWERS_ONLY') ...[
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: _SocialButton(
+                              label: state.isFollowing ? 'Following' : 'Follow',
+                              icon: state.isFollowing
+                                  ? Icons.check
+                                  : Icons.person_add_outlined,
+                              active: state.isFollowing,
+                              onTap: state.actionInProgress
+                                  ? null
+                                  : notifier.toggleFollow,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     const tabs = ['Posts', 'About', 'Health'];
 
     return Scaffold(
@@ -179,30 +408,95 @@ class PetPublicProfileScreen extends ConsumerWidget {
           slivers: [
             // ── Cover + Avatar ──────────────────────────────────────────
             SliverToBoxAdapter(
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  SizedBox(
-                    height: 200,
-                    width: double.infinity,
-                    child: pet.coverMediaUrl != null
-                        ? Image.network(pet.coverMediaUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                _GradientCover(name: pet.name))
-                        : _GradientCover(name: pet.name),
-                  ),
-                  Positioned(
-                    top: 48,
-                    left: 16,
-                    child: _BackButton(onTap: () => Navigator.pop(context)),
-                  ),
-                  Positioned(
-                    bottom: -42,
-                    left: 20,
-                    child: _AvatarBadge(photoUrl: pet.photoUrl),
-                  ),
-                ],
+              child: SizedBox(
+                height: 250, // 200 cover height + avatar overlap area
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      height: 200,
+                      child: pet.coverMediaUrl != null
+                          ? Image.network(pet.coverMediaUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  _GradientCover(name: pet.name))
+                          : _GradientCover(name: pet.name),
+                    ),
+                    Positioned(
+                      top: 48,
+                      left: 16,
+                      child: _TransparentIconButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        tooltip: 'Back',
+                        onTap: () => Navigator.pop(context),
+                      ),
+                    ),
+                    Positioned(
+                      top: 48,
+                      right: 16,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _TransparentIconButton(
+                            icon: Icons.share_outlined,
+                            tooltip: 'Share',
+                            onTap: () => ShareService.share(context, type: 'pet', id: petId),
+                          ),
+                          const SizedBox(width: 8),
+                          PopupMenuButton<String>(
+                            tooltip: 'More options',
+                            icon: const Icon(
+                              Icons.more_horiz,
+                              color: Colors.white,
+                              size: 24,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 4,
+                                  offset: Offset(1, 1),
+                                ),
+                              ],
+                            ),
+                            onSelected: (v) {
+                              if (v == 'report') {
+                                ReportBottomSheet.show(
+                                  context,
+                                  targetType: ReportTargetType.pet,
+                                  targetId: petId,
+                                );
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              PopupMenuItem(
+                                value: 'report',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.flag_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Report Pet Profile',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 8,
+                      left: 20,
+                      child: _AvatarBadge(photoUrl: pet.photoUrl),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -271,12 +565,9 @@ class PetPublicProfileScreen extends ConsumerWidget {
                   spacing: 10,
                   runSpacing: 8,
                   children: [
-                    _StatChip(Icons.favorite_outline, pet.likesCount ?? 0,
-                        'Likes'),
-                    _StatChip(Icons.people_outline, pet.followersCount ?? 0,
-                        'Followers'),
-                    _StatChip(Icons.article_outlined, state.posts.length,
-                        'Posts'),
+                    _StatChip(Icons.favorite_outline, state.likesCount, 'Likes'),
+                    _StatChip(Icons.people_outline, state.followersCount, 'Followers'),
+                    _StatChip(Icons.article_outlined, state.posts.length, 'Posts'),
                   ],
                 ),
               ),
@@ -296,7 +587,9 @@ class PetPublicProfileScreen extends ConsumerWidget {
                               ? Icons.check
                               : Icons.person_add_outlined,
                           active: state.isFollowing,
-                          onTap: notifier.toggleFollow,
+                          onTap: state.actionInProgress
+                              ? null
+                              : notifier.toggleFollow,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -308,7 +601,9 @@ class PetPublicProfileScreen extends ConsumerWidget {
                               : Icons.favorite_outline,
                           active: state.isLiked,
                           activeColor: Colors.pink,
-                          onTap: notifier.toggleLike,
+                          onTap: state.actionInProgress
+                              ? null
+                              : notifier.toggleLike,
                         ),
                       ),
                     ],
@@ -399,7 +694,7 @@ class PetPublicProfileScreen extends ConsumerWidget {
 
   String _petSubtitle(PetModel pet) {
     return <String?>[pet.animalTypeName, pet.breedName]
-        .where((s) => s != null && s!.isNotEmpty)
+        .where((s) => s != null && s.isNotEmpty)
         .whereType<String>()
         .join(' · ');
   }
@@ -422,21 +717,39 @@ class PetPublicProfileScreen extends ConsumerWidget {
 
 // ── Reusable Widgets ─────────────────────────────────────────────────────────
 
-class _BackButton extends StatelessWidget {
+class _TransparentIconButton extends StatelessWidget {
+  final IconData icon;
   final VoidCallback onTap;
-  const _BackButton({required this.onTap});
+  final String? tooltip;
+
+  const _TransparentIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          shape: BoxShape.circle,
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 22,
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 4,
+                offset: const Offset(1, 1),
+              ),
+            ],
+          ),
         ),
-        child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
       ),
     );
   }
@@ -453,7 +766,7 @@ class _AvatarBadge extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)
         ],
       ),
       child: CircleAvatar(
@@ -485,7 +798,7 @@ class _GradientCover extends StatelessWidget {
       ),
       child: Center(
         child: Icon(Icons.pets,
-            size: 60, color: Colors.white.withOpacity(0.3)),
+            size: 60, color: Colors.white.withValues(alpha: 0.3)),
       ),
     );
   }
@@ -506,7 +819,7 @@ class _StatChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05), blurRadius: 8)
+              color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)
         ],
       ),
       child: Row(
@@ -530,7 +843,7 @@ class _SocialButton extends StatelessWidget {
   final IconData icon;
   final bool active;
   final Color? activeColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _SocialButton({
     required this.label,
@@ -543,7 +856,9 @@ class _SocialButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = activeColor ?? const Color(0xFF4C6EF5);
-    return GestureDetector(
+    return Opacity(
+      opacity: onTap == null ? 0.5 : 1.0,
+      child: GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -566,6 +881,7 @@ class _SocialButton extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -640,7 +956,7 @@ class _PostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -653,11 +969,11 @@ class _PostCard extends StatelessWidget {
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(16)),
               child: Image.network(
-                firstMedia['url'].toString(),
+                MediaUrl.normalize(firstMedia['url'].toString()),
                 height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox(),
+                errorBuilder: (_, _, _) => const SizedBox(),
               ),
             ),
           if (caption.isNotEmpty)

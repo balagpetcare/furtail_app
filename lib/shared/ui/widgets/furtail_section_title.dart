@@ -29,7 +29,7 @@ class FurtailSectionTitle extends StatelessWidget {
                   ),
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

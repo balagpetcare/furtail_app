@@ -99,7 +99,7 @@ class AchievementsSection extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _all.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
                 final a = _all[i];
                 final achieved = points >= a.requiredPoints;
@@ -174,7 +174,7 @@ class _AchievementCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE6E6E6)),
         color: Colors.white,
         boxShadow: achieved
-            ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 6))]
+            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 14, offset: const Offset(0, 6))]
             : null,
       ),
       child: Column(
@@ -218,7 +218,7 @@ class _AchievementCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Icon(Icons.lock_outline, size: 16, color: Colors.black.withOpacity(0.45)),
+                    child: Icon(Icons.lock_outline, size: 16, color: Colors.black.withValues(alpha: 0.45)),
                   ),
                 ],
               ),

@@ -31,7 +31,7 @@ class CampaignHeroBannerSmart extends ConsumerWidget {
         onBookNow: onBookNow,
         showStaleBadge: showStaleBadge,
       ),
-      error: (_, __) => CampaignHeroBanner(
+      error: (_, _) => CampaignHeroBanner(
         campaign: campaign,
         onTap: onTap,
         onBookNow: onBookNow,

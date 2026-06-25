@@ -36,11 +36,11 @@ class ProfileGallery extends StatelessWidget {
                 child: Image.network(
                   url,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: Colors.white.withOpacity(0.06),
+                  errorBuilder: (_, _, _) => Container(
+                    color: Colors.white.withValues(alpha: 0.06),
                     child: Icon(
                       Icons.image,
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                     ),
                   ),
                 ),

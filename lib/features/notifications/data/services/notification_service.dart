@@ -14,14 +14,67 @@ import '../../domain/notification_type.dart';
 import '../models/notification_payload.dart';
 import '../notification_channels.dart';
 import '../repositories/notification_repository.dart';
+import '../../../../core/services/post_upload_manager.dart';
 
 /// Top-level FCM background handler (killed / background).
+/// Shows a local notification so data-only FCM payloads are visible.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  if (kDebugMode) {
-    debugPrint('[FCM] background message: ${message.messageId}');
+  try {
+    final payload = _backgroundPayloadFromMessage(message);
+    final local = FlutterLocalNotificationsPlugin();
+    const android = AndroidInitializationSettings('@mipmap/launcher_icon');
+    const ios = DarwinInitializationSettings();
+    await local.initialize(
+      const InitializationSettings(android: android, iOS: ios),
+    );
+    final androidPlugin = local
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      for (final ch in NotificationChannels.androidChannels()) {
+        await androidPlugin.createNotificationChannel(ch);
+      }
+    }
+    final notifId = payload.data['notificationId']?.hashCode.abs() ?? 0;
+    final stableId = notifId > 0 ? notifId % 2147483647 : DateTime.now().millisecondsSinceEpoch % 2147483647;
+    final androidDetails = AndroidNotificationDetails(
+      NotificationChannels.idFor(payload.type),
+      payload.type.code,
+      channelDescription: payload.type.code,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      icon: '@mipmap/launcher_icon',
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    await local.show(
+      stableId,
+      payload.title.isNotEmpty ? payload.title : 'Furtail',
+      payload.body.isNotEmpty ? payload.body : null,
+      NotificationDetails(android: androidDetails, iOS: iosDetails),
+      payload: payload.actionUrl ?? payload.type.code,
+    );
+  } catch (e, st) {
+    if (kDebugMode) {
+      debugPrint('[FCM] background handler error: $e\n$st');
+    }
   }
+}
+
+NotificationPayload _backgroundPayloadFromMessage(RemoteMessage message) {
+  final merged = <String, dynamic>{
+    ...message.data,
+    if (message.notification?.title != null)
+      'title': message.notification!.title,
+    if (message.notification?.body != null)
+      'body': message.notification!.body,
+  };
+  return NotificationPayload.fromFcmMap(merged);
 }
 
 typedef NotificationTapCallback = void Function(NotificationPayload payload);
@@ -50,9 +103,23 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    await _initTimezone();
-    await _initLocalNotifications();
-    await _initFirebaseMessaging();
+    try {
+      await _initTimezone();
+    } catch (e, st) {
+      debugPrint('[NotificationService] Timezone init failed: $e\n$st');
+    }
+
+    try {
+      await _initLocalNotifications();
+    } catch (e, st) {
+      debugPrint('[NotificationService] Local notifications init failed: $e\n$st');
+    }
+
+    try {
+      await _initFirebaseMessaging();
+    } catch (e, st) {
+      debugPrint('[NotificationService] Firebase Messaging init failed: $e\n$st');
+    }
 
     _initialized = true;
   }
@@ -106,6 +173,26 @@ class NotificationService {
   void _onLocalNotificationTap(NotificationResponse response) {
     final payload = response.payload;
     if (payload == null || payload.isEmpty) return;
+
+    if (payload == 'retry_post_upload') {
+      try {
+        PostUploadManager.instance.setPendingRetry(true);
+      } catch (_) {}
+      return;
+    }
+
+    // "post:<id>" — tap on upload-success notification opens the home feed,
+    // which auto-refreshes via PostUploadManager state. Deep-link navigation to
+    // the specific post can be added here once a post-detail route exists.
+    if (payload.startsWith('post:')) {
+      try {
+        PostUploadManager.instance.checkAndProcessPendingRetry();
+      } catch (_) {}
+      // Intentionally no deep-link navigation yet — home screen already
+      // refreshes automatically on PostUploadStatus.posted.
+      return;
+    }
+
     final data = <String, String>{'rawPayload': payload};
     final parsed = NotificationPayload.fromFcmMap(data);
     onNotificationTap?.call(parsed);

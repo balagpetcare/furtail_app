@@ -25,8 +25,8 @@ class UserStats extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
-                border: Border.all(color: Colors.white.withOpacity(0.14)),
+                color: Colors.white.withValues(alpha: 0.08),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
@@ -40,7 +40,7 @@ class UserStats extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     label,
-                    style: context.appText.labelMedium!.copyWith(color: Colors.white.withOpacity(0.70), fontWeight: FontWeight.w700),
+                    style: context.appText.labelMedium!.copyWith(color: Colors.white.withValues(alpha: 0.70), fontWeight: FontWeight.w700),
                   ),
                 ],
               ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/constants/app_colors.dart';
 import 'package:furtail_app/core/theme/app_typography.dart';
-import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 import 'package:furtail_app/features/fundraising/presentation/utils/fundraising_time_ago.dart';

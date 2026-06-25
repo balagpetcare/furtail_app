@@ -6,6 +6,8 @@ class NotificationPayload {
   final String body;
   final String? actionUrl;
   final String? notificationId;
+  final String? actorName;
+  final String? actorAvatarUrl;
   final Map<String, String> data;
 
   const NotificationPayload({
@@ -14,6 +16,8 @@ class NotificationPayload {
     required this.body,
     this.actionUrl,
     this.notificationId,
+    this.actorName,
+    this.actorAvatarUrl,
     this.data = const {},
   });
 
@@ -35,12 +39,18 @@ class NotificationPayload {
         nested['body']?.toString() ??
         '';
 
+    // Backend social notifications send 'route'/'deepLink' instead of 'actionUrl'.
+    final actionUrl = data['actionUrl'] ?? data['action_url'] ??
+        data['route'] ?? data['deepLink'];
+
     return NotificationPayload(
       type: AppNotificationType.fromCode(data['type']),
       title: title,
       body: body,
-      actionUrl: data['actionUrl'] ?? data['action_url'],
+      actionUrl: actionUrl,
       notificationId: data['notificationId'] ?? data['notification_id'],
+      actorName: data['actorName'] ?? data['actor_name'],
+      actorAvatarUrl: data['actorAvatarUrl'] ?? data['actor_avatar_url'],
       data: data,
     );
   }

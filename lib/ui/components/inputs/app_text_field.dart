@@ -9,6 +9,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
   final int maxLines;
+  final String? errorText;
 
   const AppTextField({
     super.key,
@@ -20,6 +21,7 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.maxLines = 1,
+    this.errorText,
   });
 
   @override
@@ -34,6 +36,7 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        errorText: errorText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );

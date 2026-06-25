@@ -1,3 +1,4 @@
+import 'package:furtail_app/app/router/app_routes.dart';
 import 'package:furtail_app/core/accessibility/a11y_widgets.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
@@ -19,7 +20,7 @@ class HomeAppBar extends StatelessWidget {
         : AppSpacing.lg;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: AppSpacing.sm),
+      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: AppSpacing.xs),
       child: Row(
         children: [
           MinTouchTarget(
@@ -28,7 +29,7 @@ class HomeAppBar extends StatelessWidget {
             child: FurtailNetworkAvatar(
               imageUrl: avatarUrl,
               displayName: userName,
-              radius: 22,
+              radius: 20,
               backgroundColor: cs.primary,
               foregroundColor: cs.onPrimary,
             ),
@@ -39,7 +40,7 @@ class HomeAppBar extends StatelessWidget {
               textField: true,
               label: 'Search Furtail',
               child: Container(
-                height: 45,
+                height: 40,
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(30),
@@ -51,13 +52,13 @@ class HomeAppBar extends StatelessWidget {
                     color: cs.onSurface,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search Furtail...',
+                    hintText: 'Search Furtail…',
                     hintStyle: context.appText.bodyMedium!.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
                     prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                     isDense: true,
                   ),
                 ),
@@ -70,7 +71,8 @@ class HomeAppBar extends StatelessWidget {
             tooltip: 'Notifications',
             semanticLabel: 'Notifications',
             color: cs.onSurface,
-            onPressed: () {},
+            onPressed: () =>
+                Navigator.pushNamed(context, AppRoutes.notificationsList),
           ),
         ],
       ),

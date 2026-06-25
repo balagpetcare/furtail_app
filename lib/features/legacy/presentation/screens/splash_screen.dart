@@ -81,69 +81,55 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final primary = context.colorScheme.primary;
+    // Use Scaffold backgroundColor instead of Stack+Positioned.fill so the
+    // Column gets the full tight width constraint from the Scaffold body,
+    // preventing content from drifting left on all screen sizes.
     return Scaffold(
-      body: Stack(
-        children: [
-          // Lightweight background (avoid decoding a large full-screen bitmap).
-          Positioned.fill(child: Container(color: _warmWhite)),
+      backgroundColor: _warmWhite,
+      body: SafeArea(
+        child: SizedBox.expand(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(flex: 3),
 
-          // ✅ Text content
-          SafeArea(
-            child: Column(
-              children: [
-                // Move text a bit higher (previously it sat too low)
-                const Spacer(flex: 3),
+              Image.asset(
+                'assets/images/splash_screen.png',
+                height: 110,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 14),
 
-                // Small centered logo (cheap to decode).
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Image.asset(
-                    'assets/images/splash_screen.png',
-                    height: 110,
-                    fit: BoxFit.contain,
-                  ),
+              Text(
+                "Furtail",
+                textAlign: TextAlign.center,
+                style: context.appText.displayMedium!.copyWith(
+                  color: _deepGreen, fontWeight: FontWeight.w900, height: 1.2),
+              ),
+              const SizedBox(height: 8),
+
+              Text(
+                "We Care Your Love",
+                textAlign: TextAlign.center,
+                style: context.appText.bodyLarge!.copyWith(
+                  color: primary, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: primary,
+                  backgroundColor: primary.withValues(alpha: 0.15),
                 ),
+              ),
 
-                // App name (bigger, deep green)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    "Furtail",
-                    textAlign: TextAlign.center,
-                    style: context.appText.displayMedium!.copyWith(color: _deepGreen, fontWeight: FontWeight.w900, height: 1.2),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Tagline (blue)
-                Text(
-                  "We Care Your Love",
-                  textAlign: TextAlign.center,
-                  style: context.appText.bodyLarge!.copyWith(color: primary, fontWeight: FontWeight.w700),
-                ),
-
-                const SizedBox(height: 18),
-
-                // Loader
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 40),
-                  child: SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.4,
-                      color: primary,
-                      backgroundColor: primary.withOpacity(0.15),
-                    ),
-                  ),
-                ),
-
-                const Spacer(flex: 2),
-              ],
-            ),
+              const Spacer(flex: 2),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

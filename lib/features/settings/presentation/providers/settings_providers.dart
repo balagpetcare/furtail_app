@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:furtail_app/services/api_client.dart';
 
+import '../../data/datasources/settings_local_datasource.dart';
 import '../../data/models/blocked_user.dart';
+import '../../data/models/media_upload_settings.dart';
 import '../../data/models/notification_preferences.dart';
 import '../../data/models/privacy_settings.dart';
 import '../../data/models/storage_usage_info.dart';
@@ -105,3 +107,28 @@ class StorageUsageNotifier extends AsyncNotifier<StorageUsageInfo> {
 final settingsLogoutProvider = Provider<Future<void> Function()>((ref) {
   return () => ref.read(settingsRepositoryProvider).logout();
 });
+
+// ── Media upload settings ──────────────────────────────────────────────────
+
+final _mediaUploadDatasource = Provider<SettingsLocalDatasource>(
+  (_) => SettingsLocalDatasource(),
+);
+
+final mediaUploadSettingsProvider =
+    AsyncNotifierProvider<MediaUploadSettingsNotifier, MediaUploadSettings>(
+  MediaUploadSettingsNotifier.new,
+);
+
+class MediaUploadSettingsNotifier extends AsyncNotifier<MediaUploadSettings> {
+  @override
+  Future<MediaUploadSettings> build() async {
+    return ref.read(_mediaUploadDatasource).loadMediaUploadSettings();
+  }
+
+  Future<void> patch(MediaUploadSettings Function(MediaUploadSettings) fn) async {
+    final current = state.asData?.value ?? const MediaUploadSettings();
+    final next = fn(current);
+    state = AsyncData(next);
+    await ref.read(_mediaUploadDatasource).saveMediaUploadSettings(next);
+  }
+}

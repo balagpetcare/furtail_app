@@ -11,6 +11,7 @@ Future<T?> showCommentsBottomSheet<T>(
   required int postId,
   void Function(int newCount)? onCountChanged,
   bool autoFocusComposer = false,
+  int? highlightCommentId,
 }) {
   return showModalBottomSheet<T>(
     context: context,
@@ -35,6 +36,7 @@ Future<T?> showCommentsBottomSheet<T>(
                 postId: postId,
                 onCountChanged: onCountChanged,
                 autoFocusComposer: autoFocusComposer,
+                highlightCommentId: highlightCommentId,
               ),
             ),
           ),

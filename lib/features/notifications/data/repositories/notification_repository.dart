@@ -6,6 +6,8 @@ import 'package:furtail_app/services/api_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/notification_item.dart';
+
 /// Persists FCM token and syncs with backend (when API is available).
 class NotificationRepository {
   NotificationRepository(this._api);
@@ -84,6 +86,76 @@ class NotificationRepository {
       if (res is Map) return Map<String, dynamic>.from(res);
     } catch (_) {}
     return null;
+  }
+
+  /// Fetch paginated notification list from backend.
+  Future<NotificationListResponse> fetchNotifications({int limit = 20, int? cursor}) async {
+    try {
+      final res = await _api.get(
+        ApiEndpoints.notificationsList(limit: limit, cursor: cursor),
+        auth: true,
+      );
+      if (res is Map) {
+        return NotificationListResponse.fromJson(Map<String, dynamic>.from(res));
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationRepository] fetchNotifications: $e');
+        debugPrint('$st');
+      }
+    }
+    return const NotificationListResponse(items: []);
+  }
+
+  /// Mark a single notification as read.
+  Future<bool> markAsRead(int notificationId) async {
+    try {
+      await _api.patch(
+        ApiEndpoints.markNotificationRead(notificationId),
+        {},
+        auth: true,
+      );
+      return true;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationRepository] markAsRead: $e');
+        debugPrint('$st');
+      }
+      return false;
+    }
+  }
+
+  /// Mark all notifications as read.
+  Future<bool> markAllAsRead() async {
+    try {
+      await _api.post(
+        ApiEndpoints.markAllNotificationsRead(),
+        {},
+        auth: true,
+      );
+      return true;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationRepository] markAllAsRead: $e');
+        debugPrint('$st');
+      }
+      return false;
+    }
+  }
+
+  /// Fetch unread count from backend.
+  Future<int> fetchUnreadCount() async {
+    try {
+      final res = await _api.get(
+        ApiEndpoints.notificationsUnreadCount(),
+        auth: true,
+      );
+      if (res is Map) {
+        final raw = res['data'] ?? res['unreadCount'] ?? res['unread_count'];
+        if (raw is num) return raw.toInt();
+      }
+    } catch (_) {}
+    return 0;
   }
 
   static String platformLabel() {

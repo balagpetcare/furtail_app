@@ -1,42 +1,44 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:furtail_app/app/router/app_routes.dart';
-import 'package:furtail_app/core/theme/typography.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:furtail_app/app/router/app_routes.dart';
+import 'package:furtail_app/core/providers/current_user_provider.dart';
 import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/core/theme/typography.dart';
 
-import '../../data/models/user_profile_model.dart';
-import '../../data/profile_service.dart';
 import '../../../pets/presentation/pet_create_screen.dart';
 import '../../../pets/presentation/screens/pet_profile_screen.dart';
-import 'profile_edit_overview_screen.dart';
-import 'edit_about_details_screen.dart';
-
+import '../../../posts/presentation/screens/saved_posts_screen.dart';
+import '../../data/models/user_profile_model.dart';
+import '../../data/profile_service.dart';
 import '../widgets/achievements_section.dart';
 import '../widgets/my_pets_family_white.dart';
 import '../widgets/profile_completion_card.dart';
 import '../widgets/profile_header_stack.dart';
 import '../widgets/profile_highlights.dart';
-import '../widgets/profile_media_upload_screen.dart';
 import '../widgets/profile_status_composer.dart';
 import '../widgets/profile_tab_about.dart';
 import '../widgets/profile_tab_posts.dart';
 import '../widgets/profile_tab_gallery.dart';
 import '../widgets/profile_tab_more.dart';
-import '../widgets/profile_tab_videos.dart';
-import '../../../posts/presentation/screens/saved_posts_screen.dart';
+import 'edit_about_details_screen.dart';
+import 'profile_edit_overview_screen.dart';
 
 /// New User Profile screen (white UI, stack header, achievements, tabs).
-class UserProfileScreen extends StatefulWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   final Future<void> Function()? onPetChanged;
 
   const UserProfileScreen({super.key, this.onPetChanged});
 
   @override
-  State<UserProfileScreen> createState() => _UserProfileScreenState();
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen>
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     with TickerProviderStateMixin {
   final ProfileService _profileService = ProfileService();
 
@@ -49,7 +51,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _load();
   }
 
@@ -146,6 +148,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             await _profileService.updateProfile({'avatarMediaId': null});
         if (!mounted) return;
         setState(() => _profile = updated);
+        // Clear avatar in Home header and drawer immediately.
+        await ref.read(currentUserProvider.notifier).updateAvatar(null);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -157,28 +161,45 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       return;
     }
 
+    if (!mounted) return;
     final source =
         choice == 'camera' ? ImageSource.camera : ImageSource.gallery;
-    final result = await Navigator.push<ProfileMediaUploadResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProfileMediaUploadScreen(
-          title: 'Update Profile Photo',
-          cropStyle: ProfileCropStyle.avatar,
-          initialSource: source,
+    await _pickCropUploadAvatar(source);
+  }
+
+  Future<void> _pickCropUploadAvatar(ImageSource source) async {
+    final picker = ImagePicker();
+    final x = await picker.pickImage(source: source, imageQuality: 92);
+    if (x == null) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: x.path,
+      compressQuality: 92,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Photo',
+          toolbarColor: Colors.black,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: true,
+          initAspectRatio: CropAspectRatioPreset.square,
+          aspectRatioPresets: const [CropAspectRatioPreset.square],
         ),
-      ),
+        IOSUiSettings(title: 'Crop Photo', aspectRatioLockEnabled: true),
+      ],
     );
-    if (result == null) return;
+    if (cropped == null || !mounted) return;
 
-    setState(() =>
-        _profile = _profile?.copyWith(photoUrl: result.previewUrl));
-
+    final file = File(cropped.path);
     try {
+      final mediaId = await _profileService.uploadMedia(file: file);
+      if (!mounted) return;
       final updated = await _profileService
-          .updateProfile({'avatarMediaId': result.mediaId});
+          .updateProfile({'avatarMediaId': mediaId});
       if (!mounted) return;
       setState(() => _profile = updated);
+      // Propagate new avatar to Home header and drawer immediately.
+      await ref.read(currentUserProvider.notifier).updateAvatar(updated.photoUrl);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -212,26 +233,50 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       return;
     }
 
+    if (!mounted) return;
     final source =
         choice == 'camera' ? ImageSource.camera : ImageSource.gallery;
-    final result = await Navigator.push<ProfileMediaUploadResult>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ProfileMediaUploadScreen(
-          title: 'Update Cover Photo',
-          cropStyle: ProfileCropStyle.cover,
-          initialSource: source,
+    await _pickCropUploadCover(source);
+  }
+
+  Future<void> _pickCropUploadCover(ImageSource source) async {
+    final picker = ImagePicker();
+    final x = await picker.pickImage(source: source, imageQuality: 92);
+    if (x == null) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: x.path,
+      compressQuality: 92,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Cover',
+          toolbarColor: Colors.black,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: false,
+          aspectRatioPresets: const [
+            CropAspectRatioPreset.ratio16x9,
+            CropAspectRatioPreset.ratio3x2,
+            CropAspectRatioPreset.original,
+          ],
         ),
-      ),
+        IOSUiSettings(
+          title: 'Crop Cover',
+          aspectRatioPresets: const [
+            CropAspectRatioPreset.ratio16x9,
+            CropAspectRatioPreset.ratio3x2,
+            CropAspectRatioPreset.original,
+          ],
+        ),
+      ],
     );
-    if (result == null) return;
+    if (cropped == null || !mounted) return;
 
-    setState(() =>
-        _profile = _profile?.copyWith(coverUrl: result.previewUrl));
-
+    final file = File(cropped.path);
     try {
+      final mediaId = await _profileService.uploadMedia(file: file);
+      if (!mounted) return;
       final updated = await _profileService
-          .updateProfile({'coverMediaId': result.mediaId});
+          .updateProfile({'coverMediaId': mediaId});
       if (!mounted) return;
       setState(() => _profile = updated);
     } catch (e) {
@@ -261,78 +306,6 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                onPressed: () => Navigator.maybePop(context),
-              )
-            : null,
-        actions: [
-          IconButton(
-            tooltip: 'Share profile',
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () {
-              final id = _profile?.id ?? 0;
-              if (id <= 0) return;
-              ShareService.share(context, type: 'user', id: id);
-            },
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            onSelected: (v) async {
-              switch (v) {
-                case 'edit':
-                  _openEditProfile();
-                  return;
-                case 'avatar':
-                  await _changeAvatar();
-                  return;
-                case 'cover':
-                  await _changeCover();
-                  return;
-                case 'add_pet':
-                  final ok = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PetCreateScreen()),
-                  );
-                  if (ok == true) {
-                    await widget.onPetChanged?.call();
-                    await _refresh();
-                  }
-                  return;
-                default:
-                  return;
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                  value: 'edit',
-                  child: _MenuRow(
-                      icon: Icons.edit_rounded, label: 'Edit Profile')),
-              PopupMenuItem(
-                  value: 'avatar',
-                  child: _MenuRow(
-                      icon: Icons.account_circle_rounded,
-                      label: 'Change Profile Photo')),
-              PopupMenuItem(
-                  value: 'cover',
-                  child: _MenuRow(
-                      icon: Icons.image_rounded,
-                      label: 'Change Cover Photo')),
-              PopupMenuDivider(),
-              PopupMenuItem(
-                  value: 'add_pet',
-                  child: _MenuRow(
-                      icon: Icons.pets_rounded, label: 'Add a Pet')),
-            ],
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
@@ -352,7 +325,33 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                     controller: _tabController,
                     physics: const BouncingScrollPhysics(),
                     children: [
+                      // 0 — Posts
                       ProfileTabPosts(userId: _profile!.id),
+                      // 1 — Pets
+                      _OwnPetsTab(
+                        profile: _profile!,
+                        onTapPet: (pet) {
+                          final id = pet.id;
+                          if (id == null) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => PetProfileScreen(petId: id)),
+                          );
+                        },
+                        onAddPet: () async {
+                          final ok = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const PetCreateScreen()),
+                          );
+                          if (ok == true) {
+                            await widget.onPetChanged?.call();
+                            await _load();
+                          }
+                        },
+                      ),
+                      // 2 — About
                       ProfileTabAbout(
                         profile: _profile!,
                         onSeeMore: () async {
@@ -366,6 +365,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           if (ok == true) await _refresh();
                         },
                       ),
+                      // 3 — Media
                       SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         child: ProfileTabGallery(
@@ -373,10 +373,35 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                           canManage: true,
                         ),
                       ),
-                      ProfileTabVideos(
-                          userId: _profile!.id, canManage: true),
-                      const SavedPostsList(),
-                      const ProfileTabMore(),
+                      // 4 — More
+                      ProfileTabMore(
+                        onEditProfile: _openEditProfile,
+                        onSavedPosts: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SavedPostsList()),
+                        ),
+                        onShareProfile: () {
+                          final id = _profile!.id;
+                          if (id <= 0) return;
+                          ShareService.share(context, type: 'user', id: id);
+                        },
+                        onAddPet: () async {
+                          final ok = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const PetCreateScreen()),
+                          );
+                          if (ok == true) {
+                            await widget.onPetChanged?.call();
+                            await _load();
+                          }
+                        },
+                        onMyPets: () => _tabController.animateTo(1),
+                        profileLink: (_profile!.username ?? '').trim().isNotEmpty
+                            ? 'https://furtail.app/u/${_profile!.username}'
+                            : null,
+                      ),
                     ],
                   ),
           ),
@@ -430,6 +455,72 @@ class _UserProfileScreenState extends State<UserProfileScreen>
           },
           onCreatePost: () =>
               Navigator.pushNamed(context, AppRoutes.createPost),
+          showBackButton: Navigator.canPop(context),
+          onShare: () {
+            final id = p.id;
+            if (id <= 0) return;
+            ShareService.share(context, type: 'user', id: id);
+          },
+          moreActionsButton: PopupMenuButton<String>(
+            tooltip: 'More options',
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0x73000000),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
+            ),
+            onSelected: (v) async {
+              switch (v) {
+                case 'edit':
+                  _openEditProfile();
+                  return;
+                case 'avatar':
+                  await _changeAvatar();
+                  return;
+                case 'cover':
+                  await _changeCover();
+                  return;
+                case 'add_pet':
+                  final ok = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PetCreateScreen()),
+                  );
+                  if (ok == true) {
+                    await widget.onPetChanged?.call();
+                    await _refresh();
+                  }
+                  return;
+                default:
+                  return;
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                  value: 'edit',
+                  child: _MenuRow(
+                      icon: Icons.edit_rounded, label: 'Edit Profile')),
+              PopupMenuItem(
+                  value: 'avatar',
+                  child: _MenuRow(
+                      icon: Icons.account_circle_rounded,
+                      label: 'Change Profile Photo')),
+              PopupMenuItem(
+                  value: 'cover',
+                  child: _MenuRow(
+                      icon: Icons.image_rounded,
+                      label: 'Change Cover Photo')),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                  value: 'add_pet',
+                  child: _MenuRow(
+                      icon: Icons.pets_rounded, label: 'Add a Pet')),
+            ],
+          ),
         ),
 
         const SizedBox(height: 12),
@@ -440,7 +531,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             onTapPinned: () => ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Pinned posts coming soon.')),
             ),
-            onTapFeaturedPhotos: () => _tabController.animateTo(2),
+            onTapFeaturedPhotos: () => _tabController.animateTo(3),
             onTapInsights: () => ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Insights coming soon.')),
             ),
@@ -540,10 +631,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             ?.copyWith(fontWeight: FontWeight.normal),
         tabs: const [
           Tab(text: 'Posts'),
+          Tab(text: 'Pets'),
           Tab(text: 'About'),
-          Tab(text: 'Gallery'),
-          Tab(text: 'Videos'),
-          Tab(text: 'Saved'),
+          Tab(text: 'Media'),
           Tab(text: 'More'),
         ],
       ),
@@ -617,6 +707,110 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   }
 }
 
+// ─── Own profile — Pets tab ───────────────────────────────────────────────────
+
+class _OwnPetsTab extends StatelessWidget {
+  final UserProfileModel profile;
+  final void Function(dynamic pet) onTapPet;
+  final VoidCallback? onAddPet;
+
+  const _OwnPetsTab({
+    required this.profile,
+    required this.onTapPet,
+    this.onAddPet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pets = profile.pets;
+    final cs = Theme.of(context).colorScheme;
+
+    if (pets.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.pets_rounded, size: 72, color: cs.primary.withValues(alpha: 0.18)),
+              const SizedBox(height: 20),
+              const Text(
+                'No pets yet',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add your first pet and share their moments with the world!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cs.onSurfaceVariant, height: 1.4),
+              ),
+              const SizedBox(height: 24),
+              if (onAddPet != null)
+                FilledButton.icon(
+                  onPressed: onAddPet,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add a Pet'),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: pets.length + 1,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        if (index == pets.length) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: OutlinedButton.icon(
+              onPressed: onAddPet,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add another pet'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          );
+        }
+        final p = pets[index];
+        final hasPhoto = (p.photoUrl?.trim() ?? '').isNotEmpty;
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: hasPhoto
+                ? Image.network(p.photoUrl!, fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        Icon(Icons.pets, color: cs.onPrimaryContainer))
+                : Icon(Icons.pets, color: cs.onPrimaryContainer),
+          ),
+          title: Text(
+            p.name,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: (p.animalTypeName ?? '').isNotEmpty
+              ? Text(p.animalTypeName!)
+              : null,
+          trailing: const Icon(Icons.chevron_right_rounded),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onTap: () => onTapPet(p),
+        );
+      },
+    );
+  }
+}
+
 // ─── Tab bar delegate ─────────────────────────────────────────────────────────
 
 class _TabBarHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -644,12 +838,26 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 18),
+        Icon(
+          icon,
+          size: 18,
+          color: theme.colorScheme.primary,
+        ),
         const SizedBox(width: 10),
-        Expanded(child: Text(label)),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ],
     );
   }
 }
+

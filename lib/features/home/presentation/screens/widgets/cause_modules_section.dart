@@ -111,7 +111,7 @@ class _CauseCard extends StatelessWidget {
           border: Border.all(color: cs.outline),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -126,7 +126,7 @@ class _CauseCard extends StatelessWidget {
                   height: 36,
                   width: 36,
                   decoration: BoxDecoration(
-                    color: context.colorScheme.primary.withOpacity(0.10),
+                    color: context.colorScheme.primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: context.colorScheme.primary),

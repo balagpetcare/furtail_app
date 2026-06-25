@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 
 import '../../data/models/visitor_profile_model.dart';
@@ -13,6 +14,10 @@ class VisitorProfileHeaderStack extends StatelessWidget {
   final List<String> followerPreviewUrls;
   final int followersCount;
   final int followingCount;
+  final bool showBackButton;
+  final VoidCallback? onShare;
+  final VoidCallback? onBack;
+  final Widget? moreActionsButton;
 
   const VisitorProfileHeaderStack({
     super.key,
@@ -21,6 +26,10 @@ class VisitorProfileHeaderStack extends StatelessWidget {
     required this.followerPreviewUrls,
     required this.followersCount,
     required this.followingCount,
+    this.showBackButton = false,
+    this.onShare,
+    this.onBack,
+    this.moreActionsButton,
   });
 
   static const double _coverH = 200;
@@ -34,8 +43,10 @@ class VisitorProfileHeaderStack extends StatelessWidget {
     final coverUrl = (profile.coverUrl ?? '').trim();
     final avatarUrl = (profile.avatarUrl ?? '').trim();
 
+    final cs = context.colorScheme;
+
     return Container(
-      color: Colors.white,
+      color: cs.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -52,6 +63,36 @@ class VisitorProfileHeaderStack extends StatelessWidget {
                   left: 0, right: 0,
                   top: _coverH - 64, height: 64,
                   child: const _BottomFade(),
+                ),
+                // Floating top navigation buttons (transparent with icons and shadow)
+                if (showBackButton)
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: _FloatingActionButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      onTap: onBack ?? () => Navigator.maybePop(context),
+                      tooltip: 'Back',
+                    ),
+                  ),
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onShare != null)
+                        _FloatingActionButton(
+                          icon: Icons.share_outlined,
+                          onTap: onShare!,
+                          tooltip: 'Share',
+                        ),
+                      if (moreActionsButton != null) ...[
+                        const SizedBox(width: 8),
+                        moreActionsButton!,
+                      ],
+                    ],
+                  ),
                 ),
                 Positioned(
                   left: 16,
@@ -73,6 +114,7 @@ class VisitorProfileHeaderStack extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.3,
+                        color: cs.onSurface,
                       ),
                 ),
                 if (username.isNotEmpty) ...[
@@ -80,7 +122,7 @@ class VisitorProfileHeaderStack extends StatelessWidget {
                   Text(
                     '@$username',
                     style: TextStyle(
-                      color: context.colorScheme.primary.withOpacity(0.85),
+                      color: cs.primary.withValues(alpha: 0.85),
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -99,7 +141,7 @@ class VisitorProfileHeaderStack extends StatelessWidget {
                 bioText,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.black87, height: 1.4, fontSize: 13.5),
+                style: TextStyle(color: cs.onSurface, height: 1.4, fontSize: 13.5),
               ),
             ),
           ] else ...[
@@ -108,7 +150,19 @@ class VisitorProfileHeaderStack extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 'No bio added yet.',
-                style: TextStyle(color: Colors.black38, fontSize: 13, fontStyle: FontStyle.italic),
+                style: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6), fontSize: 13, fontStyle: FontStyle.italic),
+              ),
+            ),
+          ],
+
+          // Follower preview avatars
+          if (followerPreviewUrls.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _FollowerPreviewRow(
+                urls: followerPreviewUrls,
+                totalCount: followersCount,
               ),
             ),
           ],
@@ -133,14 +187,15 @@ class _VisitorCover extends StatelessWidget {
       return Image.file(
         File(url.replaceFirst('file://', '')),
         fit: BoxFit.cover, width: double.infinity, height: double.infinity,
-        errorBuilder: (_, __, ___) => const _DefaultCover(),
+        errorBuilder: (_, _, _) => const _DefaultCover(),
       );
     }
     return CachedNetworkImage(
       imageUrl: url,
+      cacheManager: FurtailImageCacheManager(),
       fit: BoxFit.cover, width: double.infinity, height: double.infinity,
-      placeholder: (_, __) => const _DefaultCover(),
-      errorWidget: (_, __, ___) => const _DefaultCover(),
+      placeholder: (_, _) => const _DefaultCover(),
+      errorWidget: (_, _, _) => const _DefaultCover(),
     );
   }
 }
@@ -166,19 +221,19 @@ class _DefaultCover extends StatelessWidget {
           right: 18, top: 18,
           child: Transform.rotate(
             angle: 0.3,
-            child: Icon(Icons.pets, size: 56, color: Colors.white.withOpacity(0.20)),
+            child: Icon(Icons.pets, size: 56, color: Colors.white.withValues(alpha: 0.20)),
           ),
         ),
         Positioned(
           left: 50, top: 55,
           child: Transform.rotate(
             angle: -0.5,
-            child: Icon(Icons.pets, size: 34, color: Colors.white.withOpacity(0.12)),
+            child: Icon(Icons.pets, size: 34, color: Colors.white.withValues(alpha: 0.12)),
           ),
         ),
         Positioned(
           right: 80, bottom: 16,
-          child: Icon(Icons.favorite_rounded, size: 26, color: Colors.white.withOpacity(0.18)),
+          child: Icon(Icons.favorite_rounded, size: 26, color: Colors.white.withValues(alpha: 0.18)),
         ),
       ],
     );
@@ -195,7 +250,7 @@ class _BottomFade extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.22)],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.22)],
         ),
       ),
     );
@@ -218,7 +273,7 @@ class _VisitorAvatar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -251,14 +306,15 @@ class _AvatarContent extends StatelessWidget {
       return Image.file(
         File(url.replaceFirst('file://', '')),
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _defaultAvatar,
+        errorBuilder: (_, _, _) => _defaultAvatar,
       );
     }
     return CachedNetworkImage(
       imageUrl: url,
+      cacheManager: FurtailImageCacheManager(),
       fit: BoxFit.cover,
-      placeholder: (_, __) => _defaultAvatar,
-      errorWidget: (_, __, ___) => _defaultAvatar,
+      placeholder: (_, _) => _defaultAvatar,
+      errorWidget: (_, _, _) => _defaultAvatar,
     );
   }
 
@@ -282,4 +338,99 @@ class _AvatarContent extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _FloatingActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  const _FloatingActionButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: Color(0x73000000),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+class _FollowerPreviewRow extends StatelessWidget {
+  final List<String> urls;
+  final int totalCount;
+
+  const _FollowerPreviewRow({required this.urls, required this.totalCount});
+
+  static const double _size = 26.0;
+  static const double _overlap = 8.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.colorScheme;
+    final show = urls.take(5).toList();
+    final stackWidth = _size + (_size - _overlap) * (show.length - 1);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: stackWidth,
+          height: _size,
+          child: Stack(
+            children: List.generate(show.length, (i) {
+              return Positioned(
+                left: i * (_size - _overlap),
+                child: Container(
+                  width: _size,
+                  height: _size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: cs.surface, width: 1.5),
+                  ),
+                  child: ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: show[i],
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => CircleAvatar(
+                        radius: _size / 2,
+                        backgroundColor: cs.primaryContainer,
+                        child: Icon(Icons.person, size: 14, color: cs.onPrimaryContainer),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$totalCount ${totalCount == 1 ? 'follower' : 'followers'}',
+          style: TextStyle(
+            fontSize: 12,
+            color: cs.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
 }

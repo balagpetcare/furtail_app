@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -29,8 +30,8 @@ class PetHorizontalList extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.07),
-            border: Border.all(color: Colors.white.withOpacity(0.14)),
+            color: Colors.white.withValues(alpha: 0.07),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(
@@ -55,9 +56,9 @@ class PetHorizontalList extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
+                    color: Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.12)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                   ),
                   child: Row(
                     children: [
@@ -66,7 +67,7 @@ class PetHorizontalList extends StatelessWidget {
                       Expanded(
                         child: Text(
                           "No pets added yet. Tap 'Add New +' to create your first pet.",
-                          style: context.appText.labelLarge!.copyWith(color: Colors.white.withOpacity(0.78), fontWeight: FontWeight.w600, height: 1.3),
+                          style: context.appText.labelLarge!.copyWith(color: Colors.white.withValues(alpha: 0.78), fontWeight: FontWeight.w600, height: 1.3),
                         ),
                       ),
                     ],
@@ -78,7 +79,7 @@ class PetHorizontalList extends StatelessWidget {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: pets.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, _) => const SizedBox(width: 12),
                     itemBuilder: (context, index) {
                       final pet = pets[index];
                       final imageUrl = (pet.photoUrl ?? "").toString().trim();
@@ -95,10 +96,10 @@ class PetHorizontalList extends StatelessWidget {
                         child: Container(
                           width: 120,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.06),
+                            color: Colors.white.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.12),
+                              color: Colors.white.withValues(alpha: 0.12),
                             ),
                           ),
                           child: Column(
@@ -113,10 +114,11 @@ class PetHorizontalList extends StatelessWidget {
                                       ? _fallback()
                                       : CachedNetworkImage(
                                           imageUrl: imageUrl,
+                                          cacheManager: FurtailImageCacheManager(),
                                           width: double.infinity,
                                           fit: BoxFit.cover,
-                                          placeholder: (_, __) => _loading(context),
-                                          errorWidget: (_, __, ___) =>
+                                          placeholder: (_, _) => _loading(context),
+                                          errorWidget: (_, _, _) =>
                                               _fallback(),
                                         ),
                                 ),
@@ -137,7 +139,7 @@ class PetHorizontalList extends StatelessWidget {
                                       subtitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: context.appText.labelMedium!.copyWith(color: Colors.white.withOpacity(0.65), fontWeight: FontWeight.w600),
+                                      style: context.appText.labelMedium!.copyWith(color: Colors.white.withValues(alpha: 0.65), fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
@@ -158,12 +160,12 @@ class PetHorizontalList extends StatelessWidget {
 
   Widget _fallback() {
     return Container(
-      color: Colors.white.withOpacity(0.06),
+      color: Colors.white.withValues(alpha: 0.06),
       child: Center(
         child: Icon(
           Icons.pets,
           size: 28,
-          color: Colors.white.withOpacity(0.45),
+          color: Colors.white.withValues(alpha: 0.45),
         ),
       ),
     );
@@ -171,11 +173,11 @@ class PetHorizontalList extends StatelessWidget {
 
   Widget _loading(BuildContext context) {
     return Container(
-      color: Colors.white.withOpacity(0.06),
+      color: Colors.white.withValues(alpha: 0.06),
       child: Center(
         child: Text(
           "Loading pet joy...",
-          style: context.appText.labelMedium!.copyWith(color: Colors.white.withOpacity(0.65)),
+          style: context.appText.labelMedium!.copyWith(color: Colors.white.withValues(alpha: 0.65)),
         ),
       ),
     );

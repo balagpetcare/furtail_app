@@ -127,6 +127,9 @@ class _PetEditOverviewScreenState extends State<PetEditOverviewScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Pet'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
         actions: [
           IconButton(
             onPressed: _load,

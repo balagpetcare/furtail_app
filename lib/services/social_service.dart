@@ -36,6 +36,13 @@ class SocialService {
     return (decoded as Map).cast<String, dynamic>();
   }
 
+  Future<Map<String, dynamic>> getVisitorProfileByUsername(String username) async {
+    final clean = username.trim().replaceFirst(RegExp(r'^@'), '');
+    if (clean.isEmpty) throw Exception('Username is required');
+    final decoded = await _client.get(ApiEndpoints.visitorProfileByUsername(clean));
+    return (decoded as Map).cast<String, dynamic>();
+  }
+
   Future<SocialStatus> getStatus(int userId) async {
     final decoded = await _client.get(ApiEndpoints.socialStatus(userId));
     final map = (decoded as Map).cast<String, dynamic>();

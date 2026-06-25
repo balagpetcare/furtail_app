@@ -13,12 +13,25 @@ enum AppNotificationType {
   follow('follow'),
   announcement('announcement'),
   emergency('emergency'),
+  // Social notifications
+  friendRequestReceived('friend_request_received'),
+  friendRequestAccepted('friend_request_accepted'),
+  userFollowed('user_followed'),
+  petFollowed('pet_followed'),
+  petLiked('pet_liked'),
   /// Generic push when server omits a known type.
   general('general');
 
   const AppNotificationType(this.code);
 
   final String code;
+
+  bool get isSocial =>
+      this == friendRequestReceived ||
+      this == friendRequestAccepted ||
+      this == userFollowed ||
+      this == petFollowed ||
+      this == petLiked;
 
   static AppNotificationType fromCode(String? raw) {
     if (raw == null || raw.isEmpty) return AppNotificationType.general;
@@ -45,6 +58,17 @@ enum AppNotificationType {
         return AppNotificationType.donationUpdate;
       case 'community':
         return AppNotificationType.communityActivity;
+      // Social types — backend sends UPPER_SNAKE_CASE
+      case 'friend_request_received':
+        return AppNotificationType.friendRequestReceived;
+      case 'friend_request_accepted':
+        return AppNotificationType.friendRequestAccepted;
+      case 'user_followed':
+        return AppNotificationType.userFollowed;
+      case 'pet_followed':
+        return AppNotificationType.petFollowed;
+      case 'pet_liked':
+        return AppNotificationType.petLiked;
       default:
         return AppNotificationType.general;
     }

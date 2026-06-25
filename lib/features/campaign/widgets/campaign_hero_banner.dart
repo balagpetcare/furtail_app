@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:intl/intl.dart';
 
 import '../data/models/campaign_countdown.dart';
@@ -137,8 +138,9 @@ class _HeroImage extends StatelessWidget {
           if (url != null && url.isNotEmpty)
             CachedNetworkImage(
               imageUrl: url,
+              cacheManager: FurtailImageCacheManager(),
               fit: BoxFit.cover,
-              errorWidget: (_, __, ___) => Image.asset(fallback, fit: BoxFit.cover),
+              errorWidget: (_, _, _) => Image.asset(fallback, fit: BoxFit.cover),
             )
           else
             Image.asset(fallback, fit: BoxFit.cover),

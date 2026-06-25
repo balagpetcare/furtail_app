@@ -74,10 +74,12 @@ class _FundraisingCreateScreenState
     if ((_areaName ?? '').trim().isNotEmpty) parts.add(_areaName!.trim());
     if ((_unionName ?? '').trim().isNotEmpty) parts.add(_unionName!.trim());
     if ((_upazilaName ?? '').trim().isNotEmpty) parts.add(_upazilaName!.trim());
-    if ((_districtName ?? '').trim().isNotEmpty)
+    if ((_districtName ?? '').trim().isNotEmpty) {
       parts.add(_districtName!.trim());
-    if ((_divisionName ?? '').trim().isNotEmpty)
+    }
+    if ((_divisionName ?? '').trim().isNotEmpty) {
       parts.add(_divisionName!.trim());
+    }
 
     final text = parts.join(', ');
     _locationCtrl.text = text;
@@ -293,8 +295,9 @@ class _FundraisingCreateScreenState
                   validator: (v) {
                     final t = (v ?? '').trim();
                     if (t.isEmpty) return 'Title is required';
-                    if (t.length < 6)
+                    if (t.length < 6) {
                       return 'Please write a more descriptive title';
+                    }
                     return null;
                   },
                 ),
@@ -310,8 +313,9 @@ class _FundraisingCreateScreenState
                   validator: (v) {
                     final t = (v ?? '').trim();
                     if (t.isEmpty) return 'Description is required';
-                    if (t.length < 20)
+                    if (t.length < 20) {
                       return 'Please add more details (min 20 characters)';
+                    }
                     return null;
                   },
                 ),
@@ -475,8 +479,8 @@ class _FundraisingCreateScreenState
                                 right: 10,
                                 child: IconButton(
                                   style: IconButton.styleFrom(
-                                    backgroundColor: Colors.black.withOpacity(
-                                      0.35,
+                                    backgroundColor: Colors.black.withValues(
+                                      alpha: 0.35,
                                     ),
                                     foregroundColor: Colors.white,
                                   ),
@@ -497,7 +501,7 @@ class _FundraisingCreateScreenState
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.35),
+                                      color: Colors.black.withValues(alpha: 0.35),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
@@ -528,9 +532,9 @@ class _FundraisingCreateScreenState
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.black.withOpacity(0.08),
+                              color: Colors.black.withValues(alpha: 0.08),
                             ),
-                            color: Colors.grey.withOpacity(0.06),
+                            color: Colors.grey.withValues(alpha: 0.06),
                           ),
                           child: Row(
                             children: [
@@ -645,9 +649,9 @@ class _ActionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.10),
+          color: Colors.grey.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

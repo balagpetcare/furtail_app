@@ -68,13 +68,51 @@ class _PetEditPhotoScreenState extends State<PetEditPhotoScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges => _file != null;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Update Pet Photo')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      appBar: AppBar(
+        title: const Text('Update Pet Photo'),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1A1A2E),
+        elevation: 0,
+      ),
+      body: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (_saving) return;
+          if (!_hasUnsavedChanges) {
+            Navigator.pop(context);
+            return;
+          }
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Discard Photo?'),
+              content: const Text('Are you sure you want to discard the selected photo?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Keep Editing'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Discard'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && context.mounted) {
+            Navigator.pop(context);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           children: [
             OutlinedButton.icon(
               onPressed: _pick,
@@ -100,6 +138,7 @@ class _PetEditPhotoScreenState extends State<PetEditPhotoScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

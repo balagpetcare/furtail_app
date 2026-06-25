@@ -69,6 +69,18 @@ class _HomeBackHandlerState extends State<HomeBackHandler> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+        
+        final scaffoldState = Scaffold.maybeOf(context);
+        if (scaffoldState?.isDrawerOpen == true) {
+          scaffoldState!.closeDrawer();
+          return;
+        }
+
+        if (Navigator.canPop(context)) {
+          Navigator.maybePop(context);
+          return;
+        }
+
         final shouldExit = await _handleBack();
         if (shouldExit && context.mounted) {
           await SystemNavigator.pop();

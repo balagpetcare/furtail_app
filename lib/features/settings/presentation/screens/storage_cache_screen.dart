@@ -27,7 +27,7 @@ class StorageCacheScreen extends ConsumerWidget {
       ),
       body: usageAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(child: Text(t.refresh)),
+        error: (e, s) => Center(child: Text(t.refresh)),
         data: (info) => ListView(
           padding: const EdgeInsets.all(14),
           children: [
@@ -36,7 +36,9 @@ class StorageCacheScreen extends ConsumerWidget {
             SettingsCard(
               child: Column(
                 children: [
-                  _row(t.cacheSize, formatBytes(info.cacheBytes)),
+                  _row('Images cache', formatBytes(info.imageCacheBytes)),
+                  Divider(height: 1, color: context.colorScheme.outline),
+                  _row('Videos cache', formatBytes(info.videoCacheBytes)),
                   Divider(height: 1, color: context.colorScheme.outline),
                   _row(t.tempSize, formatBytes(info.tempBytes)),
                   Divider(height: 1, color: context.colorScheme.outline),

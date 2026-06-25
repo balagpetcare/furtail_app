@@ -73,14 +73,14 @@ class CampaignSuccessPage extends ConsumerWidget {
             Expanded(
               child: ticketsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Text('Tickets will arrive via SMS shortly.'),
+                error: (_, _) => const Text('Tickets will arrive via SMS shortly.'),
                 data: (tickets) {
                   if (tickets.isEmpty) {
                     return const Text('Tickets are being generated…');
                   }
                   return ListView.separated(
                     itemCount: tickets.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, i) {
                       final t = tickets[i];
                       return Card(

@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/campaign_booking_draft.dart';
 import '../../data/models/campaign_public_models.dart';
-import '../../domain/vaccination_platform/campaign_booking_flow.dart';
 import '../providers/campaign_discovery_providers.dart';
 import '../providers/smart_campaign_providers.dart';
 import '../utils/campaign_pricing_utils.dart';

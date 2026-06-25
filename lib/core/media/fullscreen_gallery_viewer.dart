@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'furtail_cache_manager.dart';
+
 /// Facebook-like fullscreen image viewer.
 ///
 /// Features:
@@ -64,13 +66,14 @@ class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
                 child: Center(
                   child: CachedNetworkImage(
                     imageUrl: url,
+                    cacheManager: FurtailImageCacheManager(),
                     fit: BoxFit.contain,
-                    placeholder: (_, __) => const SizedBox(
+                    placeholder: (_, _) => const SizedBox(
                       width: 26,
                       height: 26,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                    errorWidget: (_, _, _) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
                   ),
                 ),
               );

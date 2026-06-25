@@ -40,34 +40,6 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
-      appBar: AppBar(
-        title: const Text('Pet Profile'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.maybePop(context),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Share',
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () => ShareService.share(context, type: 'pet', id: widget.petId),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (v) {
-              if (v == 'report') {
-                ReportBottomSheet.show(
-                  context,
-                  targetType: ReportTargetType.pet,
-                  targetId: widget.petId,
-                );
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'report', child: Text('Report')),
-            ],
-          ),
-        ],
-      ),
       body: SafeArea(
         child: FutureBuilder<PetProfileModel>(
           future: _future,
@@ -200,8 +172,9 @@ class _HeaderHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        AspectRatio(
-          aspectRatio: 4 / 3,
+        SizedBox(
+          height: 200,
+          width: double.infinity,
           child: Container(
             decoration: BoxDecoration(
               color: Colors.black12,
@@ -226,8 +199,8 @@ class _HeaderHero extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.15),
-                  Colors.black.withOpacity(0.40),
+                  Colors.black.withValues(alpha: 0.15),
+                  Colors.black.withValues(alpha: 0.40),
                 ],
               ),
             ),
@@ -236,19 +209,68 @@ class _HeaderHero extends StatelessWidget {
         Positioned(
           top: 12,
           left: 12,
-          child: _RoundIconButton(
-            icon: Icons.arrow_back_rounded,
+          child: _TransparentIconButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            tooltip: 'Back',
             onTap: () => Navigator.pop(context),
           ),
         ),
         Positioned(
           top: 12,
           right: 12,
-          child: _RoundIconButton(
-            icon: Icons.share_outlined,
-            onTap: () {
-              ShareService.share(context, type: 'pet', id: pet.id);
-            },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _TransparentIconButton(
+                icon: Icons.share_outlined,
+                tooltip: 'Share',
+                onTap: () {
+                  ShareService.share(context, type: 'pet', id: pet.id);
+                },
+              ),
+              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                tooltip: 'More options',
+                icon: const Icon(
+                  Icons.more_horiz,
+                  color: Colors.white,
+                  size: 24,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 4,
+                      offset: Offset(1, 1),
+                    ),
+                  ],
+                ),
+                onSelected: (v) {
+                  if (v == 'report') {
+                    ReportBottomSheet.show(
+                      context,
+                      targetType: ReportTargetType.pet,
+                      targetId: pet.id,
+                    );
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.flag_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Report Pet Profile',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         Positioned(
@@ -271,28 +293,37 @@ class _HeaderHero extends StatelessWidget {
   }
 }
 
-class _RoundIconButton extends StatelessWidget {
+class _TransparentIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  const _RoundIconButton({required this.icon, required this.onTap});
+  final String? tooltip;
+
+  const _TransparentIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.75),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white.withOpacity(0.35)),
-            ),
-            child: Icon(icon, color: Colors.black87),
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 22,
+            shadows: [
+              Shadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 4,
+                offset: const Offset(1, 1),
+              ),
+            ],
           ),
         ),
       ),
@@ -355,7 +386,7 @@ class _InfoItem extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: Colors.black87),
@@ -425,8 +456,8 @@ class _Pill extends StatelessWidget {
       decoration: BoxDecoration(
         color: tint,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 6))],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 6))],
       ),
       child: Row(
         children: [
@@ -481,7 +512,7 @@ class _GradientButton extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(26),
           gradient: const LinearGradient(colors: [Color(0xFF2D7FF9), Color(0xFFF0852B)]),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.10), blurRadius: 18, offset: const Offset(0, 10))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 18, offset: const Offset(0, 10))],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -671,7 +702,7 @@ class _Action extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.85),
+                color: Colors.white.withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, color: const Color(0xFF2D7FF9)),
@@ -714,10 +745,10 @@ class _GlassCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.75),
+            color: Colors.white.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.7)),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 10))],
+            border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 10))],
           ),
           child: child,
         ),

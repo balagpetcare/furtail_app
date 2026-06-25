@@ -5,11 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:furtail_app/core/network/api_config.dart';
-import 'package:furtail_app/core/network/multipart_helper.dart';
 import 'package:furtail_app/core/media/media_url.dart';
 import 'models/user_profile_model.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as p;
 
 /// Profile related API calls.
 /// Backend (Node API) routes used:
@@ -186,18 +183,4 @@ class ProfileService {
     if (res.statusCode == 404) return "Not found.";
     return "Request failed (${res.statusCode}). Please try again.";
   }
-Future<http.MultipartFile> _multipartFromAnyFile(dynamic file) async {
-  // On some real Android devices the picker can return content:// URIs.
-  // http.MultipartFile.fromPath can't read those, so we fallback to bytes.
-  if (file is XFile) {
-    final bytes = await file.readAsBytes();
-    final name = p.basename(file.name.isNotEmpty ? file.name : file.path);
-    return http.MultipartFile.fromBytes('file', bytes, filename: name);
-  }
-  if (file is File) {
-    final name = p.basename(file.path);
-    return await http.MultipartFile.fromPath('file', file.path, filename: name);
-  }
-  throw Exception('Unsupported file type for upload: ${file.runtimeType}');
-}
 }

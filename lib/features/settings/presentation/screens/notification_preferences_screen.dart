@@ -20,7 +20,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(t.notificationPreferences)),
       body: prefsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(child: Text(t.refresh)),
+        error: (e, s) => Center(child: Text(t.somethingWentWrong)),
         data: (prefs) => ListView(
           padding: const EdgeInsets.all(14),
           children: [
@@ -58,6 +58,12 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                   _switch(context, title: t.followsNotif, value: prefs.follows,
                       onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(follows: v))),
                   Divider(height: 1, color: cs.outline),
+                  _switch(context, title: t.mentionsNotif, value: prefs.mentions,
+                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(mentions: v))),
+                  Divider(height: 1, color: cs.outline),
+                  _switch(context, title: t.messagesNotif, value: prefs.messages,
+                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(messages: v))),
+                  Divider(height: 1, color: cs.outline),
                   _switch(context, title: t.announcementsNotif, value: prefs.announcements,
                       onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(announcements: v))),
                   Divider(height: 1, color: cs.outline),
@@ -67,6 +73,14 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                     subtitle: t.emergencyNotifDesc,
                     value: prefs.emergency,
                     onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(emergency: v)),
+                  ),
+                  Divider(height: 1, color: cs.outline),
+                  _switch(
+                    context,
+                    title: t.marketingNotif,
+                    subtitle: t.marketingNotifDesc,
+                    value: prefs.marketing,
+                    onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(marketing: v)),
                   ),
                 ],
               ),

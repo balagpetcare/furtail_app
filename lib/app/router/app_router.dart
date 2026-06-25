@@ -13,15 +13,22 @@ import 'package:furtail_app/features/fundraising/presentation/screens/fundraisin
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
 import '../../features/profile/presentation/screens/user_profile_screen.dart';
 import '../../features/profile/presentation/screens/visitor_profile_screen.dart';
+import '../../features/profile/presentation/screens/visitor_profile_resolver_screen.dart';
 import '../../features/legacy/presentation/screens/create_post_screen.dart';
 import '../../features/legacy/presentation/screens/edit_post_screen.dart';
 import 'package:furtail_app/features/posts/presentation/screens/post_details_screen.dart';
+import 'package:furtail_app/features/posts/presentation/screens/media_viewer_screen.dart';
+import 'package:furtail_app/features/posts/presentation/screens/post_media_detail_screen.dart';
+import 'package:furtail_app/features/posts/data/models/post_model.dart';
 import 'package:furtail_app/features/posts/presentation/screens/reels_player_screen.dart';
 import 'package:furtail_app/features/posts/presentation/screens/saved_posts_screen.dart';
 import 'package:furtail_app/features/pets/presentation/pet_create_screen.dart';
 import 'package:furtail_app/features/pets/presentation/screens/pet_profile_screen.dart';
 import 'package:furtail_app/features/pets/presentation/screens/pet_public_profile_screen.dart';
+import '../../features/settings/presentation/screens/account_settings_screen.dart';
+import '../../features/settings/presentation/screens/media_storage_settings_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import 'package:furtail_app/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/certificate_viewer_screen.dart';
@@ -52,9 +59,24 @@ class AppRouter {
 
       case AppRoutes.visitorProfile:
         final args = (settings.arguments as Map?) ?? {};
-        final userId = (args['userId'] as int?) ?? 0;
+        final rawUid = args['userId'];
+        final userId = rawUid is int ? rawUid : int.tryParse(rawUid?.toString() ?? '');
+        if (userId == null || userId <= 0) {
+          return _notFound('Profile not available');
+        }
         return MaterialPageRoute(
           builder: (_) => VisitorProfileScreen(userId: userId),
+        );
+
+      case AppRoutes.visitorProfileByUsername:
+        final args = (settings.arguments as Map?) ?? {};
+        final rawUsername = args['username'] as String? ?? '';
+        final username = rawUsername.trim().replaceFirst(RegExp(r'^@'), '');
+        if (username.isEmpty) {
+          return _notFound('Profile not available');
+        }
+        return MaterialPageRoute(
+          builder: (_) => VisitorProfileResolverScreen(username: username),
         );
 
       case AppRoutes.createPost:
@@ -78,6 +100,37 @@ class AppRouter {
           return _notFound('Post argument missing');
         }
         return MaterialPageRoute(builder: (_) => EditPostScreen(post: post));
+
+      case AppRoutes.mediaViewer:
+      case AppRoutes.postMediaDetail:
+        final args = (settings.arguments as Map?) ?? {};
+        final post = args['post'] as PostModel?;
+        final initialIndex = args['initialIndex'] as int? ?? 0;
+        if (post != null) {
+          return MaterialPageRoute(
+            builder: (_) => MediaViewerScreen(
+              post: post,
+              initialIndex: initialIndex,
+            ),
+          );
+        }
+        // Fallback for legacy callers that pass individual fields
+        final postId = args['postId'] as int? ?? 0;
+        final media = (args['media'] as List?)?.cast<PostMediaModel>() ?? const [];
+        final author = args['author'] as PostAuthorModel?;
+        final caption = args['caption'] as String? ?? '';
+        if (author == null) {
+          return _notFound('Author details missing');
+        }
+        return MaterialPageRoute(
+          builder: (_) => PostMediaDetailScreen(
+            postId: postId,
+            media: media,
+            initialIndex: initialIndex,
+            author: author,
+            caption: caption,
+          ),
+        );
 
       case AppRoutes.reelsPlayer:
         final args = (settings.arguments as Map?) ?? {};
@@ -105,7 +158,11 @@ class AppRouter {
 
       case AppRoutes.petPublicProfile:
         final args = (settings.arguments as Map?) ?? {};
-        final petId = (args['petId'] as int?) ?? 0;
+        final rawPid = args['petId'];
+        final petId = rawPid is int ? rawPid : int.tryParse(rawPid?.toString() ?? '');
+        if (petId == null || petId <= 0) {
+          return _notFound('Pet profile not available');
+        }
         return MaterialPageRoute(
           builder: (_) => PetPublicProfileScreen(petId: petId),
         );
@@ -140,6 +197,23 @@ class AppRouter {
 
       case AppRoutes.settings:
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
+
+      case AppRoutes.accountSettings:
+        return MaterialPageRoute(builder: (_) => const AccountSettingsScreen());
+
+      // editProfile: navigate to own profile where avatar/bio editing lives
+      case AppRoutes.editProfile:
+        return MaterialPageRoute(builder: (_) => const UserProfileScreen());
+
+      case AppRoutes.mediaStorageSettings:
+        return MaterialPageRoute(
+          builder: (_) => const MediaStorageSettingsScreen(),
+        );
+
+      case AppRoutes.notificationsList:
+        return MaterialPageRoute(
+          builder: (_) => const FurtailHomeScreen(initialIndex: 4),
+        );
 
       // case AppRoutes.petList:
       //   return MaterialPageRoute(builder: (_) => const PetListScreen());

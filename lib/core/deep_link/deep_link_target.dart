@@ -6,6 +6,7 @@ enum DeepLinkKind {
   pet,
   fundraising,
   profile,
+  friendRequests,
 }
 
 class DeepLinkTarget {

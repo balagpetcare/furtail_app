@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:furtail_app/core/network/api_config.dart';
 
 class DhakaWard {
   final int id;
@@ -52,11 +53,8 @@ class DhakaLocationsResponse {
   }
 }
 
-// TODO: replace with your own config/provider for base URL
-const _defaultBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://192.168.10.111:3000');
-
 final dhakaLocationsProvider = FutureProvider.family<DhakaLocationsResponse, String>((ref, lang) async {
-  final uri = Uri.parse('$_defaultBaseUrl/api/v1/locations/dhaka?lang=$lang');
+  final uri = Uri.parse('${ApiConfig.host}/api/v1/locations/dhaka?lang=$lang');
   final res = await http.get(uri);
   if (res.statusCode != 200) {
     throw Exception('Failed to load Dhaka locations: ${res.statusCode}');

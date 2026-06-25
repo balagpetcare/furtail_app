@@ -52,7 +52,7 @@ class LanguageSelectScreen extends ConsumerWidget {
             Text(
               'আপনি পরে Settings থেকে ভাষা পরিবর্তন করতে পারবেন।',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black.withOpacity(0.6)),
+              style: TextStyle(color: Colors.black.withValues(alpha: 0.6)),
             ),
             const SizedBox(height: 14),
           ],

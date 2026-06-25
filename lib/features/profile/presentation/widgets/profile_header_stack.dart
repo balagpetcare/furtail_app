@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 
 import '../../data/models/user_profile_model.dart';
@@ -25,6 +26,10 @@ class ProfileHeaderStack extends StatelessWidget {
   final VoidCallback? onEditProfile;
   final VoidCallback? onAddPet;
   final VoidCallback? onCreatePost;
+  final bool showBackButton;
+  final VoidCallback? onShare;
+  final VoidCallback? onBack;
+  final Widget? moreActionsButton;
 
   const ProfileHeaderStack({
     super.key,
@@ -39,6 +44,10 @@ class ProfileHeaderStack extends StatelessWidget {
     this.onEditProfile,
     this.onAddPet,
     this.onCreatePost,
+    this.showBackButton = false,
+    this.onShare,
+    this.onBack,
+    this.moreActionsButton,
   });
 
   static const double _coverH = 200;
@@ -61,7 +70,6 @@ class ProfileHeaderStack extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Stack height = coverH + halfAvatar so avatar is within bounds.
-          // Previously avatar was at bottom:-56 → outside Stack → no touch events.
           SizedBox(
             height: _coverH + _halfAvatar,
             child: Stack(
@@ -77,6 +85,36 @@ class ProfileHeaderStack extends StatelessWidget {
                   left: 0, right: 0,
                   top: _coverH - 64, height: 64,
                   child: const _BottomFade(),
+                ),
+                // Floating top navigation buttons (transparent with icons and shadow)
+                if (showBackButton)
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: _FloatingActionButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      onTap: onBack ?? () => Navigator.maybePop(context),
+                      tooltip: 'Back',
+                    ),
+                  ),
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onShare != null)
+                        _FloatingActionButton(
+                          icon: Icons.share_outlined,
+                          onTap: onShare!,
+                          tooltip: 'Share',
+                        ),
+                      if (moreActionsButton != null) ...[
+                        const SizedBox(width: 8),
+                        moreActionsButton!,
+                      ],
+                    ],
+                  ),
                 ),
                 // Cover camera button (within stack bounds)
                 Positioned(
@@ -120,7 +158,7 @@ class ProfileHeaderStack extends StatelessWidget {
                         Text(
                           '@$username',
                           style: TextStyle(
-                            color: cs.primary.withOpacity(0.85),
+                            color: cs.primary.withValues(alpha: 0.85),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -226,17 +264,18 @@ class _ProfileCover extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => const _DefaultCover(),
+        errorBuilder: (_, _, _) => const _DefaultCover(),
       );
     }
 
     return CachedNetworkImage(
       imageUrl: url,
+      cacheManager: FurtailImageCacheManager(),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      placeholder: (_, __) => const _DefaultCover(),
-      errorWidget: (_, __, ___) => const _DefaultCover(),
+      placeholder: (_, _) => const _DefaultCover(),
+      errorWidget: (_, _, _) => const _DefaultCover(),
     );
   }
 }
@@ -262,25 +301,25 @@ class _DefaultCover extends StatelessWidget {
           right: 18, top: 18,
           child: Transform.rotate(
             angle: 0.3,
-            child: Icon(Icons.pets, size: 56, color: Colors.white.withOpacity(0.20)),
+            child: Icon(Icons.pets, size: 56, color: Colors.white.withValues(alpha: 0.20)),
           ),
         ),
         Positioned(
           left: 50, top: 55,
           child: Transform.rotate(
             angle: -0.5,
-            child: Icon(Icons.pets, size: 34, color: Colors.white.withOpacity(0.13)),
+            child: Icon(Icons.pets, size: 34, color: Colors.white.withValues(alpha: 0.13)),
           ),
         ),
         Positioned(
           right: 80, bottom: 16,
-          child: Icon(Icons.favorite_rounded, size: 26, color: Colors.white.withOpacity(0.18)),
+          child: Icon(Icons.favorite_rounded, size: 26, color: Colors.white.withValues(alpha: 0.18)),
         ),
         Positioned(
           left: 18, bottom: 22,
           child: Transform.rotate(
             angle: 0.4,
-            child: Icon(Icons.pets, size: 22, color: Colors.white.withOpacity(0.12)),
+            child: Icon(Icons.pets, size: 22, color: Colors.white.withValues(alpha: 0.12)),
           ),
         ),
       ],
@@ -298,7 +337,7 @@ class _BottomFade extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withOpacity(0.22)],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.22)],
         ),
       ),
     );
@@ -318,15 +357,16 @@ class _AvatarArea extends StatelessWidget {
       return Image.file(
         File(url.replaceFirst('file://', '')),
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _DefaultAvatar(name: name),
+        errorBuilder: (_, _, _) => _DefaultAvatar(name: name),
       );
     }
 
     return CachedNetworkImage(
       imageUrl: url,
+      cacheManager: FurtailImageCacheManager(),
       fit: BoxFit.cover,
-      placeholder: (_, __) => _DefaultAvatar(name: name),
-      errorWidget: (_, __, ___) => _DefaultAvatar(name: name),
+      placeholder: (_, _) => _DefaultAvatar(name: name),
+      errorWidget: (_, _, _) => _DefaultAvatar(name: name),
     );
   }
 }
@@ -387,7 +427,7 @@ class _AvatarWithCam extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -424,9 +464,9 @@ class _CamBtn extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(isSmall ? 6 : 8),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.60),
+            color: Theme.of(context).colorScheme.primary,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
           ),
           child: Icon(Icons.camera_alt, color: Colors.white, size: isSmall ? 15 : 18),
         ),
@@ -515,6 +555,39 @@ class _IconActionBtn extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 20, color: Colors.black87),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  const _FloatingActionButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            color: Color(0x73000000),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
       ),
     );
