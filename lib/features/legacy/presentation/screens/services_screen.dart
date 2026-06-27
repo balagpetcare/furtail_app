@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
 
-import 'adoption_screen.dart';
 import 'donation_screen.dart';
 import 'shop_screen.dart';
 import 'vet_screen.dart';
@@ -46,7 +46,8 @@ class ServicesScreen extends StatelessWidget {
           _ServiceItem(
             'Adoption',
             Icons.favorite_rounded,
-            const AdoptionScreen(),
+            null,
+            routeName: AppRoutes.adoption,
           ),
           _ServiceItem('Lost & Found', Icons.travel_explore_rounded, null),
           _ServiceItem(
@@ -104,8 +105,9 @@ class _ServiceItem {
   final String title;
   final IconData icon;
   final Widget? page;
+  final String? routeName;
 
-  const _ServiceItem(this.title, this.icon, this.page);
+  const _ServiceItem(this.title, this.icon, this.page, {this.routeName});
 }
 
 class _ServiceSectionView extends StatelessWidget {
@@ -140,13 +142,19 @@ class _ServiceSectionView extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final item = section.items[index];
-            final enabled = item.page != null;
+            final enabled = item.page != null || item.routeName != null;
             return InkWell(
               onTap: enabled
-                  ? () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => item.page!),
-                    )
+                  ? () {
+                      if (item.routeName != null) {
+                        Navigator.pushNamed(context, item.routeName!);
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => item.page!),
+                      );
+                    }
                   : () => _showComingSoon(context, item.title),
               borderRadius: BorderRadius.circular(8),
               child: Ink(

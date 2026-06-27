@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/features/adoption/presentation/screens/adoption_home_screen.dart';
 
 class AdoptionScreen extends StatelessWidget {
   const AdoptionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Adopt a Pet")),
-      body: const Center(child: Text("Adoption List Coming Soon...")),
-    );
+    return const AdoptionHomeScreen();
   }
 }

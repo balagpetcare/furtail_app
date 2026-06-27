@@ -44,6 +44,7 @@ class ApiEndpoints {
   // ---------- POSTS / FEED ----------
   static String postsFeed({int limit = 50}) =>
       "${ApiConfig.apiV1}/posts/feed?limit=$limit";
+
   static String postsUserFeed({required int userId, int limit = 50}) =>
       "${ApiConfig.apiV1}/posts/user/$userId?limit=$limit";
   static String postsUserPhotos({required int userId, int limit = 50}) =>
@@ -324,6 +325,47 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/reports/reasons?type=${Uri.encodeQueryComponent(type)}";
   static String createReport() => "${ApiConfig.apiV1}/reports";
 
+  // ---------- ADOPTION ----------
+  static String adoptions({
+    String? species,
+    String? search,
+    int? countryId,
+    int? divisionId,
+    int? stateId,
+    int? districtId,
+    int? cityId,
+    int? areaId,
+    int page = 1,
+    int limit = 20,
+  }) {
+    final qp = <String, String>{'page': '$page', 'limit': '$limit'};
+    if (species != null && species.trim().isNotEmpty) qp['species'] = species.trim();
+    if (search != null && search.trim().isNotEmpty) qp['search'] = search.trim();
+    if (countryId != null) qp['countryId'] = '$countryId';
+    if (divisionId != null) qp['divisionId'] = '$divisionId';
+    if (stateId != null) qp['stateId'] = '$stateId';
+    if (districtId != null) qp['districtId'] = '$districtId';
+    if (cityId != null) qp['cityId'] = '$cityId';
+    if (areaId != null) qp['areaId'] = '$areaId';
+    final query = qp.entries
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
+        .join('&');
+    return "${ApiConfig.apiV1}/adoptions?$query";
+  }
+
+  static String adoptionDetail(int id) => "${ApiConfig.apiV1}/adoptions/$id";
+  static String createAdoption() => "${ApiConfig.apiV1}/adoptions";
+  static String updateAdoption(int id) => "${ApiConfig.apiV1}/adoptions/$id";
+  static String submitAdoptionReview(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/submit-review";
+  static String myAdoptions({int page = 1, int limit = 20}) =>
+      "${ApiConfig.apiV1}/me/adoptions?page=$page&limit=$limit";
+  static String myAdoptionApplications({int page = 1, int limit = 20}) =>
+      "${ApiConfig.apiV1}/me/adoption-applications?page=$page&limit=$limit";
+
   // ---------- COMMENTS (Phase 1: Edit, Delete, Cursor) ----------
   /// PATCH /api/v1/posts/:postId/comments/:commentId — edit a comment
   static String postsCommentEdit({
@@ -417,4 +459,7 @@ class ApiEndpoints {
   /// DELETE /api/v1/stories/:id — delete a story
   static String storiesDelete(int storyId) =>
       "${ApiConfig.apiV1}/stories/$storyId";
+
+
 }
+

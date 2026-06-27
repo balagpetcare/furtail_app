@@ -32,6 +32,7 @@ import 'package:furtail_app/features/notifications/presentation/screens/notifica
 import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/certificate_viewer_screen.dart';
+import 'package:furtail_app/features/adoption/presentation/screens/adoption_home_screen.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -170,6 +171,9 @@ class AppRouter {
       case AppRoutes.donation:
         return MaterialPageRoute(builder: (_) => const DonationScreen());
 
+      case AppRoutes.adoption:
+        return MaterialPageRoute(builder: (_) => const AdoptionHomeScreen());
+
       case AppRoutes.wallet:
         return MaterialPageRoute(builder: (_) => const WalletScreen());
 
@@ -209,6 +213,7 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => const MediaStorageSettingsScreen(),
         );
+
 
       case AppRoutes.notificationsList:
         return MaterialPageRoute(
