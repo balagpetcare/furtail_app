@@ -6,7 +6,11 @@ import 'package:furtail_app/features/adoption/data/datasources/adoption_remote_d
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_pet_detail_screen.dart';
+import 'package:furtail_app/features/adoption/presentation/screens/listing_applications_screen.dart';
+import 'package:furtail_app/features/adoption/presentation/screens/create_adoption_listing_screen.dart';
+import 'package:furtail_app/features/adoption/presentation/widgets/adoption_comments_sheet.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_pet_card.dart';
+import 'package:furtail_app/core/services/share_service.dart';
 import 'package:furtail_app/services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,7 +18,8 @@ class MyAdoptionListingsScreen extends StatefulWidget {
   const MyAdoptionListingsScreen({super.key});
 
   @override
-  State<MyAdoptionListingsScreen> createState() => _MyAdoptionListingsScreenState();
+  State<MyAdoptionListingsScreen> createState() =>
+      _MyAdoptionListingsScreenState();
 }
 
 class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
@@ -60,6 +65,47 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
     }
   }
 
+  void _updateItem(AdoptionPetUiModel updated) {
+    if (!mounted) return;
+    setState(() {
+      _items = _items
+          .map((pet) => pet.id == updated.id ? updated : pet)
+          .toList();
+    });
+  }
+
+  void _updateCommentCount(int adoptionId, int count) {
+    if (!mounted) return;
+    setState(() {
+      _items = _items
+          .map(
+            (pet) => pet.id == adoptionId
+                ? pet.copyWith(commentCount: count)
+                : pet,
+          )
+          .toList();
+    });
+  }
+
+  Future<void> _toggleFavorite(AdoptionPetUiModel pet) async {
+    final next = !pet.isFavoritedByMe;
+    final optimistic = pet.copyWith(
+      isFavoritedByMe: next,
+      favoriteCount: (pet.favoriteCount + (next ? 1 : -1)).clamp(0, 1 << 30),
+    );
+    _updateItem(optimistic);
+    try {
+      final updated = next
+          ? await _repository.favoriteAdoption(pet.id)
+          : await _repository.unfavoriteAdoption(pet.id);
+      if (!mounted) return;
+      _updateItem(updated);
+    } catch (_) {
+      if (!mounted) return;
+      _updateItem(pet);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +132,8 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
             else if (_error != null)
               const _StateCard(
                 title: 'Could not load listings',
-                message: 'The adoption API is unavailable right now. Pull to refresh and try again.',
+                message:
+                    'The adoption API is unavailable right now. Pull to refresh and try again.',
                 icon: Icons.cloud_off_rounded,
               )
             else if (_items.isEmpty)
@@ -99,20 +146,78 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
               ..._items.map(
                 (pet) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                  child: AdoptionPetCard(
-                    pet: pet,
-                    isSaved: false,
-                    onToggleSaved: () {},
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => AdoptionPetDetailScreen(
-                          pet: pet,
-                          repository: _repository,
-                          isSaved: false,
-                          onToggleSaved: () {},
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AdoptionPetCard(
+                        pet: pet,
+                        isFavorited: pet.isFavoritedByMe,
+                        isOwnedByMe: true,
+                        onToggleFavorite: () => _toggleFavorite(pet),
+                        onOpenDetails: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => AdoptionPetDetailScreen(
+                              pet: pet,
+                              repository: _repository,
+                              onPetChanged: _updateItem,
+                            ),
+                          ),
+                        ),
+                        onComment: () {
+                          showAdoptionCommentsSheet(
+                            context,
+                            pet: pet,
+                            repository: _repository,
+                            onCountChanged: (count) =>
+                                _updateCommentCount(pet.id, count),
+                          );
+                        },
+                        onShare: () => ShareService.share(
+                          context,
+                          type: 'pet',
+                          id: pet.id,
+                        ),
+                        onMenuSelected: (action) {
+                          if (action == AdoptionCardMenuAction.editListing) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => CreateAdoptionListingScreen(
+                                  existingListing: pet,
+                                ),
+                              ),
+                            ).then((updated) {
+                              if (updated == true) {
+                                _load();
+                              }
+                            });
+                          } else if (action == AdoptionCardMenuAction.updateStatus) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ListingApplicationsScreen(
+                                  adoptionId: pet.id,
+                                  petName: pet.name,
+                                ),
+                              ),
+                            ).then((_) => _load());
+                          }
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.sm),
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.description_outlined),
+                          label: Text('View Applications (${pet.applicationCount})'),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ListingApplicationsScreen(
+                                adoptionId: pet.id,
+                                petName: pet.name,
+                              ),
+                            ),
+                          ).then((_) => _load()),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),

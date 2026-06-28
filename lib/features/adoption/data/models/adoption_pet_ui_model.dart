@@ -1,3 +1,7 @@
+import 'package:furtail_app/core/media/media_url.dart';
+
+import 'adoption_media_models.dart';
+
 class AdoptionPetUiModel {
   final int id;
   final String name;
@@ -14,8 +18,15 @@ class AdoptionPetUiModel {
   final bool isShelter;
   final String ownerName;
   final int? ownerUserId;
+  final String? ownerAvatarUrl;
   final String ownerRoleLabel;
+  final bool ownerVerified;
+  final bool viewerIsOwner;
   final String status;
+  final String? ownerContactPhone;
+  final String? ownerWhatsappPhone;
+  final String? ownerCityAreaText;
+  final String? pickupLocationNotes;
   final List<String> galleryLabels;
   final List<String> personalityTags;
   final List<String> compatibilityTags;
@@ -25,6 +36,20 @@ class AdoptionPetUiModel {
   final String healthNotes;
   final String? coverImageUrl;
   final List<String> galleryImageUrls;
+  final List<AdoptionMediaUiModel> media;
+  final int favoriteCount;
+  final int commentCount;
+  final bool isFavoritedByMe;
+  final int? bdDivisionId;
+  final int? bdDistrictId;
+  final int? bdUpazilaId;
+  final int? bdAreaId;
+  final double? latitude;
+  final double? longitude;
+  final String? serviceAreaType;
+  final int applicationCount;
+  final String? sizeText;
+  final String? colorText;
 
   const AdoptionPetUiModel({
     required this.id,
@@ -42,8 +67,15 @@ class AdoptionPetUiModel {
     required this.isShelter,
     required this.ownerName,
     this.ownerUserId,
+    this.ownerAvatarUrl,
     required this.ownerRoleLabel,
+    this.ownerVerified = false,
+    this.viewerIsOwner = false,
     required this.status,
+    this.ownerContactPhone,
+    this.ownerWhatsappPhone,
+    this.ownerCityAreaText,
+    this.pickupLocationNotes,
     required this.galleryLabels,
     required this.personalityTags,
     required this.compatibilityTags,
@@ -53,7 +85,30 @@ class AdoptionPetUiModel {
     required this.healthNotes,
     this.coverImageUrl,
     this.galleryImageUrls = const [],
+    this.media = const [],
+    this.favoriteCount = 0,
+    this.commentCount = 0,
+    this.isFavoritedByMe = false,
+    this.bdDivisionId,
+    this.bdDistrictId,
+    this.bdUpazilaId,
+    this.bdAreaId,
+    this.latitude,
+    this.longitude,
+    this.serviceAreaType,
+    this.applicationCount = 0,
+    this.sizeText,
+    this.colorText,
   });
+
+  AdoptionMediaUiModel? get coverMedia {
+    if (media.isNotEmpty) return media.first;
+    final cover = coverImageUrl?.trim() ?? '';
+    if (cover.isNotEmpty) {
+      return AdoptionMediaUiModel(id: null, url: cover, type: 'IMAGE');
+    }
+    return null;
+  }
 
   bool get hasHealthBadge => vaccinated || dewormed;
 
@@ -73,8 +128,15 @@ class AdoptionPetUiModel {
     bool? isShelter,
     String? ownerName,
     int? ownerUserId,
+    String? ownerAvatarUrl,
     String? ownerRoleLabel,
+    bool? ownerVerified,
+    bool? viewerIsOwner,
     String? status,
+    String? ownerContactPhone,
+    String? ownerWhatsappPhone,
+    String? ownerCityAreaText,
+    String? pickupLocationNotes,
     List<String>? galleryLabels,
     List<String>? personalityTags,
     List<String>? compatibilityTags,
@@ -84,6 +146,20 @@ class AdoptionPetUiModel {
     String? healthNotes,
     String? coverImageUrl,
     List<String>? galleryImageUrls,
+    List<AdoptionMediaUiModel>? media,
+    int? favoriteCount,
+    int? commentCount,
+    bool? isFavoritedByMe,
+    int? bdDivisionId,
+    int? bdDistrictId,
+    int? bdUpazilaId,
+    int? bdAreaId,
+    double? latitude,
+    double? longitude,
+    String? serviceAreaType,
+    int? applicationCount,
+    String? sizeText,
+    String? colorText,
   }) {
     return AdoptionPetUiModel(
       id: id ?? this.id,
@@ -101,8 +177,15 @@ class AdoptionPetUiModel {
       isShelter: isShelter ?? this.isShelter,
       ownerName: ownerName ?? this.ownerName,
       ownerUserId: ownerUserId ?? this.ownerUserId,
+      ownerAvatarUrl: ownerAvatarUrl ?? this.ownerAvatarUrl,
       ownerRoleLabel: ownerRoleLabel ?? this.ownerRoleLabel,
+      ownerVerified: ownerVerified ?? this.ownerVerified,
+      viewerIsOwner: viewerIsOwner ?? this.viewerIsOwner,
       status: status ?? this.status,
+      ownerContactPhone: ownerContactPhone ?? this.ownerContactPhone,
+      ownerWhatsappPhone: ownerWhatsappPhone ?? this.ownerWhatsappPhone,
+      ownerCityAreaText: ownerCityAreaText ?? this.ownerCityAreaText,
+      pickupLocationNotes: pickupLocationNotes ?? this.pickupLocationNotes,
       galleryLabels: galleryLabels ?? this.galleryLabels,
       personalityTags: personalityTags ?? this.personalityTags,
       compatibilityTags: compatibilityTags ?? this.compatibilityTags,
@@ -112,20 +195,41 @@ class AdoptionPetUiModel {
       healthNotes: healthNotes ?? this.healthNotes,
       coverImageUrl: coverImageUrl ?? this.coverImageUrl,
       galleryImageUrls: galleryImageUrls ?? this.galleryImageUrls,
+      media: media ?? this.media,
+      favoriteCount: favoriteCount ?? this.favoriteCount,
+      commentCount: commentCount ?? this.commentCount,
+      isFavoritedByMe: isFavoritedByMe ?? this.isFavoritedByMe,
+      bdDivisionId: bdDivisionId ?? this.bdDivisionId,
+      bdDistrictId: bdDistrictId ?? this.bdDistrictId,
+      bdUpazilaId: bdUpazilaId ?? this.bdUpazilaId,
+      bdAreaId: bdAreaId ?? this.bdAreaId,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      serviceAreaType: serviceAreaType ?? this.serviceAreaType,
+      applicationCount: applicationCount ?? this.applicationCount,
+      sizeText: sizeText ?? this.sizeText,
+      colorText: colorText ?? this.colorText,
     );
   }
 
   static AdoptionPetUiModel fromApiJson(Map<String, dynamic> json) {
     final mediaList = _asMapList(json['media']);
+    final media = mediaList
+        .map((item) => AdoptionMediaUiModel.fromApiJson(item))
+        .where((item) => item.displayUrl.isNotEmpty || item.hasThumbnail)
+        .toList();
     final galleryImageUrls = mediaList
         .map((item) {
-          final media = item['media'];
-          if (media is Map) {
-            final url = _asString(media['url']);
-            if (url.isNotEmpty) return url;
-            final thumb = _asString(media['thumbnailUrl']);
-            if (thumb.isNotEmpty) return thumb;
-          }
+          final mediaJson = item['media'];
+          final candidate = mediaJson is Map
+              ? Map<String, dynamic>.from(mediaJson)
+              : item;
+          final type = AdoptionMediaUiModel.fromApiJson(candidate).type;
+          if (type.toUpperCase() != 'IMAGE') return '';
+          final url = _asString(candidate['url']);
+          if (url.isNotEmpty) return url;
+          final thumb = _asString(candidate['thumbnailUrl']);
+          if (thumb.isNotEmpty) return thumb;
           return '';
         })
         .where((item) => item.isNotEmpty)
@@ -143,6 +247,8 @@ class AdoptionPetUiModel {
     final shelter = _asMap(json['shelterProfile']);
     final country = _asMap(json['country']);
     final criteria = _asMap(json['criteria']);
+    final count = _asMap(json['_count']);
+    final favorites = _asMapList(json['favorites']);
 
     final ownerName = _firstNonEmpty([
       _asString(shelter['displayName']),
@@ -150,6 +256,12 @@ class AdoptionPetUiModel {
       _asString(ownerProfile['username']),
       'Furtail user',
     ]);
+    final ownerAvatarUrl = MediaUrl.normalize(
+      _firstNonEmpty([
+        _asString(_asMap(ownerProfile['avatarMedia'])['url']),
+        _asString(ownerProfile['avatarUrl']),
+      ]),
+    );
 
     final ownerRoleLabel = _ownerRoleLabel(
       ownerType: _asString(json['ownerType']),
@@ -180,10 +292,7 @@ class AdoptionPetUiModel {
       breed: breed.isNotEmpty ? breed : 'Breed not specified',
       ageLabel: ageText.isNotEmpty ? ageText : 'Age not specified',
       gender: gender,
-      location: _firstNonEmpty([
-        _asString(country['name']),
-        'Bangladesh',
-      ]),
+      location: _firstNonEmpty([_asString(country['name']), 'Bangladesh']),
       description: _firstNonEmpty([
         _asString(json['description']),
         _asString(json['story']),
@@ -193,17 +302,28 @@ class AdoptionPetUiModel {
       dewormed: _asBool(json['dewormed']),
       neutered: _asBool(json['neutered']),
       microchipped: _asBool(json['microchipped']),
-      isShelter: _asString(shelter['displayName']).isNotEmpty ||
+      isShelter:
+          _asString(shelter['displayName']).isNotEmpty ||
           _asString(json['ownerType']) == 'SHELTER' ||
           _asString(json['ownerType']) == 'RESCUE',
       ownerName: ownerName,
       ownerUserId: _asIntOrNull(owner['id']),
+      ownerAvatarUrl: ownerAvatarUrl.isNotEmpty ? ownerAvatarUrl : null,
       ownerRoleLabel: ownerRoleLabel,
+      ownerVerified:
+          _asString(shelter['verificationStatus']).toUpperCase() == 'VERIFIED',
+      viewerIsOwner: json['viewerIsOwner'] == true,
       status: status,
+      ownerContactPhone: _nullableString(json['ownerContactPhone']),
+      ownerWhatsappPhone: _nullableString(json['ownerWhatsappPhone']),
+      ownerCityAreaText: _nullableString(json['ownerCityAreaText']),
+      pickupLocationNotes: _nullableString(json['pickupLocationNotes']),
       galleryLabels: galleryLabels,
       personalityTags: _asStringList(json['personalityTagsJson']),
       compatibilityTags: _asStringList(json['compatibilityTagsJson']),
-      serviceAreas: serviceAreas.isNotEmpty ? serviceAreas : const ['Bangladesh'],
+      serviceAreas: serviceAreas.isNotEmpty
+          ? serviceAreas
+          : const ['Bangladesh'],
       adopterConditions: {
         ..._asStringList(json['adopterConditionsJson']),
         ..._criteriaConditions(criteria),
@@ -217,8 +337,24 @@ class AdoptionPetUiModel {
         _asString(json['healthInfo']),
         'No health notes available yet.',
       ]),
-      coverImageUrl: galleryImageUrls.isNotEmpty ? galleryImageUrls.first : null,
+      coverImageUrl: media.isNotEmpty
+          ? (media.first.isVideo ? media.first.thumbnailUrl : media.first.url)
+          : (galleryImageUrls.isNotEmpty ? galleryImageUrls.first : null),
       galleryImageUrls: galleryImageUrls,
+      media: media,
+      favoriteCount: _asInt(count['favorites']),
+      commentCount: _asInt(count['comments']),
+      isFavoritedByMe: favorites.isNotEmpty,
+      bdDivisionId: _asIntOrNull(json['bdDivisionId']),
+      bdDistrictId: _asIntOrNull(json['bdDistrictId']),
+      bdUpazilaId: _asIntOrNull(json['bdUpazilaId']),
+      bdAreaId: _asIntOrNull(json['bdAreaId']),
+      latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
+      longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
+      serviceAreaType: _nullableString(json['serviceAreaType']),
+      applicationCount: _asInt(count['applications']),
+      sizeText: _nullableString(json['sizeText']),
+      colorText: _nullableString(json['colorText']),
     );
   }
 
@@ -244,9 +380,15 @@ class AdoptionPetUiModel {
   }
 
   static String _asString(dynamic value) => value?.toString().trim() ?? '';
-  static int _asInt(dynamic value) => int.tryParse(value?.toString() ?? '') ?? 0;
-  static int? _asIntOrNull(dynamic value) => int.tryParse(value?.toString() ?? '');
+  static int _asInt(dynamic value) =>
+      int.tryParse(value?.toString() ?? '') ?? 0;
+  static int? _asIntOrNull(dynamic value) =>
+      int.tryParse(value?.toString() ?? '');
   static bool _asBool(dynamic value) => value == true;
+  static String? _nullableString(dynamic value) {
+    final text = _asString(value);
+    return text.isEmpty ? null : text;
+  }
 
   static String _firstNonEmpty(List<String> values) {
     for (final value in values) {
@@ -325,7 +467,11 @@ class AdoptionPetUiModel {
         return value
             .toLowerCase()
             .split('_')
-            .map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}')
+            .map(
+              (part) => part.isEmpty
+                  ? part
+                  : '${part[0].toUpperCase()}${part.substring(1)}',
+            )
             .join(' ');
     }
   }

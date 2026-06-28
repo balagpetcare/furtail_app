@@ -16,7 +16,8 @@ class ApplicationDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<ApplicationDetailScreen> createState() => _ApplicationDetailScreenState();
+  State<ApplicationDetailScreen> createState() =>
+      _ApplicationDetailScreenState();
 }
 
 class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
@@ -37,7 +38,9 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
       _isLoading = true;
     });
     try {
-      final detail = await widget.repository.fetchAdoptionApplicationDetail(widget.applicationId);
+      final detail = await widget.repository.fetchAdoptionApplicationDetail(
+        widget.applicationId,
+      );
       if (!mounted) return;
       setState(() {
         _app = detail;
@@ -78,7 +81,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         _isSaving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update status: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to update status: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -168,13 +174,27 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.cloud_off_rounded, size: 48, color: Colors.grey),
+                      const Icon(
+                        Icons.cloud_off_rounded,
+                        size: 48,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                      Text('Could not load application', style: AppTypography.sectionTitle(context)),
+                      Text(
+                        'Could not load application',
+                        style: AppTypography.sectionTitle(context),
+                      ),
                       const SizedBox(height: AppSpacing.sm),
-                      Text(_error!, textAlign: TextAlign.center, style: TextStyle(color: cs.onSurfaceVariant)),
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
                       const SizedBox(height: AppSpacing.lg),
-                      ElevatedButton(onPressed: _load, child: const Text('Retry')),
+                      ElevatedButton(
+                        onPressed: _load,
+                        child: const Text('Retry'),
+                      ),
                     ],
                   ),
                 ),
@@ -193,7 +213,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 28,
-                                backgroundImage: app.applicantAvatarUrl.isNotEmpty
+                                backgroundImage:
+                                    app.applicantAvatarUrl.isNotEmpty
                                     ? NetworkImage(app.applicantAvatarUrl)
                                     : null,
                                 child: app.applicantAvatarUrl.isEmpty
@@ -207,11 +228,16 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                                   children: [
                                     Text(
                                       app.applicantName,
-                                      style: AppTypography.sectionTitle(context),
+                                      style: AppTypography.sectionTitle(
+                                        context,
+                                      ),
                                     ),
                                     Text(
                                       '@${app.applicantUsername}',
-                                      style: TextStyle(color: cs.outline, fontSize: 13),
+                                      style: TextStyle(
+                                        color: cs.outline,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -222,17 +248,26 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Application Status:', style: AppTypography.menuTitle(context)),
+                              Text(
+                                'Application Status:',
+                                style: AppTypography.menuTitle(context),
+                              ),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSpacing.md,
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _statusColor(app.status, cs).withValues(alpha: 0.1),
+                                  color: _statusColor(
+                                    app.status,
+                                    cs,
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: _statusColor(app.status, cs).withValues(alpha: 0.4),
+                                    color: _statusColor(
+                                      app.status,
+                                      cs,
+                                    ).withValues(alpha: 0.4),
                                   ),
                                 ),
                                 child: Text(
@@ -263,8 +298,11 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.pets, color: Colors.purple),
-                      title: Text(app.pet.name, style: AppTypography.menuTitle(context)),
-                      subtitle: Text('${app.pet.species} • ${app.pet.breed ?? "Unknown breed"}'),
+                      title: Text(
+                        app.pet.name,
+                        style: AppTypography.menuTitle(context),
+                      ),
+                      subtitle: Text('${app.pet.species} • ${app.pet.breed}'),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -277,12 +315,51 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Message from Applicant', style: AppTypography.menuTitle(context)),
+                            Text(
+                              'Message from Applicant',
+                              style: AppTypography.menuTitle(context),
+                            ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
                               app.message,
-                              style: TextStyle(color: cs.onSurfaceVariant, height: 1.4),
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                height: 1.4,
+                              ),
                             ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+
+                  if (app.applicantPhone.isNotEmpty ||
+                      app.applicantWhatsappPhone.isNotEmpty ||
+                      app.applicantCityAreaText.isNotEmpty ||
+                      app.applicantAddress.isNotEmpty) ...[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Applicant Contact',
+                              style: AppTypography.menuTitle(context),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            if (app.applicantPhone.isNotEmpty)
+                              Text('Mobile: ${app.applicantPhone}'),
+                            if (app.applicantWhatsappPhone.isNotEmpty)
+                              Text('WhatsApp: ${app.applicantWhatsappPhone}'),
+                            if (app.applicantCityAreaText.isNotEmpty)
+                              Text('City / area: ${app.applicantCityAreaText}'),
+                            if (app.applicantAddress.isNotEmpty)
+                              Text(
+                                'Location details: ${app.applicantAddress}',
+                                style: TextStyle(color: cs.onSurfaceVariant),
+                              ),
                           ],
                         ),
                       ),
@@ -298,16 +375,23 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Questionnaire Responses', style: AppTypography.menuTitle(context)),
+                            Text(
+                              'Questionnaire Responses',
+                              style: AppTypography.menuTitle(context),
+                            ),
                             const SizedBox(height: AppSpacing.md),
                             ...app.answers.map(
                               (ans) => Padding(
-                                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.md,
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      ans['questionLabel'] ?? ans['questionKey'] ?? 'Question',
+                                      ans['questionLabel'] ??
+                                          ans['questionKey'] ??
+                                          'Question',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 13,
@@ -340,7 +424,10 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Manage Application', style: AppTypography.menuTitle(context)),
+                          Text(
+                            'Manage Application',
+                            style: AppTypography.menuTitle(context),
+                          ),
                           const SizedBox(height: AppSpacing.md),
                           Wrap(
                             spacing: AppSpacing.sm,
@@ -355,7 +442,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                                 child: const Text('Shortlist'),
                               ),
                               ElevatedButton(
-                                onPressed: () => _updateStatus('INTERVIEW_SCHEDULED'),
+                                onPressed: () =>
+                                    _updateStatus('INTERVIEW_SCHEDULED'),
                                 child: const Text('Schedule Interview'),
                               ),
                               ElevatedButton(
@@ -363,7 +451,31 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                                   backgroundColor: Colors.green.shade50,
                                   foregroundColor: Colors.green.shade800,
                                 ),
-                                onPressed: () => _updateStatus('APPROVED'),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Confirm Approval'),
+                                      content: const Text(
+                                        'Are you sure you want to approve this application? '
+                                        'Approving will mark the pet as Adopted and close the listing to new applications.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(ctx);
+                                            _updateStatus('APPROVED');
+                                          },
+                                          child: const Text('Approve'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                                 child: const Text('Approve'),
                               ),
                               ElevatedButton(
@@ -371,7 +483,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                                   backgroundColor: Colors.red.shade50,
                                   foregroundColor: Colors.red.shade800,
                                 ),
-                                onPressed: () => _promptNoteAndStatus('REJECTED'),
+                                onPressed: () =>
+                                    _promptNoteAndStatus('REJECTED'),
                                 child: const Text('Reject'),
                               ),
                               ElevatedButton(
@@ -379,7 +492,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                                   backgroundColor: Colors.grey.shade100,
                                   foregroundColor: Colors.grey.shade800,
                                 ),
-                                onPressed: () => _promptNoteAndStatus('CANCELLED'),
+                                onPressed: () =>
+                                    _promptNoteAndStatus('CANCELLED'),
                                 child: const Text('Cancel'),
                               ),
                             ],
