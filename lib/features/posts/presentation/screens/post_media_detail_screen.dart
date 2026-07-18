@@ -47,6 +47,7 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
   late final List<GlobalKey> _itemKeys;
   int _currentIndex = 0;
   bool _scrolledToInitial = false;
+  final Set<int> _likeBusyIndexes = <int>{};
 
   @override
   void initState() {
@@ -60,10 +61,10 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
     _engagements = widget.media.map((m) {
       return MediaEngagementSummary(
         mediaId: m.id,
-        pawCount: widget.post?.likeCount ?? 0,
+        likeCount: widget.post?.likeCount ?? 0,
         commentCount: widget.post?.commentCount ?? 0,
         shareCount: 0,
-        isPawed: widget.post?.isLikedByMe ?? false,
+        isLiked: widget.post?.isLikedByMe ?? false,
       );
     }).toList();
 
@@ -95,24 +96,29 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
     }
   }
 
-  Future<void> _togglePaw(int index) async {
+  Future<void> _toggleLike(int index) async {
+    if (_likeBusyIndexes.contains(index)) return;
+    _likeBusyIndexes.add(index);
     final summary = _engagements[index];
-    final currentlyPawed = summary.isPawed;
+    final currentlyLiked = summary.isLiked;
 
     // Optimistic UI update
     setState(() {
       _engagements[index] = summary.copyWith(
-        isPawed: !currentlyPawed,
-        pawCount: (summary.pawCount + (currentlyPawed ? -1 : 1)).clamp(0, 999999),
+        isLiked: !currentlyLiked,
+        likeCount: (summary.likeCount + (currentlyLiked ? -1 : 1)).clamp(
+          0,
+          999999,
+        ),
       );
     });
 
     try {
       // TODO: Connect media-level toggle-like API endpoint here once supported:
       // await _ds.likeMedia(summary.mediaId);
-      
+
       // Fallback: Map to post-level endpoints
-      final res = currentlyPawed
+      final res = currentlyLiked
           ? await _ds.unlikePost(widget.postId)
           : await _ds.likePost(widget.postId);
 
@@ -122,8 +128,8 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
       if (mounted) {
         setState(() {
           _engagements[index] = _engagements[index].copyWith(
-            pawCount: likeCount ?? _engagements[index].pawCount,
-            isPawed: isLikedByMe ?? _engagements[index].isPawed,
+            likeCount: likeCount ?? _engagements[index].likeCount,
+            isLiked: isLikedByMe ?? _engagements[index].isLiked,
           );
         });
       }
@@ -133,10 +139,12 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
         setState(() {
           _engagements[index] = summary;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Paw action failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Like action failed: $e')));
       }
+    } finally {
+      _likeBusyIndexes.remove(index);
     }
   }
 
@@ -156,7 +164,9 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
           onCountChanged: (n) {
             if (mounted) {
               setState(() {
-                _engagements[index] = _engagements[index].copyWith(commentCount: n);
+                _engagements[index] = _engagements[index].copyWith(
+                  commentCount: n,
+                );
               });
             }
           },
@@ -176,7 +186,9 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
   Future<void> _shareMediaUrl(PostMediaModel mediaItem) async {
     if (mediaItem.url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot share: URL is empty or processing.')),
+        const SnackBar(
+          content: Text('Cannot share: URL is empty or processing.'),
+        ),
       );
       return;
     }
@@ -186,7 +198,9 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
   Future<void> _shareMediaFile(PostMediaModel mediaItem) async {
     if (mediaItem.url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot share: URL is empty or processing.')),
+        const SnackBar(
+          content: Text('Cannot share: URL is empty or processing.'),
+        ),
       );
       return;
     }
@@ -195,21 +209,24 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
       if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
         final tempDir = await getTemporaryDirectory();
-        final extension = mediaItem.type.toUpperCase() == 'VIDEO' ? 'mp4' : 'jpg';
-        final file = File('${tempDir.path}/shared_media_${mediaItem.id}.$extension');
-        await file.writeAsBytes(bytes);
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'Shared from Furtail',
+        final extension = mediaItem.type.toUpperCase() == 'VIDEO'
+            ? 'mp4'
+            : 'jpg';
+        final file = File(
+          '${tempDir.path}/shared_media_${mediaItem.id}.$extension',
         );
+        await file.writeAsBytes(bytes);
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], text: 'Shared from Furtail');
       } else {
         throw Exception('Failed to download media file from server');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share file: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share file: $e')));
       }
     }
   }
@@ -217,14 +234,20 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
   Future<void> _downloadMedia(PostMediaModel mediaItem) async {
     if (mediaItem.url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot download: URL is empty or processing.')),
+        const SnackBar(
+          content: Text('Cannot download: URL is empty or processing.'),
+        ),
       );
       return;
     }
 
     if (mediaItem.type.toUpperCase() == 'VIDEO') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video downloading is not supported yet. Please share the link instead.')),
+        const SnackBar(
+          content: Text(
+            'Video downloading is not supported yet. Please share the link instead.',
+          ),
+        ),
       );
       return;
     }
@@ -232,7 +255,9 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
     try {
       final hasPhotos = await PermissionService().ensure(AppPermission.photos);
       if (!hasPhotos) {
-        final hasStorage = await PermissionService().ensure(AppPermission.storage);
+        final hasStorage = await PermissionService().ensure(
+          AppPermission.storage,
+        );
         if (!hasStorage) {
           throw Exception('Storage/Photo permission denied');
         }
@@ -256,7 +281,8 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
 
       dir ??= await getTemporaryDirectory();
 
-      final fileName = 'furtail_image_${mediaItem.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName =
+          'furtail_image_${mediaItem.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(bytes);
 
@@ -267,9 +293,9 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
       }
     }
   }
@@ -374,11 +400,16 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
                               CircleAvatar(
                                 radius: 18,
                                 backgroundColor: const Color(0xFFEFEFEF),
-                                backgroundImage: (widget.author.avatarUrl ?? '').isEmpty
+                                backgroundImage:
+                                    (widget.author.avatarUrl ?? '').isEmpty
                                     ? null
                                     : NetworkImage(widget.author.avatarUrl!),
                                 child: (widget.author.avatarUrl ?? '').isEmpty
-                                    ? const Icon(Icons.person, color: Colors.black45, size: 20)
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Colors.black45,
+                                        size: 20,
+                                      )
                                     : null,
                               ),
                               const SizedBox(width: 12),
@@ -433,7 +464,7 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
                               // Actions bar
                               MediaEngagementActions(
                                 summary: _engagements[index],
-                                onPawToggle: () => _togglePaw(index),
+                                onLikeToggle: () => _toggleLike(index),
                                 onCommentPressed: () => _openComments(index),
                                 onSharePressed: () => _sharePost(index),
                               ),
@@ -464,16 +495,14 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
         ratio = item.width! / item.height!;
       }
       return Center(
-        child: AspectRatio(
+        child: FeedVideoPlayer(
+          url: item.playbackUrl,
+          visibilityKey: 'detail-video-${item.id}',
+          startMuted: false, // detail screen plays sound
+          syncMuteWithGlobal: false,
+          enableAutoplay: true,
           aspectRatio: ratio,
-          child: FeedVideoPlayer(
-            url: item.url,
-            visibilityKey: 'detail-video-${item.id}',
-            startMuted: false, // detail screen plays sound
-            enableAutoplay: true,
-            aspectRatio: ratio,
-            fit: BoxFit.contain, // contain without cropping
-          ),
+          fit: BoxFit.contain, // contain without cropping
         ),
       );
     }
@@ -493,7 +522,10 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
               child: SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(color: Colors.white70, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white70,
+                  strokeWidth: 2,
+                ),
               ),
             ),
           ),

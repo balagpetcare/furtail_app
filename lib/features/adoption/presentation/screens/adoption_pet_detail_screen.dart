@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
+import 'package:furtail_app/features/adoption/presentation/widgets/adoption_action_row.dart';
 import 'package:furtail_app/core/media/feed_video_player.dart';
 import 'package:furtail_app/core/navigation/profile_navigation.dart';
 import 'package:furtail_app/core/services/share_service.dart';
@@ -6,7 +9,6 @@ import 'package:furtail_app/core/storage/local_storage.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
-import 'package:furtail_app/core/widgets/social_action_row.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_media_models.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
@@ -16,9 +18,8 @@ import 'package:furtail_app/features/adoption/presentation/screens/listing_appli
 import 'package:furtail_app/features/adoption/presentation/screens/my_adoption_listings_screen.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_comments_sheet.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_report_sheet.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-enum _DetailMenuAction { edit, applications, share, save, report }
+enum _DetailMenuAction { edit, applications, save, report }
 
 class AdoptionPetDetailScreen extends StatefulWidget {
   final AdoptionPetUiModel pet;
@@ -149,11 +150,10 @@ class _AdoptionPetDetailScreenState extends State<AdoptionPetDetailScreen> {
   }
 
   Future<void> _openReport() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = (prefs.getString('token') ?? '').trim();
+    final hasSession = await SecureStorageService().hasSession;
     if (!mounted) return;
 
-    if (token.isEmpty) {
+    if (!hasSession) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please sign in to report a listing.'),
@@ -203,363 +203,397 @@ class _AdoptionPetDetailScreenState extends State<AdoptionPetDetailScreen> {
     final pet = _pet;
     final media = pet.media;
 
+    // Responsive media area height — roughly square on most phones.
+    final screenWidth = MediaQuery.of(context).size.width;
+    final mediaHeight = (screenWidth * 0.82).clamp(220.0, 340.0);
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            backgroundColor: cs.surface,
-            surfaceTintColor: Colors.transparent,
-            actions: [
-              if (_loadingDetail)
-                const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              _OverlayIconButton(
-                onPressed: _openComments,
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-                tooltip: 'Comments',
-              ),
-              _OverlayIconButton(
-                onPressed: () => _sharePet(context, pet),
-                icon: const Icon(Icons.share_outlined),
-                tooltip: 'Share',
-              ),
-              PopupMenuButton<_DetailMenuAction>(
-                tooltip: 'More actions',
-                onSelected: (value) {
-                  switch (value) {
-                    case _DetailMenuAction.share:
-                      _sharePet(context, pet);
-                      break;
-                    case _DetailMenuAction.edit:
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const MyAdoptionListingsScreen(),
-                        ),
-                      );
-                      break;
-                    case _DetailMenuAction.applications:
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ListingApplicationsScreen(
-                            adoptionId: pet.id,
-                            petName: pet.name,
-                          ),
-                        ),
-                      );
-                      break;
-                    case _DetailMenuAction.save:
-                      _toggleFavorite();
-                      break;
-                    case _DetailMenuAction.report:
-                      _openReport();
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  if (_isOwnedByMe) ...[
-                    const PopupMenuItem(
-                      value: _DetailMenuAction.edit,
-                      child: Text('Edit listing'),
-                    ),
-                    const PopupMenuItem(
-                      value: _DetailMenuAction.applications,
-                      child: Text('View applications'),
-                    ),
-                  ],
-                  const PopupMenuItem(
-                    value: _DetailMenuAction.share,
-                    child: Text('Share'),
-                  ),
-                  PopupMenuItem(
-                    value: _DetailMenuAction.save,
-                    child: Text(_isFavorited ? 'Unsave' : 'Save'),
-                  ),
-                  if (!_isOwnedByMe)
-                    const PopupMenuItem(
-                      value: _DetailMenuAction.report,
-                      child: Text('Report listing'),
-                    ),
-                ],
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: _OverlayIconDecoration(
-                    child: Icon(Icons.more_horiz_rounded, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: media.isNotEmpty
-                  ? _MediaCarousel(
-                      petId: pet.id,
-                      media: media,
-                      controller: _carouselCtrl,
-                      pageIndex: _carouselPage,
-                      onPageChanged: (i) => setState(() => _carouselPage = i),
-                    )
-                  : _NoPhotoBanner(species: pet.species),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      // SafeArea on the body pushes the CustomScrollView below the status bar
+      // so that media never draws behind the notch.
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            // ── Media section + floating controls ──────────────────────
+            SliverToBoxAdapter(
+              child: Stack(
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          pet.name,
-                          style: AppTypography.sectionTitle(
-                            context,
-                          ).copyWith(fontWeight: FontWeight.w800),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      _StatusPill(status: pet.status),
-                    ],
+                  // Media carousel with a fixed, bounded height.
+                  SizedBox(
+                    height: mediaHeight,
+                    child: media.isNotEmpty
+                        ? _MediaCarousel(
+                            petId: pet.id,
+                            media: media,
+                            controller: _carouselCtrl,
+                            pageIndex: _carouselPage,
+                            onPageChanged: (i) =>
+                                setState(() => _carouselPage = i),
+                          )
+                        : _NoPhotoBanner(species: pet.species),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  InkWell(
-                    onTap: _openOwnerProfile,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        children: [
-                          FurtailNetworkAvatar(
-                            imageUrl: pet.ownerAvatarUrl,
-                            displayName: pet.ownerName,
-                            radius: 20,
-                            badge: pet.ownerVerified
-                                ? Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.verified,
-                                      size: 12,
-                                      color: Colors.blue,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  pet.ownerName,
-                                  style: AppTypography.menuTitle(
-                                    context,
-                                  ).copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                Text(
-                                  [
-                                    if (pet.ownerRoleLabel.isNotEmpty)
-                                      pet.ownerRoleLabel,
-                                    if (pet.location.trim().isNotEmpty)
-                                      pet.location.trim(),
-                                  ].join(' · '),
-                                  style: AppTypography.caption(
-                                    context,
-                                  ).copyWith(color: cs.onSurfaceVariant),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
+                  // Transparent floating controls — back / share / more.
+                  // No extra SafeArea needed; the outer SafeArea already
+                  // pushed content below the status bar.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    _buildSubtitle(pet),
-                    style: AppTypography.bodyRegular(
-                      context,
-                    ).copyWith(color: cs.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _AdoptionSocialActions(
-                    pet: pet,
-                    isFavorited: _isFavorited,
-                    onToggleFavorite: _toggleFavorite,
-                    onOpenComments: _openComments,
-                    onShare: () => _sharePet(context, pet),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _SafetyWarning(),
-                  const SizedBox(height: AppSpacing.lg),
-                  if (pet.story.isNotEmpty &&
-                      pet.story != 'No adoption story shared yet.')
-                    _Section(
-                      icon: Icons.auto_stories_outlined,
-                      title: 'Pet Story',
-                      child: Text(
-                        pet.story,
-                        style: AppTypography.bodyRegular(
-                          context,
-                        ).copyWith(color: cs.onSurfaceVariant, height: 1.5),
-                      ),
-                    ),
-                  _Section(
-                    icon: Icons.health_and_safety_outlined,
-                    title: 'Health',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: [
-                            _HealthChip(
-                              label: pet.vaccinated
-                                  ? 'Vaccinated'
-                                  : 'Not vaccinated',
-                              positive: pet.vaccinated,
-                            ),
-                            _HealthChip(
-                              label: pet.dewormed
-                                  ? 'Dewormed'
-                                  : 'No deworming record',
-                              positive: pet.dewormed,
-                            ),
-                            _HealthChip(
-                              label: pet.neutered
-                                  ? 'Neutered/Spayed'
-                                  : 'Not neutered',
-                              positive: pet.neutered,
-                            ),
-                            _HealthChip(
-                              label: pet.microchipped
-                                  ? 'Microchipped'
-                                  : 'No microchip',
-                              positive: pet.microchipped,
-                            ),
-                          ],
+                        _OverlayIconButton(
+                          onPressed: () => Navigator.of(context).maybePop(),
+                          icon: const Icon(Icons.arrow_back),
+                          tooltip: 'Back',
                         ),
-                        if (pet.healthNotes.isNotEmpty &&
-                            pet.healthNotes !=
-                                'No health notes available yet') ...[
-                          const SizedBox(height: AppSpacing.md),
-                          Text(
-                            pet.healthNotes,
-                            style: AppTypography.bodyRegular(
-                              context,
-                            ).copyWith(color: cs.onSurfaceVariant, height: 1.5),
+                        const Spacer(),
+                        if (_loadingDetail)
+                          const Padding(
+                            padding: EdgeInsets.all(14),
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ],
+                        _OverlayIconButton(
+                          onPressed: () => _sharePet(context, pet),
+                          icon: const Icon(Icons.share_outlined),
+                          tooltip: 'Share',
+                        ),
+                        PopupMenuButton<_DetailMenuAction>(
+                          tooltip: 'More actions',
+                          onSelected: (value) {
+                            switch (value) {
+                              case _DetailMenuAction.edit:
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const MyAdoptionListingsScreen(),
+                                  ),
+                                );
+                                break;
+                              case _DetailMenuAction.applications:
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ListingApplicationsScreen(
+                                      adoptionId: pet.id,
+                                      petName: pet.name,
+                                    ),
+                                  ),
+                                );
+                                break;
+                              case _DetailMenuAction.save:
+                                _toggleFavorite();
+                                break;
+                              case _DetailMenuAction.report:
+                                _openReport();
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            if (_isOwnedByMe) ...[
+                              const PopupMenuItem(
+                                value: _DetailMenuAction.edit,
+                                child: Text('Edit listing'),
+                              ),
+                              const PopupMenuItem(
+                                value: _DetailMenuAction.applications,
+                                child: Text('View applications'),
+                              ),
+                            ],
+                            PopupMenuItem(
+                              value: _DetailMenuAction.save,
+                              child: Text(_isFavorited ? 'Unsave' : 'Save'),
+                            ),
+                            if (!_isOwnedByMe)
+                              const PopupMenuItem(
+                                value: _DetailMenuAction.report,
+                                child: Text('Report listing'),
+                              ),
+                          ],
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: _OverlayIconDecoration(
+                              child: Icon(
+                                Icons.more_horiz_rounded,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  if (pet.personalityTags.isNotEmpty ||
-                      pet.compatibilityTags.isNotEmpty)
+                ],
+              ),
+            ),
+            // ── Pet info content ───────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            pet.name,
+                            style: AppTypography.sectionTitle(
+                              context,
+                            ).copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        _StatusPill(status: pet.status),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    InkWell(
+                      onTap: _openOwnerProfile,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            FurtailNetworkAvatar(
+                              imageUrl: pet.ownerAvatarUrl,
+                              displayName: pet.ownerName,
+                              radius: 20,
+                              badge: pet.ownerVerified
+                                  ? Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.verified,
+                                        size: 12,
+                                        color: Colors.blue,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    pet.ownerName,
+                                    style: AppTypography.menuTitle(
+                                      context,
+                                    ).copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  Text(
+                                    [
+                                      if (pet.ownerRoleLabel.isNotEmpty)
+                                        pet.ownerRoleLabel,
+                                      if (pet.location.trim().isNotEmpty)
+                                        pet.location.trim(),
+                                    ].join(' · '),
+                                    style: AppTypography.caption(
+                                      context,
+                                    ).copyWith(color: cs.onSurfaceVariant),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _buildSubtitle(pet),
+                      style: AppTypography.bodyRegular(
+                        context,
+                      ).copyWith(color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _AdoptionSocialActions(
+                      pet: pet,
+                      isFavorited: _isFavorited,
+                      onToggleFavorite: _toggleFavorite,
+                      onOpenComments: _openComments,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _SafetyWarning(),
+                    const SizedBox(height: AppSpacing.lg),
+                    if (pet.story.isNotEmpty &&
+                        pet.story != 'No adoption story shared yet.')
+                      _Section(
+                        icon: Icons.auto_stories_outlined,
+                        title: 'Pet Story',
+                        child: Text(
+                          pet.story,
+                          style: AppTypography.bodyRegular(
+                            context,
+                          ).copyWith(color: cs.onSurfaceVariant, height: 1.5),
+                        ),
+                      ),
                     _Section(
-                      icon: Icons.psychology_outlined,
-                      title: 'Personality & Compatibility',
+                      icon: Icons.health_and_safety_outlined,
+                      title: 'Health',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (pet.personalityTags.isNotEmpty)
-                            Wrap(
-                              spacing: AppSpacing.sm,
-                              runSpacing: AppSpacing.sm,
-                              children: pet.personalityTags
-                                  .map((t) => _InfoChip(label: t))
-                                  .toList(),
-                            ),
-                          if (pet.compatibilityTags.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            Wrap(
-                              spacing: AppSpacing.sm,
-                              runSpacing: AppSpacing.sm,
-                              children: pet.compatibilityTags
-                                  .map((t) => _InfoChip(label: t))
-                                  .toList(),
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              _HealthChip(
+                                label: pet.vaccinated
+                                    ? 'Vaccinated'
+                                    : 'Not vaccinated',
+                                positive: pet.vaccinated,
+                              ),
+                              _HealthChip(
+                                label: pet.dewormed
+                                    ? 'Dewormed'
+                                    : 'No deworming record',
+                                positive: pet.dewormed,
+                              ),
+                              _HealthChip(
+                                label: pet.neutered
+                                    ? 'Neutered/Spayed'
+                                    : 'Not neutered',
+                                positive: pet.neutered,
+                              ),
+                              _HealthChip(
+                                label: pet.microchipped
+                                    ? 'Microchipped'
+                                    : 'No microchip',
+                                positive: pet.microchipped,
+                              ),
+                            ],
+                          ),
+                          if (pet.healthNotes.isNotEmpty &&
+                              pet.healthNotes !=
+                                  'No health notes available yet') ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              pet.healthNotes,
+                              style: AppTypography.bodyRegular(context)
+                                  .copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    height: 1.5,
+                                  ),
                             ),
                           ],
                         ],
                       ),
                     ),
-                  if (pet.serviceAreas.isNotEmpty)
-                    _Section(
-                      icon: Icons.map_outlined,
-                      title: 'Service Areas',
-                      child: Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: pet.serviceAreas
-                            .map((a) => _InfoChip(label: a))
-                            .toList(),
-                      ),
-                    ),
-                  if (pet.adopterConditions.isNotEmpty)
-                    _Section(
-                      icon: Icons.checklist_rounded,
-                      title: 'Adopter Conditions',
-                      child: Column(
-                        children: pet.adopterConditions
-                            .map(
-                              (c) => Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.sm,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle_outline_rounded,
-                                      size: 16,
-                                      color: cs.primary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        c,
-                                        style: AppTypography.bodyRegular(
-                                          context,
-                                        ).copyWith(color: cs.onSurfaceVariant),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                    if (pet.personalityTags.isNotEmpty ||
+                        pet.compatibilityTags.isNotEmpty)
+                      _Section(
+                        icon: Icons.psychology_outlined,
+                        title: 'Personality & Compatibility',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (pet.personalityTags.isNotEmpty)
+                              Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.sm,
+                                children: pet.personalityTags
+                                    .map((t) => _InfoChip(label: t))
+                                    .toList(),
                               ),
-                            )
-                            .toList(),
+                            if (pet.compatibilityTags.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Wrap(
+                                spacing: AppSpacing.sm,
+                                runSpacing: AppSpacing.sm,
+                                children: pet.compatibilityTags
+                                    .map((t) => _InfoChip(label: t))
+                                    .toList(),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
+                    if (pet.serviceAreas.isNotEmpty)
+                      _Section(
+                        icon: Icons.map_outlined,
+                        title: 'Service Areas',
+                        child: Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: pet.serviceAreas
+                              .map((a) => _InfoChip(label: a))
+                              .toList(),
+                        ),
+                      ),
+                    if (pet.adopterConditions.isNotEmpty)
+                      _Section(
+                        icon: Icons.checklist_rounded,
+                        title: 'Adopter Conditions',
+                        child: Column(
+                          children: pet.adopterConditions
+                              .map(
+                                (c) => Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: AppSpacing.sm,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline_rounded,
+                                        size: 16,
+                                        color: cs.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          c,
+                                          style:
+                                              AppTypography.bodyRegular(
+                                                context,
+                                              ).copyWith(
+                                                color: cs.onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    // Space so content can scroll above the fixed bottom CTA.
+                    SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 80,
                     ),
-                  const SizedBox(height: 100),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        // Closes SafeArea(child: CustomScrollView(...))
       ),
       bottomNavigationBar: _BottomActionBar(
         pet: pet,
@@ -588,28 +622,22 @@ class _AdoptionSocialActions extends StatelessWidget {
   final bool isFavorited;
   final VoidCallback onToggleFavorite;
   final VoidCallback onOpenComments;
-  final VoidCallback onShare;
 
   const _AdoptionSocialActions({
     required this.pet,
     required this.isFavorited,
     required this.onToggleFavorite,
     required this.onOpenComments,
-    required this.onShare,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SocialActionRow(
-      likeCount: pet.favoriteCount,
-      commentCount: pet.commentCount,
-      shareCount: 0,
+    return AdoptionActionRow(
+      pet: pet,
       isLiked: isFavorited,
+      isSaved: isFavorited,
       onLike: onToggleFavorite,
       onComment: onOpenComments,
-      onShare: onShare,
-      showSaveButton: true,
-      isSaved: isFavorited,
       onSave: onToggleFavorite,
     );
   }
@@ -689,7 +717,9 @@ class _BottomActionBar extends StatelessWidget {
               label: Text(
                 isOwnedByMe
                     ? (canEdit ? 'Update Listing' : 'View Applications')
-                    : (pet.status == 'Adopted' ? 'Already adopted' : 'Apply to Adopt'),
+                    : (pet.status == 'Adopted'
+                          ? 'Already adopted'
+                          : 'Apply to Adopt'),
               ),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -723,106 +753,101 @@ class _MediaCarousel extends StatelessWidget {
     required this.onPageChanged,
   });
 
+  void _openViewer(BuildContext context, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => _AdoptionMediaViewer(
+          media: media,
+          initialIndex: index,
+          petId: petId,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: controller,
-          itemCount: media.length,
-          onPageChanged: onPageChanged,
-          itemBuilder: (_, i) {
-            final item = media[i];
-            if (item.isVideo) {
-              return _VideoMediaHero(petId: petId, item: item, index: i);
-            }
-            return Image.network(
-              item.displayUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (_, _, _) => const _PhotoFallback(),
-            );
-          },
-        ),
-        if (media.length > 1) ...[
-          Positioned(
-            bottom: 12,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                media.length,
-                (i) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: i == pageIndex ? 16 : 6,
-                  height: 6,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: i == pageIndex
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(3),
+    final cs = context.colorScheme;
+    // Height is set by the parent SizedBox; we just fill it.
+    return ColoredBox(
+      // Subtle surface tone for letterbox areas — blends with app theme.
+      color: cs.surfaceContainerHighest,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            controller: controller,
+            itemCount: media.length,
+            onPageChanged: onPageChanged,
+            itemBuilder: (_, i) {
+              final item = media[i];
+              // Static preview in carousel; fullscreen viewer handles playback.
+              if (item.isVideo) {
+                return GestureDetector(
+                  onTap: () => _openViewer(context, i),
+                  child: _VideoPlaceholder(thumbnailUrl: item.previewImageUrl),
+                );
+              }
+              return GestureDetector(
+                onTap: () => _openViewer(context, i),
+                child: Image.network(
+                  item.displayUrl,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  errorBuilder: (_, _, _) => const _PhotoFallback(),
+                ),
+              );
+            },
+          ),
+          // Counter badge — top-right, below the overlay button row (~52dp).
+          if (media.length > 1)
+            Positioned(
+              top: 52,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${pageIndex + 1}/${media.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 56,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.black45,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${pageIndex + 1}/${media.length}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+          // Dot indicators — bottom-center.
+          if (media.length > 1)
+            Positioned(
+              bottom: 10,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  media.length,
+                  (i) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: i == pageIndex ? 16 : 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      color: i == pageIndex
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
-      ],
-    );
-  }
-}
-
-class _VideoMediaHero extends StatelessWidget {
-  final int petId;
-  final AdoptionMediaUiModel item;
-  final int index;
-
-  const _VideoMediaHero({
-    required this.petId,
-    required this.item,
-    required this.index,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ratio =
-        (item.width != null && item.height != null && item.height! > 0)
-        ? item.width! / item.height!
-        : 16 / 9;
-    final url = item.playbackUrl;
-    if (url.isEmpty) {
-      return _VideoPlaceholder(thumbnailUrl: item.previewImageUrl);
-    }
-
-    return FeedVideoPlayer(
-      url: url,
-      visibilityKey: 'adoption-detail-$petId-$index',
-      startMuted: true,
-      enableAutoplay: false,
-      aspectRatio: ratio,
-      fit: BoxFit.cover,
-      isDetailViewer: true,
+      ),
     );
   }
 }
@@ -896,7 +921,10 @@ class _OverlayIconDecoration extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       alignment: Alignment.center,
-      child: child,
+      child: IconTheme(
+        data: const IconThemeData(color: Colors.white),
+        child: child,
+      ),
     );
   }
 }
@@ -1105,4 +1133,291 @@ class _InfoChip extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────── Fullscreen media viewer ─────────────────────
+
+class _AdoptionMediaViewer extends StatefulWidget {
+  final List<AdoptionMediaUiModel> media;
+  final int initialIndex;
+  final int petId;
+
+  const _AdoptionMediaViewer({
+    required this.media,
+    required this.initialIndex,
+    required this.petId,
+  });
+
+  @override
+  State<_AdoptionMediaViewer> createState() => _AdoptionMediaViewerState();
+}
+
+class _AdoptionMediaViewerState extends State<_AdoptionMediaViewer> {
+  late final PageController _page;
+  late final PageController _thumb;
+  int _index = 0;
+  bool _controlsVisible = true;
+  Timer? _hideTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex.clamp(
+      0,
+      (widget.media.length - 1).clamp(0, 9999),
+    );
+    _page = PageController(initialPage: _index);
+    _thumb = PageController(initialPage: _index, viewportFraction: 0.18);
+    _startHideTimer();
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _page.dispose();
+    _thumb.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int i) {
+    setState(() {
+      _index = i;
+      _controlsVisible = true;
+    });
+    _startHideTimer();
+    if (_thumb.hasClients) {
+      _thumb.animateToPage(
+        i,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _startHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      setState(() => _controlsVisible = false);
+    });
+  }
+
+  void _toggleControls() {
+    setState(() {
+      _controlsVisible = !_controlsVisible;
+    });
+    if (_controlsVisible) {
+      _startHideTimer();
+    } else {
+      _hideTimer?.cancel();
+    }
+  }
+
+  void _onInteraction() {
+    if (!mounted) return;
+    setState(() => _controlsVisible = true);
+    _startHideTimer();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = widget.media;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _toggleControls,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Main swipeable viewer
+              PageView.builder(
+                controller: _page,
+                itemCount: media.length,
+                onPageChanged: _onPageChanged,
+                itemBuilder: (_, i) {
+                  final item = media[i];
+                  if (item.isVideo) {
+                    final url = item.playbackUrl;
+                    if (url.isEmpty) return const _PhotoFallback();
+                    return Center(
+                      child: FeedVideoPlayer(
+                        url: url,
+                        visibilityKey: 'adoption-viewer-${widget.petId}-$i',
+                        startMuted: false,
+                        enableAutoplay: false,
+                        aspectRatio: 16 / 9,
+                        fit: BoxFit.contain,
+                        isDetailViewer: true,
+                      ),
+                    );
+                  }
+                  final url = item.displayUrl;
+                  if (url.isEmpty) return const _PhotoFallback();
+                  return InteractiveViewer(
+                    child: Center(
+                      child: Image.network(
+                        url,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const _PhotoFallback(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // Close button inside SafeArea via Stack positioning (always visible)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    padding: const EdgeInsets.all(8),
+                  ),
+                ),
+              ),
+
+              // Counter inside SafeArea (always visible)
+              if (media.length > 1)
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${_index + 1} / ${media.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Thumbnail strip at the bottom inside SafeArea (auto-hides with controls)
+              if (media.length > 1)
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  bottom: _controlsVisible ? 8 : -80,
+                  left: 0,
+                  right: 0,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _controlsVisible ? 1.0 : 0.0,
+                    child: Container(
+                      color: Colors.black54,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      height: 72,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        itemCount: media.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 6),
+                        itemBuilder: (_, i) {
+                          final item = media[i];
+                          final selected = i == _index;
+                          final thumbUrl = item.isVideo
+                              ? (item.thumbnailUrl ?? item.displayUrl)
+                              : item.displayUrl;
+                          return GestureDetector(
+                            onTap: () {
+                              _onInteraction();
+                              _page.animateToPage(
+                                i,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOut,
+                              );
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 54,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: selected
+                                      ? Colors.white
+                                      : Colors.white30,
+                                  width: selected ? 2 : 1,
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  thumbUrl.isNotEmpty && !item.isVideo
+                                      ? Image.network(
+                                          thumbUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) =>
+                                              const _ThumbPlaceholder(
+                                                isVideo: false,
+                                              ),
+                                        )
+                                      : item.isVideo &&
+                                            item.thumbnailUrl != null &&
+                                            item.thumbnailUrl!.isNotEmpty
+                                      ? Image.network(
+                                          item.thumbnailUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) =>
+                                              const _ThumbPlaceholder(
+                                                isVideo: true,
+                                              ),
+                                        )
+                                      : const _ThumbPlaceholder(isVideo: true),
+                                  if (item.isVideo)
+                                    Container(
+                                      color: Colors.black26,
+                                      alignment: Alignment.center,
+                                      child: const Icon(
+                                        Icons.play_circle_outline_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThumbPlaceholder extends StatelessWidget {
+  final bool isVideo;
+  const _ThumbPlaceholder({required this.isVideo});
+  @override
+  Widget build(BuildContext context) => Container(
+    color: Colors.white10,
+    child: Icon(
+      isVideo ? Icons.videocam_outlined : Icons.photo_outlined,
+      color: Colors.white30,
+      size: 20,
+    ),
+  );
 }

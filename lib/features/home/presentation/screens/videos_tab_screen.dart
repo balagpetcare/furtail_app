@@ -18,17 +18,6 @@ class VideosTabScreen extends StatefulWidget {
 
 class _VideosTabScreenState extends State<VideosTabScreen> {
   final _ds = PostsRemoteDs();
-  final List<String> _categories = const [
-    'For You',
-    'Following',
-    'Health',
-    'Training',
-    'Rescue',
-    'Funny',
-    'Shop',
-  ];
-
-  var _selectedCategory = 0;
   var _loading = true;
   String? _error;
   List<PostModel> _videos = const [];
@@ -123,41 +112,6 @@ class _VideosTabScreenState extends State<VideosTabScreen> {
       );
     }
 
-    return Stack(
-      children: [
-        ReelsPlayerScreen(reels: _videos, initialIndex: 0),
-        Positioned(
-          top: 8,
-          left: 0,
-          right: 0,
-          child: SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _categories.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final selected = _selectedCategory == index;
-                return ChoiceChip(
-                  label: Text(_categories[index]),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _selectedCategory = index),
-                  selectedColor: Colors.white,
-                  backgroundColor: Colors.black.withValues(alpha: 0.35),
-                  labelStyle: TextStyle(
-                    color: selected ? cs.primary : Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  side: BorderSide(
-                    color: selected ? Colors.white : Colors.white54,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ],
-    );
+    return ReelsPlayerScreen(reels: _videos, initialIndex: 0);
   }
 }

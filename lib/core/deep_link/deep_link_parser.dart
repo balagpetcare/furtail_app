@@ -15,9 +15,22 @@ abstract final class DeepLinkParser {
     'donation': DeepLinkKind.fundraising,
     'profile': DeepLinkKind.profile,
     'user': DeepLinkKind.profile,
+    'adoption': DeepLinkKind.adoption,
+    'adoption-comments': DeepLinkKind.adoptionComments,
+    'adoption_comments': DeepLinkKind.adoptionComments,
+    'adoption-application': DeepLinkKind.adoptionApplication,
+    'adoption_application': DeepLinkKind.adoptionApplication,
     'friend-requests': DeepLinkKind.friendRequests,
     'friend_request': DeepLinkKind.friendRequests,
     'friendRequests': DeepLinkKind.friendRequests,
+  };
+
+  /// Path/host tokens that identify a password-reset link. The reset token
+  /// lives in the `token` query parameter, not a path segment.
+  static const _resetPasswordTokens = <String>{
+    'reset-password',
+    'reset_password',
+    'resetpassword',
   };
 
   /// Returns null when URI is not a recognized Furtail deep link.
@@ -25,6 +38,17 @@ abstract final class DeepLinkParser {
     final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (uri.scheme == DeepLinkConfig.customScheme && uri.host.isNotEmpty) {
       segs.insert(0, uri.host);
+    }
+
+    // Reset-password links carry the token in the query string. For HTTPS
+    // links, still require an allowed host so arbitrary sites can't spoof one.
+    final firstSeg = segs.isNotEmpty ? segs.first.toLowerCase() : '';
+    if (_resetPasswordTokens.contains(firstSeg)) {
+      final isHttps = uri.scheme == 'https' || uri.scheme == 'http';
+      if (isHttps && !DeepLinkConfig.isAllowedHost(uri.host)) return null;
+      final token = uri.queryParameters['token']?.trim() ?? '';
+      if (token.isEmpty) return null;
+      return DeepLinkTarget(kind: DeepLinkKind.resetPassword, id: token);
     }
 
     final fromSegments = _fromSegments(segs);
@@ -49,7 +73,9 @@ abstract final class DeepLinkParser {
     }
 
     // @username shorthand: bare "@handle" string (no slash) → profile
-    if (trimmed.startsWith('@') && !trimmed.contains('/') && trimmed.length > 1) {
+    if (trimmed.startsWith('@') &&
+        !trimmed.contains('/') &&
+        trimmed.length > 1) {
       return DeepLinkTarget(kind: DeepLinkKind.profile, id: trimmed);
     }
 
@@ -79,8 +105,12 @@ abstract final class DeepLinkParser {
     if (parts.length >= 2) {
       final kind = _typeAliases[parts[0].toLowerCase()];
       if (kind != null) {
-        if (kind == DeepLinkKind.campaign && !RegExp(r'^\d+$').hasMatch(parts[1])) {
-          return DeepLinkTarget(kind: DeepLinkKind.campaignDetail, id: parts[1]);
+        if (kind == DeepLinkKind.campaign &&
+            !RegExp(r'^\d+$').hasMatch(parts[1])) {
+          return DeepLinkTarget(
+            kind: DeepLinkKind.campaignDetail,
+            id: parts[1],
+          );
         }
         return DeepLinkTarget(kind: kind, id: parts[1]);
       }

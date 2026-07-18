@@ -53,7 +53,10 @@ Future<int> _enforceMaxSizeImpl(String cacheKey, int maxBytes) async {
 
   // Collect all cached files (skip metadata .json)
   final files = <File>[];
-  await for (final entity in storeDir.list(recursive: true, followLinks: false)) {
+  await for (final entity in storeDir.list(
+    recursive: true,
+    followLinks: false,
+  )) {
     if (entity is File && !entity.path.endsWith('.json')) {
       files.add(entity);
     }
@@ -95,13 +98,15 @@ class FurtailImageCacheManager extends CacheManager with ImageCacheManager {
   factory FurtailImageCacheManager() => _instance;
 
   FurtailImageCacheManager._()
-      : super(Config(
+    : super(
+        Config(
           cacheKey,
           stalePeriod: FurtailCacheLimits.imageStalePeriod,
           maxNrOfCacheObjects: FurtailCacheLimits.imageMaxObjects,
           repo: JsonCacheInfoRepository(databaseName: cacheKey),
           fileService: HttpFileService(),
-        ));
+        ),
+      );
 
   /// Total byte size of all cached image files on disk.
   Future<int> getCacheSizeBytes() async => _dirSizeBytes(await _storeDir());
@@ -112,13 +117,22 @@ class FurtailImageCacheManager extends CacheManager with ImageCacheManager {
   }
 
   /// Delete oldest cached files until under [FurtailCacheLimits.imageMaxCacheBytes].
-  Future<int> enforceMaxSize() => _enforceMaxSizeImpl(cacheKey, FurtailCacheLimits.imageMaxCacheBytes);
+  Future<int> enforceMaxSize() =>
+      _enforceMaxSizeImpl(cacheKey, FurtailCacheLimits.imageMaxCacheBytes);
 
   @override
-  Future<FileInfo> downloadFile(String url,
-      {Map<String, String>? authHeaders, String? key, bool force = false}) async {
-    final fileInfo = await super.downloadFile(url,
-        authHeaders: authHeaders, key: key, force: force);
+  Future<FileInfo> downloadFile(
+    String url, {
+    Map<String, String>? authHeaders,
+    String? key,
+    bool force = false,
+  }) async {
+    final fileInfo = await super.downloadFile(
+      url,
+      authHeaders: authHeaders,
+      key: key,
+      force: force,
+    );
     unawaited(enforceMaxSize());
     return fileInfo;
   }
@@ -132,11 +146,14 @@ class FurtailImageCacheManager extends CacheManager with ImageCacheManager {
     Duration maxAge = const Duration(days: 30),
     String fileExtension = 'file',
   }) async {
-    final file = await super.putFile(url, fileBytes,
-        key: key,
-        eTag: eTag,
-        maxAge: maxAge,
-        fileExtension: fileExtension);
+    final file = await super.putFile(
+      url,
+      fileBytes,
+      key: key,
+      eTag: eTag,
+      maxAge: maxAge,
+      fileExtension: fileExtension,
+    );
     unawaited(enforceMaxSize());
     return file;
   }
@@ -151,13 +168,15 @@ class FurtailVideoCacheManager extends CacheManager {
   factory FurtailVideoCacheManager() => _instance;
 
   FurtailVideoCacheManager._()
-      : super(Config(
+    : super(
+        Config(
           cacheKey,
           stalePeriod: FurtailCacheLimits.videoStalePeriod,
           maxNrOfCacheObjects: FurtailCacheLimits.videoMaxObjects,
           repo: JsonCacheInfoRepository(databaseName: cacheKey),
           fileService: HttpFileService(),
-        ));
+        ),
+      );
 
   /// Total byte size of all cached video files on disk.
   Future<int> getCacheSizeBytes() async => _dirSizeBytes(await _storeDir());
@@ -168,11 +187,11 @@ class FurtailVideoCacheManager extends CacheManager {
   }
 
   /// Delete oldest cached files until under [FurtailCacheLimits.videoMaxCacheBytes].
-  Future<int> enforceMaxSize() => _enforceMaxSizeImpl(cacheKey, FurtailCacheLimits.videoMaxCacheBytes);
+  Future<int> enforceMaxSize() =>
+      _enforceMaxSizeImpl(cacheKey, FurtailCacheLimits.videoMaxCacheBytes);
 
   /// Clears the entire video cache.
-  static Future<void> clearAll() =>
-      FurtailVideoCacheManager().emptyCache();
+  static Future<void> clearAll() => FurtailVideoCacheManager().emptyCache();
 }
 
 /// Enterprise-safe disk caching service for video assets.
@@ -181,6 +200,16 @@ class VideoCacheService {
   static final VideoCacheService instance = VideoCacheService._();
 
   final FurtailVideoCacheManager _cacheManager = FurtailVideoCacheManager();
+
+  bool isStreamUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final path = uri.path.toLowerCase();
+      return path.endsWith('.m3u8') || path.contains('/index.m3u8');
+    } catch (_) {
+      return url.toLowerCase().contains('.m3u8');
+    }
+  }
 
   /// Gets the normalized stable cache key by stripping dynamic query parameters (e.g., token signatures)
   String normalizeUrl(String url) {
@@ -201,6 +230,9 @@ class VideoCacheService {
   /// Get video file from disk cache, downloading it if not present.
   /// Shows logs indicating cache hit vs network download.
   Future<File> getVideoFile(String url) async {
+    if (isStreamUrl(url)) {
+      throw UnsupportedError('HLS streams are played directly from network');
+    }
     final key = normalizeUrl(url);
     try {
       final fileInfo = await _cacheManager.getFileFromCache(key);
@@ -242,6 +274,9 @@ class VideoCacheService {
   /// Prefetch video in the background only if on Wi-Fi connection.
   Future<void> prefetchVideo(String url) async {
     try {
+      if (isStreamUrl(url)) {
+        return;
+      }
       final connectivityList = await Connectivity().checkConnectivity();
       final onMobile = connectivityList.contains(ConnectivityResult.mobile);
       if (onMobile) {
@@ -260,17 +295,20 @@ class VideoCacheService {
       if (kDebugMode) {
         debugPrint('[VideoCache] Prefetching video (Wi-Fi): key=$key');
       }
-      
+
       // Async background download
-      _cacheManager.downloadFile(url, key: key).then((_) {
-        _cacheManager.enforceMaxSize(); // Enforce limit after prefetch
-      }).catchError((e) {
-        if (kDebugMode) {
-          debugPrint('[VideoCache] Background prefetch failed: $e');
-        }
-        // Ensure failed downloads don't pollute state
-        _cacheManager.removeFile(key);
-      });
+      _cacheManager
+          .downloadFile(url, key: key)
+          .then((_) {
+            _cacheManager.enforceMaxSize(); // Enforce limit after prefetch
+          })
+          .catchError((e) {
+            if (kDebugMode) {
+              debugPrint('[VideoCache] Background prefetch failed: $e');
+            }
+            // Ensure failed downloads don't pollute state
+            _cacheManager.removeFile(key);
+          });
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[VideoCache] Prefetch check error: $e');
@@ -280,6 +318,9 @@ class VideoCacheService {
 
   /// Remove a corrupt file from the cache so it gets refetched next time.
   Future<void> removeFile(String url) async {
+    if (isStreamUrl(url)) {
+      return;
+    }
     final key = normalizeUrl(url);
     if (kDebugMode) {
       debugPrint('[VideoCache] Removing file from cache: key=$key');
@@ -361,8 +402,10 @@ class VideoCacheService {
       final tempDir = await getTemporaryDirectory();
       if (!await tempDir.exists()) return 0;
       final cutoff = DateTime.now().subtract(maxAge);
-      await for (final entity
-          in tempDir.list(recursive: true, followLinks: false)) {
+      await for (final entity in tempDir.list(
+        recursive: true,
+        followLinks: false,
+      )) {
         try {
           if (entity is File) {
             final stat = await entity.stat();

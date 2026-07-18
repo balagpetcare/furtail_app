@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:furtail_app/core/auth/auth_controller.dart';
 import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:furtail_app/services/api_client.dart';
 
@@ -105,7 +106,10 @@ class StorageUsageNotifier extends AsyncNotifier<StorageUsageInfo> {
 }
 
 final settingsLogoutProvider = Provider<Future<void> Function()>((ref) {
-  return () => ref.read(settingsRepositoryProvider).logout();
+  return () async {
+    await ref.read(settingsRepositoryProvider).logout();
+    await ref.read(authControllerProvider.notifier).logout();
+  };
 });
 
 // ── Media upload settings ──────────────────────────────────────────────────

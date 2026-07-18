@@ -621,7 +621,7 @@ class _PointsCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '${points.toString()} Paw Points',
+                    '${points.toString()} Like Points',
                     style: context.appText.titleMedium!.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:furtail_app/app/router/app_routes.dart';
 
-import 'donation_screen.dart';
 import 'shop_screen.dart';
 import 'vet_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
@@ -53,7 +52,8 @@ class ServicesScreen extends StatelessWidget {
           _ServiceItem(
             'Donation',
             Icons.volunteer_activism_rounded,
-            const DonationScreen(),
+            null,
+            routeName: AppRoutes.donation,
           ),
           _ServiceItem('Rescue Support', Icons.health_and_safety_rounded, null),
         ],

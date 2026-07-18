@@ -26,7 +26,7 @@ import 'package:furtail_app/features/posts/presentation/widgets/post_card_commen
 
 class PostCard extends StatefulWidget {
   final PostModel post;
-  final int? meId; // ✅ current user id here
+  final int? meId; // âœ… current user id here
   final VoidCallback? onNeedRefresh;
 
   const PostCard({
@@ -44,6 +44,7 @@ class _PostCardState extends State<PostCard> {
   final _ds = PostsRemoteDs();
   late PostModel _post;
   bool _hidden = false;
+  bool _likeBusy = false;
 
   @override
   void initState() {
@@ -72,11 +73,38 @@ class _PostCardState extends State<PostCard> {
         likeCount: likeCount,
         commentCount: commentCount,
         isLikedByMe: isLikedByMe,
+        isBookmarkedByMe: _post.isBookmarkedByMe,
+        privacy: _post.privacy,
+        backgroundStyle: _post.backgroundStyle,
+        feelingId: _post.feelingId,
+        feelingLabel: _post.feelingLabel,
+        feelingEmoji: _post.feelingEmoji,
+        activityId: _post.activityId,
+        activityLabel: _post.activityLabel,
+        activityEmoji: _post.activityEmoji,
+        shareCount: _post.shareCount,
+        viewCount: _post.viewCount,
+        isReportedByMe: _post.isReportedByMe,
+        isFollowingAuthor: _post.isFollowingAuthor,
+        sponsoredLabel: _post.sponsoredLabel,
+        locationTag: _post.locationTag,
+        postType: _post.postType,
+        lostPetName: _post.lostPetName,
+        lostPetLocation: _post.lostPetLocation,
+        lostPetContactVisible: _post.lostPetContactVisible,
+        taggedPetIds: _post.taggedPetIds,
+        taggedPets: _post.taggedPets,
+        songTitle: _post.songTitle,
+        songArtist: _post.songArtist,
+        songStartMs: _post.songStartMs,
+        songDurationMs: _post.songDurationMs,
       );
     });
   }
 
   Future<void> _toggleLike() async {
+    if (_likeBusy) return;
+    setState(() => _likeBusy = true);
     final currentlyLiked = _post.isLikedByMe;
     try {
       final res = currentlyLiked
@@ -88,6 +116,8 @@ class _PostCardState extends State<PostCard> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Like failed: ${e.toString()}')));
+    } finally {
+      if (mounted) setState(() => _likeBusy = false);
     }
   }
 
@@ -119,6 +149,31 @@ class _PostCardState extends State<PostCard> {
                 category: _post.category,
                 fundraisingCampaignId: _post.fundraisingCampaignId,
                 fundraisingEmbed: _post.fundraisingEmbed,
+                isBookmarkedByMe: _post.isBookmarkedByMe,
+                privacy: _post.privacy,
+                backgroundStyle: _post.backgroundStyle,
+                feelingId: _post.feelingId,
+                feelingLabel: _post.feelingLabel,
+                feelingEmoji: _post.feelingEmoji,
+                activityId: _post.activityId,
+                activityLabel: _post.activityLabel,
+                activityEmoji: _post.activityEmoji,
+                shareCount: _post.shareCount,
+                viewCount: _post.viewCount,
+                isReportedByMe: _post.isReportedByMe,
+                isFollowingAuthor: _post.isFollowingAuthor,
+                sponsoredLabel: _post.sponsoredLabel,
+                locationTag: _post.locationTag,
+                postType: _post.postType,
+                lostPetName: _post.lostPetName,
+                lostPetLocation: _post.lostPetLocation,
+                lostPetContactVisible: _post.lostPetContactVisible,
+                taggedPetIds: _post.taggedPetIds,
+                taggedPets: _post.taggedPets,
+                songTitle: _post.songTitle,
+                songArtist: _post.songArtist,
+                songStartMs: _post.songStartMs,
+                songDurationMs: _post.songDurationMs,
               );
             });
           },
@@ -159,7 +214,7 @@ class _PostCardState extends State<PostCard> {
       await PostsRemoteDs().deletePost(postId: post.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted ✅')),
+        const SnackBar(content: Text('Post deleted âœ…')),
       );
       widget.onNeedRefresh?.call();
     } catch (e) {
@@ -268,18 +323,19 @@ class _PostCardState extends State<PostCard> {
     final canEdit = meId != null && post.author.id == meId;
 
     return Container(
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
       ),
-      margin: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -329,40 +385,40 @@ class _PostCardState extends State<PostCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // â”€â”€ Post type badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                if (_shouldShowPostTypeBadge(post.postType))
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 4, 14, 4),
+                    child: _buildPostTypeBadge(post.postType!),
+                  ),
+
+                // â”€â”€ Lost Pet Alert highlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                if (post.postType == 'LOST_PET')
+                  _buildLostPetDetails(post),
+
                 if ((post.caption ?? '').isNotEmpty)
                   () {
-                    final textLength = post.caption!.length;
-                    final isTextOnly = post.media.isEmpty;
-                    final isShort = textLength <= 160;
-                    final styleId = post.backgroundStyle;
-                    final hasStyle = styleId != null && styleId != 'none';
-
-                    if (isTextOnly && isShort && hasStyle) {
-                      final style = PostBackgroundStyle.find(styleId);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
-                        child: ShortPostBackgroundBox(
-                          caption: post.caption!,
-                          style: style,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PostDetailsScreen(post: post),
-                              ),
-                            );
-                          },
-                        ),
+                    if (_isBackgroundTextPost(post)) {
+                      final style = PostBackgroundStyle.find(post.backgroundStyle);
+                      return ShortPostBackgroundBox(
+                        caption: cleanPostBodyForDisplay(post.caption!),
+                        style: style,
+                        fullWidth: true,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PostDetailsScreen(post: post),
+                            ),
+                          );
+                        },
                       );
                     }
 
                     return Padding(
                       padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
                       child: _ReadMoreText(
-                        text: post.caption!,
+                        text: cleanPostBodyForDisplay(post.caption!),
                         trimLines: 3,
                         style: context.appText.bodyLarge!.copyWith(
                           height: 1.35,
@@ -414,6 +470,112 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
           const Divider(thickness: 1, color: Color(0xFFEEEEEE), height: 1),
+        ],
+      ),
+    );
+  }
+
+  // â”€â”€ Post type badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  bool _shouldShowPostTypeBadge(String? type) {
+    if (type == null) return false;
+    return type != 'GENERAL' && type != 'GENERAL_POST';
+  }
+
+  bool _isBackgroundTextPost(PostModel post) {
+    final caption = post.caption;
+    if (caption == null || caption.isEmpty) return false;
+
+    final styleId = post.backgroundStyle;
+    return post.media.isEmpty &&
+        caption.length <= 220 &&
+        styleId != null &&
+        styleId != 'none';
+  }
+
+  Widget _buildPostTypeBadge(String type) {
+    IconData icon;
+    Color color;
+    String label;
+    switch (type) {
+      case 'HEALTH_UPDATE':
+        icon = Icons.favorite_outline; color = const Color(0xFFE91E63); label = 'Health Update'; break;
+      case 'VACCINATION':
+        icon = Icons.vaccines_outlined; color = const Color(0xFF4CAF50); label = 'Vaccination'; break;
+      case 'LOST_PET':
+        icon = Icons.report_problem_rounded; color = const Color(0xFFF44336); label = 'Lost Pet Alert'; break;
+      case 'ADOPTION':
+        icon = Icons.pets_rounded; color = const Color(0xFF9C27B0); label = 'Adoption'; break;
+      case 'SERVICE_REVIEW':
+        icon = Icons.star_outline; color = const Color(0xFFFF9800); label = 'Service Review'; break;
+      default:
+        return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // â”€â”€ Lost Pet details â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  Widget _buildLostPetDetails(PostModel post) {
+    final hasName = (post.lostPetName ?? '').isNotEmpty;
+    final hasLocation = (post.lostPetLocation ?? '').isNotEmpty;
+    if (!hasName && !hasLocation) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 6, 14, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasName)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.pets, size: 16, color: Colors.red.shade700),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      post.lostPetName!,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red.shade800),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (hasLocation)
+            Row(
+              children: [
+                Icon(Icons.location_on_outlined, size: 14, color: Colors.red.shade600),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Last seen: ${post.lostPetLocation!}',
+                    style: TextStyle(fontSize: 13, color: Colors.red.shade700),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -558,7 +720,7 @@ class _FundraisingEmbedBlock extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            amount > 0 ? '৳${_money(amount)}' : '',
+            amount > 0 ? 'à§³${_money(amount)}' : '',
             style: context.appText.bodyLarge!.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -772,7 +934,7 @@ class _MiniPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Card padding + safe margin বাদ দিয়ে width
+    // Card padding + safe margin à¦¬à¦¾à¦¦ à¦¦à¦¿à§Ÿà§‡ width
     final maxWidth = MediaQuery.of(context).size.width * 0.70;
 
     return Container(
@@ -793,8 +955,8 @@ class _MiniPill extends StatelessWidget {
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: Text(
               label,
-              maxLines: 1, // 🔒 এক লাইনে
-              overflow: TextOverflow.ellipsis, // … দেখাবে
+              maxLines: 1, // ðŸ”’ à¦à¦• à¦²à¦¾à¦‡à¦¨à§‡
+              overflow: TextOverflow.ellipsis, // â€¦ à¦¦à§‡à¦–à¦¾à¦¬à§‡
               softWrap: false,
               style: context.appText.labelMedium!.copyWith(
                 color: Colors.black87,
@@ -894,7 +1056,7 @@ class _MediaBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (mediaGrid != null) mediaGrid,
+        if (mediaGrid != null) ...[mediaGrid],
         if (mediaGrid == null && fileBlock != null)
           Container(
             height: 140,
@@ -907,7 +1069,7 @@ class _MediaBlock extends StatelessWidget {
               ),
             ),
           ),
-        if (fileBlock != null) fileBlock,
+        if (fileBlock != null) ...[fileBlock],
       ],
     );
   }
@@ -958,7 +1120,7 @@ class _ReadMoreTextState extends State<_ReadMoreText> {
       ),
       maxLines: widget.trimLines,
       textDirection: TextDirection.ltr,
-      ellipsis: '…',
+      ellipsis: 'â€¦',
     )..layout(maxWidth: maxW);
 
     final didOverflow = tp.didExceedMaxLines;
@@ -995,3 +1157,5 @@ class _ReadMoreTextState extends State<_ReadMoreText> {
     );
   }
 }
+
+

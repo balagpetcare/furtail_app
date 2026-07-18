@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_media_models.dart';
@@ -31,6 +33,45 @@ const _serviceAreaLabels = <String, String>{
   'RADIUS_BASED': 'Radius based',
   'INTERNATIONAL': 'International',
 };
+
+bool _hasLocalFile(File file) {
+  final path = file.path.trim();
+  if (path.isEmpty) return false;
+  try {
+    return file.existsSync();
+  } catch (_) {
+    return false;
+  }
+}
+
+bool _hasRemoteUrl(String? value) => (value ?? '').trim().isNotEmpty;
+
+Uri? _remoteUri(String? value) {
+  final raw = (value ?? '').trim();
+  if (raw.isEmpty) return null;
+  return Uri.tryParse(raw);
+}
+
+Widget _mediaPlaceholder({
+  required IconData icon,
+  required String label,
+  required Color background,
+  required Color foreground,
+}) {
+  return ColoredBox(
+    color: background,
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: foreground, size: 34),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(color: foreground, fontSize: 12)),
+        ],
+      ),
+    ),
+  );
+}
 
 class AdoptionListingPreviewScreen extends StatefulWidget {
   final AdoptionListingFormPayload payload;
@@ -74,15 +115,19 @@ class _AdoptionListingPreviewScreenState
           submitNow: true,
         );
       } else {
-        await widget.repository
-            .createAdoptionListing(widget.payload, submitNow: true);
+        await widget.repository.createAdoptionListing(
+          widget.payload,
+          submitNow: true,
+        );
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.existingListingId != null
-              ? 'Your adoption listing has been updated.'
-              : 'Your adoption listing is now public.'),
+          content: Text(
+            widget.existingListingId != null
+                ? 'Your adoption listing has been updated.'
+                : 'Your adoption listing is now public.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -97,7 +142,9 @@ class _AdoptionListingPreviewScreenState
       final msg = e.toString().replaceFirst('Exception: ', '').trim();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(msg.isEmpty ? 'Could not publish. Please try again.' : msg),
+          content: Text(
+            msg.isEmpty ? 'Could not publish. Please try again.' : msg,
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -112,7 +159,8 @@ class _AdoptionListingPreviewScreenState
     final species = _speciesLabels[p.species] ?? p.species;
     final breed = p.breed.trim();
     final gender = _genderLabels[p.gender] ?? p.gender;
-    final serviceArea = _serviceAreaLabels[p.serviceAreaType] ?? p.serviceAreaType;
+    final serviceArea =
+        _serviceAreaLabels[p.serviceAreaType] ?? p.serviceAreaType;
     final hasMedia = widget.localMedia.isNotEmpty;
     final adoptionConditions = _buildConditions(p);
 
@@ -130,13 +178,18 @@ class _AdoptionListingPreviewScreenState
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.rocket_launch_rounded, size: 15),
               label: const Text('Publish Now'),
               style: FilledButton.styleFrom(
                 visualDensity: VisualDensity.compact,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
               ),
             ),
           ),
@@ -159,15 +212,20 @@ class _AdoptionListingPreviewScreenState
 
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Name
                   Text(
                     name,
-                    style: AppTypography.sectionTitle(context)
-                        .copyWith(fontWeight: FontWeight.w800, fontSize: 22),
+                    style: AppTypography.sectionTitle(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.w800, fontSize: 22),
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
@@ -176,44 +234,78 @@ class _AdoptionListingPreviewScreenState
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      _Badge(species, cs.primaryContainer,
-                          cs.onPrimaryContainer),
+                      _Badge(
+                        species,
+                        cs.primaryContainer,
+                        cs.onPrimaryContainer,
+                      ),
                       if (breed.isNotEmpty)
-                        _Badge(breed, cs.secondaryContainer,
-                            cs.onSecondaryContainer),
+                        _Badge(
+                          breed,
+                          cs.secondaryContainer,
+                          cs.onSecondaryContainer,
+                        ),
                       if (gender != 'Not specified')
-                        _Badge(gender, cs.surfaceContainerHighest, cs.onSurface),
+                        _Badge(
+                          gender,
+                          cs.surfaceContainerHighest,
+                          cs.onSurface,
+                        ),
                       if (p.ageText.trim().isNotEmpty)
-                        _Badge(p.ageText.trim(), cs.surfaceContainerHighest,
-                            cs.onSurface),
+                        _Badge(
+                          p.ageText.trim(),
+                          cs.surfaceContainerHighest,
+                          cs.onSurface,
+                        ),
                       if (p.sizeText.trim().isNotEmpty)
-                        _Badge(p.sizeText.trim(), cs.surfaceContainerHighest,
-                            cs.onSurface),
+                        _Badge(
+                          p.sizeText.trim(),
+                          cs.surfaceContainerHighest,
+                          cs.onSurface,
+                        ),
                       if (p.colorText.trim().isNotEmpty)
-                        _Badge(p.colorText.trim(), cs.surfaceContainerHighest,
-                            cs.onSurface),
+                        _Badge(
+                          p.colorText.trim(),
+                          cs.surfaceContainerHighest,
+                          cs.onSurface,
+                        ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
 
                   // Health badges
-                  if (p.vaccinated || p.dewormed || p.neutered || p.microchipped)
+                  if (p.vaccinated ||
+                      p.dewormed ||
+                      p.neutered ||
+                      p.microchipped)
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
                       children: [
                         if (p.vaccinated)
-                          _Badge('Vaccinated', Colors.green.shade50,
-                              Colors.green.shade700),
+                          _Badge(
+                            'Vaccinated',
+                            Colors.green.shade50,
+                            Colors.green.shade700,
+                          ),
                         if (p.dewormed)
-                          _Badge('Dewormed', Colors.green.shade50,
-                              Colors.green.shade700),
+                          _Badge(
+                            'Dewormed',
+                            Colors.green.shade50,
+                            Colors.green.shade700,
+                          ),
                         if (p.neutered)
-                          _Badge('Neutered/Spayed', Colors.teal.shade50,
-                              Colors.teal.shade700),
+                          _Badge(
+                            'Neutered/Spayed',
+                            Colors.teal.shade50,
+                            Colors.teal.shade700,
+                          ),
                         if (p.microchipped)
-                          _Badge('Microchipped', Colors.blue.shade50,
-                              Colors.blue.shade700),
+                          _Badge(
+                            'Microchipped',
+                            Colors.blue.shade50,
+                            Colors.blue.shade700,
+                          ),
                       ],
                     ),
 
@@ -272,9 +364,12 @@ class _AdoptionListingPreviewScreenState
                   if (p.description.trim().isNotEmpty) ...[
                     _sectionHeading('Story', context),
                     const SizedBox(height: 4),
-                    Text(p.description.trim(),
-                        style: AppTypography.bodyRegular(context)
-                            .copyWith(color: cs.onSurfaceVariant, height: 1.5)),
+                    Text(
+                      p.description.trim(),
+                      style: AppTypography.bodyRegular(
+                        context,
+                      ).copyWith(color: cs.onSurfaceVariant, height: 1.5),
+                    ),
                     const SizedBox(height: AppSpacing.md),
                   ],
 
@@ -282,9 +377,12 @@ class _AdoptionListingPreviewScreenState
                   if (p.adoptionReason.trim().isNotEmpty) ...[
                     _sectionHeading('Reason for rehoming', context),
                     const SizedBox(height: 4),
-                    Text(p.adoptionReason.trim(),
-                        style: AppTypography.bodyRegular(context)
-                            .copyWith(color: cs.onSurfaceVariant, height: 1.5)),
+                    Text(
+                      p.adoptionReason.trim(),
+                      style: AppTypography.bodyRegular(
+                        context,
+                      ).copyWith(color: cs.onSurfaceVariant, height: 1.5),
+                    ),
                     const SizedBox(height: AppSpacing.md),
                   ],
 
@@ -294,9 +392,12 @@ class _AdoptionListingPreviewScreenState
                     const SizedBox(height: AppSpacing.md),
                     _sectionHeading('Health notes', context),
                     const SizedBox(height: 4),
-                    Text(p.healthInfo.trim(),
-                        style: AppTypography.bodyRegular(context)
-                            .copyWith(color: cs.onSurfaceVariant, height: 1.5)),
+                    Text(
+                      p.healthInfo.trim(),
+                      style: AppTypography.bodyRegular(
+                        context,
+                      ).copyWith(color: cs.onSurfaceVariant, height: 1.5),
+                    ),
                     const SizedBox(height: AppSpacing.md),
                   ],
 
@@ -312,13 +413,19 @@ class _AdoptionListingPreviewScreenState
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.check_circle_outline,
-                                size: 14, color: cs.primary),
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 14,
+                              color: cs.primary,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(c,
-                                  style: AppTypography.bodyRegular(context)
-                                      .copyWith(color: cs.onSurface)),
+                              child: Text(
+                                c,
+                                style: AppTypography.bodyRegular(
+                                  context,
+                                ).copyWith(color: cs.onSurface),
+                              ),
                             ),
                           ],
                         ),
@@ -337,18 +444,23 @@ class _AdoptionListingPreviewScreenState
                       color: cs.primaryContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: cs.primary.withValues(alpha: 0.25)),
+                        color: cs.primary.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.visibility_outlined,
-                            size: 14, color: cs.primary),
+                        Icon(
+                          Icons.visibility_outlined,
+                          size: 14,
+                          color: cs.primary,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             'This is how your listing will look to adopters. Tap "Publish Now" to make it public.',
-                            style: AppTypography.caption(context).copyWith(
-                                color: cs.onPrimaryContainer),
+                            style: AppTypography.caption(
+                              context,
+                            ).copyWith(color: cs.onPrimaryContainer),
                           ),
                         ),
                       ],
@@ -367,12 +479,15 @@ class _AdoptionListingPreviewScreenState
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.rocket_launch_rounded, size: 16),
                       label: const Text('Publish Now'),
                       style: FilledButton.styleFrom(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -409,7 +524,8 @@ class _AdoptionListingPreviewScreenState
         'Minimum income: ${p.minimumIncomeRange.trim()}',
       if (p.maximumIncomeRange.trim().isNotEmpty)
         'Maximum income: ${p.maximumIncomeRange.trim()}',
-      if (p.adopterConditionNote.trim().isNotEmpty) p.adopterConditionNote.trim(),
+      if (p.adopterConditionNote.trim().isNotEmpty)
+        p.adopterConditionNote.trim(),
     ];
   }
 }
@@ -444,10 +560,40 @@ class _MediaCarousel extends StatelessWidget {
               if (item.isVideo) {
                 return _PreviewVideoHero(item: item);
               }
-              return Image.file(
-                item.file,
-                fit: BoxFit.cover,
-                width: double.infinity,
+              if (_hasRemoteUrl(item.url)) {
+                return Image.network(
+                  item.url!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  errorBuilder: (_, __, ___) {
+                    if (_hasLocalFile(item.file)) {
+                      return Image.file(
+                        item.file,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      );
+                    }
+                    return _mediaPlaceholder(
+                      icon: Icons.broken_image_outlined,
+                      label: 'Image unavailable',
+                      background: Colors.black12,
+                      foreground: Colors.black54,
+                    );
+                  },
+                );
+              }
+              if (_hasLocalFile(item.file)) {
+                return Image.file(
+                  item.file,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                );
+              }
+              return _mediaPlaceholder(
+                icon: Icons.photo_library_outlined,
+                label: 'Image unavailable',
+                background: Colors.black12,
+                foreground: Colors.black54,
               );
             },
           ),
@@ -480,8 +626,7 @@ class _MediaCarousel extends StatelessWidget {
               top: 10,
               right: 10,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(12),
@@ -489,9 +634,10 @@ class _MediaCarousel extends StatelessWidget {
                 child: Text(
                   '${pageIndex + 1} / ${items.length}',
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -523,20 +669,34 @@ class _PreviewVideoHeroState extends State<_PreviewVideoHero> {
 
   void _initController() {
     final token = ++_token;
-    final controller = VideoPlayerController.file(widget.item.file);
+    final remote = _remoteUri(widget.item.url);
+    final controller = remote != null
+        ? VideoPlayerController.networkUrl(remote)
+        : _hasLocalFile(widget.item.file)
+        ? VideoPlayerController.file(widget.item.file)
+        : null;
+    if (controller == null) {
+      _controller = null;
+      _init = null;
+      return;
+    }
     _controller = controller;
-    _init = controller.initialize().then((_) {
-      if (!mounted || token != _token) return;
-      controller.setLooping(true);
-      controller.pause();
-      setState(() {});
-    }).catchError((_) {});
+    _init = controller
+        .initialize()
+        .then((_) {
+          if (!mounted || token != _token) return;
+          controller.setLooping(true);
+          controller.pause();
+          setState(() {});
+        })
+        .catchError((_) {});
   }
 
   @override
   void didUpdateWidget(covariant _PreviewVideoHero oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.file.path != widget.item.file.path) {
+    if (oldWidget.item.file.path != widget.item.file.path ||
+        oldWidget.item.url != widget.item.url) {
       final controller = _controller;
       _controller = null;
       _init = null;
@@ -563,7 +723,12 @@ class _PreviewVideoHeroState extends State<_PreviewVideoHero> {
   Widget build(BuildContext context) {
     final controller = _controller;
     if (controller == null || _init == null) {
-      return const ColoredBox(color: Colors.black87);
+      return _mediaPlaceholder(
+        icon: Icons.videocam_off_outlined,
+        label: 'Video unavailable',
+        background: Colors.black87,
+        foreground: Colors.white70,
+      );
     }
 
     return FutureBuilder<void>(
@@ -573,7 +738,8 @@ class _PreviewVideoHeroState extends State<_PreviewVideoHero> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              if (widget.item.thumbnail != null)
+              if (widget.item.thumbnail != null &&
+                  _hasLocalFile(widget.item.thumbnail!))
                 Image.file(widget.item.thumbnail!, fit: BoxFit.cover)
               else
                 const ColoredBox(color: Colors.black87),
@@ -640,13 +806,17 @@ class _EmptyPhotoHero extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.photo_library_outlined,
-              size: 36, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+          Icon(
+            Icons.photo_library_outlined,
+            size: 36,
+            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+          ),
           const SizedBox(height: 8),
           Text(
             'No media',
-            style: AppTypography.caption(context)
-                .copyWith(color: cs.onSurfaceVariant),
+            style: AppTypography.caption(
+              context,
+            ).copyWith(color: cs.onSurfaceVariant),
           ),
         ],
       ),
@@ -665,10 +835,13 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-          color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11, color: fg, fontWeight: FontWeight.w600)),
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, color: fg, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }
@@ -678,11 +851,12 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final ColorScheme cs;
-  const _InfoRow(
-      {required this.icon,
-      required this.label,
-      required this.value,
-      required this.cs});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.cs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -691,13 +865,19 @@ class _InfoRow extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: cs.onSurfaceVariant),
         const SizedBox(width: 6),
-        Text('$label: ',
-            style: AppTypography.caption(context).copyWith(
-                color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+        Text(
+          '$label: ',
+          style: AppTypography.caption(
+            context,
+          ).copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+        ),
         Expanded(
-          child: Text(value,
-              style: AppTypography.caption(context)
-                  .copyWith(color: cs.onSurfaceVariant)),
+          child: Text(
+            value,
+            style: AppTypography.caption(
+              context,
+            ).copyWith(color: cs.onSurfaceVariant),
+          ),
         ),
       ],
     );
@@ -705,7 +885,10 @@ class _InfoRow extends StatelessWidget {
 }
 
 Widget _sectionHeading(String text, BuildContext context) {
-  return Text(text,
-      style: AppTypography.menuTitle(context)
-          .copyWith(fontWeight: FontWeight.w700));
+  return Text(
+    text,
+    style: AppTypography.menuTitle(
+      context,
+    ).copyWith(fontWeight: FontWeight.w700),
+  );
 }

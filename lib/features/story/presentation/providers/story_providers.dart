@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/auth/secure_storage_service.dart';
 import '../../../../services/api_client.dart';
 import '../../data/datasources/story_remote_ds.dart';
 import '../../data/repositories/story_repository.dart';
@@ -16,7 +17,10 @@ final storyRepositoryProvider = Provider<StoryRepository>(
 // ── Internal providers ───────────────────────────────────────────────────────
 
 final _storyRemoteDsProvider = Provider<StoryRemoteDs>(
-  (ref) => StoryRemoteDs(ref.watch(apiClientProvider)),
+  (ref) => StoryRemoteDs(
+    ref.watch(apiClientProvider),
+    ref.watch(secureStorageServiceProvider),
+  ),
 );
 
 final _storyRepositoryProvider = Provider<StoryRepository>(
@@ -121,16 +125,18 @@ class StoryFeedNotifier extends StateNotifier<AsyncValue<List<StoryEntity>>> {
   }
 
   void _silentRefresh() {
-    refresh().catchError((_) {/* keep optimistic state */});
+    refresh().catchError((_) {
+      /* keep optimistic state */
+    });
   }
 }
 
 final storyFeedProvider =
     StateNotifierProvider<StoryFeedNotifier, AsyncValue<List<StoryEntity>>>(
-  (ref) => StoryFeedNotifier(
-    ref.watch(getStoriesUseCaseProvider),
-    ref.watch(createStoryUseCaseProvider),
-    ref.watch(deleteStoryUseCaseProvider),
-    ref.watch(storyRepositoryProvider),
-  ),
-);
+      (ref) => StoryFeedNotifier(
+        ref.watch(getStoriesUseCaseProvider),
+        ref.watch(createStoryUseCaseProvider),
+        ref.watch(deleteStoryUseCaseProvider),
+        ref.watch(storyRepositoryProvider),
+      ),
+    );

@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/auth/secure_storage_service.dart';
 import '../../data/models/campaign_public_models.dart';
 import 'campaign_ab_testing_service.dart';
 import 'campaign_countdown_service.dart';
@@ -13,10 +14,10 @@ class SmartCampaignEngine {
     required CampaignAbTestingService abTesting,
     required CampaignCountdownService countdown,
     required UserGeoPreferencesService geoPrefs,
-  })  : _geoTargeting = geoTargeting,
-        _abTesting = abTesting,
-        _countdown = countdown,
-        _geoPrefs = geoPrefs;
+  }) : _geoTargeting = geoTargeting,
+       _abTesting = abTesting,
+       _countdown = countdown,
+       _geoPrefs = geoPrefs;
 
   final GeoTargetingService _geoTargeting;
   final CampaignAbTestingService _abTesting;
@@ -24,7 +25,9 @@ class SmartCampaignEngine {
   final UserGeoPreferencesService _geoPrefs;
 
   /// Filter geo, assign A/B variants, sort by priority for homepage.
-  Future<List<PublicCampaign>> prepareHomeCampaigns(List<PublicCampaign> raw) async {
+  Future<List<PublicCampaign>> prepareHomeCampaigns(
+    List<PublicCampaign> raw,
+  ) async {
     var campaigns = await _geoTargeting.filterForUser(raw);
     campaigns = _geoTargeting.sortByPriority(campaigns);
 
@@ -44,9 +47,10 @@ class SmartCampaignEngine {
 
   Future<String> _userSeed() async {
     final prefs = await SharedPreferences.getInstance();
+    final accessToken = await SecureStorageService().accessToken;
     return prefs.getString('userId') ??
         prefs.getString('userPhone') ??
-        prefs.getString('token') ??
+        accessToken ??
         'guest';
   }
 

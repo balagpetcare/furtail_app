@@ -57,6 +57,24 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
     );
   }
 
+  /// Computes the player height based on media aspect ratios,
+  /// capped at 60% of screen height so bottom content stays visible.
+  double _playerHeight(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.6;
+
+    // Use the first video's aspect ratio if available, otherwise 16:9
+    final video = widget.media.where((m) => m.type.toUpperCase() == 'VIDEO').firstOrNull;
+    double aspectRatio = 16 / 9;
+    if (video != null && video.width != null && video.height != null && video.height! > 0) {
+      aspectRatio = video.width! / video.height!;
+    }
+
+    final naturalHeight = screenWidth / aspectRatio;
+    return naturalHeight.clamp(0.0, maxHeight);
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = widget.media;
@@ -66,7 +84,7 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: MediaQuery.of(context).size.width * 9 / 16,
+          height: _playerHeight(context),
           child: PageView.builder(
             controller: _page,
             onPageChanged: (i) => setState(() => _index = i),

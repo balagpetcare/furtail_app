@@ -12,6 +12,175 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Furtail';
 
   @override
+  String get authWelcomeTitle => 'Welcome to Furtail';
+
+  @override
+  String get authSignInSubtitle => 'Sign in to continue caring for your pets';
+
+  @override
+  String get authIdentifierHint => 'Email, phone number, or username';
+
+  @override
+  String get authPasswordHint => 'Password';
+
+  @override
+  String get authConfirmPasswordHint => 'Confirm password';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authLogin => 'Log In';
+
+  @override
+  String get authNoAccount => 'Don\'t have an account? ';
+
+  @override
+  String get authRegister => 'Register';
+
+  @override
+  String get authOrContinueWith => 'or continue with';
+
+  @override
+  String get authMore => 'More';
+
+  @override
+  String authProviderPending(String provider) {
+    return '$provider sign-in isn\'t available yet in this app.';
+  }
+
+  @override
+  String get authCreateAccountTitle => 'Create Account';
+
+  @override
+  String get authCreateAccountSubtitle => 'Join the Furtail community today';
+
+  @override
+  String get authFullNameHint => 'Full name';
+
+  @override
+  String get authEmailHint => 'Email';
+
+  @override
+  String get authPhoneHint => 'Phone number';
+
+  @override
+  String get authCreateAccountButton => 'Create Account';
+
+  @override
+  String get authHaveAccount => 'Already have an account? ';
+
+  @override
+  String get authLoginLink => 'Login';
+
+  @override
+  String get authFieldRequired => 'This field is required';
+
+  @override
+  String authPasswordTooShort(int minLength) {
+    return 'Password must be at least $minLength characters';
+  }
+
+  @override
+  String get authPasswordMismatch => 'Passwords do not match';
+
+  @override
+  String get authInvalidEmail => 'Enter a valid email address';
+
+  @override
+  String get authRegisteredSuccess => 'Account created. Please log in.';
+
+  @override
+  String get otpTitle => 'Sign in with a one-time code';
+
+  @override
+  String get otpChannelEmail => 'Email';
+
+  @override
+  String get otpChannelPhone => 'SMS';
+
+  @override
+  String get otpChannelWhatsapp => 'WhatsApp';
+
+  @override
+  String get otpRecipientHint => 'Email or phone number';
+
+  @override
+  String get otpSendCode => 'Send code';
+
+  @override
+  String otpEnterCodeSentTo(String destination) {
+    return 'Enter the code sent to $destination';
+  }
+
+  @override
+  String get otpCodeHint => 'Verification code';
+
+  @override
+  String get otpVerify => 'Verify';
+
+  @override
+  String get otpResend => 'Resend code';
+
+  @override
+  String otpResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get otpChangeRecipient => 'Use a different email/phone';
+
+  @override
+  String get otpErrorExpired => 'This code has expired. Request a new one.';
+
+  @override
+  String get otpErrorMaxAttempts =>
+      'Too many incorrect attempts. Request a new code.';
+
+  @override
+  String get otpErrorInvalid => 'Incorrect code. Please try again.';
+
+  @override
+  String get otpErrorCooldown => 'Please wait before requesting another code.';
+
+  @override
+  String get resetPasswordTitle => 'Reset password';
+
+  @override
+  String get resetPasswordTokenHint => 'Reset code from your email';
+
+  @override
+  String get resetPasswordNewPasswordHint => 'New password';
+
+  @override
+  String get resetPasswordConfirmHint => 'Confirm new password';
+
+  @override
+  String get resetPasswordSubmit => 'Reset password';
+
+  @override
+  String get resetPasswordSuccess =>
+      'Password reset. Please log in with your new password.';
+
+  @override
+  String resetPasswordPolicyMinLength(int minLength) {
+    return 'At least $minLength characters';
+  }
+
+  @override
+  String get resetPasswordPolicyUppercase => 'At least one uppercase letter';
+
+  @override
+  String get resetPasswordPolicyNumber => 'At least one number';
+
+  @override
+  String get resetPasswordPolicySymbol => 'At least one symbol';
+
+  @override
+  String get resetPasswordTokenExplainer =>
+      'Paste the reset code from the email we sent you.';
+
+  @override
   String get settings => 'Settings';
 
   @override

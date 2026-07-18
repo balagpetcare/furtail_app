@@ -224,7 +224,7 @@ class _ProfileTabVideosState extends State<ProfileTabVideos> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${p.likeCount} Paws · ${p.commentCount} comments',
+                          'Like (${p.likeCount}) · Comment (${p.commentCount})',
                           style: context.appText.bodySmall!.copyWith(color: Colors.black54),
                         ),
                       ],

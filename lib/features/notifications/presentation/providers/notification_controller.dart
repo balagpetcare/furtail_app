@@ -74,8 +74,8 @@ class NotificationsListState {
 
 final notificationsListProvider =
     NotifierProvider<NotificationsListNotifier, NotificationsListState>(
-  NotificationsListNotifier.new,
-);
+      NotificationsListNotifier.new,
+    );
 
 class NotificationsListNotifier extends Notifier<NotificationsListState> {
   @override
@@ -94,10 +94,7 @@ class NotificationsListNotifier extends Notifier<NotificationsListState> {
         unreadCount: res.unreadCount,
       );
     } catch (e, st) {
-      state = state.copyWith(
-        loading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(loading: false, error: e.toString());
       if (kDebugMode) {
         debugPrint('[NotificationsList] load error: $e\n$st');
       }
@@ -207,8 +204,8 @@ class NotificationBootstrapState {
 /// Riverpod controller — bootstraps push + local notification stack.
 final notificationControllerProvider =
     AsyncNotifierProvider<NotificationController, NotificationBootstrapState>(
-  NotificationController.new,
-);
+      NotificationController.new,
+    );
 
 class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
   @override
@@ -234,7 +231,11 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
   NotificationService get _service => ref.read(notificationServiceProvider);
 
   /// Call after successful login so token registration uses auth header.
+  /// Also requests notification permissions at this point (deferred from app startup).
   Future<void> registerPushAfterAuth() async {
+    // Request notification permissions now that user is authenticated
+    await _service.requestNotificationPermissions();
+
     if (!_service.fcmAvailable) return;
     final repo = ref.read(notificationRepositoryProvider);
     final cached = await repo.getCachedFcmToken();
@@ -247,7 +248,9 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
 
   Future<void> refreshFcmToken() async {
     await _service.initialize();
-    final token = await ref.read(notificationRepositoryProvider).getCachedFcmToken();
+    final token = await ref
+        .read(notificationRepositoryProvider)
+        .getCachedFcmToken();
     state = AsyncData(
       NotificationBootstrapState(
         ready: true,
@@ -275,13 +278,12 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
     required String title,
     required String body,
     String? actionUrl,
-  }) =>
-      _service.showTyped(
-        type: type,
-        title: title,
-        body: body,
-        actionUrl: actionUrl,
-      );
+  }) => _service.showTyped(
+    type: type,
+    title: title,
+    body: body,
+    actionUrl: actionUrl,
+  );
 
   Future<void> syncVaccinationReminders(List<VaccinationReminder> reminders) =>
       _service.syncVaccinationReminders(reminders);
@@ -306,9 +308,13 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
 
   void _handleNotificationTap(NotificationPayload payload) {
     if (kDebugMode) {
-      debugPrint('[NotificationController] tap: ${payload.type.code} ${payload.actionUrl}');
+      debugPrint(
+        '[NotificationController] tap: ${payload.type.code} ${payload.actionUrl}',
+      );
     }
-    ref.read(notificationRepositoryProvider).savePendingTapPayload(payload.data);
+    ref
+        .read(notificationRepositoryProvider)
+        .savePendingTapPayload(payload.data);
 
     // Prefer actionUrl from backend; fall back to type-based routing.
     final url = payload.actionUrl;
@@ -331,6 +337,16 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
       case AppNotificationType.petLiked:
         if (payload.data['petId'] != null) {
           deepLink.handleString('/pet/${payload.data['petId']}');
+        }
+        break;
+      case AppNotificationType.adoptionLike:
+      case AppNotificationType.adoptionComment:
+      case AppNotificationType.adoptionApplicationSubmitted:
+      case AppNotificationType.adoptionApplicationApproved:
+      case AppNotificationType.adoptionApplicationRejected:
+      case AppNotificationType.adoptionListingStatusChanged:
+        if (payload.actionUrl != null && payload.actionUrl!.isNotEmpty) {
+          deepLink.handleString(payload.actionUrl!);
         }
         break;
       default:

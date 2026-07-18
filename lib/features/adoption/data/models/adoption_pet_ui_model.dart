@@ -50,6 +50,11 @@ class AdoptionPetUiModel {
   final int applicationCount;
   final String? sizeText;
   final String? colorText;
+  final int? ageYears;
+  final int? ageMonths;
+  final int? ageDays;
+  final int? totalAgeDays;
+  final DateTime? approximateDateOfBirth;
 
   const AdoptionPetUiModel({
     required this.id,
@@ -99,6 +104,11 @@ class AdoptionPetUiModel {
     this.applicationCount = 0,
     this.sizeText,
     this.colorText,
+    this.ageYears,
+    this.ageMonths,
+    this.ageDays,
+    this.totalAgeDays,
+    this.approximateDateOfBirth,
   });
 
   AdoptionMediaUiModel? get coverMedia {
@@ -160,6 +170,11 @@ class AdoptionPetUiModel {
     int? applicationCount,
     String? sizeText,
     String? colorText,
+    int? ageYears,
+    int? ageMonths,
+    int? ageDays,
+    int? totalAgeDays,
+    DateTime? approximateDateOfBirth,
   }) {
     return AdoptionPetUiModel(
       id: id ?? this.id,
@@ -209,6 +224,11 @@ class AdoptionPetUiModel {
       applicationCount: applicationCount ?? this.applicationCount,
       sizeText: sizeText ?? this.sizeText,
       colorText: colorText ?? this.colorText,
+      ageYears: ageYears ?? this.ageYears,
+      ageMonths: ageMonths ?? this.ageMonths,
+      ageDays: ageDays ?? this.ageDays,
+      totalAgeDays: totalAgeDays ?? this.totalAgeDays,
+      approximateDateOfBirth: approximateDateOfBirth ?? this.approximateDateOfBirth,
     );
   }
 
@@ -276,6 +296,32 @@ class AdoptionPetUiModel {
     }.toList();
 
     final ageText = _asString(json['ageText']);
+    final ageYears = _asIntOrNull(json['ageYears']);
+    final ageMonths = _asIntOrNull(json['ageMonths']);
+    final ageDays = _asIntOrNull(json['ageDays']);
+    final totalAgeDays = _asIntOrNull(json['totalAgeDays']);
+    final approximateDateOfBirth = json['approximateDateOfBirth'] != null 
+        ? DateTime.tryParse(json['approximateDateOfBirth'].toString()) 
+        : null;
+
+    final parts = <String>[];
+    if (ageYears != null && ageYears > 0) {
+      parts.add(ageYears == 1 ? '1 year' : '$ageYears years');
+    }
+    if (ageMonths != null && ageMonths > 0) {
+      parts.add(ageMonths == 1 ? '1 month' : '$ageMonths months');
+    }
+    if (ageDays != null && ageDays > 0) {
+      parts.add(ageDays == 1 ? '1 day' : '$ageDays days');
+    }
+    final formattedAge = parts.join(' ');
+
+    // Priority: structured age → ageText fallback (old listings) → "Age unavailable"
+    final finalAgeLabel = formattedAge.isNotEmpty
+        ? formattedAge
+        : (ageText.isNotEmpty ? ageText : 'Age unavailable');
+
+
     final breed = _asString(json['breed']);
     final species = _speciesLabel(_asString(json['species']));
     final gender = _genderLabel(_asString(json['gender']));
@@ -290,7 +336,7 @@ class AdoptionPetUiModel {
       name: _firstNonEmpty([_asString(json['name']), 'Unnamed pet']),
       species: species,
       breed: breed.isNotEmpty ? breed : 'Breed not specified',
-      ageLabel: ageText.isNotEmpty ? ageText : 'Age not specified',
+      ageLabel: finalAgeLabel,
       gender: gender,
       location: _firstNonEmpty([_asString(country['name']), 'Bangladesh']),
       description: _firstNonEmpty([
@@ -355,6 +401,11 @@ class AdoptionPetUiModel {
       applicationCount: _asInt(count['applications']),
       sizeText: _nullableString(json['sizeText']),
       colorText: _nullableString(json['colorText']),
+      ageYears: ageYears,
+      ageMonths: ageMonths,
+      ageDays: ageDays,
+      totalAgeDays: totalAgeDays,
+      approximateDateOfBirth: approximateDateOfBirth,
     );
   }
 

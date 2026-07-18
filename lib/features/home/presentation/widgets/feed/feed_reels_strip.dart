@@ -45,9 +45,11 @@ class ReelsStrip extends StatelessWidget {
                     )
                     .fold<PostMediaModel?>(null, (prev, m) => prev ?? m);
                 final rawStatus = (videoMedia?.status ?? 'READY').toUpperCase();
-                final hasUrl = (videoMedia?.url ?? '').isNotEmpty;
+                final hasUrl = (videoMedia?.playbackUrl ?? '').isNotEmpty;
                 // Show as READY when video is playable even while HD processing
-                final status = (rawStatus == 'PENDING' || rawStatus == 'PROCESSING') && hasUrl
+                final status =
+                    (rawStatus == 'PENDING' || rawStatus == 'PROCESSING') &&
+                        hasUrl
                     ? 'READY'
                     : rawStatus;
                 final thumb = videoMedia?.thumbnailUrl?.isNotEmpty == true

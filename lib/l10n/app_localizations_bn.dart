@@ -12,6 +12,175 @@ class AppLocalizationsBn extends AppLocalizations {
   String get appTitle => 'Furtail অ্যাপ';
 
   @override
+  String get authWelcomeTitle => 'Furtail-এ স্বাগতম';
+
+  @override
+  String get authSignInSubtitle => 'চালিয়ে যেতে সাইন ইন করুন';
+
+  @override
+  String get authIdentifierHint => 'ইমেইল, ফোন নম্বর বা ইউজারনেম';
+
+  @override
+  String get authPasswordHint => 'পাসওয়ার্ড';
+
+  @override
+  String get authConfirmPasswordHint => 'পাসওয়ার্ড নিশ্চিত করুন';
+
+  @override
+  String get authForgotPassword => 'পাসওয়ার্ড ভুলে গেছেন?';
+
+  @override
+  String get authLogin => 'লগ ইন';
+
+  @override
+  String get authNoAccount => 'অ্যাকাউন্ট নেই? ';
+
+  @override
+  String get authRegister => 'রেজিস্টার';
+
+  @override
+  String get authOrContinueWith => 'অথবা চালিয়ে যান';
+
+  @override
+  String get authMore => 'আরও';
+
+  @override
+  String authProviderPending(String provider) {
+    return '$provider দিয়ে সাইন-ইন এখনো উপলব্ধ নয়।';
+  }
+
+  @override
+  String get authCreateAccountTitle => 'অ্যাকাউন্ট তৈরি করুন';
+
+  @override
+  String get authCreateAccountSubtitle => 'আজই Furtail কমিউনিটিতে যোগ দিন';
+
+  @override
+  String get authFullNameHint => 'পুরো নাম';
+
+  @override
+  String get authEmailHint => 'ইমেইল';
+
+  @override
+  String get authPhoneHint => 'ফোন নম্বর';
+
+  @override
+  String get authCreateAccountButton => 'অ্যাকাউন্ট তৈরি করুন';
+
+  @override
+  String get authHaveAccount => 'আগে থেকে অ্যাকাউন্ট আছে? ';
+
+  @override
+  String get authLoginLink => 'লগ ইন';
+
+  @override
+  String get authFieldRequired => 'এই ঘরটি আবশ্যক';
+
+  @override
+  String authPasswordTooShort(int minLength) {
+    return 'পাসওয়ার্ড কমপক্ষে $minLength অক্ষরের হতে হবে';
+  }
+
+  @override
+  String get authPasswordMismatch => 'পাসওয়ার্ড মিলছে না';
+
+  @override
+  String get authInvalidEmail => 'একটি সঠিক ইমেইল ঠিকানা লিখুন';
+
+  @override
+  String get authRegisteredSuccess => 'অ্যাকাউন্ট তৈরি হয়েছে। এখন লগ ইন করুন।';
+
+  @override
+  String get otpTitle => 'ওয়ান-টাইম কোড দিয়ে সাইন ইন করুন';
+
+  @override
+  String get otpChannelEmail => 'ইমেইল';
+
+  @override
+  String get otpChannelPhone => 'এসএমএস';
+
+  @override
+  String get otpChannelWhatsapp => 'হোয়াটসঅ্যাপ';
+
+  @override
+  String get otpRecipientHint => 'ইমেইল বা ফোন নম্বর';
+
+  @override
+  String get otpSendCode => 'কোড পাঠান';
+
+  @override
+  String otpEnterCodeSentTo(String destination) {
+    return '$destination-এ পাঠানো কোডটি লিখুন';
+  }
+
+  @override
+  String get otpCodeHint => 'ভেরিফিকেশন কোড';
+
+  @override
+  String get otpVerify => 'যাচাই করুন';
+
+  @override
+  String get otpResend => 'আবার কোড পাঠান';
+
+  @override
+  String otpResendIn(int seconds) {
+    return '$seconds সেকেন্ডে আবার পাঠানো যাবে';
+  }
+
+  @override
+  String get otpChangeRecipient => 'ভিন্ন ইমেইল/ফোন ব্যবহার করুন';
+
+  @override
+  String get otpErrorExpired =>
+      'কোডের মেয়াদ শেষ হয়ে গেছে। নতুন কোড অনুরোধ করুন।';
+
+  @override
+  String get otpErrorMaxAttempts => 'অনেকবার ভুল হয়েছে। নতুন কোড অনুরোধ করুন।';
+
+  @override
+  String get otpErrorInvalid => 'ভুল কোড। আবার চেষ্টা করুন।';
+
+  @override
+  String get otpErrorCooldown => 'আবার অনুরোধ করার আগে একটু অপেক্ষা করুন।';
+
+  @override
+  String get resetPasswordTitle => 'পাসওয়ার্ড রিসেট করুন';
+
+  @override
+  String get resetPasswordTokenHint => 'ইমেইল থেকে পাওয়া রিসেট কোড';
+
+  @override
+  String get resetPasswordNewPasswordHint => 'নতুন পাসওয়ার্ড';
+
+  @override
+  String get resetPasswordConfirmHint => 'নতুন পাসওয়ার্ড নিশ্চিত করুন';
+
+  @override
+  String get resetPasswordSubmit => 'পাসওয়ার্ড রিসেট করুন';
+
+  @override
+  String get resetPasswordSuccess =>
+      'পাসওয়ার্ড রিসেট হয়েছে। নতুন পাসওয়ার্ড দিয়ে লগ ইন করুন।';
+
+  @override
+  String resetPasswordPolicyMinLength(int minLength) {
+    return 'কমপক্ষে $minLength অক্ষর';
+  }
+
+  @override
+  String get resetPasswordPolicyUppercase => 'কমপক্ষে একটি বড় হাতের অক্ষর';
+
+  @override
+  String get resetPasswordPolicyNumber => 'কমপক্ষে একটি সংখ্যা';
+
+  @override
+  String get resetPasswordPolicySymbol => 'কমপক্ষে একটি প্রতীক';
+
+  @override
+  String get resetPasswordTokenExplainer =>
+      'আমরা আপনাকে যে ইমেইল পাঠিয়েছি তা থেকে রিসেট কোডটি পেস্ট করুন।';
+
+  @override
   String get settings => 'সেটিংস';
 
   @override

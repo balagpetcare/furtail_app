@@ -22,6 +22,7 @@ import 'features/notifications/presentation/providers/notification_controller.da
 import 'core/services/post_upload_manager.dart';
 import 'core/media/furtail_cache_manager.dart' show VideoCacheService;
 import 'core/network/api_config.dart';
+import 'core/config/central_auth_config.dart';
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -29,36 +30,46 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await firebaseMessagingBackgroundHandler(message);
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  dev.log('[AppConfig] API_BASE_URL=${ApiConfig.apiV1}', name: 'AppConfig');
-  await LocalStorage.migrateLegacyPreferences();
-
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    await AnalyticsService.instance.initialize();
-    await CrashReportingService.instance.initialize();
-  } catch (_) {
-    // Firebase config placeholder — local notifications still work.
-    await AnalyticsService.instance.initialize();
-    await CrashReportingService.instance.initialize();
-  }
-
+void main() {
   CrashReportingService.instance.installGlobalHandlers();
 
-  runZonedGuarded(
-    () {
-      runApp(
-        ProviderScope(
-          observers: [FurtailCrashlyticsProviderObserver()],
-          child: const FurtailApp(),
-        ),
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Fail fast on a broken API host configuration instead of letting Dio
+    // throw "No host specified in URI" deep inside the first network call
+    // (e.g. the post-login Furtail /auth/me profile fetch).
+    ApiConfig.assertValid();
+    CentralAuthConfig.assertValid();
+
+    dev.log('[AppConfig] API_BASE_URL=${ApiConfig.apiV1}', name: 'AppConfig');
+    dev.log(
+      '[AppConfig] CENTRAL_AUTH_API_BASE_URL=${CentralAuthConfig.apiV1}',
+      name: 'AppConfig',
+    );
+    await LocalStorage.migrateLegacyPreferences();
+
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
       );
-    },
-    CrashReportingService.instance.recordZoneError,
-  );
+      await AnalyticsService.instance.initialize();
+      await CrashReportingService.instance.initialize();
+    } catch (_) {
+      // Firebase config placeholder — local notifications still work.
+      await AnalyticsService.instance.initialize();
+      await CrashReportingService.instance.initialize();
+    }
+
+    runApp(
+      ProviderScope(
+        observers: [FurtailCrashlyticsProviderObserver()],
+        child: const FurtailApp(),
+      ),
+    );
+  }, CrashReportingService.instance.recordZoneError);
 }
 
 class FurtailApp extends ConsumerStatefulWidget {
@@ -99,6 +110,12 @@ class _FurtailAppState extends ConsumerState<FurtailApp> {
 
     final localeAsync = ref.watch(localeControllerProvider);
     final locale = localeAsync.asData?.value;
+    final requestedRoute =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    final initialRoute =
+        requestedRoute.isEmpty || requestedRoute == Navigator.defaultRouteName
+        ? Navigator.defaultRouteName
+        : requestedRoute;
 
     return MaterialApp(
       navigatorKey: AppNavigator.key,
@@ -117,7 +134,7 @@ class _FurtailAppState extends ConsumerState<FurtailApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.light,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      initialRoute: '/',
+      initialRoute: initialRoute,
     );
   }
 }

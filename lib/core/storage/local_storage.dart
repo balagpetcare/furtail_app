@@ -1,7 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorage {
-  static const _kToken = 'token';
   static const _kUserName = 'userName';
   static const _kUserEmail = 'userEmail';
   // Used for ownership checks (Edit/Delete post).
@@ -15,35 +14,33 @@ class LocalStorage {
   /// Phase 5: State/Province code for API (X-State-Code)
   static const _kStateCode = 'furtail_state_code';
 
-  static Future<void> saveAuth({
-    required String token,
+  /// Populates the display-cache fields (name/email/id/avatar) still read
+  /// synchronously by several preserved domain screens for ownership checks
+  /// and header display. Called by `AuthController` after bootstrap/login
+  /// succeeds against the Central Auth `/me` response.
+  ///
+  /// Deliberately does NOT store a token — the OAuth2 access/refresh tokens
+  /// are owned exclusively by `SecureStorageService` (flutter_secure_storage)
+  /// since the Central Auth migration; this is display data only.
+  static Future<void> cacheUserDisplayInfo({
+    required int userId,
     required String userName,
     required String userEmail,
-    int? userId,
     String? avatarUrl,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kToken, token);
+    await prefs.setInt(_kUserId, userId);
     await prefs.setString(_kUserName, userName);
     await prefs.setString(_kUserEmail, userEmail);
-
-    // Keep these optional for backward compatibility.
-    if (userId != null) {
-      await prefs.setInt(_kUserId, userId);
-    }
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
       await prefs.setString(_kAvatarUrl, avatarUrl.trim());
+    } else {
+      await prefs.remove(_kAvatarUrl);
     }
   }
 
-  static Future<String?> getToken() async {
+  static Future<void> clearUserDisplayInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_kToken);
-  }
-
-  static Future<void> clearAuth() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kToken);
     await prefs.remove(_kUserName);
     await prefs.remove(_kUserEmail);
     await prefs.remove(_kUserId);

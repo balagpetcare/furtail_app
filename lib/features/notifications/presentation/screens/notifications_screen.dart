@@ -12,7 +12,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
@@ -130,7 +131,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     Icon(
                       Icons.notifications_none_rounded,
                       size: 64,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      color: colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.4,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -143,7 +146,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     Text(
                       'Social activity will appear here',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        color: colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                     ),
                   ],
@@ -162,7 +167,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           children: [
             Icon(Icons.wifi_off_rounded, size: 48, color: colorScheme.error),
             const SizedBox(height: 12),
-            Text('Could not load notifications', style: theme.textTheme.bodyLarge),
+            Text(
+              'Could not load notifications',
+              style: theme.textTheme.bodyLarge,
+            ),
             const SizedBox(height: 8),
             FilledButton.tonal(
               onPressed: _onRefresh,
@@ -182,10 +190,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           if (index >= state.items.length) {
             return const Padding(
               padding: EdgeInsets.all(16),
-              child: Center(child: SizedBox(
-                width: 24, height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
             );
           }
           return _NotificationTile(
@@ -202,10 +213,7 @@ class _NotificationTile extends StatelessWidget {
   final NotificationItem item;
   final VoidCallback onTap;
 
-  const _NotificationTile({
-    required this.item,
-    required this.onTap,
-  });
+  const _NotificationTile({required this.item, required this.onTap});
 
   String _timeAgo(DateTime date) {
     final now = DateTime.now();
@@ -228,6 +236,18 @@ class _NotificationTile extends StatelessWidget {
         return Icons.pets_rounded;
       case AppNotificationType.petLiked:
         return Icons.favorite_rounded;
+      case AppNotificationType.adoptionLike:
+        return Icons.favorite_border_rounded;
+      case AppNotificationType.adoptionComment:
+        return Icons.chat_bubble_outline_rounded;
+      case AppNotificationType.adoptionApplicationSubmitted:
+        return Icons.assignment_turned_in_outlined;
+      case AppNotificationType.adoptionApplicationApproved:
+        return Icons.verified_outlined;
+      case AppNotificationType.adoptionApplicationRejected:
+        return Icons.cancel_outlined;
+      case AppNotificationType.adoptionListingStatusChanged:
+        return Icons.pets_outlined;
       default:
         return Icons.notifications_rounded;
     }
@@ -294,7 +314,9 @@ class _NotificationTile extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontWeight: isUnread ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: isUnread
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                             fontSize: 14,
                           ),
                         ),

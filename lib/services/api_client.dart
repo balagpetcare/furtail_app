@@ -1,30 +1,107 @@
-import 'dart:convert';
+import 'dart:developer' as developer;
+
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:furtail_app/core/auth/auth_controller.dart';
+import 'package:furtail_app/core/auth/auth_interceptor.dart';
+import 'package:furtail_app/core/auth/central_auth_api.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Dio-backed API client. Public method names/signatures/return
+/// shapes/thrown-exception shape are preserved exactly from the previous
+/// package:http implementation so every existing call site (posts/pets/
+/// adoption/comments/feed/notifications/media/...) needs zero changes:
+///  - success responses return the JSON-decoded body (`dynamic`)
+///  - API failures surface as typed exceptions with readable status/code
+class ApiClientException implements Exception {
+  ApiClientException({
+    required this.message,
+    this.statusCode,
+    this.code,
+    this.dioExceptionType,
+    this.method,
+    this.url,
+    this.responseData,
+  });
+
+  final String message;
+  final int? statusCode;
+  final String? code;
+  final String? dioExceptionType;
+  final String? method;
+  final String? url;
+  final Object? responseData;
+
+  bool get isUnauthorized => statusCode == 401;
+  bool get isForbidden => statusCode == 403;
+  bool get isNetworkError =>
+      dioExceptionType == 'connectionError' ||
+      dioExceptionType == 'connectionTimeout' ||
+      dioExceptionType == 'receiveTimeout' ||
+      dioExceptionType == 'sendTimeout';
+
+  @override
+  String toString() => message;
+}
+
 class ApiClient {
-  Future<String?> _token() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
+  final Dio _dio;
+
+  /// [dio] is a test-only seam — production call sites never pass it, so
+  /// they always get the real `Dio` built here. Lets tests attach a
+  /// request-short-circuiting interceptor to simulate server responses
+  /// without a live network call.
+  ///
+  /// When [dio] is omitted and no [authInterceptor] is supplied, a default
+  /// [AuthInterceptor] is attached automatically, built from the canonical
+  /// [SecureStorageService]/[CentralAuthApi] singletons. This is a safety
+  /// net for the many call sites that construct `ApiClient()` directly
+  /// outside of Riverpod (`apiClientProvider` still passes its own
+  /// [authInterceptor], wired to `onSessionExpired`, which takes precedence)
+  /// — without it, those call sites would silently never attach a Bearer
+  /// token to protected requests.
+  ApiClient({AuthInterceptor? authInterceptor, Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 20),
+              receiveTimeout: const Duration(seconds: 30),
+              // Callers pass full absolute URLs (as before), so no baseUrl here.
+            ),
+          ) {
+    if (authInterceptor != null) {
+      _dio.interceptors.add(authInterceptor);
+    } else if (dio == null) {
+      _dio.interceptors.add(
+        AuthInterceptor(
+          secureStorage: SecureStorageService(),
+          centralAuthApi: CentralAuthApi(),
+          // No WidgetRef available here to drive AuthState; the interceptor
+          // already clears the persisted session on a definitive failure,
+          // which is what actually gates future requests.
+          onSessionExpired: () {},
+        ),
+      );
+    }
   }
+
+  /// Test-only seam: whether this instance carries an [AuthInterceptor],
+  /// regardless of whether it came from the default wiring above or from an
+  /// explicit [authInterceptor] argument.
+  @visibleForTesting
+  bool get hasAuthInterceptorForTest =>
+      _dio.interceptors.whereType<AuthInterceptor>().isNotEmpty;
 
   Future<Map<String, String>> _headers({required bool auth}) async {
     final headers = <String, String>{"Content-Type": "application/json"};
-    if (auth) {
-      final t = await _token();
-      if (t == null || t.isEmpty) {
-        throw Exception("Token not found. Please login again.");
-      }
-      headers["Authorization"] = "Bearer $t";
-    }
     // Phase 5: X-Country-Code for API policy/context
     final prefs = await SharedPreferences.getInstance();
-    final country = prefs.getString("furtail_country_code");
-    if (country != null && country.trim().isNotEmpty) {
-      headers["X-Country-Code"] = country.trim().toUpperCase();
-    }
+    final country = (prefs.getString("furtail_country_code") ?? 'BD').trim();
+    headers["X-Country-Code"] = country.isEmpty ? 'BD' : country.toUpperCase();
     final state = prefs.getString("furtail_state_code");
     if (state != null && state.trim().isNotEmpty) {
       headers["X-State-Code"] = state.trim().toUpperCase();
@@ -32,38 +109,67 @@ class ApiClient {
     return headers;
   }
 
-  dynamic _safeDecode(String body) {
-    if (body.trim().isEmpty) return {};
-    try {
-      return jsonDecode(body);
-    } catch (_) {
-      return {"raw": body};
+  dynamic _safeDecode(dynamic data) {
+    if (data == null) return {};
+    if (data is String) {
+      if (data.trim().isEmpty) return {};
+      try {
+        return data; // already handled by Dio's ResponseType.json in most cases
+      } catch (_) {
+        return {"raw": data};
+      }
     }
+    return data;
   }
 
-  dynamic _handle(
-    http.Response res, {
+  dynamic _handle(Response res, {required String method, required String url}) {
+    final decoded = _safeDecode(res.data);
+
+    if ((res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 300) {
+      return decoded;
+    }
+    throw ApiClientException(
+      message: _messageFromDecoded(decoded, fallback: 'API Error'),
+      statusCode: res.statusCode,
+      code: _codeFromDecoded(decoded),
+      method: method,
+      url: url,
+      responseData: decoded,
+    );
+  }
+
+  String _messageFromDecoded(dynamic decoded, {required String fallback}) {
+    if (decoded is Map && decoded['message'] != null) {
+      return decoded['message'].toString();
+    }
+    return fallback;
+  }
+
+  String? _codeFromDecoded(dynamic decoded) {
+    if (decoded is Map && decoded['code'] != null) {
+      return decoded['code'].toString();
+    }
+    return null;
+  }
+
+  ApiClientException _toApiClientException(
+    DioException error, {
     required String method,
     required String url,
   }) {
-    final decoded = _safeDecode(res.body);
-
-    if (res.statusCode >= 200 && res.statusCode < 300) {
-      return decoded;
-    }
-
-    final msg = (decoded is Map && decoded["message"] != null)
-        ? decoded["message"].toString()
-        : "API Error";
-
-    final error = Exception("$msg (${res.statusCode})");
-    CrashReportingService.instance.recordNetworkError(
+    final decoded = _safeDecode(error.response?.data);
+    return ApiClientException(
+      message: _messageFromDecoded(
+        decoded,
+        fallback: error.message ?? 'API Error',
+      ),
+      statusCode: error.response?.statusCode,
+      code: _codeFromDecoded(decoded),
+      dioExceptionType: error.type.name,
       method: method,
       url: url,
-      error: error,
-      statusCode: res.statusCode,
+      responseData: decoded,
     );
-    throw error;
   }
 
   Future<T> _runHttp<T>(
@@ -73,6 +179,18 @@ class ApiClient {
   ) async {
     try {
       return await request();
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.badResponse) {
+        final error = _toApiClientException(e, method: method, url: url);
+        await CrashReportingService.instance.recordNetworkError(
+          method: method,
+          url: url,
+          error: error,
+          statusCode: error.statusCode,
+        );
+        throw error;
+      }
+      rethrow;
     } catch (e, st) {
       final msg = e.toString();
       if (!msg.contains('API Error') && !msg.contains('Upload Error')) {
@@ -89,9 +207,12 @@ class ApiClient {
 
   Future<dynamic> get(String url, {bool auth = true}) async {
     return _runHttp('GET', url, () async {
-      final res = await http.get(
-        Uri.parse(url),
-        headers: await _headers(auth: auth),
+      final res = await _dio.get<dynamic>(
+        url,
+        options: Options(
+          headers: await _headers(auth: auth),
+          extra: {'auth': auth},
+        ),
       );
       return _handle(res, method: 'GET', url: url);
     });
@@ -103,10 +224,13 @@ class ApiClient {
     bool auth = true,
   }) async {
     return _runHttp('POST', url, () async {
-      final res = await http.post(
-        Uri.parse(url),
-        headers: await _headers(auth: auth),
-        body: jsonEncode(body),
+      final res = await _dio.post<dynamic>(
+        url,
+        data: body,
+        options: Options(
+          headers: await _headers(auth: auth),
+          extra: {'auth': auth},
+        ),
       );
       return _handle(res, method: 'POST', url: url);
     });
@@ -118,10 +242,13 @@ class ApiClient {
     bool auth = true,
   }) async {
     return _runHttp('PATCH', url, () async {
-      final res = await http.patch(
-        Uri.parse(url),
-        headers: await _headers(auth: auth),
-        body: jsonEncode(body),
+      final res = await _dio.patch<dynamic>(
+        url,
+        data: body,
+        options: Options(
+          headers: await _headers(auth: auth),
+          extra: {'auth': auth},
+        ),
       );
       return _handle(res, method: 'PATCH', url: url);
     });
@@ -129,9 +256,12 @@ class ApiClient {
 
   Future<dynamic> delete(String url, {bool auth = true}) async {
     return _runHttp('DELETE', url, () async {
-      final res = await http.delete(
-        Uri.parse(url),
-        headers: await _headers(auth: auth),
+      final res = await _dio.delete<dynamic>(
+        url,
+        options: Options(
+          headers: await _headers(auth: auth),
+          extra: {'auth': auth},
+        ),
       );
       return _handle(res, method: 'DELETE', url: url);
     });
@@ -145,43 +275,42 @@ class ApiClient {
     Map<String, String>? fields,
   }) async {
     return _runHttp('POST', url, () async {
-      final req = http.MultipartRequest('POST', Uri.parse(url));
+      final formData = FormData.fromMap({
+        if (fields != null) ...fields,
+        fieldName: await MultipartFile.fromFile(filePath),
+      });
 
-      if (auth) {
-        final t = await _token();
-        if (t == null || t.isEmpty) {
-          throw Exception('Token not found. Please login again.');
-        }
-        req.headers['Authorization'] = 'Bearer $t';
-      }
+      // multipart requests still need country/state headers, and (when
+      // `auth: true`) the Authorization header — the latter is normally
+      // attached by AuthInterceptor's onRequest hook, which runs for every
+      // Dio request including this one, so we don't attach it manually here.
+      final headers = await _headers(auth: auth);
+      headers.remove('Content-Type'); // let Dio set the multipart boundary
 
-      if (fields != null) req.fields.addAll(fields);
-      req.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
-
-      final streamed = await req.send();
-      final body = await streamed.stream.bytesToString();
-
-      if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
-        return _safeDecode(body);
-      }
-
-      final decoded = _safeDecode(body);
-      final msg = (decoded is Map && decoded['message'] != null)
-          ? decoded['message'].toString()
-          : 'Upload Error';
-
-      final error = Exception('$msg (${streamed.statusCode})');
-      await CrashReportingService.instance.recordNetworkError(
-        method: 'POST',
-        url: url,
-        error: error,
-        statusCode: streamed.statusCode,
+      final res = await _dio.post<dynamic>(
+        url,
+        data: formData,
+        options: Options(headers: headers, extra: {'auth': auth}),
       );
-      throw error;
+      return _safeDecode(res.data);
     });
   }
 }
 
-final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient();
+final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
+  final interceptor = AuthInterceptor(
+    secureStorage: ref.read(secureStorageServiceProvider),
+    centralAuthApi: ref.read(centralAuthApiProvider),
+    onSessionExpired: () {
+      ref.read(authControllerProvider.notifier).forceLogout();
+    },
+  );
+  final client = ApiClient(authInterceptor: interceptor);
+  if (kDebugMode) {
+    developer.log(
+      'apiClientProvider built instance=${client.hashCode}',
+      name: 'ApiClient',
+    );
+  }
+  return client;
 });

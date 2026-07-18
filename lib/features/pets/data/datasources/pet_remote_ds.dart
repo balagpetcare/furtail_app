@@ -2,17 +2,19 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/auth/secure_storage_service.dart';
 import '../../../../core/network/api_config.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/pet_model.dart';
 
 class PetRemoteDs {
-  Future<String?> _token() async {
-    final sp = await SharedPreferences.getInstance();
-    return sp.getString("token");
-  }
+  final SecureStorageService _secureStorage;
+
+  PetRemoteDs([SecureStorageService? secureStorage])
+    : _secureStorage = secureStorage ?? SecureStorageService();
+
+  Future<String?> _token() => _secureStorage.accessToken;
 
   Future<Map<String, String>> _authHeaders({bool json = true}) async {
     final t = await _token();

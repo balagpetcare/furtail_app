@@ -7,8 +7,7 @@ import 'package:furtail_app/core/theme/app_typography.dart';
 import '../../../../../features/legacy/presentation/screens/vet_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 import '../../../../../features/legacy/presentation/screens/shop_screen.dart';
-import '../../../../../features/legacy/presentation/screens/donation_screen.dart';
-import '../../../../../features/legacy/presentation/screens/adoption_screen.dart';
+import 'package:furtail_app/app/router/app_routes.dart';
 // import '../../grooming_screen.dart'; // যদি থাকে
 
 class ServiceGrid extends StatelessWidget {
@@ -49,19 +48,13 @@ class ServiceGrid extends StatelessWidget {
         'icon': Icons.volunteer_activism_rounded,
         'label': 'Donation',
         'color': Colors.pink,
-        'onTap': (context) => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const DonationScreen()),
-        ),
+        'onTap': (context) => Navigator.pushNamed(context, AppRoutes.donation),
       },
       {
         'icon': Icons.home_rounded,
         'label': 'Adoption',
         'color': Colors.green,
-        'onTap': (context) => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AdoptionScreen()),
-        ),
+        'onTap': (context) => Navigator.pushNamed(context, AppRoutes.adoption),
       },
       // --- নিচের গুলোর জন্য পেজ তৈরি না থাকলে মেসেজ দেখাবে ---
       {

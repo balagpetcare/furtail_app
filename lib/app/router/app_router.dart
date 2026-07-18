@@ -4,12 +4,11 @@ import 'app_routes.dart';
 // screens imports (refactor path অনুযায়ী)
 import '../../features/home/presentation/screens/furtail_home_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
-import '../../features/legacy/presentation/screens/splash_screen.dart';
 import '../../features/legacy/presentation/screens/country_picker_screen.dart';
 import '../../features/legacy/presentation/screens/shop_screen.dart';
 import '../../features/legacy/presentation/screens/services_screen.dart';
-import '../../features/legacy/presentation/screens/donation_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_feed_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
 import '../../features/profile/presentation/screens/user_profile_screen.dart';
 import '../../features/profile/presentation/screens/visitor_profile_screen.dart';
@@ -28,17 +27,24 @@ import 'package:furtail_app/features/pets/presentation/screens/pet_public_profil
 import '../../features/settings/presentation/screens/account_settings_screen.dart';
 import '../../features/settings/presentation/screens/media_storage_settings_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
-import 'package:furtail_app/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/certificate_viewer_screen.dart';
+import 'package:furtail_app/core/widgets/placeholder_screen.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_home_screen.dart';
+import 'package:furtail_app/core/auth/auth_gate.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.splash:
-        return MaterialPageRoute(builder: (_) => const SplashScreen());
+        // AuthGate owns the splash -> login -> home decision (bootstraps
+        // AuthController against SecureStorageService + `/me`). SplashScreen
+        // itself is now a pure presentational widget shown during
+        // AuthStatus.unknown.
+        return MaterialPageRoute(
+          builder: (_) => const AuthGate(authenticatedChild: FurtailHomeScreen()),
+        );
 
       case AppRoutes.countryPicker:
         return MaterialPageRoute(builder: (_) => const CountryPickerScreen());
@@ -61,7 +67,9 @@ class AppRouter {
       case AppRoutes.visitorProfile:
         final args = (settings.arguments as Map?) ?? {};
         final rawUid = args['userId'];
-        final userId = rawUid is int ? rawUid : int.tryParse(rawUid?.toString() ?? '');
+        final userId = rawUid is int
+            ? rawUid
+            : int.tryParse(rawUid?.toString() ?? '');
         if (userId == null || userId <= 0) {
           return _notFound('Profile not available');
         }
@@ -109,15 +117,14 @@ class AppRouter {
         final initialIndex = args['initialIndex'] as int? ?? 0;
         if (post != null) {
           return MaterialPageRoute(
-            builder: (_) => MediaViewerScreen(
-              post: post,
-              initialIndex: initialIndex,
-            ),
+            builder: (_) =>
+                MediaViewerScreen(post: post, initialIndex: initialIndex),
           );
         }
         // Fallback for legacy callers that pass individual fields
         final postId = args['postId'] as int? ?? 0;
-        final media = (args['media'] as List?)?.cast<PostMediaModel>() ?? const [];
+        final media =
+            (args['media'] as List?)?.cast<PostMediaModel>() ?? const [];
         final author = args['author'] as PostAuthorModel?;
         final caption = args['caption'] as String? ?? '';
         if (author == null) {
@@ -160,7 +167,9 @@ class AppRouter {
       case AppRoutes.petPublicProfile:
         final args = (settings.arguments as Map?) ?? {};
         final rawPid = args['petId'];
-        final petId = rawPid is int ? rawPid : int.tryParse(rawPid?.toString() ?? '');
+        final petId = rawPid is int
+            ? rawPid
+            : int.tryParse(rawPid?.toString() ?? '');
         if (petId == null || petId <= 0) {
           return _notFound('Pet profile not available');
         }
@@ -169,7 +178,7 @@ class AppRouter {
         );
 
       case AppRoutes.donation:
-        return MaterialPageRoute(builder: (_) => const DonationScreen());
+        return MaterialPageRoute(builder: (_) => const FundraisingFeedScreen());
 
       case AppRoutes.adoption:
         return MaterialPageRoute(builder: (_) => const AdoptionHomeScreen());
@@ -214,6 +223,15 @@ class AppRouter {
           builder: (_) => const MediaStorageSettingsScreen(),
         );
 
+      case AppRoutes.lostPetAlert:
+        return MaterialPageRoute(
+          builder: (_) => const PlaceholderScreen(
+            title: 'Lost Pet Alert',
+            message:
+                'Lost Pet Alert is coming soon. You will be able to report and share missing pet alerts here.',
+            icon: Icons.report_problem_rounded,
+          ),
+        );
 
       case AppRoutes.notificationsList:
         return MaterialPageRoute(

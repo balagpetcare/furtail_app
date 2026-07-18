@@ -3,6 +3,11 @@ class AdoptionListingFormPayload {
   final String species;
   final String breed;
   final String ageText;
+  final int? ageYears;
+  final int? ageMonths;
+  final int? ageDays;
+  final int? totalAgeDays;
+  final String? approximateDateOfBirth;
   final String gender;
   final String sizeText;
   final String colorText;
@@ -13,13 +18,15 @@ class AdoptionListingFormPayload {
   final bool neutered;
   final bool microchipped;
   final String healthInfo;
-  final String countryIdText;
-  final String stateIdText;
-  final String cityIdText;
-  final String divisionIdText;
-  final String districtIdText;
-  final String upazilaIdText;
-  final String areaIdText;
+  final String ownerContactPhone;
+  final String ownerWhatsappPhone;
+  final String ownerCityAreaText;
+  final String pickupLocationNotes;
+  final int countryId;
+  final int? bdDivisionId;
+  final int? bdDistrictId;
+  final int? bdUpazilaId;
+  final int? bdAreaId;
   final String serviceAreaType;
   final bool allowInternationalAdoption;
   final String customServiceAreasText;
@@ -32,12 +39,20 @@ class AdoptionListingFormPayload {
   final String minimumIncomeRange;
   final String maximumIncomeRange;
   final String adopterConditionNote;
+  final double? latitude;
+  final double? longitude;
+  final List<int> mediaIds;
 
   const AdoptionListingFormPayload({
     required this.name,
     required this.species,
     required this.breed,
     required this.ageText,
+    this.ageYears,
+    this.ageMonths,
+    this.ageDays,
+    this.totalAgeDays,
+    this.approximateDateOfBirth,
     required this.gender,
     required this.sizeText,
     required this.colorText,
@@ -48,13 +63,15 @@ class AdoptionListingFormPayload {
     required this.neutered,
     required this.microchipped,
     required this.healthInfo,
-    required this.countryIdText,
-    required this.stateIdText,
-    required this.cityIdText,
-    required this.divisionIdText,
-    required this.districtIdText,
-    required this.upazilaIdText,
-    required this.areaIdText,
+    required this.ownerContactPhone,
+    required this.ownerWhatsappPhone,
+    required this.ownerCityAreaText,
+    required this.pickupLocationNotes,
+    required this.countryId,
+    this.bdDivisionId,
+    this.bdDistrictId,
+    this.bdUpazilaId,
+    this.bdAreaId,
     required this.serviceAreaType,
     required this.allowInternationalAdoption,
     required this.customServiceAreasText,
@@ -67,6 +84,9 @@ class AdoptionListingFormPayload {
     required this.minimumIncomeRange,
     required this.maximumIncomeRange,
     required this.adopterConditionNote,
+    this.latitude,
+    this.longitude,
+    this.mediaIds = const [],
   });
 
   Map<String, dynamic> toApiPayload({required bool submitNow}) {
@@ -82,17 +102,20 @@ class AdoptionListingFormPayload {
     return {
       'submitNow': submitNow,
       'ownerType': 'INDIVIDUAL',
-      'countryId': _parseRequiredInt(countryIdText),
-      'stateId': _parseOptionalInt(stateIdText),
-      'cityId': _parseOptionalInt(cityIdText),
-      'bdDivisionId': _parseOptionalInt(divisionIdText),
-      'bdDistrictId': _parseOptionalInt(districtIdText),
-      'bdUpazilaId': _parseOptionalInt(upazilaIdText),
-      'bdAreaId': _parseOptionalInt(areaIdText),
+      'countryId': countryId,
+      if (bdDivisionId != null) 'bdDivisionId': bdDivisionId,
+      if (bdDistrictId != null) 'bdDistrictId': bdDistrictId,
+      if (bdUpazilaId != null) 'bdUpazilaId': bdUpazilaId,
+      if (bdAreaId != null) 'bdAreaId': bdAreaId,
       'species': species,
       'name': _trim(name),
       if (_trim(breed).isNotEmpty) 'breed': _trim(breed),
       if (_trim(ageText).isNotEmpty) 'ageText': _trim(ageText),
+      if (ageYears != null) 'ageYears': ageYears,
+      if (ageMonths != null) 'ageMonths': ageMonths,
+      if (ageDays != null) 'ageDays': ageDays,
+      if (totalAgeDays != null) 'totalAgeDays': totalAgeDays,
+      if (approximateDateOfBirth != null) 'approximateDateOfBirth': approximateDateOfBirth,
       if (_trim(gender).isNotEmpty) 'gender': gender,
       if (_trim(sizeText).isNotEmpty) 'sizeText': _trim(sizeText),
       if (_trim(colorText).isNotEmpty) 'colorText': _trim(colorText),
@@ -100,6 +123,11 @@ class AdoptionListingFormPayload {
       'description': _trim(description),
       'story': 'Reason for adoption: ${_trim(adoptionReason)}',
       if (_trim(healthInfo).isNotEmpty) 'healthInfo': _trim(healthInfo),
+      'ownerContactPhone': _trim(ownerContactPhone),
+      if (_trim(ownerWhatsappPhone).isNotEmpty)
+        'ownerWhatsappPhone': _trim(ownerWhatsappPhone),
+      'ownerCityAreaText': _trim(ownerCityAreaText),
+      'pickupLocationNotes': _trim(pickupLocationNotes),
       'serviceAreaType': serviceAreaType,
       if (_trim(serviceAreaNotes).isNotEmpty)
         'serviceAreaNotes': _trim(serviceAreaNotes),
@@ -111,6 +139,9 @@ class AdoptionListingFormPayload {
       'microchipped': microchipped,
       if (adopterConditions.isNotEmpty)
         'adopterConditionsJson': adopterConditions,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (mediaIds.isNotEmpty) 'mediaIds': mediaIds,
       'criteria': {
         'adoptionExperienceRequired': previousPetExperienceRequired,
         'homeCheckRequired': followUpAgreement,
@@ -132,20 +163,6 @@ class AdoptionListingFormPayload {
       .map(_trim)
       .where((item) => item.isNotEmpty)
       .toList();
-
-  static int _parseRequiredInt(String value) {
-    final parsed = _parseOptionalInt(value);
-    if (parsed == null) {
-      throw const FormatException('Country ID is required.');
-    }
-    return parsed;
-  }
-
-  static int? _parseOptionalInt(String value) {
-    final trimmed = _trim(value);
-    if (trimmed.isEmpty) return null;
-    return int.tryParse(trimmed);
-  }
 
   static String _trim(String value) => value.trim();
 }

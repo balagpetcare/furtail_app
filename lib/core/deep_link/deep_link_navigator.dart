@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../app/router/app_routes.dart';
+import '../../features/adoption/presentation/screens/adoption_notification_entry_screens.dart';
 import '../../features/campaign/presentation/screens/campaign_details_page.dart';
 import '../../features/campaign/presentation/screens/campaign_hub_screen.dart';
 import '../../features/fundraising/presentation/screens/fundraising_details_screen.dart';
-import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/home/presentation/screens/furtail_home_screen.dart';
 import '../../features/pets/presentation/screens/pet_profile_screen.dart';
 import '../../features/posts/presentation/screens/post_details_by_id_screen.dart';
 import '../../features/profile/presentation/screens/visitor_profile_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/profile/presentation/screens/visitor_profile_resolver_screen.dart';
 import 'deep_link_target.dart';
 
@@ -35,7 +36,10 @@ abstract final class DeepLinkNavigator {
         if (slug.isEmpty) return null;
         return MaterialPageRoute(
           builder: (_) => CampaignDetailsPage(slug: slug),
-          settings: RouteSettings(name: AppRoutes.campaignDetail, arguments: {'slug': slug}),
+          settings: RouteSettings(
+            name: AppRoutes.campaignDetail,
+            arguments: {'slug': slug},
+          ),
         );
       case DeepLinkKind.campaign:
         return MaterialPageRoute(
@@ -70,6 +74,35 @@ abstract final class DeepLinkNavigator {
         return MaterialPageRoute(
           builder: (_) => const FurtailHomeScreen(initialIndex: 4),
           settings: const RouteSettings(name: AppRoutes.notificationsList),
+        );
+      case DeepLinkKind.adoption:
+        final adoptionId = int.tryParse(target.id);
+        if (adoptionId == null || adoptionId <= 0) return null;
+        return MaterialPageRoute(
+          builder: (_) => AdoptionDetailEntryScreen(adoptionId: adoptionId),
+          settings: const RouteSettings(name: AppRoutes.adoption),
+        );
+      case DeepLinkKind.adoptionComments:
+        final adoptionId = int.tryParse(target.id);
+        if (adoptionId == null || adoptionId <= 0) return null;
+        return MaterialPageRoute(
+          builder: (_) => AdoptionCommentsEntryScreen(adoptionId: adoptionId),
+          settings: const RouteSettings(name: AppRoutes.adoption),
+        );
+      case DeepLinkKind.adoptionApplication:
+        final applicationId = int.tryParse(target.id);
+        if (applicationId == null || applicationId <= 0) return null;
+        return MaterialPageRoute(
+          builder: (_) =>
+              AdoptionApplicationEntryScreen(applicationId: applicationId),
+          settings: const RouteSettings(name: AppRoutes.adoption),
+        );
+      case DeepLinkKind.resetPassword:
+        final token = target.id.trim();
+        if (token.isEmpty) return null;
+        return MaterialPageRoute(
+          builder: (_) => ResetPasswordScreen(initialToken: token),
+          settings: const RouteSettings(name: '/auth/reset-password'),
         );
       case DeepLinkKind.profile:
         final rawId = target.id.trim();

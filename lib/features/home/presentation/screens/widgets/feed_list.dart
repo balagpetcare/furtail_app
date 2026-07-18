@@ -15,7 +15,7 @@ import 'package:furtail_app/features/home/presentation/widgets/feed/feed_post_ca
 // parsing the entire JSON blob at once.
 
 // =============================
-// HOME FEED (posts only) â€” offline-first
+// HOME FEED (posts only) — offline-first
 // =============================
 
 class FeedList extends StatefulWidget {
@@ -29,7 +29,12 @@ class FeedList extends StatefulWidget {
   /// Callback when the feed decides a parent-level refresh is needed.
   final VoidCallback? onNeedRefresh;
 
-  const FeedList({super.key, this.meId, this.refreshToken, this.onNeedRefresh});
+  const FeedList({
+    super.key,
+    this.meId,
+    this.refreshToken,
+    this.onNeedRefresh,
+  });
 
   @override
   State<FeedList> createState() => _FeedListState();
@@ -51,12 +56,9 @@ class _FeedListState extends State<FeedList> {
   /// Last network error. Cleared on successful fetch.
   String? _networkError;
 
-  /// Timestamp of the data in [_posts] (either cache age or fetch time).
-  DateTime? _dataAge;
-
   int? _meId;
 
-  // â”€â”€ Debug build counter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Debug build counter ────────────────────────────────────────────────
   int _buildCount = 0;
 
   @override
@@ -76,12 +78,12 @@ class _FeedListState extends State<FeedList> {
     } catch (_) {}
   }
 
-  // â”€â”€ Cache-then-network strategy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Cache-then-network strategy ────────────────────────────────────────
   //
   // Display flow:
-  //   1. Load cache â†’ show immediately (zero network cost, any age).
-  //   2. Fetch from network â†’ replace cache display on success.
-  //   3. On network failure â†’ keep showing cache; show error notice.
+  //   1. Load cache → show immediately (zero network cost, any age).
+  //   2. Fetch from network → replace cache display on success.
+  //   3. On network failure → keep showing cache; show error notice.
   //
   // The TTL in FeedCacheService is only consulted to decide how the loading
   // indicator looks, not whether to show the cache.
@@ -89,16 +91,10 @@ class _FeedListState extends State<FeedList> {
   Future<void> _loadCacheThenFetch() async {
     // Step 1: Paint the cached posts before touching the network.
     final cached = await _cache.loadFeed();
-    final cachedAt = await _cache.lastFetchedAt();
-
     if (mounted && cached != null) {
-      // Show whatever is in cache â€“ even an empty list is valid state.
-      // Do NOT require cached.isNotEmpty; an empty cached result is still
-      // "we have a cache" and should suppress the loading spinner.
       setState(() {
         _posts = cached;
         _isFromCache = cached.isNotEmpty;
-        _dataAge = cachedAt;
       });
     }
 
@@ -108,7 +104,6 @@ class _FeedListState extends State<FeedList> {
 
   Future<void> _fetchFromNetwork() async {
     if (!mounted) return;
-    // Deduplicate: don't start a second network request while one is running.
     if (_isLoadingFromNetwork) return;
     setState(() => _isLoadingFromNetwork = true);
 
@@ -116,16 +111,12 @@ class _FeedListState extends State<FeedList> {
       final posts = await _ds.getFeed(limit: 50);
       if (!mounted) return;
 
-      // Guard: if the fresh response is empty but we had cached posts, keep
-      // the cached posts rather than replacing with an empty screen.
-      // An empty server response on a fresh install is shown normally.
       final hadCachedContent = _isFromCache && _posts.isNotEmpty;
       final freshIsEmpty = posts.isEmpty;
 
       setState(() {
         _posts = (freshIsEmpty && hadCachedContent) ? _posts : posts;
         _isFromCache = freshIsEmpty && hadCachedContent;
-        _dataAge = DateTime.now();
         _isLoadingFromNetwork = false;
         _networkError = null;
       });
@@ -134,7 +125,6 @@ class _FeedListState extends State<FeedList> {
       setState(() {
         _isLoadingFromNetwork = false;
         _networkError = 'offline';
-        // _posts and _isFromCache intentionally not changed â€“ keep cached data.
       });
     } on TimeoutException catch (_) {
       if (!mounted) return;
@@ -157,22 +147,12 @@ class _FeedListState extends State<FeedList> {
     if (oldWidget.meId != widget.meId && widget.meId != null) {
       _meId = widget.meId;
     }
-    // Parent increments refreshToken to trigger a network refetch (e.g., when
-    // internet comes back or the user pulls-to-refresh).
     if (oldWidget.refreshToken != widget.refreshToken) {
       _fetchFromNetwork();
     }
   }
 
-  // â”€â”€ Build â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  //
-  // IMPORTANT: Returns a *sliver* widget (SliverToBoxAdapter or SliverList) so
-  // it can be inserted directly into CustomScrollView.slivers.
-  //
-  // The normal path returns SliverList with SliverChildBuilderDelegate which
-  // renders items lazily â€” only the items scrolled into view are built.
-  // This replaces the previous shrinkWrap ListView which forced all 50 posts
-  // to be laid out synchronously, causing scroll jank on mid-range devices.
+  // ── Build ──────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -196,43 +176,13 @@ class _FeedListState extends State<FeedList> {
       return SliverToBoxAdapter(child: _buildErrorState(_networkError!));
     }
 
-    // Truly empty: no cache, no posts, no error (e.g., fresh install + logged out).
-    if (_posts.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
-    final showNotice = _isFromCache || _networkError != null;
-
-    // Header items that appear before the post list in the sliver.
-    final headerCount = showNotice ? 1 : 0;
-    final totalCount = headerCount + _posts.length;
-
-    // SliverList with SliverChildBuilderDelegate gives true lazy rendering:
-    // each post card is built only when it scrolls into view.
+    // Pure post list — no banners inside the feed
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          // â”€â”€ Header items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          if (index < headerCount) {
-            int h = index;
-            if (showNotice) {
-              if (h == 0) {
-                return _CachedFeedNotice(
-                  dataAge: _dataAge,
-                  isNetworkError: _networkError != null,
-                  isRefreshing: _isLoadingFromNetwork,
-                );
-              }
-              h--;
-            }
-          }
-
-          // â”€â”€ Post items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          final postIndex = index - headerCount;
-          final post = _posts[postIndex];
+          final post = _posts[index];
           return Padding(
-            // Replicate the 12px separator the old ListView.separated used.
-            padding: EdgeInsets.only(bottom: 12, top: postIndex == 0 ? 0 : 0),
+            padding: EdgeInsets.only(bottom: 8),
             child: RepaintBoundary(
               child: PostCard(
                 key: ValueKey(post.id),
@@ -243,14 +193,12 @@ class _FeedListState extends State<FeedList> {
             ),
           );
         },
-        childCount: totalCount,
-        // Stable key for list identity â€” helps Flutter reuse element subtrees
-        // when setState is called (e.g., on feed refresh).
+        childCount: _posts.length,
         findChildIndexCallback: (key) {
           if (key is ValueKey<int>) {
             final idx = _posts.indexWhere((p) => p.id == key.value);
             if (idx == -1) return null;
-            return headerCount + idx;
+            return idx;
           }
           return null;
         },
@@ -308,79 +256,4 @@ class _FeedListState extends State<FeedList> {
   }
 }
 
-// â”€â”€ Cached-feed notice bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-class _CachedFeedNotice extends StatelessWidget {
-  final DateTime? dataAge;
-  final bool isNetworkError;
-  final bool isRefreshing;
-
-  const _CachedFeedNotice({
-    required this.dataAge,
-    required this.isNetworkError,
-    required this.isRefreshing,
-  });
-
-  String get _ageText {
-    if (dataAge == null) return 'Cached content';
-    final diff = DateTime.now().difference(dataAge!);
-    if (diff.inMinutes < 1) return 'Updated just now';
-    if (diff.inMinutes < 60) return 'Updated ${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return 'Updated ${diff.inHours}h ago';
-    return 'Updated ${diff.inDays}d ago';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(14, 8, 14, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isNetworkError
-            ? const Color(0xFFFFF3E0)
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isNetworkError
-              ? const Color(0xFFFFCC80)
-              : Theme.of(context).colorScheme.outlineVariant,
-        ),
-      ),
-      child: Row(
-        children: [
-          if (isRefreshing)
-            const SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 1.5),
-            )
-          else
-            Icon(
-              isNetworkError ? Icons.cloud_off_outlined : Icons.history_rounded,
-              size: 14,
-              color: isNetworkError
-                  ? const Color(0xFFE65100)
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              isRefreshing
-                  ? 'Refreshing...'
-                  : isNetworkError
-                  ? 'Offline Â· $_ageText'
-                  : _ageText,
-              style: TextStyle(
-                fontSize: 11,
-                color: isNetworkError
-                    ? const Color(0xFFE65100)
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -104,6 +104,318 @@ abstract class AppLocalizations {
   /// **'Furtail'**
   String get appTitle;
 
+  /// No description provided for @authWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Furtail'**
+  String get authWelcomeTitle;
+
+  /// No description provided for @authSignInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue caring for your pets'**
+  String get authSignInSubtitle;
+
+  /// No description provided for @authIdentifierHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Email, phone number, or username'**
+  String get authIdentifierHint;
+
+  /// No description provided for @authPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPasswordHint;
+
+  /// No description provided for @authConfirmPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm password'**
+  String get authConfirmPasswordHint;
+
+  /// No description provided for @authForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get authForgotPassword;
+
+  /// No description provided for @authLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Log In'**
+  String get authLogin;
+
+  /// No description provided for @authNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t have an account? '**
+  String get authNoAccount;
+
+  /// No description provided for @authRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get authRegister;
+
+  /// No description provided for @authOrContinueWith.
+  ///
+  /// In en, this message translates to:
+  /// **'or continue with'**
+  String get authOrContinueWith;
+
+  /// No description provided for @authMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get authMore;
+
+  /// No description provided for @authProviderPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{provider} sign-in isn\'t available yet in this app.'**
+  String authProviderPending(String provider);
+
+  /// No description provided for @authCreateAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get authCreateAccountTitle;
+
+  /// No description provided for @authCreateAccountSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the Furtail community today'**
+  String get authCreateAccountSubtitle;
+
+  /// No description provided for @authFullNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get authFullNameHint;
+
+  /// No description provided for @authEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get authEmailHint;
+
+  /// No description provided for @authPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get authPhoneHint;
+
+  /// No description provided for @authCreateAccountButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get authCreateAccountButton;
+
+  /// No description provided for @authHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? '**
+  String get authHaveAccount;
+
+  /// No description provided for @authLoginLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get authLoginLink;
+
+  /// No description provided for @authFieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get authFieldRequired;
+
+  /// No description provided for @authPasswordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least {minLength} characters'**
+  String authPasswordTooShort(int minLength);
+
+  /// No description provided for @authPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get authPasswordMismatch;
+
+  /// No description provided for @authInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address'**
+  String get authInvalidEmail;
+
+  /// No description provided for @authRegisteredSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created. Please log in.'**
+  String get authRegisteredSuccess;
+
+  /// No description provided for @otpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with a one-time code'**
+  String get otpTitle;
+
+  /// No description provided for @otpChannelEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get otpChannelEmail;
+
+  /// No description provided for @otpChannelPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS'**
+  String get otpChannelPhone;
+
+  /// No description provided for @otpChannelWhatsapp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get otpChannelWhatsapp;
+
+  /// No description provided for @otpRecipientHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or phone number'**
+  String get otpRecipientHint;
+
+  /// No description provided for @otpSendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get otpSendCode;
+
+  /// No description provided for @otpEnterCodeSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the code sent to {destination}'**
+  String otpEnterCodeSentTo(String destination);
+
+  /// No description provided for @otpCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification code'**
+  String get otpCodeHint;
+
+  /// No description provided for @otpVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get otpVerify;
+
+  /// No description provided for @otpResend.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get otpResend;
+
+  /// No description provided for @otpResendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {seconds}s'**
+  String otpResendIn(int seconds);
+
+  /// No description provided for @otpChangeRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different email/phone'**
+  String get otpChangeRecipient;
+
+  /// No description provided for @otpErrorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired. Request a new one.'**
+  String get otpErrorExpired;
+
+  /// No description provided for @otpErrorMaxAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many incorrect attempts. Request a new code.'**
+  String get otpErrorMaxAttempts;
+
+  /// No description provided for @otpErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect code. Please try again.'**
+  String get otpErrorInvalid;
+
+  /// No description provided for @otpErrorCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait before requesting another code.'**
+  String get otpErrorCooldown;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset code from your email'**
+  String get resetPasswordTokenHint;
+
+  /// No description provided for @resetPasswordNewPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get resetPasswordNewPasswordHint;
+
+  /// No description provided for @resetPasswordConfirmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get resetPasswordConfirmHint;
+
+  /// No description provided for @resetPasswordSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetPasswordSubmit;
+
+  /// No description provided for @resetPasswordSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset. Please log in with your new password.'**
+  String get resetPasswordSuccess;
+
+  /// No description provided for @resetPasswordPolicyMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {minLength} characters'**
+  String resetPasswordPolicyMinLength(int minLength);
+
+  /// No description provided for @resetPasswordPolicyUppercase.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one uppercase letter'**
+  String get resetPasswordPolicyUppercase;
+
+  /// No description provided for @resetPasswordPolicyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one number'**
+  String get resetPasswordPolicyNumber;
+
+  /// No description provided for @resetPasswordPolicySymbol.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one symbol'**
+  String get resetPasswordPolicySymbol;
+
+  /// No description provided for @resetPasswordTokenExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the reset code from the email we sent you.'**
+  String get resetPasswordTokenExplainer;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:

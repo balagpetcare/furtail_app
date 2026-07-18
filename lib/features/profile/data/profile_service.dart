@@ -1,11 +1,13 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
+import 'package:furtail_app/core/auth/auth_interceptor.dart';
+import 'package:furtail_app/core/auth/central_auth_api.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:furtail_app/core/network/api_config.dart';
-import 'package:furtail_app/core/media/media_url.dart';
+import '../../../services/api_client.dart';
+import '../../../core/network/api_config.dart';
+import '../../../core/media/media_url.dart';
 import 'models/user_profile_model.dart';
 
 /// Profile related API calls.
@@ -17,9 +19,23 @@ class ProfileService {
   static const _kAvatarBustTs = 'avatarBustTs';
   static const _kCoverBustTs = 'coverBustTs';
 
-  Future<String?> _token() async {
-    final sp = await SharedPreferences.getInstance();
-    return sp.getString("token");
+  final ApiClient _client;
+
+  ProfileService({ApiClient? client})
+    : _client =
+          client ??
+          ApiClient(
+            authInterceptor: AuthInterceptor(
+              secureStorage: SecureStorageService(),
+              centralAuthApi: CentralAuthApi(),
+              onSessionExpired: () {},
+            ),
+          );
+
+  dynamic _normalizeResponse(dynamic response) {
+    if (response is Map<String, dynamic>) return response;
+    if (response is Map) return Map<String, dynamic>.from(response);
+    return <String, dynamic>{};
   }
 
   /// Upload a media file (avatar/cover/gallery etc).
@@ -35,41 +51,32 @@ class ProfileService {
     File? file,
     String? type, // kept for compatibility; backend detects mime itself
   }) async {
-    // Ensure we have a file to upload
     File? realFile = file;
     if (realFile == null) {
       if (bytes == null || filename == null) {
-        throw Exception("uploadMedia requires either (file) OR (bytes + filename).");
+        throw Exception(
+          'uploadMedia requires either (file) OR (bytes + filename).',
+        );
       }
-      // write bytes to a temp file so we can send it via multipart
-      final tmpDir = Directory.systemTemp.createTempSync("bpa_media_");
-      realFile = File("${tmpDir.path}/$filename");
+      final tmpDir = Directory.systemTemp.createTempSync('bpa_media_');
+      realFile = File('${tmpDir.path}/$filename');
       await realFile.writeAsBytes(bytes, flush: true);
     }
 
-    final token = await _token();
-    if (token == null) throw Exception("Unauthorized. Please login again.");
-
-    final uri = Uri.parse("${ApiConfig.apiV1}/media/upload");
-    final req = http.MultipartRequest("POST", uri);
-    req.headers["Authorization"] = "Bearer $token";
-
-    final name = filename ?? realFile.path.split(Platform.pathSeparator).last;
-    req.files.add(await http.MultipartFile.fromPath("file", realFile.path, filename: name));
-
-    final streamed = await req.send();
-    final res = await http.Response.fromStream(streamed);
-
-    if (res.statusCode != 201 && res.statusCode != 200) {
-      throw Exception(_friendlyError(res));
-    }
-
-    final body = jsonDecode(res.body);
-    final data = body is Map ? body["data"] : null;
-    final id = (data is Map) ? data["id"] : null;
-    final parsed = int.tryParse(id?.toString() ?? "");
+    final response = await _client.multipartPost(
+      url: '${ApiConfig.apiV1}/media/upload',
+      fieldName: 'file',
+      filePath: realFile.path,
+      auth: true,
+    );
+    final body = _normalizeResponse(response);
+    final data = body['data'] is Map
+        ? Map<String, dynamic>.from(body['data'] as Map)
+        : body['data'];
+    final id = (data is Map) ? data['id'] : null;
+    final parsed = int.tryParse(id?.toString() ?? '');
     if (parsed == null) {
-      throw Exception("Upload succeeded but media id not found in response.");
+      throw Exception('Upload succeeded but media id not found in response.');
     }
     return parsed;
   }
@@ -79,24 +86,13 @@ class ProfileService {
   /// displayName, username, bio, visibility, showEmail, showPhone,
   /// avatarMediaId, coverMediaId, email, phone
   Future<UserProfileModel> updateProfile(Map<String, dynamic> payload) async {
-    final token = await _token();
-    if (token == null) throw Exception("Unauthorized. Please login again.");
-
-    final uri = Uri.parse("${ApiConfig.apiV1}/user/me");
-    final res = await http.patch(
-      uri,
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode(payload),
+    final response = await _client.patch(
+      '${ApiConfig.apiV1}/user/me',
+      payload,
+      auth: true,
     );
 
-    if (res.statusCode != 200) {
-      throw Exception(_friendlyError(res));
-    }
-
-    // ✅ Cache busting: when avatar/cover changes, store a timestamp so UI refreshes instantly.
+    // Cache busting: when avatar/cover changes, store a timestamp so UI refreshes instantly.
     final sp = await SharedPreferences.getInstance();
     final now = DateTime.now().millisecondsSinceEpoch;
     if (payload.containsKey('avatarMediaId')) {
@@ -106,59 +102,44 @@ class ProfileService {
       await sp.setInt(_kCoverBustTs, now);
     }
 
-    final data = jsonDecode(res.body);
-    // backend returns {success:true, data: {...profile...}}
-    final root = (data is Map) ? data : <String, dynamic>{};
-    final profile = root["data"];
-    if (profile is Map) {
-      final model = UserProfileModel.fromApi(Map<String, dynamic>.from(profile));
+    final data = _normalizeResponse(response);
+    final root = data['data'];
+    if (root is Map) {
+      final model = UserProfileModel.fromApi(Map<String, dynamic>.from(root));
       return await _applyBust(model);
     }
-    // fallback: some older versions returned the profile directly
     if (data is Map) {
       final model = UserProfileModel.fromApi(Map<String, dynamic>.from(data));
       return await _applyBust(model);
     }
-    throw Exception("Unexpected response from server.");
+    throw Exception('Unexpected response from server.');
   }
 
   Future<UserProfileModel> getProfile() async {
-    final token = await _token();
-    if (token == null) throw Exception("Unauthorized. Please login again.");
-
-    // ✅ Main endpoint
-    final uri = Uri.parse("${ApiConfig.apiV1}/user/me");
-
-    final res = await http.get(
-      uri,
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    // Optional fallback if your server only has /user/profile
-    if (res.statusCode == 404) {
-      final fallback = await http.get(
-        Uri.parse("${ApiConfig.apiV1}/user/profile"),
-        headers: {"Authorization": "Bearer $token"},
-      );
-      if (fallback.statusCode != 200) {
-        throw Exception(_friendlyError(fallback));
+    try {
+      return await _getProfileAt('${ApiConfig.apiV1}/user/me');
+    } on ApiClientException catch (e) {
+      if (e.statusCode == 404) {
+        return _getProfileAt('${ApiConfig.apiV1}/user/profile');
       }
-      final data = jsonDecode(fallback.body);
-      final model = UserProfileModel.fromApi(data as Map<String, dynamic>);
+      rethrow;
+    }
+  }
+
+  Future<UserProfileModel> _getProfileAt(String url) async {
+    final response = await _client.get(url, auth: true);
+    final data = _normalizeResponse(response);
+
+    if (data is Map && data['data'] is Map) {
+      final model = UserProfileModel.fromApi(
+        Map<String, dynamic>.from(data['data'] as Map),
+      );
       return await _applyBust(model);
     }
 
-    if (res.statusCode != 200) {
-      throw Exception(_friendlyError(res));
-    }
-
-    final data = jsonDecode(res.body);
-    // backend returns {success:true, data: {...}}
-    if (data is Map && data["data"] is Map) {
-      final model = UserProfileModel.fromApi(Map<String, dynamic>.from(data["data"]));
-      return await _applyBust(model);
-    }
-    final model = UserProfileModel.fromApi(data as Map<String, dynamic>);
+    final model = UserProfileModel.fromApi(
+      Map<String, dynamic>.from(data as Map),
+    );
     return await _applyBust(model);
   }
 
@@ -170,17 +151,5 @@ class ProfileService {
       photoUrl: MediaUrl.cacheBust(model.photoUrl ?? '', avatarTs),
       coverUrl: MediaUrl.cacheBust(model.coverUrl ?? '', coverTs),
     );
-  }
-
-  String _friendlyError(http.Response res) {
-    try {
-      final body = jsonDecode(res.body);
-      final msg = (body is Map) ? body["message"]?.toString() : null;
-      if (msg != null && msg.isNotEmpty) return msg;
-    } catch (_) {}
-    if (res.statusCode == 400) return "Bad request. Please check inputs.";
-    if (res.statusCode == 401) return "Unauthorized. Please login again.";
-    if (res.statusCode == 404) return "Not found.";
-    return "Request failed (${res.statusCode}). Please try again.";
   }
 }

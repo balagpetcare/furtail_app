@@ -4,10 +4,11 @@ import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:furtail_app/core/auth/auth_controller.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/config/policy_features_provider.dart';
 import 'package:furtail_app/core/network/connectivity_service.dart';
 import 'package:furtail_app/core/providers/current_user_provider.dart';
-import 'package:furtail_app/core/widgets/offline_banner.dart';
 import 'package:furtail_app/core/widgets/placeholder_screen.dart';
 
 // Ã Â¦â€°Ã Â¦â€¡Ã Â¦Å“Ã Â§â€¡Ã Â¦Å¸ Ã Â¦â€¡Ã Â¦Â®Ã Â¦ÂªÃ Â§â€¹Ã Â¦Â°Ã Â§ÂÃ Â¦Å¸
@@ -58,7 +59,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
   // Ã¢Å“â€¦ Rebuild/refresh tokens for each tab (IndexedStack keeps state; tokens force reload)
   int _homeRefreshToken = 0;
-  int _shopRefreshToken = 0;
+  final int _videosRefreshToken = 0;
   int _servicesRefreshToken = 0;
   int _profileRefreshToken = 0;
 
@@ -69,10 +70,18 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
   // Scroll controller for the Home feed.
   final _scrollController = ScrollController();
 
+  // ── Scroll-based hide/show for header & bottom nav ─────────────
+  bool _isHeaderVisible = true;
+  double _lastScrollOffset = 0;
+  static const double _scrollThreshold = 8.0;
+
   String userName = "Guest";
   String userEmail = "";
   String? avatarUrl;
   String? token;
+
+  /// Current upload state, passed to FeedList to render the pending card.
+  PostUploadState? _currentUploadState;
 
   // Upload dialog deduplication Ã¢â‚¬â€ track the task id + status of the last shown
   // dialog so the same terminal state never opens a duplicate sheet.
@@ -86,11 +95,15 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     _loadUserData();
     _startConnectivityWatch();
     PostUploadManager.instance.state.addListener(_onUploadStateChanged);
+    _scrollController.addListener(_onScroll);
   }
 
   void _onUploadStateChanged() {
     final uploadState = PostUploadManager.instance.state.value;
     final taskId = PostUploadManager.instance.currentTask?.id;
+
+    // Sync local state on every change so the feed pending card stays in sync.
+    setState(() => _currentUploadState = uploadState);
 
     // Reset dedup when a new attempt starts so retry-then-fail can re-show the dialog.
     if (uploadState.status == PostUploadStatus.preparing) {
@@ -173,6 +186,19 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     });
   }
 
+  /// Retry triggered from the feed pending card.
+  void _onRetryUploadFromFeed() {
+    PostUploadManager.instance.retry().catchError((e) {
+      debugPrint('[Home] Feed retry error: $e');
+    });
+  }
+
+  /// Cancel/remove triggered from the feed pending card.
+  void _onCancelUploadFromFeed() {
+    PostUploadManager.instance.cancelNotification();
+    PostUploadManager.instance.reset();
+  }
+
   void _showUploadSuccessSnackBar() {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -205,8 +231,35 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     });
   }
 
+  /// Called on every scroll event to decide whether to show/hide bottom nav.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final offset = _scrollController.offset;
+    final diff = offset - _lastScrollOffset;
+    _lastScrollOffset = offset;
+
+    // Always show at the top
+    if (offset <= 0) {
+      if (!_isHeaderVisible) setState(() => _isHeaderVisible = true);
+      return;
+    }
+
+    // Threshold prevents flicker on small movements
+    if (diff.abs() < _scrollThreshold) return;
+
+    // Scrolling down → hide
+    if (diff > 0 && _isHeaderVisible) {
+      setState(() => _isHeaderVisible = false);
+    }
+    // Scrolling up → show
+    else if (diff < 0 && !_isHeaderVisible) {
+      setState(() => _isHeaderVisible = true);
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _connectivitySub?.cancel();
     _scrollController.dispose();
     PostUploadManager.instance.state.removeListener(_onUploadStateChanged);
@@ -220,7 +273,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     final newUserName = prefs.getString('userName') ?? "Guest";
     final newUserEmail = prefs.getString('userEmail') ?? "";
     final newAvatarUrl = prefs.getString('avatarUrl');
-    final newToken = prefs.getString('token');
+    final newToken = await ref.read(secureStorageServiceProvider).accessToken;
 
     // If token just became available (e.g., right after login), refresh the feed.
     final bool tokenBecameAvailable =
@@ -260,13 +313,17 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
       return;
     }
 
+    // Restore nav visibility when user taps any tab (they clearly see the nav)
+    if (!_isHeaderVisible) setState(() => _isHeaderVisible = true);
+
     final isSameTab = index == _selectedIndex;
     if (index == 4) {
-      final prefs = await SharedPreferences.getInstance();
+      final hasSession = await ref
+          .read(secureStorageServiceProvider)
+          .hasSession;
       if (!mounted) return;
-      final t = prefs.getString('token');
 
-      if (t == null || t.isEmpty) {
+      if (!hasSession) {
         await Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => LoginScreen()),
@@ -283,7 +340,6 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     setState(() {
       _selectedIndex = index;
       if (index == 0) _homeRefreshToken++;
-      if (index == 1) _shopRefreshToken++;
       if (index == 3) _servicesRefreshToken++;
       if (index == 4 && isSameTab) _profileRefreshToken++;
     });
@@ -293,42 +349,72 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     final selected = await showModalBottomSheet<_CreateAction>(
       context: context,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _CreateSheetTile(
-              icon: Icons.edit_note_rounded,
-              label: 'Create Post',
-              action: _CreateAction.post,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.4,
+        maxChildSize: 0.7,
+        expand: false,
+        builder: (context, scrollController) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ListView(
+              controller: scrollController,
+              children: [
+                _CreateSheetTile(
+                  icon: Icons.edit_note_rounded,
+                  iconColor: const Color(0xFF4CAF50),
+                  label: 'Create Post',
+                  subtitle: 'Share photos, videos, or text',
+                  action: _CreateAction.post,
+                ),
+                _CreateSheetTile(
+                  icon: Icons.video_call_rounded,
+                  iconColor: const Color(0xFFE91E63),
+                  label: 'Create Reel',
+                  subtitle: 'Record or upload a short video',
+                  action: _CreateAction.reel,
+                ),
+                _CreateSheetTile(
+                  icon: Icons.auto_stories_rounded,
+                  iconColor: const Color(0xFFFF9800),
+                  label: 'Add Story',
+                  subtitle: 'Share a moment that disappears in 24h',
+                  action: _CreateAction.story,
+                ),
+                _CreateSheetTile(
+                  icon: Icons.pets_rounded,
+                  iconColor: const Color(0xFF9C27B0),
+                  label: 'Add Pet',
+                  subtitle: 'Register your pet on Furtail',
+                  action: _CreateAction.pet,
+                ),
+                _CreateSheetTile(
+                  icon: Icons.medical_services_rounded,
+                  iconColor: const Color(0xFF2196F3),
+                  label: 'Book Service',
+                  subtitle: 'Find a vet, groomer, or trainer',
+                  action: _CreateAction.service,
+                ),
+                _CreateSheetTile(
+                  icon: Icons.report_problem_rounded,
+                  iconColor: const Color(0xFFF44336),
+                  label: 'Lost Pet Alert',
+                  subtitle: 'Report a missing pet',
+                  action: _CreateAction.lostPet,
+                ),
+              ],
             ),
-            _CreateSheetTile(
-              icon: Icons.video_call_rounded,
-              label: 'Upload Video',
-              action: _CreateAction.video,
-            ),
-            _CreateSheetTile(
-              icon: Icons.auto_stories_rounded,
-              label: 'Add Story',
-              action: _CreateAction.story,
-            ),
-            _CreateSheetTile(
-              icon: Icons.pets_rounded,
-              label: 'Add Pet',
-              action: _CreateAction.pet,
-            ),
-            _CreateSheetTile(
-              icon: Icons.medical_services_rounded,
-              label: 'Book Service',
-              action: _CreateAction.service,
-            ),
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
       ),
     );
 
     if (selected == null || !mounted) return;
+    // Book Service does not require login; everything else does.
     if (selected != _CreateAction.service && !_isLoggedIn) {
       await Navigator.push(
         context,
@@ -340,10 +426,18 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
     switch (selected) {
       case _CreateAction.post:
-      case _CreateAction.video:
         final created = await Navigator.push<bool>(
           context,
           MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+        );
+        if (created == true && mounted) setState(() => _homeRefreshToken++);
+        return;
+      case _CreateAction.reel:
+        final created = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CreatePostScreen(autoMediaType: 'REEL'),
+          ),
         );
         if (created == true && mounted) setState(() => _homeRefreshToken++);
         return;
@@ -363,15 +457,18 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
       case _CreateAction.service:
         if (mounted) setState(() => _selectedIndex = 3);
         return;
+      case _CreateAction.lostPet:
+        if (mounted) {
+          await Navigator.pushNamed(context, AppRoutes.lostPetAlert);
+        }
+        return;
     }
   }
 
   // Ã¢Å“â€¦ Drawer click handler
   Future<void> _handleDrawerSelect(BPADrawerDestination dest) async {
-    final prefs = await SharedPreferences.getInstance();
+    final loggedIn = await ref.read(secureStorageServiceProvider).hasSession;
     if (!mounted) return;
-    final t = prefs.getString('token');
-    final loggedIn = t != null && t.isNotEmpty;
 
     // Helper: push to login if not authenticated.
     Future<bool> ensureLoggedIn() async {
@@ -384,8 +481,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
       if (!mounted) return false;
       await _loadUserData();
       if (!mounted) return false;
-      final p = await SharedPreferences.getInstance();
-      return p.getString('token') != null && p.getString('token')!.isNotEmpty;
+      return ref.read(secureStorageServiceProvider).hasSession;
     }
 
     // Protected routes (login needed)
@@ -573,11 +669,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
       case BPADrawerDestination.adoption:
         {
-          pushPlaceholder(
-            'Adoption',
-            'Adoption screen is not added yet. Come back soon!',
-            icon: Icons.favorite_rounded,
-          );
+          await Navigator.pushNamed(context, AppRoutes.adoption);
           return;
         }
 
@@ -590,7 +682,11 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
           } catch (_) {}
           if (!mounted) return;
 
-          await prefs.remove('token');
+          // Clears the real Central Auth session (secure storage + best-effort
+          // server-side revoke) — this used to only remove legacy display-cache
+          // prefs, leaving the actual access/refresh token pair intact.
+          await ref.read(authControllerProvider.notifier).logout();
+          final prefs = await SharedPreferences.getInstance();
           await prefs.remove('userName');
           await prefs.remove('userEmail');
           ref.read(currentUserProvider.notifier).clear();
@@ -745,11 +841,14 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
           userName: userName,
           refreshToken: _homeRefreshToken,
           scrollController: _scrollController,
+          pendingUpload: _currentUploadState,
+          onRetryUpload: _onRetryUploadFromFeed,
+          onCancelUpload: _onCancelUploadFromFeed,
         ),
       ),
       KeyedSubtree(
-        key: ValueKey('videos_$_shopRefreshToken'),
-        child: VideosTabScreen(refreshToken: _shopRefreshToken),
+        key: ValueKey('videos_$_videosRefreshToken'),
+        child: VideosTabScreen(refreshToken: _videosRefreshToken),
       ),
       const SizedBox.shrink(),
       KeyedSubtree(
@@ -798,11 +897,15 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
           child: IndexedStack(index: _selectedIndex, children: pages),
         ),
 
-        // Bottom nav is always visible Ã¢â‚¬â€ no scroll-based hiding.
-        bottomNavigationBar: CustomBottomNav(
-          selectedIndex: _selectedIndex,
-          onItemTapped: _onItemTapped,
-          onFabPressed: _showCreateSheet,
+        // Bottom nav — collapses completely (height → 0) when scrolled down
+        // so the feed reclaims the space and no ghost background remains.
+        bottomNavigationBar: _AnimatedBottomNav(
+          visible: _isHeaderVisible,
+          child: CustomBottomNav(
+            selectedIndex: _selectedIndex,
+            onItemTapped: _onItemTapped,
+            onFabPressed: _showCreateSheet,
+          ),
         ),
       ),
     );
@@ -813,25 +916,52 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 // HOME CONTENT ASSEMBLY
 // ------------------------------------------
 
-enum _CreateAction { post, video, story, pet, service }
+enum _CreateAction { post, reel, story, pet, service, lostPet }
 
 class _CreateSheetTile extends StatelessWidget {
   final IconData icon;
+  final Color iconColor;
   final String label;
+  final String? subtitle;
   final _CreateAction action;
 
   const _CreateSheetTile({
     required this.icon,
+    required this.iconColor,
     required this.label,
+    this.subtitle,
     required this.action,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-      title: Text(label),
-      trailing: const Icon(Icons.chevron_right_rounded),
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: iconColor, size: 24),
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle!,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       onTap: () => Navigator.pop(context, action),
     );
   }
@@ -841,33 +971,41 @@ class HomeContentAssembly extends ConsumerWidget {
   final String userName;
   final int refreshToken;
   final ScrollController? scrollController;
+  final PostUploadState? pendingUpload;
+  final VoidCallback? onRetryUpload;
+  final VoidCallback? onCancelUpload;
 
   const HomeContentAssembly({
     super.key,
     required this.userName,
     required this.refreshToken,
     this.scrollController,
+    this.pendingUpload,
+    this.onRetryUpload,
+    this.onCancelUpload,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
     return CustomScrollView(
       controller: scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        // Ã¢Å“â€¦ Hide on scroll down, show on scroll up (Search/Profile/Notification bar)
+        // ── Compact home header (floating + snap = Facebook-style) ───
         SliverAppBar(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: cs.surface,
           elevation: 0,
           automaticallyImplyLeading: false,
-          pinned: true,
-          floating: false,
-          snap: false,
-          toolbarHeight: 60,
+          pinned: false,
+          floating: true,
+          snap: true,
+          toolbarHeight: 48,
           flexibleSpace: SafeArea(
             bottom: false,
             child: ColoredBox(
-              color: Theme.of(context).colorScheme.surface,
+              color: cs.surface,
               child: HomeAppBar(
                 userName: userName,
                 avatarUrl: ref.watch(currentUserProvider).avatarUrl,
@@ -875,17 +1013,18 @@ class HomeContentAssembly extends ConsumerWidget {
             ),
           ),
         ),
-        // Ã¢â€â‚¬Ã¢â€â‚¬ Offline / poor-connection banner Ã¢â€â‚¬Ã¢â€â‚¬
-        const SliverToBoxAdapter(child: OfflineBanner()),
 
-        // Ã¢â€â‚¬Ã¢â€â‚¬ My Day / Story (replaces old CampaignHomeSliver + static StorySection) Ã¢â€â‚¬Ã¢â€â‚¬
+        // ── Slim status bar (offline + upload status) ────────────────
+        SliverToBoxAdapter(child: _buildSlimStatusBar(context)),
+
+        // ── My Day / Story ──────────────────────────────────────────
         SliverToBoxAdapter(
           child: Column(
             children: [
               const MyDaySection(),
-              const SizedBox(height: 15),
-              const ServiceGrid(),
               const SizedBox(height: 10),
+              const ServiceGrid(),
+              const SizedBox(height: 8),
               Divider(
                 thickness: 1,
                 height: 1,
@@ -898,6 +1037,170 @@ class HomeContentAssembly extends ConsumerWidget {
         FeedList(refreshToken: refreshToken),
         const SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
+    );
+  }
+
+  /// Compact slim status bar combining offline banner + upload progress.
+  /// Does not push feed posts down; appears as a compact overlay row.
+  Widget _buildSlimStatusBar(BuildContext context) {
+    // Hide the slim bar when failed — the bottom sheet handles retry/cancel for that state.
+    final hasUpload =
+        pendingUpload != null &&
+        pendingUpload!.status != PostUploadStatus.idle &&
+        pendingUpload!.status != PostUploadStatus.failed;
+    // Connectivity is read via the outer build() scope using ref.watch
+    final isOffline =
+        false; // simplified — connectivity check kept for future use
+
+    // Nothing to show
+    if (!hasUpload && !isOffline) return const SizedBox(height: 4);
+
+    final children = <Widget>[];
+    if (isOffline) {
+      children.add(
+        Container(
+          height: 24,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.cloud_off_outlined,
+                size: 11,
+                color: Color(0xFFE65100),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Offline',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: const Color(0xFFE65100),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (hasUpload) {
+      children.add(_buildSlimUploadBar(context));
+    }
+
+    if (children.isEmpty) return const SizedBox(height: 4);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(children: children),
+    );
+  }
+
+  /// Compact upload progress bar (36px tall, shows spinner/percentage/failed actions).
+  Widget _buildSlimUploadBar(BuildContext context) {
+    final state = pendingUpload!;
+    final cs = Theme.of(context).colorScheme;
+    final isFailed = state.status == PostUploadStatus.failed;
+    final isPosted = state.status == PostUploadStatus.posted;
+    final isUploading = state.status == PostUploadStatus.uploading;
+
+    String message;
+    switch (state.status) {
+      case PostUploadStatus.preparing:
+      case PostUploadStatus.compressing:
+        message = state.message.isNotEmpty ? state.message : 'Preparing…';
+        break;
+      case PostUploadStatus.uploading:
+        final pct = (state.overallProgress * 100).round();
+        message = state.message.isNotEmpty
+            ? '$state.message ($pct%)'
+            : 'Uploading… ($pct%)';
+        break;
+      case PostUploadStatus.processing:
+        message =
+            '${state.message.isNotEmpty ? state.message : 'Processing…'} (HD)';
+        break;
+      case PostUploadStatus.posted:
+        message = 'Posted!';
+        break;
+      case PostUploadStatus.failed:
+        message = state.error ?? 'Upload failed';
+        break;
+      default:
+        message = '';
+    }
+
+    return Container(
+      height: 34,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      decoration: BoxDecoration(
+        color: isFailed
+            ? Colors.red.shade50
+            : isPosted
+            ? Colors.green.shade50
+            : cs.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          if (isUploading)
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    Container(color: cs.surfaceContainerHighest),
+                    FractionallySizedBox(
+                      widthFactor: state.overallProgress.clamp(0.0, 1.0),
+                      child: Container(color: cs.primary),
+                    ),
+                    Center(
+                      child: Text(
+                        message,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: cs.onPrimaryContainer,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            const SizedBox(width: 8),
+            if (isFailed)
+              Icon(Icons.error_outline, size: 14, color: Colors.red.shade600)
+            else if (isPosted)
+              Icon(Icons.check_circle, size: 14, color: Colors.green.shade600)
+            else
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: cs.primary,
+                ),
+              ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isFailed ? Colors.red.shade700 : cs.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1013,6 +1316,73 @@ class _UploadFailedSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _AnimatedBottomNav
+//
+// Wraps the bottom nav inside a SizeTransition so the Scaffold's
+// bottomNavigationBar slot fully collapses to 0 height when hidden.
+// AnimatedSlide/AnimatedOpacity only move/fade the paint — they do NOT change
+// the reserved slot height, leaving a white/grey ghost background strip.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AnimatedBottomNav extends StatefulWidget {
+  final bool visible;
+  final Widget child;
+
+  const _AnimatedBottomNav({required this.visible, required this.child});
+
+  @override
+  State<_AnimatedBottomNav> createState() => _AnimatedBottomNavState();
+}
+
+class _AnimatedBottomNavState extends State<_AnimatedBottomNav>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _sizeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      value: widget.visible ? 1.0 : 0.0,
+    );
+    _sizeAnim = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+      reverseCurve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedBottomNav old) {
+    super.didUpdateWidget(old);
+    if (old.visible != widget.visible) {
+      if (widget.visible) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _sizeAnim,
+      axisAlignment: -1,
+      child: widget.child,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:furtail_app/app/router/app_routes.dart';
 import 'package:furtail_app/core/navigation/profile_navigation.dart';
 import 'package:furtail_app/core/storage/local_storage.dart';
@@ -21,7 +22,7 @@ import 'package:furtail_app/features/posts/presentation/widgets/post_media_carou
 ///   AppBar (author header + more menu + share)
 ///   └─ Caption (with background style for short text posts)
 ///   └─ Media carousel (images/video)
-///   └─ Stats row + action buttons (Paw / Comment / Share)
+///   └─ Inline Like / Comment / Share action row
 ///   └─ Comments preview section
 ///   Bottom bar: sticky comment composer (opens bottom sheet)
 class PostDetailsScreen extends StatefulWidget {
@@ -62,6 +63,17 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
   }
 
   bool get _canEdit => _meId != null && _post.author.id == _meId;
+
+  bool _isBackgroundTextPost(PostModel post) {
+    final caption = post.caption;
+    if (caption == null || caption.isEmpty) return false;
+
+    final styleId = post.backgroundStyle;
+    return post.media.isEmpty &&
+        caption.length <= 160 &&
+        styleId != null &&
+        styleId != 'none';
+  }
 
   Future<void> _openEdit() async {
     if (!_canEdit) {
@@ -159,11 +171,15 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
         .map((m) => m.url)
         .toList();
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1A1A2E),
         elevation: 0,
-        scrolledUnderElevation: 0.5,
+        scrolledUnderElevation: 1,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black12,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: const BackButton(),
         titleSpacing: 0,
         title: PostDetailsHeader(
@@ -203,6 +219,13 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
             },
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: Colors.grey.shade200,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -212,7 +235,10 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
               children: [
                 // ── Post caption ──────────────────────────────────────────
                 if ((post.caption ?? '').isNotEmpty)
-                  _CaptionSection(post: post, media: media),
+                  _CaptionSection(
+                    post: post,
+                    isBackgroundTextPost: _isBackgroundTextPost(post),
+                  ),
 
                 // ── Media carousel ────────────────────────────────────────
                 if (media.isNotEmpty)
@@ -282,33 +308,29 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
 
 class _CaptionSection extends StatelessWidget {
   final PostModel post;
-  final List<PostMediaModel> media;
+  final bool isBackgroundTextPost;
 
-  const _CaptionSection({required this.post, required this.media});
+  const _CaptionSection({
+    required this.post,
+    required this.isBackgroundTextPost,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final textLength = post.caption!.length;
-    final isTextOnly = media.isEmpty;
-    final isShort = textLength <= 160;
     final styleId = post.backgroundStyle;
-    final hasStyle = styleId != null && styleId != 'none';
-
-    if (isTextOnly && isShort && hasStyle) {
+    if (isBackgroundTextPost) {
       final style = PostBackgroundStyle.find(styleId);
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: ShortPostBackgroundBox(
-          caption: post.caption!,
-          style: style,
-        ),
+      return ShortPostBackgroundBox(
+        caption: cleanPostBodyForDisplay(post.caption!),
+        style: style,
+        fullWidth: true,
       );
     }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: _ReadMoreText(
-        text: post.caption!,
+        text: cleanPostBodyForDisplay(post.caption!),
         trimLines: 8,
         style: Theme.of(context)
             .textTheme

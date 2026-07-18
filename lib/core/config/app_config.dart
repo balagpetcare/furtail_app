@@ -45,7 +45,9 @@ class AppConfig {
   /// Strip trailing /api/v1 so callers can pass the full URL or just the host.
   static String _stripApiV1(String url) {
     const suffix = '/api/v1';
-    return url.endsWith(suffix) ? url.substring(0, url.length - suffix.length) : url;
+    return url.endsWith(suffix)
+        ? url.substring(0, url.length - suffix.length)
+        : url;
   }
 
   static String _resolveLocalhost(String url) {

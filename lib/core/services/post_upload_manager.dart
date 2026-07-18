@@ -25,12 +25,12 @@ class PostUploadState {
   final double overallProgress;
   /// Progress within the current phase (0..1), not shown directly in UI.
   final double phaseProgress;
-  /// Phase label without a percentage, e.g. "Preparing video…"
+  /// Phase label without a percentage, e.g. "Preparing videoâ€¦"
   final String message;
   final bool done;
   final String? error;
   final PostUploadStatus status;
-  /// ID returned by createPost/updatePost — available when status == posted.
+  /// ID returned by createPost/updatePost â€” available when status == posted.
   final int? createdPostId;
   /// Server timestamp of the created post.
   final DateTime? createdAt;
@@ -104,7 +104,26 @@ class PostUploadTask {
   final double? volume;
   final String? privacy;
   final int? editPostId;
-  final String? backgroundStyle; // Style metadata for text posts
+  final String? backgroundStyle;
+  final String? postType;
+  final String? lostPetName;
+  final String? lostPetLocation;
+  final bool? lostPetContactVisible;
+  final List<int>? taggedPetIds;
+  final String? locationText;
+  final String? feelingId;
+  final String? feelingLabel;
+  final String? feelingEmoji;
+  final String? activityId;
+  final String? activityLabel;
+  final String? activityEmoji;
+  final int? coverTimestampMs;
+  final String? aspectRatio;
+  final String? quality;
+  final String? songTitle;
+  final String? songArtist;
+  final int? songStartMs;
+  final int? songDurationMs;
 
   PostUploadTask({
     required this.id,
@@ -118,10 +137,29 @@ class PostUploadTask {
     this.privacy,
     this.editPostId,
     this.backgroundStyle,
+    this.postType,
+    this.lostPetName,
+    this.lostPetLocation,
+    this.lostPetContactVisible,
+    this.taggedPetIds,
+    this.locationText,
+    this.feelingId,
+    this.feelingLabel,
+    this.feelingEmoji,
+    this.activityId,
+    this.activityLabel,
+    this.activityEmoji,
+    this.coverTimestampMs,
+    this.aspectRatio,
+    this.quality,
+    this.songTitle,
+    this.songArtist,
+    this.songStartMs,
+    this.songDurationMs,
   });
 }
 
-// ── Upload size limits ────────────────────────────────────────────────────────
+// â”€â”€ Upload size limits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // These must match MAX_UPLOAD_BYTES on the backend (appConfig.mediaPolicy).
 const int _maxImageBytes = 15 * 1024 * 1024;  // 15 MB
 const int _maxVideoBytes = 200 * 1024 * 1024; // 200 MB
@@ -137,10 +175,10 @@ String _formatFileSize(int bytes) {
   }
 }
 
-// ── Overall progress weights per phase ───────────────────────────────────────
-//   preparing:   0.00 → 0.05
-//   uploading:   0.25 → 0.90
-//   processing:  0.90 → 0.98
+// â”€â”€ Overall progress weights per phase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//   preparing:   0.00 â†’ 0.05
+//   uploading:   0.25 â†’ 0.90
+//   processing:  0.90 â†’ 0.98
 //   posted:      1.00
 double _uploadingOverall(double queueProgress) => 0.25 + queueProgress * 0.65;
 
@@ -170,7 +208,7 @@ class PostUploadManager {
   // index.  Used by retry() to skip re-uploading files that already succeeded.
   final Map<int, int> _uploadedDraftMediaIds = {};
 
-  // Throttle state/notification updates to ≤10/sec during compression and upload.
+  // Throttle state/notification updates to â‰¤10/sec during compression and upload.
   DateTime? _lastProgressUpdate;
 
   bool _shouldEmitProgress() {
@@ -201,7 +239,7 @@ class PostUploadManager {
     if (_hasPendingRetry) {
       final task = _currentTask;
       if (task == null) {
-        // No active task — notification tap arrived after user cancelled.
+        // No active task â€” notification tap arrived after user cancelled.
         // Clear the flag so it doesn't interfere with the next upload.
         _hasPendingRetry = false;
         return;
@@ -249,7 +287,7 @@ class PostUploadManager {
   Future<void> _showProgressNotification(
     int overallPercent,
     String phaseMessage, {
-    String title = 'Uploading post…',
+    String title = 'Uploading postâ€¦',
   }) async {
     try {
       final androidDetails = AndroidNotificationDetails(
@@ -263,7 +301,7 @@ class PostUploadManager {
         progress: overallPercent,
         ongoing: true,
         onlyAlertOnce: true,
-        icon: '@mipmap/launcher_icon',
+        icon: '@mipmap/ic_launcher',
       );
       final notificationDetails = NotificationDetails(android: androidDetails);
       await _localNotifications.show(
@@ -285,10 +323,10 @@ class PostUploadManager {
         channelDescription: 'Post upload status',
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/launcher_icon',
+        icon: '@mipmap/ic_launcher',
       );
       const notificationDetails = NotificationDetails(android: androidDetails);
-      // Payload format: "post:<postId>" — handled in notification_service.dart.
+      // Payload format: "post:<postId>" â€” handled in notification_service.dart.
       // When postId is null (e.g., edit flow) we pass null so no navigation happens.
       final payload = postId != null ? 'post:$postId' : null;
       await _localNotifications.show(
@@ -311,10 +349,10 @@ class PostUploadManager {
         channelDescription: 'Post upload status',
         importance: Importance.high,
         priority: Priority.high,
-        icon: '@mipmap/launcher_icon',
+        icon: '@mipmap/ic_launcher',
       );
       const notificationDetails = NotificationDetails(android: androidDetails);
-      // Size errors cannot be fixed by retrying the same file — omit retry payload
+      // Size errors cannot be fixed by retrying the same file â€” omit retry payload
       // so tapping the notification does not re-queue a doomed upload.
       final body = isSizeError
           ? 'File is too large. Please choose a smaller file.'
@@ -339,8 +377,8 @@ class PostUploadManager {
 
     _currentTask = task;
     final isVideo = task.type == 'VIDEO' || task.type == 'REEL';
-    final prepMsg = isVideo ? 'Preparing video…' : 'Preparing post…';
-    final notifTitle = isVideo ? 'Uploading video…' : 'Uploading post…';
+    final prepMsg = isVideo ? 'Preparing videoâ€¦' : 'Preparing postâ€¦';
+    final notifTitle = isVideo ? 'Uploading videoâ€¦' : 'Uploading postâ€¦';
 
     state.value = PostUploadState(
       inProgress: true,
@@ -392,6 +430,12 @@ class PostUploadManager {
         privacy: task.privacy,
         editPostId: task.editPostId,
         backgroundStyle: task.backgroundStyle,
+        postType: task.postType,
+        lostPetName: task.lostPetName,
+        lostPetLocation: task.lostPetLocation,
+        lostPetContactVisible: task.lostPetContactVisible,
+        taggedPetIds: task.taggedPetIds,
+        coverTimestampMs: task.coverTimestampMs,
       );
     }
 
@@ -402,7 +446,7 @@ class PostUploadManager {
     // Clear any stale draft-upload records from a previous attempt of this task.
     _uploadedDraftMediaIds.clear();
     final isVideoTask = task.type == 'VIDEO' || task.type == 'REEL';
-    final notifTitle = isVideoTask ? 'Uploading video…' : 'Uploading post…';
+    final notifTitle = isVideoTask ? 'Uploading videoâ€¦' : 'Uploading postâ€¦';
     try {
       final mediaIds = <int>[];
       final newLocalDrafts =
@@ -425,7 +469,7 @@ class PostUploadManager {
             ? _maxVideoBytes
             : _maxImageBytes;
         debugPrint(
-          '[PostUploadManager] Pre-upload validation — '
+          '[PostUploadManager] Pre-upload validation â€” '
           'path=${file.path} '
           'sizeBytes=$size sizeFormatted=${_formatFileSize(size)} '
           'maxBytes=$maxBytes maxFormatted=${_formatFileSize(maxBytes)} '
@@ -444,7 +488,7 @@ class PostUploadManager {
           uploadFile = await _prepareVideoForUpload(file);
         }
 
-        // Full pre-upload diagnostics — logged to Dart console before any bytes
+        // Full pre-upload diagnostics â€” logged to Dart console before any bytes
         // are sent so the developer can verify the exact file and size used.
         final finalUploadSize = await uploadFile.length();
         final compressionAttempted = d.type == 'VIDEO';
@@ -479,8 +523,8 @@ class PostUploadManager {
         final localIndex = newLocalDrafts.indexOf(d);
         final label =
             newLocalDrafts.length > 1
-                ? 'Uploading ${localIndex + 1}/${newLocalDrafts.length}…'
-                : (d.type == 'VIDEO' ? 'Uploading video…' : 'Uploading post…');
+                ? 'Uploading ${localIndex + 1}/${newLocalDrafts.length}â€¦'
+                : (d.type == 'VIDEO' ? 'Uploading videoâ€¦' : 'Uploading postâ€¦');
         const uploadOverallStart = 0.25;
         state.value = state.value.copyWith(
           status: PostUploadStatus.uploading,
@@ -501,6 +545,9 @@ class PostUploadManager {
           trimEndMs: d.type == 'VIDEO' ? task.trimEndMs : null,
           mute: d.type == 'VIDEO' ? task.mute : null,
           volume: d.type == 'VIDEO' ? task.volume : null,
+          coverTimestampMs: d.type == 'VIDEO' ? task.coverTimestampMs : null,
+          aspectRatio: d.type == 'VIDEO' ? task.aspectRatio : null,
+          quality: d.type == 'VIDEO' ? task.quality : null,
           onProgress: (sent, total) {
             if (!_shouldEmitProgress()) return;
             final stepProgress = sent / total;
@@ -530,7 +577,7 @@ class PostUploadManager {
 
       const processingOverallStart = 0.90;
       final isVideoPost = task.type == 'VIDEO' || task.type == 'REEL';
-      final processingLabel = isVideoPost ? 'Server processing…' : 'Processing…';
+      final processingLabel = isVideoPost ? 'Server processingâ€¦' : 'Processingâ€¦';
       state.value = state.value.copyWith(
         status: PostUploadStatus.processing,
         message: processingLabel,
@@ -548,11 +595,34 @@ class PostUploadManager {
       DateTime? createdAt;
 
       if (task.editPostId != null) {
+        debugPrint(
+          '[PostUploadManager] Calling updatePost for editPostId=${task.editPostId} '
+          'with mediaIds=[$mediaIds] '
+          'caption="${task.caption}" '
+          'backgroundStyle=${task.backgroundStyle} '
+          'feelingId=${task.feelingId} '
+          'activityId=${task.activityId} '
+          'locationText=${task.locationText}',
+        );
         await _ds.updatePost(
           postId: task.editPostId!,
           caption: task.caption,
           mediaIds: mediaIds,
+          backgroundStyle: task.backgroundStyle,
+          postType: task.postType,
+          lostPetName: task.lostPetName,
+          lostPetLocation: task.lostPetLocation,
+          lostPetContactVisible: task.lostPetContactVisible,
+          taggedPetIds: task.taggedPetIds,
+          locationText: task.locationText,
+          feelingId: task.feelingId,
+          feelingLabel: task.feelingLabel,
+          feelingEmoji: task.feelingEmoji,
+          activityId: task.activityId,
+          activityLabel: task.activityLabel,
+          activityEmoji: task.activityEmoji,
         );
+        debugPrint('[PostUploadManager] updatePost succeeded');
         createdPostId = task.editPostId;
       } else {
         final created = await _ds.createPost(
@@ -561,6 +631,22 @@ class PostUploadManager {
           mediaIds: mediaIds,
           privacy: task.privacy,
           backgroundStyle: task.backgroundStyle,
+          postType: task.postType,
+          lostPetName: task.lostPetName,
+          lostPetLocation: task.lostPetLocation,
+          lostPetContactVisible: task.lostPetContactVisible ?? false,
+          taggedPetIds: task.taggedPetIds ?? const [],
+          locationText: task.locationText,
+          feelingId: task.feelingId,
+          feelingLabel: task.feelingLabel,
+          feelingEmoji: task.feelingEmoji,
+          activityId: task.activityId,
+          activityLabel: task.activityLabel,
+          activityEmoji: task.activityEmoji,
+          songTitle: task.songTitle,
+          songArtist: task.songArtist,
+          songStartMs: task.songStartMs,
+          songDurationMs: task.songDurationMs,
         );
         debugPrint(
           '[PostUploadManager] API response time: ${DateTime.now().difference(apiStart).inMilliseconds}ms',
@@ -602,11 +688,11 @@ class PostUploadManager {
       bool isSizeError = false;
 
       if (errMsg.startsWith('FILE_TOO_LARGE: ')) {
-        // Local pre-validation — message is already user-readable.
+        // Local pre-validation â€” message is already user-readable.
         isSizeError = true;
         errMsg = errMsg.replaceFirst('FILE_TOO_LARGE: ', '');
       } else if (errMsg.contains('FILE_TOO_LARGE')) {
-        // Backend rejected the upload — try to parse max size from response JSON.
+        // Backend rejected the upload â€” try to parse max size from response JSON.
         isSizeError = true;
         int? backendMaxMb;
         try {
@@ -624,7 +710,14 @@ class PostUploadManager {
       } else if (errMsg.contains('network') || errMsg.contains('Connection') ||
                  errMsg.contains('SocketException') || errMsg.contains('timeout')) {
         errMsg = 'Network problem. Please check your connection.';
-      } else if (errMsg.contains('500') || errMsg.startsWith('Upload failed (5')) {
+      } else if (errMsg.contains('Upload failed (400') || errMsg.contains('No file uploaded') || errMsg.contains('UPLOAD_FAILED')) {
+        errMsg = 'Upload failed: the file could not be received. Check your file format and try again.';
+      } else if (errMsg.contains('Upload failed (413') || errMsg.contains('entity too large')) {
+        isSizeError = true;
+        errMsg = 'This file is too large for the server. Please choose a smaller file.';
+      } else if (errMsg.contains('Upload failed (401') || errMsg.contains('Upload failed (403')) {
+        errMsg = 'You are not authorized to upload. Please log in again.';
+      } else if (errMsg.contains('500') || errMsg.startsWith('Upload failed (5') || errMsg.contains('INTERNAL_ERROR')) {
         errMsg = 'Upload failed due to a server issue. Please try again.';
       } else if (errMsg.contains('Cannot find module') ||
                  errMsg.contains('require stack') ||
@@ -648,19 +741,20 @@ class PostUploadManager {
   Future<File> _prepareVideoForUpload(File file) async {
     final originalSize = await file.length();
     debugPrint(
-      '[PostUploadManager] Video size: ${(originalSize / 1024 / 1024).toStringAsFixed(1)} MB — uploading original.',
+      '[PostUploadManager] Video size: ${(originalSize / 1024 / 1024).toStringAsFixed(1)} MB â€” uploading original.',
     );
     state.value = state.value.copyWith(
       status: PostUploadStatus.compressing,
-      message: 'Preparing video…',
+      message: 'Preparing videoâ€¦',
       overallProgress: 0.25,
       phaseProgress: 1.0,
     );
     await _showProgressNotification(
       25,
-      'Preparing video…',
-      title: 'Uploading video…',
+      'Preparing videoâ€¦',
+      title: 'Uploading videoâ€¦',
     );
     return file;
   }
 }
+

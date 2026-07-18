@@ -41,15 +41,11 @@ class NotificationRepository {
   }) async {
     await cacheFcmToken(token);
     try {
-      await _api.post(
-        ApiEndpoints.registerDeviceToken(),
-        {
-          'token': token,
-          'platform': platform,
-          'provider': 'fcm',
-        },
-        auth: true,
-      );
+      await _api.post(ApiEndpoints.registerDeviceToken(), {
+        'token': token,
+        'platform': platform,
+        'provider': 'fcm',
+      }, auth: true);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kFcmTokenSynced, token);
       return true;
@@ -66,10 +62,7 @@ class NotificationRepository {
     final cached = await getCachedFcmToken();
     if (cached == null) return true;
     try {
-      await _api.delete(
-        ApiEndpoints.unregisterDeviceToken(),
-        auth: true,
-      );
+      await _api.delete(ApiEndpoints.unregisterDeviceToken(), auth: true);
     } catch (_) {
       // Best-effort when endpoint missing.
     }
@@ -79,7 +72,10 @@ class NotificationRepository {
 
   Future<Map<String, dynamic>?> fetchNotificationPrefs() async {
     try {
-      final res = await _api.get(ApiEndpoints.notificationSettings(), auth: true);
+      final res = await _api.get(
+        ApiEndpoints.notificationSettings(),
+        auth: true,
+      );
       if (res is Map && res['data'] is Map) {
         return Map<String, dynamic>.from(res['data'] as Map);
       }
@@ -89,14 +85,19 @@ class NotificationRepository {
   }
 
   /// Fetch paginated notification list from backend.
-  Future<NotificationListResponse> fetchNotifications({int limit = 20, int? cursor}) async {
+  Future<NotificationListResponse> fetchNotifications({
+    int limit = 20,
+    int? cursor,
+  }) async {
     try {
       final res = await _api.get(
         ApiEndpoints.notificationsList(limit: limit, cursor: cursor),
         auth: true,
       );
       if (res is Map) {
-        return NotificationListResponse.fromJson(Map<String, dynamic>.from(res));
+        return NotificationListResponse.fromJson(
+          Map<String, dynamic>.from(res),
+        );
       }
     } catch (e, st) {
       if (kDebugMode) {
@@ -128,11 +129,7 @@ class NotificationRepository {
   /// Mark all notifications as read.
   Future<bool> markAllAsRead() async {
     try {
-      await _api.post(
-        ApiEndpoints.markAllNotificationsRead(),
-        {},
-        auth: true,
-      );
+      await _api.post(ApiEndpoints.markAllNotificationsRead(), {}, auth: true);
       return true;
     } catch (e, st) {
       if (kDebugMode) {
@@ -151,7 +148,9 @@ class NotificationRepository {
         auth: true,
       );
       if (res is Map) {
-        final raw = res['data'] ?? res['unreadCount'] ?? res['unread_count'];
+        final raw = res['data'] is Map
+            ? (res['data']['count'] ?? res['data']['unreadCount'])
+            : res['data'] ?? res['unreadCount'] ?? res['unread_count'];
         if (raw is num) return raw.toInt();
       }
     } catch (_) {}

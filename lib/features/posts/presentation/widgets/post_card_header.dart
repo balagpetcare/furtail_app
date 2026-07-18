@@ -30,6 +30,25 @@ class PostCardHeader extends StatelessWidget {
     return '${diff.inDays}d ago';
   }
 
+  List<String> _metadataParts(PostModel post) {
+    final parts = <String>[];
+    final feelingLabel = (post.feelingLabel ?? '').trim();
+    final feelingEmoji = (post.feelingEmoji ?? '').trim();
+    if (feelingLabel.isNotEmpty) {
+      parts.add('${feelingEmoji.isNotEmpty ? feelingEmoji : '😊'} $feelingLabel');
+    }
+
+    final activityLabel = (post.activityLabel ?? '').trim();
+    final activityEmoji = (post.activityEmoji ?? '').trim();
+    if (activityLabel.isNotEmpty) {
+      parts.add('${activityEmoji.isNotEmpty ? activityEmoji : '🏆'} $activityLabel');
+    }
+
+    final location = (post.locationTag ?? '').trim();
+    if (location.isNotEmpty) parts.add('📍 $location');
+    return parts;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -62,13 +81,18 @@ class PostCardHeader extends StatelessWidget {
           ],
         ],
       ),
-      subtitle: Text(
-        _timeAgo(post.createdAt),
-        style: Theme.of(context)
-            .textTheme
-            .bodySmall
-            ?.copyWith(color: Colors.black54),
-      ),
+      subtitle: () {
+        final meta = _metadataParts(post);
+        final time = _timeAgo(post.createdAt);
+        return Text(
+          meta.isNotEmpty ? '${meta.join(' · ')} · $time' : time,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+        );
+      }(),
       trailing: onMoreMenu == null
           ? null
           : IconButton(

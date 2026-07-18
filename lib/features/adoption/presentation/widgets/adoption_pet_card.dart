@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:furtail_app/core/widgets/social_action_row.dart';
+import 'package:furtail_app/features/adoption/presentation/widgets/adoption_action_row.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
@@ -146,9 +146,20 @@ class AdoptionPetCard extends StatelessWidget {
                           : Icons.help_outline_rounded,
                       label: pet.gender,
                     ),
+                    if ((pet.sizeText ?? '').trim().isNotEmpty)
+                      _MetaPill(
+                        icon: Icons.straighten_rounded,
+                        label: pet.sizeText!.trim(),
+                      ),
+                    if ((pet.colorText ?? '').trim().isNotEmpty)
+                      _MetaPill(
+                        icon: Icons.palette_outlined,
+                        label: pet.colorText!.trim(),
+                      ),
                     _MetaPill(icon: Icons.place_outlined, label: pet.location),
                   ],
                 ),
+
                 if (pet.vaccinated ||
                     pet.dewormed ||
                     pet.neutered ||
@@ -177,16 +188,12 @@ class AdoptionPetCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-            child: SocialActionRow(
-              likeCount: pet.favoriteCount,
-              commentCount: pet.commentCount,
-              shareCount: 0,
+            child: AdoptionActionRow(
+              pet: pet,
               isLiked: isFavorited,
+              isSaved: isFavorited,
               onLike: onToggleFavorite,
               onComment: onComment,
-              onShare: onShare,
-              showSaveButton: true,
-              isSaved: isFavorited,
               onSave: onSave ?? onToggleFavorite,
             ),
           ),
@@ -673,49 +680,6 @@ class _HealthBadge extends StatelessWidget {
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-}
-
-class _FeedActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _FeedActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.selected = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final color = selected ? cs.primary : cs.onSurfaceVariant;
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: AppTypography.caption(
-                context,
-              ).copyWith(color: color, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
       ),
     );
   }

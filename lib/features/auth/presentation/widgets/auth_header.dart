@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
+
 class AuthHeader extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -28,12 +29,17 @@ class AuthHeader extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           title,
-          style: context.appText.headlineMedium!.copyWith(color: titleColor, fontWeight: FontWeight.bold),
+          style: context.appText.headlineMedium!.copyWith(
+            color: titleColor,
+            fontWeight: FontWeight.bold,
+          ),
           textAlign: TextAlign.center,
         ),
         Text(
           subtitle,
-          style: context.appText.bodyMedium!.copyWith(color: context.mutedTextColor),
+          style: context.appText.bodyMedium!.copyWith(
+            color: context.mutedTextColor,
+          ),
           textAlign: TextAlign.center,
         ),
       ],

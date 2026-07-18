@@ -61,7 +61,7 @@ class UserStats extends StatelessWidget {
         const SizedBox(width: 12),
         stat("Rank", rankText, Icons.emoji_events),
         const SizedBox(width: 12),
-        stat("Paw Points", "$pawPoints", Icons.pets),
+        stat("Like Points", "$pawPoints", Icons.favorite),
       ],
     );
   }

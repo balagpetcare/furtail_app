@@ -33,6 +33,8 @@ class AppRoutes {
   static const campaignDetail = '/campaign/detail'; // args: {slug}
   static const campaignCertificate = '/campaign/certificate'; // args: {token}
 
+  static const lostPetAlert = '/lost-pet-alert';
+
   static const notificationsList = '/notifications';
   static const settings = '/settings';
   static const accountSettings = '/settings/account';

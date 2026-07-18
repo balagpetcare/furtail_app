@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:furtail_app/core/media/media_url.dart';
 
+enum AdoptionDraftMediaUploadState { local, uploading, uploaded, failed }
+
 class AdoptionDraftMediaItem {
   final String id;
   final File file;
   final String type;
+  final int? mediaId;
   final File? thumbnail;
   final int? trimStartMs;
   final int? trimEndMs;
@@ -15,11 +18,15 @@ class AdoptionDraftMediaItem {
   final String? quality;
   final int? coverTimestampMs;
   final String? url;
+  final AdoptionDraftMediaUploadState uploadState;
+  final double progress;
+  final String? errorMessage;
 
   const AdoptionDraftMediaItem({
     required this.id,
     required this.file,
     required this.type,
+    this.mediaId,
     this.thumbnail,
     this.trimStartMs,
     this.trimEndMs,
@@ -29,6 +36,9 @@ class AdoptionDraftMediaItem {
     this.quality,
     this.coverTimestampMs,
     this.url,
+    this.uploadState = AdoptionDraftMediaUploadState.local,
+    this.progress = 0,
+    this.errorMessage,
   });
 
   factory AdoptionDraftMediaItem.image(File file) {
@@ -68,6 +78,8 @@ class AdoptionDraftMediaItem {
   AdoptionDraftMediaItem copyWith({
     File? file,
     String? type,
+    int? mediaId,
+    bool clearMediaId = false,
     File? thumbnail,
     int? trimStartMs,
     int? trimEndMs,
@@ -77,11 +89,16 @@ class AdoptionDraftMediaItem {
     String? quality,
     int? coverTimestampMs,
     String? url,
+    AdoptionDraftMediaUploadState? uploadState,
+    double? progress,
+    String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return AdoptionDraftMediaItem(
       id: id,
       file: file ?? this.file,
       type: type ?? this.type,
+      mediaId: clearMediaId ? null : (mediaId ?? this.mediaId),
       thumbnail: thumbnail ?? this.thumbnail,
       trimStartMs: trimStartMs ?? this.trimStartMs,
       trimEndMs: trimEndMs ?? this.trimEndMs,
@@ -91,11 +108,21 @@ class AdoptionDraftMediaItem {
       quality: quality ?? this.quality,
       coverTimestampMs: coverTimestampMs ?? this.coverTimestampMs,
       url: url ?? this.url,
+      uploadState: uploadState ?? this.uploadState,
+      progress: progress ?? this.progress,
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 
   bool get isVideo => type.toUpperCase() == 'VIDEO';
   bool get isImage => type.toUpperCase() == 'IMAGE';
+  bool get isUploading =>
+      uploadState == AdoptionDraftMediaUploadState.uploading;
+  bool get uploadFailed => uploadState == AdoptionDraftMediaUploadState.failed;
+  bool get uploadComplete =>
+      uploadState == AdoptionDraftMediaUploadState.uploaded && mediaId != null;
 }
 
 class AdoptionMediaUiModel {
@@ -106,9 +133,6 @@ class AdoptionMediaUiModel {
   final String type;
   final String? status;
   final String? mimeType;
-  final int? width;
-  final int? height;
-  final int? durationMs;
   final String? localFilePath;
 
   const AdoptionMediaUiModel({
@@ -119,9 +143,6 @@ class AdoptionMediaUiModel {
     this.thumbnailUrl,
     this.status,
     this.mimeType,
-    this.width,
-    this.height,
-    this.durationMs,
     this.localFilePath,
   });
 
@@ -155,26 +176,51 @@ class AdoptionMediaUiModel {
   }
 
   factory AdoptionMediaUiModel.fromApiJson(dynamic raw) {
-    final json = raw is Map ? Map<String, dynamic>.from(raw) : const <String, dynamic>{};
+    final json = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : const <String, dynamic>{};
     final media = (json['media'] is Map)
         ? Map<String, dynamic>.from(json['media'] as Map)
         : json;
 
     final rawType = _asString(media['type'] ?? json['type']);
-    final mimeType = _asString(media['mimeType'] ?? media['mimetype'] ?? json['mimeType'] ?? json['mimetype']);
+    final mimeType = _asString(
+      media['mimeType'] ??
+          media['mimetype'] ??
+          json['mimeType'] ??
+          json['mimetype'],
+    );
     final url = MediaUrl.normalize(
-      _asString(media['url'] ?? media['videoUrl'] ?? json['url'] ?? json['videoUrl']),
+      _asString(
+        media['url'] ?? media['videoUrl'] ?? json['url'] ?? json['videoUrl'],
+      ),
     );
     final hlsUrl = MediaUrl.normalize(
-      _asString(media['hlsUrl'] ?? media['hls_url'] ?? json['hlsUrl'] ?? json['hls_url']),
+      _asString(
+        media['hlsUrl'] ??
+            media['hls_url'] ??
+            json['hlsUrl'] ??
+            json['hls_url'],
+      ),
     );
-    final thumbnailUrl = MediaUrl.normalize(_asString(
-      media['thumbnailUrl'] ?? media['thumbUrl'] ?? json['thumbnailUrl'] ?? json['thumbUrl'],
-    ));
-    final type = _normalizeType(rawType, mimeType, hlsUrl.isNotEmpty ? hlsUrl : url);
+    final thumbnailUrl = MediaUrl.normalize(
+      _asString(
+        media['thumbnailUrl'] ??
+            media['thumbUrl'] ??
+            json['thumbnailUrl'] ??
+            json['thumbUrl'],
+      ),
+    );
+    final type = _normalizeType(
+      rawType,
+      mimeType,
+      hlsUrl.isNotEmpty ? hlsUrl : url,
+    );
 
     return AdoptionMediaUiModel(
-      id: _asIntOrNull(media['id'] ?? json['id'] ?? media['mediaId'] ?? json['mediaId']),
+      id: _asIntOrNull(
+        media['id'] ?? json['id'] ?? media['mediaId'] ?? json['mediaId'],
+      ),
       url: url,
       hlsUrl: hlsUrl.isNotEmpty ? hlsUrl : null,
       thumbnailUrl: thumbnailUrl.isNotEmpty ? thumbnailUrl : null,
@@ -183,21 +229,18 @@ class AdoptionMediaUiModel {
           ? _asString(media['status'] ?? json['status'])
           : null,
       mimeType: mimeType.isNotEmpty ? mimeType : null,
-      width: _asIntOrNull(media['width'] ?? json['width']),
-      height: _asIntOrNull(media['height'] ?? json['height']),
-      durationMs: _asIntOrNull(
-        media['durationMs'] ??
-            media['duration'] ??
-            media['durationSeconds'] ??
-            json['durationMs'] ??
-            json['duration'] ??
-            json['durationSeconds'],
-      ),
-      localFilePath: _asString(media['localFilePath'] ?? media['localPath'] ?? json['localFilePath'] ?? json['localPath'])
-          .trim()
-          .isNotEmpty
+      localFilePath:
+          _asString(
+            media['localFilePath'] ??
+                media['localPath'] ??
+                json['localFilePath'] ??
+                json['localPath'],
+          ).trim().isNotEmpty
           ? _asString(
-              media['localFilePath'] ?? media['localPath'] ?? json['localFilePath'] ?? json['localPath'],
+              media['localFilePath'] ??
+                  media['localPath'] ??
+                  json['localFilePath'] ??
+                  json['localPath'],
             )
           : null,
     );
@@ -209,11 +252,14 @@ class AdoptionMediaUiModel {
     if (type == 'VIDEO' || mime.startsWith('video/')) return 'VIDEO';
     if (type == 'IMAGE' || mime.startsWith('image/')) return 'IMAGE';
     final lowerUrl = url.toLowerCase();
-    if (RegExp(r'\.(mp4|mov|m4v|webm|mkv|avi)(\?|$)').hasMatch(lowerUrl)) return 'VIDEO';
-    if (RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(lowerUrl)) return 'IMAGE';
+    if (RegExp(r'\.(mp4|mov|m4v|webm|mkv|avi)(\?|$)').hasMatch(lowerUrl))
+      return 'VIDEO';
+    if (RegExp(r'\.(png|jpe?g|gif|webp)(\?|$)').hasMatch(lowerUrl))
+      return 'IMAGE';
     return type.isNotEmpty ? type : 'IMAGE';
   }
 
   static String _asString(dynamic value) => value?.toString().trim() ?? '';
-  static int? _asIntOrNull(dynamic value) => int.tryParse(value?.toString() ?? '');
+  static int? _asIntOrNull(dynamic value) =>
+      int.tryParse(value?.toString() ?? '');
 }

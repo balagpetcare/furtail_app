@@ -24,7 +24,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     final payload = _backgroundPayloadFromMessage(message);
     final local = FlutterLocalNotificationsPlugin();
-    const android = AndroidInitializationSettings('@mipmap/launcher_icon');
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings();
     await local.initialize(
       const InitializationSettings(android: android, iOS: ios),
@@ -45,7 +45,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       channelDescription: payload.type.code,
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
-      icon: '@mipmap/launcher_icon',
+      icon: '@mipmap/ic_launcher',
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -93,9 +93,11 @@ class NotificationService {
   StreamSubscription<String>? _tokenRefreshSub;
   bool _initialized = false;
   bool _fcmAvailable = false;
+  bool _permissionsRequested = false;
 
   bool get isInitialized => _initialized;
   bool get fcmAvailable => _fcmAvailable;
+  bool get permissionsRequested => _permissionsRequested;
 
   NotificationTapCallback? onNotificationTap;
   IncomingFcmHandler? onIncomingFcm;
@@ -140,7 +142,7 @@ class NotificationService {
   }
 
   Future<void> _initLocalNotifications() async {
-    const android = AndroidInitializationSettings('@mipmap/launcher_icon');
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -158,16 +160,10 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
-      await androidPlugin.requestNotificationsPermission();
       for (final ch in NotificationChannels.androidChannels()) {
         await androidPlugin.createNotificationChannel(ch);
       }
     }
-
-    final iosPlugin = _local
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
-    await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   void _onLocalNotificationTap(NotificationResponse response) {
@@ -208,7 +204,11 @@ class NotificationService {
       _messaging = FirebaseMessaging.instance;
       _fcmAvailable = true;
 
-      await _requestFcmPermission();
+      await _messaging!.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
       FirebaseMessaging.onMessage.listen(_onForegroundMessage);
       FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
@@ -235,19 +235,50 @@ class NotificationService {
     }
   }
 
-  Future<void> _requestFcmPermission() async {
-    if (_messaging == null) return;
-    await _messaging!.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    await _messaging!.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+  /// Requests POST_NOTIFICATIONS permission on Android and local notification permissions on iOS.
+  /// Call this after user authentication to defer permission request from login screen.
+  Future<void> requestNotificationPermissions() async {
+    if (_permissionsRequested) return;
+    _permissionsRequested = true;
+
+    try {
+      final androidPlugin = _local
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        await androidPlugin.requestNotificationsPermission();
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationService] Android permission request failed: $e\n$st');
+      }
+    }
+
+    try {
+      final iosPlugin = _local
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationService] iOS permission request failed: $e\n$st');
+      }
+    }
+
+    try {
+      if (_messaging != null) {
+        await _messaging!.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+          provisional: false,
+        );
+      }
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[NotificationService] FCM permission request failed: $e\n$st');
+      }
+    }
   }
 
   Future<void> registerTokenWithBackend(String token) async {
@@ -298,7 +329,7 @@ class NotificationService {
       channelDescription: type.code,
       importance: _importanceFor(type),
       priority: _priorityFor(type),
-      icon: '@mipmap/launcher_icon',
+      icon: '@mipmap/ic_launcher',
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,

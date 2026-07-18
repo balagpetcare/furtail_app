@@ -26,10 +26,12 @@ final policyFeaturesProvider = FutureProvider<PolicyFeatures>((ref) async {
     final prefs = await SharedPreferences.getInstance();
     final code = prefs.getString('furtail_country_code') ?? 'BD';
     final url = '${ApiConfig.host}/api/v1/meta/features?countryCode=$code';
-    final res = await http.get(
-      Uri.parse(url),
-      headers: {'X-Country-Code': code, 'Accept': 'application/json'},
-    ).timeout(const Duration(seconds: 5));
+    final res = await http
+        .get(
+          Uri.parse(url),
+          headers: {'X-Country-Code': code, 'Accept': 'application/json'},
+        )
+        .timeout(const Duration(seconds: 5));
     if (res.statusCode != 200) return const PolicyFeatures(countryCode: 'BD');
     final decoded = jsonDecode(res.body);
     final data = decoded is Map ? decoded['data'] : null;

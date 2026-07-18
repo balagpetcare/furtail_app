@@ -1,356 +1,235 @@
-import 'package:furtail_app/core/analytics/analytics_events.dart';
-import 'package:furtail_app/core/analytics/analytics_service.dart';
-import 'package:furtail_app/core/theme/theme_extensions.dart';
-import 'package:furtail_app/core/theme/app_typography.dart';
-import 'package:furtail_app/core/theme/typography.dart';
-import 'package:furtail_app/features/notifications/presentation/providers/notification_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../data/datasources/auth_remote_datasource.dart';
-import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/usecases/login_usecase.dart';
+import 'package:furtail_app/core/auth/auth_controller.dart';
+import 'package:furtail_app/core/auth/auth_identifier_normalizer.dart';
+import 'package:furtail_app/core/auth/central_auth_api.dart';
+import 'package:furtail_app/core/auth/central_auth_error.dart';
+import 'package:furtail_app/core/theme/spacing.dart';
+import 'package:furtail_app/core/theme/theme_extensions.dart';
+import 'package:furtail_app/l10n/app_localizations.dart';
+
+import '../../social_login_launcher.dart';
 import '../widgets/auth_button.dart';
 import '../widgets/auth_header.dart';
 import '../widgets/auth_text_field.dart';
+import '../widgets/provider_button_grid.dart';
+import 'forgot_password_screen.dart';
+import 'otp_verification_screen.dart';
 import 'register_screen.dart';
 
-// ✅ আপনার প্রকৃত HomeScreen path দিন:
-import 'package:furtail_app/features/home/presentation/screens/furtail_home_screen.dart';
-
-class LoginScreen extends StatefulWidget {
+/// Native, in-app login form — talks directly to the Central Auth REST API
+/// (`/auth/login`) via [AuthController]. No browser, Custom Tab, or WebView
+/// is ever launched.
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _idController = TextEditingController(); // email OR mobile
-  final _passwordController = TextEditingController();
-
-  bool _isLoading = false;
-
-  late final LoginUseCase _loginUseCase;
-  late final AuthRepositoryImpl _repo;
-
-  @override
-  void initState() {
-    super.initState();
-    final remote = AuthRemoteDataSource();
-    _repo = AuthRepositoryImpl(remote);
-    _loginUseCase = LoginUseCase(_repo);
-  }
-
-  String? _idValidator(String? v) {
-    final s = (v ?? '').trim();
-    if (s.isEmpty) return 'Please enter email or mobile';
-    final isEmail = s.contains('@');
-    final isPhone = RegExp(r'^[0-9]+$').hasMatch(s);
-    if (!isEmail && !isPhone) return 'Enter a valid email or phone number';
-    return null;
-  }
-
-  String? _passValidator(String? v) {
-    final s = (v ?? '');
-    if (s.isEmpty) return 'Please enter password';
-    if (s.length < 6) return 'Password must be at least 6 characters';
-    return null;
-  }
-
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  Future<void> _handleLogin() async {
-    // Avoid "Null check operator used on a null value" if the Form isn't mounted yet.
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await _loginUseCase.execute(
-        identifier: _idController.text.trim(),
-        password: _passwordController.text,
-      );
-      await AnalyticsService.instance.logLogin(method: AnalyticsAuthMethod.email);
-
-      if (!mounted) return;
-      try {
-        ProviderScope.containerOf(context)
-            .read(notificationControllerProvider.notifier)
-            .registerPushAfterAuth();
-      } catch (_) {}
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final msg = e.toString().contains('Exception')
-          ? e.toString().split('Exception: ').last
-          : 'Login failed. Please try again.';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleGoogleLogin() async {
-    try {
-      setState(() => _isLoading = true);
-
-      final google = GoogleSignIn(
-        scopes: const ['email', 'profile'],
-      );
-      final account = await google.signIn();
-      if (account == null) {
-        // user cancelled
-        return;
-      }
-
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
-      if (idToken == null || idToken.isEmpty) {
-        throw Exception('Google token not found');
-      }
-
-      await _repo.loginWithGoogle(idToken: idToken);
-      await AnalyticsService.instance.logLogin(method: AnalyticsAuthMethod.google);
-      if (!mounted) return;
-      try {
-        ProviderScope.containerOf(context)
-            .read(notificationControllerProvider.notifier)
-            .registerPushAfterAuth();
-      } catch (_) {}
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleFacebookLogin() async {
-    try {
-      setState(() => _isLoading = true);
-
-      final result = await FacebookAuth.instance.login(
-        permissions: const ['email', 'public_profile'],
-      );
-
-      if (result.status != LoginStatus.success) {
-        throw Exception(result.message ?? 'Facebook login cancelled');
-      }
-
-      final accessToken = result.accessToken?.tokenString;
-      if (accessToken == null || accessToken.isEmpty) {
-        throw Exception('Facebook access token not found');
-      }
-
-      await _repo.loginWithFacebook(accessToken: accessToken);
-      await AnalyticsService.instance.logLogin(method: AnalyticsAuthMethod.facebook);
-      if (!mounted) return;
-      try {
-        ProviderScope.containerOf(context)
-            .read(notificationControllerProvider.notifier)
-            .registerPushAfterAuth();
-      } catch (_) {}
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const FurtailHomeScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _comingSoon(String platform) async {
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('$platform login'),
-        content: const Text(
-          'এই সোশ্যাল লগইনটি পরবর্তী আপডেটে যুক্ত হবে।\n\nএখন Google / Facebook দিয়ে লগইন করুন।',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  final _identifierController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _idController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  String? _validateIdentifier(String? value) {
+    final raw = value ?? '';
+    final t = AppLocalizations.of(context)!;
+    if (raw.trim().isEmpty) return t.authFieldRequired;
+    try {
+      AuthIdentifierNormalizer.normalizeForLogin(raw);
+    } on BangladeshPhoneNormalizationException catch (e) {
+      return e.message;
+    }
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (_isLoading) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final normalized = AuthIdentifierNormalizer.normalizeForLogin(
+        _identifierController.text,
+      );
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(
+            identifier: normalized.value,
+            password: _passwordController.text,
+            identifierType: normalized.type,
+          );
+      // AuthGate reacts to AuthStatus.authenticated automatically; nothing
+      // further to navigate here.
+    } on BangladeshPhoneNormalizationException catch (e) {
+      setState(() => _errorMessage = e.message);
+    } on CentralAuthException catch (e) {
+      setState(() => _errorMessage = _messageForError(e.typed));
+    } on FurtailProfileException catch (_) {
+      // Central Auth login genuinely succeeded — AuthController already
+      // moved AuthState to bootstrapFailed with a specific message, and
+      // AuthGate will swap this screen out for BootstrapRetryScreen on its
+      // own. Nothing to show here; don't report this as a login failure.
+    } catch (_) {
+      setState(() => _errorMessage = 'Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// System-browser social sign-in for a wired provider button. Cancellation
+  /// is silent; typed failures show a snackbar; a non-recoverable Furtail
+  /// profile failure is handled by AuthGate's retry screen (same contract
+  /// as [_submit]).
+  Future<void> _socialLogin(String providerId) async {
+    try {
+      await launchSocialLogin(ref, providerId);
+      // AuthGate reacts to AuthStatus.authenticated automatically.
+    } on SocialLoginCancelled {
+      // User closed the browser — not an error.
+    } on SocialLoginFailure catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } on FurtailProfileException catch (_) {
+      // AuthGate shows BootstrapRetryScreen; nothing to do here.
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sign-in did not complete. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Maps a [CentralAuthError] typed case to friendly copy — never surfaces
+  /// a raw backend error string directly.
+  String _messageForError(CentralAuthError error) {
+    return switch (error) {
+      CentralAuthNetworkError() =>
+        'Could not reach the server. Check your connection and try again.',
+      CentralAuthInvalidCredentials() => 'Incorrect email/phone or password.',
+      CentralAuthProviderDisabled() =>
+        'That sign-in method is currently disabled.',
+      CentralAuthTokenExpired() || CentralAuthTokenInvalid() =>
+        'Your session has expired. Please sign in again.',
+      CentralAuthValidationError(:final message) => message,
+      _ when (error.statusCode ?? 0) >= 500 =>
+        'The server is temporarily unavailable. Please try again shortly.',
+      _ =>
+        error.message.isNotEmpty
+            ? error.message
+            : 'Sign in failed. Please try again.',
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     final primary = context.colorScheme.primary;
+    final t = AppLocalizations.of(context)!;
+    final bootstrap = ref.watch(
+      authControllerProvider.select((s) => s.bootstrap),
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
             child: Form(
               key: _formKey,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const SizedBox(height: AppSpacing.lg),
                   AuthHeader(
-                    title: "Welcome Back!",
-                    subtitle: "Sign in to continue to Furtail",
+                    title: t.authWelcomeTitle,
+                    subtitle: t.authSignInSubtitle,
                     titleColor: primary,
-                    logoHeight: 120,
+                    logoHeight: 96,
                   ),
-                  const SizedBox(height: 30),
-
-                  // ✅ Email or Mobile field (আগের login ডিজাইন + new hint)
+                  const SizedBox(height: AppSpacing.xxl),
                   AuthTextField(
-                    controller: _idController,
-                    hintText: 'Email or Mobile',
-                    prefixIcon: Icons.email_outlined,
-                    radius: 15,
-                    borderNone: true,
-                    validator: _idValidator,
+                    controller: _identifierController,
+                    hintText: t.authIdentifierHint,
+                    prefixIcon: Icons.person_outline,
+                    validator: _validateIdentifier,
                   ),
-                  const SizedBox(height: 15),
-
+                  const SizedBox(height: AppSpacing.lg),
                   AuthTextField(
                     controller: _passwordController,
-                    hintText: 'Password',
+                    hintText: t.authPasswordHint,
                     prefixIcon: Icons.lock_outline,
                     isPassword: true,
-                    radius: 15,
-                    borderNone: true,
-                    validator: _passValidator,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? t.authFieldRequired : null,
                   ),
-
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      ),
                       child: Text(
-                        "Forgot Password?",
-                        style: AppTypography.bodyRegular(context).copyWith(color: primary),
+                        t.authForgotPassword,
+                        style: TextStyle(color: primary),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 10),
-
+                  const SizedBox(height: AppSpacing.sm),
                   AuthButton(
-                    text: 'Login',
-                    loading: _isLoading,
-                    onPressed: _handleLogin,
+                    text: t.authLogin,
                     color: primary,
-                    radius: 15,
-                    height: 55,
-                    elevation: 3,
+                    loading: _isLoading,
+                    onPressed: _submit,
                   ),
-
-                  const SizedBox(height: 30),
-
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.xl),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(child: Divider(color: context.outlineColor)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(
-                          "Or connected with",
-                          style: AppTypography.caption(context).copyWith(
-                            color: context.mutedTextColor,
+                      Text(t.authNoAccount),
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
                           ),
                         ),
-                      ),
-                      Expanded(child: Divider(color: context.outlineColor)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _social(FontAwesomeIcons.google, Colors.red, _handleGoogleLogin),
-                      const SizedBox(width: 15),
-                      _social(
-                        FontAwesomeIcons.facebookF,
-                        const Color(0xFF1877F2),
-                        _handleFacebookLogin,
-                      ),
-                      const SizedBox(width: 15),
-                      _social(
-                        FontAwesomeIcons.instagram,
-                        const Color(0xFFE1306C),
-                        () => _comingSoon('Instagram'),
-                      ),
-                      const SizedBox(width: 15),
-                      _social(FontAwesomeIcons.tiktok, Colors.black, () => _comingSoon('TikTok')),
-                      const SizedBox(width: 15),
-                      _social(FontAwesomeIcons.whatsapp, const Color(0xFF25D366), () => _comingSoon('WhatsApp')),
-                    ],
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: AppTypography.bodyRegular(context).copyWith(
-                          color: context.mutedTextColor,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterScreen(),
-                            ),
-                          );
-                        },
                         child: Text(
-                          "Create",
-                          style: context.appText.bodyLarge!.copyWith(
+                          t.authRegister,
+                          style: TextStyle(
                             color: primary,
                             fontWeight: FontWeight.bold,
                           ),
@@ -358,28 +237,46 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  if (ProviderButtonGrid.optionsFrom(bootstrap).isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: Text(
+                            t.authOrContinueWith,
+                            style: TextStyle(color: context.mutedTextColor),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    ProviderButtonGrid(
+                      bootstrap: bootstrap,
+                      onProviderSelected: _socialLogin,
+                      onOtpRequested: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OtpVerificationScreen(
+                            initialRecipient:
+                                _identifierController.text.trim().isEmpty
+                                ? null
+                                : _identifierController.text.trim(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _social(IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-        ),
-        child: Icon(icon, color: color, size: 28),
       ),
     );
   }

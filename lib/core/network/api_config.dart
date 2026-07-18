@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
+import 'base_url_validator.dart';
+
 /// Environment-driven API configuration.
 ///
 /// Recommended usage:
@@ -35,7 +37,9 @@ class ApiConfig {
   /// Strip trailing /api/v1 so callers can pass the full URL or just the host.
   static String _stripApiV1(String url) {
     const suffix = '/api/v1';
-    return url.endsWith(suffix) ? url.substring(0, url.length - suffix.length) : url;
+    return url.endsWith(suffix)
+        ? url.substring(0, url.length - suffix.length)
+        : url;
   }
 
   static String _resolveLocalhost(String url) {
@@ -52,4 +56,21 @@ class ApiConfig {
 
   /// User scoped base
   static String get userApi => '$apiV1/user';
+
+  /// Fail-fast startup check: [ApiClient] never sets a Dio `baseUrl` — every
+  /// call site is required to build a full absolute URL from [apiV1]/[host]
+  /// (see `ApiClient`'s doc comment). If [host] were ever empty or missing
+  /// a scheme/authority, those calls would silently become relative paths
+  /// and Dio would throw `No host specified in URI` deep inside a request
+  /// instead of at startup. Throws a [StateError] with a clear message
+  /// instead of letting that happen.
+  static void assertValid() {
+    assertValidBaseUrl(
+      label: 'Furtail API',
+      url: host,
+      hint:
+          'Pass --dart-define=API_BASE_URL=http://<host>:7200 (or API_HOST) '
+          'when running the app.',
+    );
+  }
 }

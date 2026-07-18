@@ -1,8 +1,38 @@
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
+
+MediaType? getMimeTypeFromPath(String filepath) {
+  final ext = filepath.split('.').last.toLowerCase();
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return MediaType('image', 'jpeg');
+    case 'png':
+      return MediaType('image', 'png');
+    case 'gif':
+      return MediaType('image', 'gif');
+    case 'webp':
+      return MediaType('image', 'webp');
+    case 'mp4':
+      return MediaType('video', 'mp4');
+    case 'mov':
+      return MediaType('video', 'quicktime');
+    case 'm4v':
+      return MediaType('video', 'x-m4v');
+    case 'avi':
+      return MediaType('video', 'x-msvideo');
+    case 'mkv':
+      return MediaType('video', 'x-matroska');
+    case 'webm':
+      return MediaType('video', 'webm');
+    default:
+      return null;
+  }
+}
 
 /// Creates a [http.MultipartFile] from either a [File] or an [XFile].
 ///
@@ -19,6 +49,7 @@ Future<http.MultipartFile> multipartFromAnyFile(
       fieldName,
       file.path,
       filename: p.basename(file.path),
+      contentType: getMimeTypeFromPath(file.path),
     );
   }
 
@@ -28,6 +59,7 @@ Future<http.MultipartFile> multipartFromAnyFile(
       fieldName,
       bytes,
       filename: file.name,
+      contentType: getMimeTypeFromPath(file.name),
     );
   }
 

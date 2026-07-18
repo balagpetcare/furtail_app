@@ -1,6 +1,6 @@
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'package:furtail_app/services/api_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/story_model.dart';
 
@@ -8,15 +8,23 @@ import '../models/story_model.dart';
 /// Uses the existing [ApiClient] for all HTTP calls.
 class StoryRemoteDs {
   final ApiClient _client;
+  final SecureStorageService _secureStorage;
 
-  StoryRemoteDs(this._client);
+  StoryRemoteDs(this._client, this._secureStorage);
 
   /// GET /api/v1/stories/feed
   /// Sends auth token when the user is logged in so the server can mark
   /// isOwnStory=true for the current user's stories.
   Future<List<StoryModel>> getStories({int limit = 50}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasToken = (prefs.getString('token') ?? '').isNotEmpty;
+    // The Central Auth session lives in SecureStorageService (written by
+    // AuthController.login and read by AuthInterceptor) — NOT the legacy
+    // SharedPreferences 'token' key, which nothing in the Central Auth flow
+    // ever writes. Checking the legacy key here always evaluated to false,
+    // so `auth: false` was passed and AuthInterceptor.onRequest (which only
+    // attaches Authorization when `options.extra['auth'] != false`) skipped
+    // the Bearer header on every request, including the first one after a
+    // successful login.
+    final hasToken = await _secureStorage.hasSession;
     final data = await _client.get(
       ApiEndpoints.storiesFeed(limit: limit),
       auth: hasToken, // send token when logged in for isOwnStory resolution

@@ -8,13 +8,13 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: appTheme, // ✅
-      builder: (context, child) {
-        // Global SafeArea to prevent content from going under notch/camera areas
-        return SafeArea(
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
+      theme: appTheme,
+      // ❌ Do NOT wrap the entire Navigator in SafeArea here.
+      //    Flutter's Scaffold + AppBar already handle safe areas (status bar,
+      //    notch, nav bar) correctly per-screen. A global SafeArea here would
+      //    consume the top inset before any AppBar can paint its background
+      //    under the status bar, causing the status-bar region to appear
+      //    transparent / wrong color.
       home: SplashScreen(),
     );
   }

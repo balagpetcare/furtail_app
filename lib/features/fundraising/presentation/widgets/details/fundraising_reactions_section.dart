@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:furtail_app/core/theme/typography.dart';
 import 'package:furtail_app/core/constants/app_colors.dart';
 import 'package:furtail_app/core/services/share_service.dart';
+import 'package:furtail_app/core/widgets/social_action_row.dart';
 import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import 'package:furtail_app/features/posts/presentation/widgets/comments_sheet.dart';
 
-/// Feed-style reactions (Paw/Comment/Share) to match Home feed UI.
+/// Feed-style reactions (Like/Comment/Share) to match Home feed UI.
 class FundraisingReactionsSection extends StatefulWidget {
   final int postId;
   final int fundraisingId;
@@ -24,13 +24,16 @@ class FundraisingReactionsSection extends StatefulWidget {
   });
 
   @override
-  State<FundraisingReactionsSection> createState() => _FundraisingReactionsSectionState();
+  State<FundraisingReactionsSection> createState() =>
+      _FundraisingReactionsSectionState();
 }
 
-class _FundraisingReactionsSectionState extends State<FundraisingReactionsSection> {
+class _FundraisingReactionsSectionState
+    extends State<FundraisingReactionsSection> {
   final _postsDs = PostsRemoteDs();
   late bool _liked;
   late int _likes;
+  bool _likeBusy = false;
 
   @override
   void initState() {
@@ -40,6 +43,8 @@ class _FundraisingReactionsSectionState extends State<FundraisingReactionsSectio
   }
 
   Future<void> _toggleLike() async {
+    if (_likeBusy) return;
+    setState(() => _likeBusy = true);
     final wasLiked = _liked;
     setState(() {
       _liked = !wasLiked;
@@ -63,6 +68,8 @@ class _FundraisingReactionsSectionState extends State<FundraisingReactionsSectio
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Like failed: ${e.toString()}')),
       );
+    } finally {
+      if (mounted) setState(() => _likeBusy = false);
     }
   }
 
@@ -76,90 +83,23 @@ class _FundraisingReactionsSectionState extends State<FundraisingReactionsSectio
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$_likes Paws · ${widget.commentCount} comments · 0 shares',
-          style: context.appText.bodySmall!.copyWith(color: Colors.black54),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: _ReactionButton(
-                icon: _liked ? Icons.pets : Icons.pets_outlined,
-                label: 'Paw',
-                selected: _liked,
-                onTap: _toggleLike,
-              ),
-            ),
-            Expanded(
-              child: _ReactionButton(
-                icon: Icons.comment_outlined,
-                label: 'Comment',
-                onTap: _openComments,
-              ),
-            ),
-            Expanded(
-              child: _ReactionButton(
-                icon: Icons.share_outlined,
-                label: 'Share',
-                onTap: () {
-                  ShareService.share(
-                    context,
-                    type: 'fundraising',
-                    id: widget.fundraisingId,
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ReactionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool selected;
-
-  const _ReactionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.selected = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: selected ? AppColors.donateBlue : Colors.black87,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: selected ? AppColors.donateBlue : Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return SocialActionRow(
+      likeCount: _likes,
+      commentCount: widget.commentCount,
+      shareCount: 0,
+      isLiked: _liked,
+      onLike: _toggleLike,
+      onComment: _openComments,
+      onShare: () {
+        ShareService.share(
+          context,
+          type: 'fundraising',
+          id: widget.fundraisingId,
+        );
+      },
+      foregroundColor: Colors.black87,
+      selectedColor: AppColors.donateBlue,
+      padding: EdgeInsets.zero,
     );
   }
 }

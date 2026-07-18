@@ -31,14 +31,17 @@ class ConnectivityService {
     }
   }
 
-  Future<ConnectivityStatus> _mapResults(List<ConnectivityResult> results) async {
+  Future<ConnectivityStatus> _mapResults(
+    List<ConnectivityResult> results,
+  ) async {
     if (results.isEmpty || results.every((r) => r == ConnectivityResult.none)) {
       return ConnectivityStatus.offline;
     }
     // Confirm real internet access with a quick DNS probe.
     try {
-      final lookup = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 4));
+      final lookup = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 4));
       if (lookup.isNotEmpty && lookup.first.rawAddress.isNotEmpty) {
         return ConnectivityStatus.online;
       }

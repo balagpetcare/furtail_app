@@ -1,15 +1,12 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../auth/secure_storage_service.dart';
 import '../network/api_endpoints.dart';
 
 class ReportService {
-  static Future<String?> _token() async {
-    final sp = await SharedPreferences.getInstance();
-    return sp.getString('token');
-  }
+  static Future<String?> _token() => SecureStorageService().accessToken;
 
   /// Submit a report to backend.
   /// type: POST | FUNDRAISING | USER | PET
@@ -30,7 +27,8 @@ class ReportService {
       'type': type,
       'targetId': targetId,
       'reasonCode': reasonCode,
-      if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
+      if (details != null && details.trim().isNotEmpty)
+        'details': details.trim(),
     });
 
     final res = await http.post(

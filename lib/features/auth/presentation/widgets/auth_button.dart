@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/theme/typography.dart';
+
 class AuthButton extends StatelessWidget {
   final String text;
   final bool loading;

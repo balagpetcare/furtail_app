@@ -4,6 +4,30 @@
 *.pyc
 *.swp
 .DS_Store
+.claude/
+_qa/
+scratch/
+tmp_*
+after_*
+account*.png
+camera_or_perm.png
+current_settings_bug.png
+photo_sheet*.png
+post_*.png
+profile*.png
+screen*.png
+security_home*.png
+settings_blank.png
+*_logcat.txt
+docs/*auth*.json
+docs/*token*.json
+docs/pet_debug_login_tokens_*.json
+docs/runtime_artifacts_*/
+docs/pet_smoke_*
+docs/phase10_*
+docs/live_api36_*
+env/phone-dev.json
+.metadata
 .atom/
 .build/
 .buildlog/
@@ -32,6 +56,10 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+android/build/
+android/*.zip
+assets/images/*.zip
+assets/images/New folder/
 
 # Symbolication related
 app.*.symbols

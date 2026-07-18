@@ -2,34 +2,36 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/network/api_config.dart';
 import 'package:furtail_app/core/network/multipart_helper.dart';
 import 'models/pet_model.dart';
 import 'models/pet_profile_model.dart';
 
 class PetService {
-  Future<String?> _token() async {
-    final sp = await SharedPreferences.getInstance();
-    return sp.getString("token");
-  }
+  final SecureStorageService _secureStorage;
+
+  PetService([SecureStorageService? secureStorage])
+    : _secureStorage = secureStorage ?? SecureStorageService();
+
+  Future<String?> _token() => _secureStorage.accessToken;
 
   Map<String, String> _authHeaders(String token) => {
-        "Authorization": "Bearer $token",
-        "Accept": "application/json",
-      };
+    "Authorization": "Bearer $token",
+    "Accept": "application/json",
+  };
 
   Map<String, String> _jsonHeaders(String token) => {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      };
+    "Authorization": "Bearer $token",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  };
 
   Map<String, String> _optionalAuthHeaders(String? token) => {
-        if (token != null) "Authorization": "Bearer $token",
-        "Accept": "application/json",
-      };
+    if (token != null) "Authorization": "Bearer $token",
+    "Accept": "application/json",
+  };
 
   // ── Owner: My Pets ─────────────────────────────────────────────────────────
 
@@ -66,7 +68,8 @@ class PetService {
     if (res.statusCode != 200) throw Exception(res.body);
     final data = jsonDecode(res.body);
     return PetProfileModel.fromJson(
-        (data["data"] ?? {}) as Map<String, dynamic>);
+      (data["data"] ?? {}) as Map<String, dynamic>,
+    );
   }
 
   Future<Map<String, dynamic>> getPet(int petId) async {
@@ -83,8 +86,7 @@ class PetService {
     return (data["data"] ?? {}) as Map<String, dynamic>;
   }
 
-  Future<Map<String, dynamic>> registerPet(
-      Map<String, dynamic> payload) async {
+  Future<Map<String, dynamic>> registerPet(Map<String, dynamic> payload) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
 
@@ -183,7 +185,9 @@ class PetService {
   // ── Pet public profile update (owner) ─────────────────────────────────────
 
   Future<void> updatePetPublicProfile(
-      int petId, Map<String, dynamic> payload) async {
+    int petId,
+    Map<String, dynamic> payload,
+  ) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
 
@@ -257,15 +261,16 @@ class PetService {
 
   // ── Pet posts ─────────────────────────────────────────────────────────────
 
-  Future<List<Map<String, dynamic>>> getPetPosts(int petId,
-      {int? cursor, int limit = 20}) async {
+  Future<List<Map<String, dynamic>>> getPetPosts(
+    int petId, {
+    int? cursor,
+    int limit = 20,
+  }) async {
     final token = await _token();
-    final params = {
-      "limit": "$limit",
-      if (cursor != null) "cursor": "$cursor",
-    };
-    final uri = Uri.parse("${ApiConfig.apiV1}/pets/$petId/posts")
-        .replace(queryParameters: params);
+    final params = {"limit": "$limit", if (cursor != null) "cursor": "$cursor"};
+    final uri = Uri.parse(
+      "${ApiConfig.apiV1}/pets/$petId/posts",
+    ).replace(queryParameters: params);
     final res = await http.get(uri, headers: _optionalAuthHeaders(token));
     if (res.statusCode != 200) throw Exception(res.body);
     final data = jsonDecode(res.body);
@@ -273,7 +278,9 @@ class PetService {
   }
 
   Future<Map<String, dynamic>> createPetPost(
-      int petId, Map<String, dynamic> payload) async {
+    int petId,
+    Map<String, dynamic> payload,
+  ) async {
     final token = await _token();
     if (token == null) throw Exception("No token found");
 

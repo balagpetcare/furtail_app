@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
@@ -6,6 +7,7 @@ import 'package:furtail_app/features/adoption/data/models/adoption_application_f
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/my_adoption_applications_screen.dart';
+import 'package:furtail_app/features/profile/data/profile_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdoptionApplyScreen extends StatefulWidget {
@@ -24,6 +26,10 @@ class AdoptionApplyScreen extends StatefulWidget {
 
 class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _whatsAppController = TextEditingController();
+  final _cityAreaController = TextEditingController();
   final _locationController = TextEditingController();
   final _housingTypeController = TextEditingController();
   final _experienceController = TextEditingController();
@@ -39,6 +45,7 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
   bool _isLoggedIn = false;
   bool _isSubmitting = false;
   bool _isOwnListing = false;
+  final _profileService = ProfileService();
 
   @override
   void initState() {
@@ -48,6 +55,10 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _mobileController.dispose();
+    _whatsAppController.dispose();
+    _cityAreaController.dispose();
     _locationController.dispose();
     _housingTypeController.dispose();
     _experienceController.dispose();
@@ -81,6 +92,39 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
+                  _SectionCard(
+                    title: 'Your contact details',
+                    child: Column(
+                      children: [
+                        _buildTextField(
+                          controller: _nameController,
+                          label: 'Your full name',
+                          validator: _requiredField,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _buildTextField(
+                          controller: _mobileController,
+                          label: 'Mobile number',
+                          hintText: '01XXXXXXXXX',
+                          validator: _phoneValidator,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _buildTextField(
+                          controller: _whatsAppController,
+                          label: 'WhatsApp number (optional)',
+                          hintText: 'Use only if different',
+                          validator: _optionalPhoneValidator,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _buildTextField(
+                          controller: _cityAreaController,
+                          label: 'City / area',
+                          validator: _requiredField,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   _SectionCard(
                     title: 'Your location',
                     child: _buildTextField(
@@ -147,7 +191,9 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
                       value: _canProvideVetCare,
                       onChanged: (value) =>
                           setState(() => _canProvideVetCare = value),
-                      title: const Text('I can provide routine and emergency vet care'),
+                      title: const Text(
+                        'I can provide routine and emergency vet care',
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -201,12 +247,22 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
 
   Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = (prefs.getString('token') ?? '').trim();
+    final hasSession = await SecureStorageService().hasSession;
     final userId = prefs.getInt('userId');
+    if (hasSession) {
+      try {
+        final profile = await _profileService.getProfile();
+        _nameController.text = profile.name;
+        _mobileController.text = (profile.phone ?? '').trim();
+        _cityAreaController.text = (profile.placeLive ?? profile.from ?? '')
+            .trim();
+      } catch (_) {}
+    }
     if (!mounted) return;
     setState(() {
-      _isLoggedIn = token.isNotEmpty;
-      _isOwnListing = userId != null &&
+      _isLoggedIn = hasSession;
+      _isOwnListing =
+          userId != null &&
           widget.pet.ownerUserId != null &&
           userId == widget.pet.ownerUserId;
       _isCheckingAuth = false;
@@ -219,7 +275,9 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
     if (!_acceptsTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You must accept the owner conditions before submitting.'),
+          content: Text(
+            'You must accept the owner conditions before submitting.',
+          ),
         ),
       );
       return;
@@ -230,7 +288,12 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
       await widget.repository.applyToAdopt(
         widget.pet.id,
         AdoptionApplicationFormPayload(
+          applicantName: _nameController.text,
+          applicantPhone: _mobileController.text,
+          applicantWhatsappPhone: _whatsAppController.text,
           applicantLocationText: _locationController.text,
+          applicantCityAreaText: _cityAreaController.text,
+          applicantEmail: '',
           housingType: _housingTypeController.text,
           familyApproval: _familyApproval,
           previousPetExperience: _experienceController.text,
@@ -244,18 +307,18 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adoption application submitted successfully.')),
+        const SnackBar(
+          content: Text('Adoption application submitted successfully.'),
+        ),
       );
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const MyAdoptionApplicationsScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const MyAdoptionApplicationsScreen()),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyError(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyError(e))));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -265,6 +328,19 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
     if ((value ?? '').trim().isEmpty) {
       return 'This field is required.';
     }
+    return null;
+  }
+
+  String? _phoneValidator(String? value) {
+    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 7) return 'Enter a valid phone number.';
+    return null;
+  }
+
+  String? _optionalPhoneValidator(String? value) {
+    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return null;
+    if (digits.length < 7) return 'Enter a valid phone number.';
     return null;
   }
 
@@ -295,10 +371,7 @@ class _AdoptionApplyScreenState extends State<AdoptionApplyScreen> {
       controller: controller,
       maxLines: maxLines,
       validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-      ),
+      decoration: InputDecoration(labelText: label, hintText: hintText),
     );
   }
 }

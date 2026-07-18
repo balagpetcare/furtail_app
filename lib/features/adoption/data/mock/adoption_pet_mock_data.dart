@@ -49,7 +49,7 @@ abstract final class AdoptionPetMockData {
       neutered: true,
       microchipped: false,
       isShelter: true,
-      ownerName: 'Safe Paws Shelter',
+      ownerName: 'Safe Shelter',
       ownerRoleLabel: 'Shelter',
       status: 'Pending',
       galleryLabels: ['Luna outdoors', 'Luna training day'],

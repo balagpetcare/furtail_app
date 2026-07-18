@@ -3,15 +3,20 @@ import 'api_config.dart';
 class ApiEndpoints {
   // ---------- NOTIFICATIONS / PUSH ----------
   /// Register FCM device token with backend.
-  static String registerDeviceToken() => "${ApiConfig.apiV1}/notifications/device-token";
+  static String registerDeviceToken() =>
+      "${ApiConfig.apiV1}/notifications/device-token";
+
   /// Unregister / deactivate device token on logout.
-  static String unregisterDeviceToken() => "${ApiConfig.apiV1}/notifications/device-token";
-  static String notificationSettings() => "${ApiConfig.apiV1}/notifications/settings";
+  static String unregisterDeviceToken() =>
+      "${ApiConfig.apiV1}/notifications/device-token";
+  static String notificationSettings() =>
+      "${ApiConfig.apiV1}/notifications/settings";
   static String notificationsList({int limit = 20, int? cursor}) {
     String url = "${ApiConfig.apiV1}/notifications?limit=$limit";
     if (cursor != null) url += "&cursor=$cursor";
     return url;
   }
+
   static String markNotificationRead(int id) =>
       "${ApiConfig.apiV1}/notifications/$id/read";
   static String markAllNotificationsRead() =>
@@ -44,6 +49,36 @@ class ApiEndpoints {
   // ---------- POSTS / FEED ----------
   static String postsFeed({int limit = 50}) =>
       "${ApiConfig.apiV1}/posts/feed?limit=$limit";
+  static String postsVideos({
+    int limit = 50,
+    int? page,
+    int? cursor,
+    String? search,
+    String? category,
+    String? sort,
+    String? duration,
+    bool? followingOnly,
+  }) {
+    final qp = <String, String>{'limit': '$limit'};
+    if (page != null) qp['page'] = '$page';
+    if (cursor != null) qp['cursor'] = '$cursor';
+    if (search != null && search.trim().isNotEmpty)
+      qp['search'] = search.trim();
+    if (category != null && category.trim().isNotEmpty)
+      qp['category'] = category.trim();
+    if (sort != null && sort.trim().isNotEmpty) qp['sort'] = sort.trim();
+    if (duration != null && duration.trim().isNotEmpty)
+      qp['duration'] = duration.trim();
+    if (followingOnly != null)
+      qp['followingOnly'] = followingOnly ? 'true' : 'false';
+    final query = qp.entries
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
+        .join('&');
+    return "${ApiConfig.apiV1}/posts/videos?$query";
+  }
 
   static String postsUserFeed({required int userId, int limit = 50}) =>
       "${ApiConfig.apiV1}/posts/user/$userId?limit=$limit";
@@ -102,11 +137,18 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/common/bd/areas?upazilaId=$upazilaId";
 
   // ---------- CENTRALIZED LOCATION MASTER ----------
-  static String locationMasterDivisions({String locale = 'en', int pageSize = 64, String? q}) {
+  static String locationMasterDivisions({
+    String locale = 'en',
+    int pageSize = 64,
+    String? q,
+  }) {
     final qp = <String, String>{'locale': locale, 'pageSize': '$pageSize'};
     if (q != null && q.trim().isNotEmpty) qp['q'] = q.trim();
     final query = qp.entries
-        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
         .join('&');
     return "${ApiConfig.apiV1}/location-master/divisions?$query";
   }
@@ -124,7 +166,10 @@ class ApiEndpoints {
     };
     if (q != null && q.trim().isNotEmpty) qp['q'] = q.trim();
     final query = qp.entries
-        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
         .join('&');
     return "${ApiConfig.apiV1}/location-master/districts?$query";
   }
@@ -142,7 +187,10 @@ class ApiEndpoints {
     };
     if (q != null && q.trim().isNotEmpty) qp['q'] = q.trim();
     final query = qp.entries
-        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
         .join('&');
     return "${ApiConfig.apiV1}/location-master/upazilas?$query";
   }
@@ -160,7 +208,10 @@ class ApiEndpoints {
     };
     if (q != null && q.trim().isNotEmpty) qp['q'] = q.trim();
     final query = qp.entries
-        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
         .join('&');
     return "${ApiConfig.apiV1}/location-master/unions?$query";
   }
@@ -172,7 +223,6 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/common/bd/zones?cityCorporationId=$cityCorporationId";
   static String bdCcAreas({required int zoneId}) =>
       "${ApiConfig.apiV1}/common/bd/cc-areas?zoneId=$zoneId";
-
 
   // ---------- SHARE ----------
   /// Backend-generated share link + deep link + message
@@ -253,17 +303,29 @@ class ApiEndpoints {
   static String fundraisingDonate(int id) =>
       "${ApiConfig.apiV1}/fundraising/campaigns/$id/donate";
 
-  static String fundraisingCampaignDonations(int id, {int limit = 50, int? cursor}) {
+  static String fundraisingCampaignDonations(
+    int id, {
+    int limit = 50,
+    int? cursor,
+  }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';
-    final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final qs = q.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     return "${ApiConfig.apiV1}/fundraising/campaigns/$id/donations?$qs";
   }
 
-  static String fundraisingCampaignUpdates(int id, {int limit = 50, int? cursor}) {
+  static String fundraisingCampaignUpdates(
+    int id, {
+    int limit = 50,
+    int? cursor,
+  }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';
-    final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final qs = q.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     return "${ApiConfig.apiV1}/fundraising/campaigns/$id/updates?$qs";
   }
 
@@ -283,39 +345,61 @@ class ApiEndpoints {
   static String fundraisingPayoutMethodUpdate(int id) =>
       "${ApiConfig.apiV1}/fundraising/payout/methods/$id";
 
-  static String fundraisingWithdrawRequests({int? campaignId, int limit = 50, int? cursor}) {
+  static String fundraisingWithdrawRequests({
+    int? campaignId,
+    int limit = 50,
+    int? cursor,
+  }) {
     final q = <String, String>{'limit': '$limit'};
     if (campaignId != null) q['campaignId'] = '$campaignId';
     if (cursor != null) q['cursor'] = '$cursor';
-    final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final qs = q.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     return "${ApiConfig.apiV1}/fundraising/withdraw/requests?$qs";
   }
 
   // ---------- WALLET (V1) ----------
   static String walletMe() => "${ApiConfig.apiV1}/wallet/me";
 
-  static String walletTransactions({int limit = 20, int? cursor, String? type, String? status, String? sourceType}) {
+  static String walletTransactions({
+    int limit = 20,
+    int? cursor,
+    String? type,
+    String? status,
+    String? sourceType,
+  }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';
     if (type != null && type.trim().isNotEmpty) q['type'] = type.trim();
     if (status != null && status.trim().isNotEmpty) q['status'] = status.trim();
-    if (sourceType != null && sourceType.trim().isNotEmpty) q['sourceType'] = sourceType.trim();
-    final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    if (sourceType != null && sourceType.trim().isNotEmpty)
+      q['sourceType'] = sourceType.trim();
+    final qs = q.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     return "${ApiConfig.apiV1}/wallet/transactions?$qs";
   }
 
-
-  static String walletWithdrawRequests({int limit = 20, int? cursor, String? status}) {
+  static String walletWithdrawRequests({
+    int limit = 20,
+    int? cursor,
+    String? status,
+  }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';
     if (status != null && status.trim().isNotEmpty) q['status'] = status.trim();
-    final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final qs = q.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     return "${ApiConfig.apiV1}/wallet/withdraw/requests?$qs";
   }
 
-  static String walletWithdrawCancel(int id) => "${ApiConfig.apiV1}/wallet/withdraw/requests/$id/cancel";
+  static String walletWithdrawCancel(int id) =>
+      "${ApiConfig.apiV1}/wallet/withdraw/requests/$id/cancel";
 
-  static String walletWithdrawCreate() => "${ApiConfig.apiV1}/wallet/withdraw/requests";
+  static String walletWithdrawCreate() =>
+      "${ApiConfig.apiV1}/wallet/withdraw/requests";
 
   static String fundraisingCreateWithdrawRequest(int campaignId) =>
       "${ApiConfig.apiV1}/fundraising/campaigns/$campaignId/withdraw";
@@ -329,24 +413,55 @@ class ApiEndpoints {
   static String adoptions({
     String? species,
     String? search,
+    String? breed,
+    String? gender,
+    String? size,
+    int? minAgeDays,
+    int? maxAgeDays,
+    bool? vaccinated,
+    bool? dewormed,
+    bool? neutered,
+    bool? goodWithKids,
+    bool? goodWithDogs,
+    bool? goodWithCats,
     int? countryId,
     int? divisionId,
     int? stateId,
     int? districtId,
     int? cityId,
     int? areaId,
+    double? nearLat,
+    double? nearLng,
+    int? radiusKm,
     int page = 1,
     int limit = 20,
   }) {
     final qp = <String, String>{'page': '$page', 'limit': '$limit'};
-    if (species != null && species.trim().isNotEmpty) qp['species'] = species.trim();
-    if (search != null && search.trim().isNotEmpty) qp['search'] = search.trim();
+    if (species != null && species.trim().isNotEmpty)
+      qp['species'] = species.trim();
+    if (search != null && search.trim().isNotEmpty)
+      qp['search'] = search.trim();
+    if (breed != null && breed.trim().isNotEmpty) qp['breed'] = breed.trim();
+    if (gender != null && gender.trim().isNotEmpty)
+      qp['gender'] = gender.trim();
+    if (size != null && size.trim().isNotEmpty) qp['size'] = size.trim();
+    if (minAgeDays != null) qp['minAgeDays'] = '$minAgeDays';
+    if (maxAgeDays != null) qp['maxAgeDays'] = '$maxAgeDays';
+    if (vaccinated == true) qp['vaccinated'] = 'true';
+    if (dewormed == true) qp['dewormed'] = 'true';
+    if (neutered == true) qp['neutered'] = 'true';
+    if (goodWithKids == true) qp['goodWithKids'] = 'true';
+    if (goodWithDogs == true) qp['goodWithDogs'] = 'true';
+    if (goodWithCats == true) qp['goodWithCats'] = 'true';
     if (countryId != null) qp['countryId'] = '$countryId';
     if (divisionId != null) qp['divisionId'] = '$divisionId';
     if (stateId != null) qp['stateId'] = '$stateId';
     if (districtId != null) qp['districtId'] = '$districtId';
     if (cityId != null) qp['cityId'] = '$cityId';
     if (areaId != null) qp['areaId'] = '$areaId';
+    if (nearLat != null) qp['nearLat'] = '$nearLat';
+    if (nearLng != null) qp['nearLng'] = '$nearLng';
+    if (radiusKm != null) qp['radiusKm'] = '$radiusKm';
     final query = qp.entries
         .map(
           (e) =>
@@ -357,6 +472,16 @@ class ApiEndpoints {
   }
 
   static String adoptionDetail(int id) => "${ApiConfig.apiV1}/adoptions/$id";
+  static String favoriteAdoption(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/favorite";
+  static String unfavoriteAdoption(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/favorite";
+  static String adoptionComments(int id, {int limit = 50}) =>
+      "${ApiConfig.apiV1}/adoptions/$id/comments?limit=$limit";
+  static String addAdoptionComment(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/comments";
+  static String deleteAdoptionComment(int id, int commentId) =>
+      "${ApiConfig.apiV1}/adoptions/$id/comments/$commentId";
   static String createAdoption() => "${ApiConfig.apiV1}/adoptions";
   static String updateAdoption(int id) => "${ApiConfig.apiV1}/adoptions/$id";
   static String submitAdoptionReview(int id) =>
@@ -365,6 +490,16 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/me/adoptions?page=$page&limit=$limit";
   static String myAdoptionApplications({int page = 1, int limit = 20}) =>
       "${ApiConfig.apiV1}/me/adoption-applications?page=$page&limit=$limit";
+  static String myAdoptionListingApplications(int id) =>
+      "${ApiConfig.apiV1}/me/adoptions/$id/applications";
+  static String adoptionApplicationDetail(int applicationId) =>
+      "${ApiConfig.apiV1}/me/adoption-applications/$applicationId";
+  static String updateAdoptionApplicationStatus(int applicationId) =>
+      "${ApiConfig.apiV1}/me/adoption-applications/$applicationId/status";
+  static String updateAdoptionApplicationNotes(int applicationId) =>
+      "${ApiConfig.apiV1}/me/adoption-applications/$applicationId/notes";
+  static String reportAdoption(int adoptionId) =>
+      "${ApiConfig.apiV1}/adoptions/$adoptionId/report";
 
   // ---------- COMMENTS (Phase 1: Edit, Delete, Cursor) ----------
   /// PATCH /api/v1/posts/:postId/comments/:commentId — edit a comment
@@ -372,6 +507,7 @@ class ApiEndpoints {
     required int postId,
     required int commentId,
   }) => "${ApiConfig.apiV1}/posts/$postId/comments/$commentId";
+
   /// DELETE /api/v1/posts/:postId/comments/:commentId — delete a comment
   static String postsCommentDelete({
     required int postId,
@@ -382,27 +518,37 @@ class ApiEndpoints {
   /// POST /api/v1/posts/:postId/share — record a share
   static String postsShare({required int postId}) =>
       "${ApiConfig.apiV1}/posts/$postId/share";
+
   /// POST /api/v1/posts/:postId/view — record a view
   static String postsView({required int postId}) =>
       "${ApiConfig.apiV1}/posts/$postId/view";
 
   // ---------- BOOKMARKS ----------
-  static String bookmarkPost({required int postId}) => "${ApiConfig.apiV1}/posts/$postId/bookmark";
-  static String unbookmarkPost({required int postId}) => "${ApiConfig.apiV1}/posts/$postId/bookmark";
-  static String bookmarkedPosts({int limit = 50}) => "${ApiConfig.apiV1}/posts/bookmarked?limit=$limit";
+  static String bookmarkPost({required int postId}) =>
+      "${ApiConfig.apiV1}/posts/$postId/bookmark";
+  static String unbookmarkPost({required int postId}) =>
+      "${ApiConfig.apiV1}/posts/$postId/bookmark";
+  static String bookmarkedPosts({int limit = 50}) =>
+      "${ApiConfig.apiV1}/posts/bookmarked?limit=$limit";
 
   // ---------- VACCINATION CAMPAIGN (2026) ----------
-  static String campaignLinkSummary() => "${ApiConfig.apiV1}/campaign-link/summary";
-  static String campaignLinkMyBookings() => "${ApiConfig.apiV1}/campaign-link/my-bookings";
-  static String campaignLinkVaccinations() => "${ApiConfig.apiV1}/campaign-link/vaccinations";
-  static String campaignLinkUpcoming() => "${ApiConfig.apiV1}/campaign-link/upcoming";
+  static String campaignLinkSummary() =>
+      "${ApiConfig.apiV1}/campaign-link/summary";
+  static String campaignLinkMyBookings() =>
+      "${ApiConfig.apiV1}/campaign-link/my-bookings";
+  static String campaignLinkVaccinations() =>
+      "${ApiConfig.apiV1}/campaign-link/vaccinations";
+  static String campaignLinkUpcoming() =>
+      "${ApiConfig.apiV1}/campaign-link/upcoming";
   static String campaignLinkBenefits({String? slug}) {
     if (slug != null && slug.trim().isNotEmpty) {
       return "${ApiConfig.apiV1}/campaign-link/benefits?slug=${Uri.encodeQueryComponent(slug.trim())}";
     }
     return "${ApiConfig.apiV1}/campaign-link/benefits";
   }
-  static String campaignLinkImport() => "${ApiConfig.apiV1}/campaign-link/import";
+
+  static String campaignLinkImport() =>
+      "${ApiConfig.apiV1}/campaign-link/import";
   static String campaignLinkPet(int campaignPetId) =>
       "${ApiConfig.apiV1}/campaign-link/pet/$campaignPetId";
   static String campaignLinkClaimCertificate(String token) =>
@@ -411,7 +557,8 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/campaign-link/certificates/$token";
   static String campaignLinkCertificatePdf(String token) =>
       "${ApiConfig.apiV1}/campaign-link/certificates/$token/pdf";
-  static String campaignPublicCampaigns() => "${ApiConfig.apiV1}/campaign/public/campaigns";
+  static String campaignPublicCampaigns() =>
+      "${ApiConfig.apiV1}/campaign/public/campaigns";
   static String campaignPublicCampaignBySlug(String slug) =>
       "${ApiConfig.apiV1}/campaign/public/campaigns/${Uri.encodeComponent(slug)}";
   static String campaignPublicCountdown(String slug) =>
@@ -424,26 +571,40 @@ class ApiEndpoints {
         : '';
     return "${ApiConfig.apiV1}/campaign/public/discovery/live-stats$qs";
   }
-  static String campaignPublicLocations(String slug, {bool onlyAvailable = true}) =>
+
+  static String campaignPublicLocations(
+    String slug, {
+    bool onlyAvailable = true,
+  }) =>
       "${ApiConfig.apiV1}/campaign/public/campaigns/${Uri.encodeComponent(slug)}/locations?onlyAvailable=$onlyAvailable";
-  static String campaignPublicLocationSlots(int locationId, {required String startDate, required String endDate}) =>
+  static String campaignPublicLocationSlots(
+    int locationId, {
+    required String startDate,
+    required String endDate,
+  }) =>
       "${ApiConfig.apiV1}/campaign/public/locations/$locationId/slots?startDate=${Uri.encodeQueryComponent(startDate)}&endDate=${Uri.encodeQueryComponent(endDate)}";
-  static String campaignCheckoutInit() => "${ApiConfig.apiV1}/campaign/public/checkout/init";
+  static String campaignCheckoutInit() =>
+      "${ApiConfig.apiV1}/campaign/public/checkout/init";
   static String campaignCheckoutStatus(String checkoutId) =>
       "${ApiConfig.apiV1}/campaign/public/checkout/${Uri.encodeComponent(checkoutId)}/status";
   static String campaignCheckoutConfirmFree() =>
       "${ApiConfig.apiV1}/campaign/public/checkout/confirm-free";
-  static String campaignCouponValidate() => "${ApiConfig.apiV1}/campaign/public/coupons/validate";
+  static String campaignCouponValidate() =>
+      "${ApiConfig.apiV1}/campaign/public/coupons/validate";
   static String campaignPublicVerify(String token) =>
       "${ApiConfig.apiV1}/campaign/public/verify/$token";
   static String campaignDhakaCityCorporations() =>
       "${ApiConfig.apiV1}/campaign/public/dhaka/city-corporations";
   static String campaignDhakaBookingAreas(String corpCode) =>
       "${ApiConfig.apiV1}/campaign/public/dhaka/city-corporations/${Uri.encodeComponent(corpCode)}/booking-areas";
-  static String campaignBookingTickets(String bookingRef, {bool includeQr = true}) {
+  static String campaignBookingTickets(
+    String bookingRef, {
+    bool includeQr = true,
+  }) {
     final qr = includeQr ? '?qr=1' : '';
     return "${ApiConfig.apiV1}/campaign/public/bookings/${Uri.encodeComponent(bookingRef)}/tickets$qr";
   }
+
   static String campaignTicketQr(String ticketToken) =>
       "${ApiConfig.apiV1}/campaign/public/tickets/${Uri.encodeComponent(ticketToken)}/qr";
 
@@ -451,15 +612,27 @@ class ApiEndpoints {
   /// GET /api/v1/stories/feed — story feed (own + friends)
   static String storiesFeed({int limit = 50}) =>
       "${ApiConfig.apiV1}/stories/feed?limit=$limit";
+
   /// POST /api/v1/stories — create a story
   static String storiesCreate() => "${ApiConfig.apiV1}/stories";
+
   /// POST /api/v1/stories/:id/view — mark as viewed
   static String storiesView(int storyId) =>
       "${ApiConfig.apiV1}/stories/$storyId/view";
+
   /// DELETE /api/v1/stories/:id — delete a story
   static String storiesDelete(int storyId) =>
       "${ApiConfig.apiV1}/stories/$storyId";
 
+  // ---------- FEELING & ACTIVITY ----------
+  static String get feelingActivities =>
+      "${ApiConfig.apiV1}/feeling-activities";
 
+  // ---------- PUBLIC COUNTRIES ----------
+  /// GET /api/v1/public/countries — all active countries sorted
+  static String get publicCountries => "${ApiConfig.apiV1}/public/countries";
+
+  /// GET /api/v1/public/countries/default — single default country
+  static String get publicCountryDefault =>
+      "${ApiConfig.apiV1}/public/countries/default";
 }
-

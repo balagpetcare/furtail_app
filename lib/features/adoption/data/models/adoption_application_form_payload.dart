@@ -1,5 +1,10 @@
 class AdoptionApplicationFormPayload {
+  final String applicantName;
+  final String applicantPhone;
+  final String applicantWhatsappPhone;
   final String applicantLocationText;
+  final String applicantCityAreaText;
+  final String applicantEmail;
   final String housingType;
   final bool familyApproval;
   final String previousPetExperience;
@@ -11,7 +16,12 @@ class AdoptionApplicationFormPayload {
   final bool acceptsTerms;
 
   const AdoptionApplicationFormPayload({
+    required this.applicantName,
+    required this.applicantPhone,
+    required this.applicantWhatsappPhone,
     required this.applicantLocationText,
+    required this.applicantCityAreaText,
+    required this.applicantEmail,
     required this.housingType,
     required this.familyApproval,
     required this.previousPetExperience,
@@ -41,9 +51,16 @@ class AdoptionApplicationFormPayload {
     }
 
     return {
+      'applicantName': _trim(applicantName),
       'messageToOwner': _trim(adoptionReason),
+      'applicantPhone': _trim(applicantPhone),
+      if (_trim(applicantWhatsappPhone).isNotEmpty)
+        'applicantWhatsappPhone': _trim(applicantWhatsappPhone),
+      if (_trim(applicantEmail).isNotEmpty)
+        'applicantEmail': _trim(applicantEmail),
       if (_trim(applicantLocationText).isNotEmpty)
         'applicantAddress': _trim(applicantLocationText),
+      'applicantCityAreaText': _trim(applicantCityAreaText),
       if (_trim(housingType).isNotEmpty)
         'applicantHouseholdSummary':
             'Housing type: ${_trim(housingType)}. Family approval: ${familyApproval ? 'Yes' : 'No'}.',

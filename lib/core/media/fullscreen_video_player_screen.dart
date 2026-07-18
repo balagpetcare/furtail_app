@@ -177,119 +177,120 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            setState(() => _show = !_show);
-            if (_show) _autoHide();
-          },
-          onDoubleTap: _togglePlay,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (c == null || _init == null)
-                const Center(child: CircularProgressIndicator())
-              else
-                FutureBuilder<void>(
-                  future: _init,
-                  builder: (_, snap) {
-                    if (snap.connectionState != ConnectionState.done) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    return Center(
-                      child: AspectRatio(
-                        aspectRatio: c.value.aspectRatio == 0
-                            ? 16 / 9
-                            : c.value.aspectRatio,
-                        child: VideoPlayer(c),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                setState(() => _show = !_show);
+                if (_show) _autoHide();
+              },
+              onDoubleTap: _togglePlay,
+              child: c == null || _init == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : FutureBuilder<void>(
+                      future: _init,
+                      builder: (_, snap) {
+                        if (snap.connectionState != ConnectionState.done) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                        return Center(
+                          child: AspectRatio(
+                            aspectRatio: c.value.aspectRatio == 0
+                                ? 16 / 9
+                                : c.value.aspectRatio,
+                            child: VideoPlayer(c),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            if (_show && c != null)
+              Positioned(
+                left: 10,
+                right: 10,
+                bottom: 10,
+                child: ValueListenableBuilder<VideoPlayerValue>(
+                  valueListenable: c,
+                  builder: (_, v, _) {
+                    final dur = v.duration;
+                    final pos = v.position;
+                    final maxMs = dur.inMilliseconds > 0
+                        ? dur.inMilliseconds.toDouble()
+                        : 1.0;
+                    final curMs = pos.inMilliseconds
+                        .clamp(0, dur.inMilliseconds)
+                        .toDouble();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _togglePlay,
+                            icon: Icon(
+                              v.isPlaying
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_fill,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
+                          Text(_fmt(pos),
+                              style: context.appText.bodySmall!
+                                  .copyWith(color: Colors.white)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Slider(
+                              value: curMs,
+                              min: 0,
+                              max: maxMs,
+                              onChanged: (val) {
+                                c.seekTo(Duration(milliseconds: val.toInt()));
+                              },
+                            ),
+                          ),
+                          Text(_fmt(dur),
+                              style: context.appText.bodySmall!
+                                  .copyWith(color: Colors.white)),
+                          IconButton(
+                            onPressed: _toggleMute,
+                            icon: Icon(
+                              _muted
+                                  ? Icons.volume_off_rounded
+                                  : Icons.volume_up_rounded,
+                              color: Colors.white,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.fullscreen_exit_rounded,
+                                color: Colors.white),
+                          ),
+                        ],
                       ),
                     );
                   },
                 ),
+              ),
 
-              if (_show && c != null)
-                Positioned(
-                  left: 10,
-                  right: 10,
-                  bottom: 10,
-                  child: ValueListenableBuilder<VideoPlayerValue>(
-                    valueListenable: c,
-                    builder: (_, v, _) {
-                      final dur = v.duration;
-                      final pos = v.position;
-                      final maxMs = dur.inMilliseconds > 0
-                          ? dur.inMilliseconds.toDouble()
-                          : 1.0;
-                      final curMs = pos.inMilliseconds
-                          .clamp(0, dur.inMilliseconds)
-                          .toDouble();
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: _togglePlay,
-                              icon: Icon(
-                                v.isPlaying
-                                    ? Icons.pause_circle_filled
-                                    : Icons.play_circle_fill,
-                                color: Colors.white,
-                                size: 32,
-                              ),
-                            ),
-                            Text(_fmt(pos),
-                                style: context.appText.bodySmall!.copyWith(color: Colors.white)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Slider(
-                                value: curMs,
-                                min: 0,
-                                max: maxMs,
-                                onChanged: (val) {
-                                  c.seekTo(
-                                      Duration(milliseconds: val.toInt()));
-                                },
-                              ),
-                            ),
-                            Text(_fmt(dur),
-                                style: context.appText.bodySmall!.copyWith(color: Colors.white)),
-                            IconButton(
-                              onPressed: _toggleMute,
-                              icon: Icon(
-                                _muted
-                                    ? Icons.volume_off_rounded
-                                    : Icons.volume_up_rounded,
-                                color: Colors.white,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () => Navigator.pop(context),
-                              icon: const Icon(Icons.fullscreen_exit_rounded,
-                                  color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+            if (_show)
+              Positioned(
+                top: 6,
+                left: 6,
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
-
-              if (_show)
-                Positioned(
-                  top: 6,
-                  left: 6,
-                  child: IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

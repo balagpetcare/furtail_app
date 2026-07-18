@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:furtail_app/core/network/api_endpoints.dart';
-import 'package:furtail_app/core/storage/local_storage.dart';
 import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:furtail_app/services/api_client.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -166,9 +165,11 @@ class SettingsRepository {
     return freed;
   }
 
+  /// Clears legacy/device-scoped state. Session tokens (SecureStorageService)
+  /// are cleared separately by AuthController.logout(), invoked alongside
+  /// this from settingsLogoutProvider.
   Future<void> logout() async {
     await _notificationRepository?.unregisterDeviceToken();
-    await LocalStorage.clearAuth();
   }
 
   Future<int> _dirSize(Directory dir) async {

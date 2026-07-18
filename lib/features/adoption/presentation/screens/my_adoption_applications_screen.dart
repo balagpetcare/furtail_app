@@ -5,9 +5,9 @@ import 'package:furtail_app/core/theme/typography.dart';
 import 'package:furtail_app/features/adoption/data/datasources/adoption_remote_ds.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_application_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_pet_detail_screen.dart';
 import 'package:furtail_app/services/api_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MyAdoptionApplicationsScreen extends StatefulWidget {
   const MyAdoptionApplicationsScreen({super.key});
@@ -33,9 +33,8 @@ class _MyAdoptionApplicationsScreenState
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = (prefs.getString('token') ?? '').trim();
-    if (token.isEmpty) {
+    final hasSession = await SecureStorageService().hasSession;
+    if (!hasSession) {
       if (!mounted) return;
       setState(() {
         _requiresLogin = true;
@@ -94,7 +93,8 @@ class _MyAdoptionApplicationsScreenState
             else if (_items.isEmpty)
               const _StateCard(
                 title: 'No applications yet',
-                message: 'You have not submitted any adoption applications yet.',
+                message:
+                    'You have not submitted any adoption applications yet.',
                 icon: Icons.assignment_turned_in_outlined,
               )
             else
@@ -108,8 +108,6 @@ class _MyAdoptionApplicationsScreenState
                         builder: (_) => AdoptionPetDetailScreen(
                           pet: application.pet,
                           repository: _repository,
-                          isSaved: false,
-                          onToggleSaved: () {},
                         ),
                       ),
                     ),
@@ -127,10 +125,7 @@ class _ApplicationCard extends StatelessWidget {
   final AdoptionApplicationUiModel application;
   final VoidCallback onTap;
 
-  const _ApplicationCard({
-    required this.application,
-    required this.onTap,
-  });
+  const _ApplicationCard({required this.application, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -154,9 +149,10 @@ class _ApplicationCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       application.pet.name,
-                      style: AppTypography.menuTitle(
-                        context,
-                      ).copyWith(color: cs.onSurface, fontWeight: FontWeight.w700),
+                      style: AppTypography.menuTitle(context).copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   Container(
@@ -170,9 +166,10 @@ class _ApplicationCard extends StatelessWidget {
                     ),
                     child: Text(
                       application.status,
-                      style: AppTypography.meta(
-                        context,
-                      ).copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+                      style: AppTypography.meta(context).copyWith(
+                        color: cs.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -205,7 +202,7 @@ class _ApplicationCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Pet status: ${application.pet.status}',
+                'Listing status: ${application.pet.status}',
                 style: AppTypography.caption(
                   context,
                 ).copyWith(color: cs.onSurfaceVariant),

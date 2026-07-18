@@ -10,9 +10,9 @@ import 'package:furtail_app/features/adoption/presentation/screens/listing_appli
 import 'package:furtail_app/features/adoption/presentation/screens/create_adoption_listing_screen.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_comments_sheet.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_pet_card.dart';
+import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/services/share_service.dart';
 import 'package:furtail_app/services/api_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MyAdoptionListingsScreen extends StatefulWidget {
   const MyAdoptionListingsScreen({super.key});
@@ -37,9 +37,8 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = (prefs.getString('token') ?? '').trim();
-    if (token.isEmpty) {
+    final hasSession = await SecureStorageService().hasSession;
+    if (!hasSession) {
       if (!mounted) return;
       setState(() {
         _requiresLogin = true;
@@ -79,9 +78,8 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
     setState(() {
       _items = _items
           .map(
-            (pet) => pet.id == adoptionId
-                ? pet.copyWith(commentCount: count)
-                : pet,
+            (pet) =>
+                pet.id == adoptionId ? pet.copyWith(commentCount: count) : pet,
           )
           .toList();
     });
@@ -179,26 +177,31 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
                         ),
                         onMenuSelected: (action) {
                           if (action == AdoptionCardMenuAction.editListing) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => CreateAdoptionListingScreen(
-                                  existingListing: pet,
-                                ),
-                              ),
-                            ).then((updated) {
-                              if (updated == true) {
-                                _load();
-                              }
-                            });
-                          } else if (action == AdoptionCardMenuAction.updateStatus) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ListingApplicationsScreen(
-                                  adoptionId: pet.id,
-                                  petName: pet.name,
-                                ),
-                              ),
-                            ).then((_) => _load());
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (_) => CreateAdoptionListingScreen(
+                                      existingListing: pet,
+                                    ),
+                                  ),
+                                )
+                                .then((updated) {
+                                  if (updated == true) {
+                                    _load();
+                                  }
+                                });
+                          } else if (action ==
+                              AdoptionCardMenuAction.updateStatus) {
+                            Navigator.of(context)
+                                .push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ListingApplicationsScreen(
+                                      adoptionId: pet.id,
+                                      petName: pet.name,
+                                    ),
+                                  ),
+                                )
+                                .then((_) => _load());
                           }
                         },
                       ),
@@ -206,15 +209,19 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
                         padding: const EdgeInsets.only(top: AppSpacing.sm),
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.description_outlined),
-                          label: Text('View Applications (${pet.applicationCount})'),
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ListingApplicationsScreen(
-                                adoptionId: pet.id,
-                                petName: pet.name,
-                              ),
-                            ),
-                          ).then((_) => _load()),
+                          label: Text(
+                            'View Applications (${pet.applicationCount})',
+                          ),
+                          onPressed: () => Navigator.of(context)
+                              .push(
+                                MaterialPageRoute(
+                                  builder: (_) => ListingApplicationsScreen(
+                                    adoptionId: pet.id,
+                                    petName: pet.name,
+                                  ),
+                                ),
+                              )
+                              .then((_) => _load()),
                         ),
                       ),
                     ],

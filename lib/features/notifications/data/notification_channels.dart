@@ -8,6 +8,8 @@ abstract final class NotificationChannels {
 
   /// Dedicated channel for all social interactions.
   static const String socialChannelId = 'social_notifications';
+  static const String uploadProgressChannelId = 'upload_progress';
+  static const String uploadAlertChannelId = 'upload_alerts';
 
   static String idFor(AppNotificationType type) {
     if (type.isSocial) return socialChannelId;
@@ -106,6 +108,22 @@ abstract final class NotificationChannels {
         'Social notifications',
         description: 'Friend requests, follows, and pet interactions',
         importance: Importance.defaultImportance,
+        playSound: true,
+        enableVibration: true,
+      ),
+      AndroidNotificationChannel(
+        uploadProgressChannelId,
+        'Upload progress',
+        description: 'Ongoing post and video upload progress',
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
+      ),
+      AndroidNotificationChannel(
+        uploadAlertChannelId,
+        'Upload alerts',
+        description: 'Upload completion and processing alerts',
+        importance: Importance.high,
         playSound: true,
         enableVibration: true,
       ),

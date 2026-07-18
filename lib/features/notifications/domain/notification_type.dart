@@ -19,6 +19,13 @@ enum AppNotificationType {
   userFollowed('user_followed'),
   petFollowed('pet_followed'),
   petLiked('pet_liked'),
+  adoptionLike('adoption_like'),
+  adoptionComment('adoption_comment'),
+  adoptionApplicationSubmitted('adoption_application_submitted'),
+  adoptionApplicationApproved('adoption_application_approved'),
+  adoptionApplicationRejected('adoption_application_rejected'),
+  adoptionListingStatusChanged('adoption_listing_status_changed'),
+
   /// Generic push when server omits a known type.
   general('general');
 
@@ -69,6 +76,18 @@ enum AppNotificationType {
         return AppNotificationType.petFollowed;
       case 'pet_liked':
         return AppNotificationType.petLiked;
+      case 'adoption_like':
+        return AppNotificationType.adoptionLike;
+      case 'adoption_comment':
+        return AppNotificationType.adoptionComment;
+      case 'adoption_application_submitted':
+        return AppNotificationType.adoptionApplicationSubmitted;
+      case 'adoption_application_approved':
+        return AppNotificationType.adoptionApplicationApproved;
+      case 'adoption_application_rejected':
+        return AppNotificationType.adoptionApplicationRejected;
+      case 'adoption_listing_status_changed':
+        return AppNotificationType.adoptionListingStatusChanged;
       default:
         return AppNotificationType.general;
     }
