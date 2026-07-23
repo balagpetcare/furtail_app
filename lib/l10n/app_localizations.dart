@@ -2059,6 +2059,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add an active payout method before submission.'**
   String get fundraisingValidationPayout;
+
+  /// No description provided for @fundraisingDonationCheckoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your donation'**
+  String get fundraisingDonationCheckoutTitle;
+
+  /// No description provided for @fundraisingDonationCheckoutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the amount and continue to secure checkout.'**
+  String get fundraisingDonationCheckoutSubtitle;
+
+  /// No description provided for @fundraisingDonationAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation amount'**
+  String get fundraisingDonationAmountLabel;
+
+  /// No description provided for @fundraisingDonationVisibilityPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get fundraisingDonationVisibilityPublic;
+
+  /// No description provided for @fundraisingDonationVisibilityAnonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get fundraisingDonationVisibilityAnonymous;
+
+  /// No description provided for @fundraisingDonationMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Support message'**
+  String get fundraisingDonationMessageLabel;
+
+  /// No description provided for @fundraisingDonationMessageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional encouragement for the fundraiser'**
+  String get fundraisingDonationMessageHint;
+
+  /// No description provided for @fundraisingDonationPaymentMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get fundraisingDonationPaymentMethodTitle;
+
+  /// No description provided for @fundraisingDonationPaymentMethodOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online payment'**
+  String get fundraisingDonationPaymentMethodOnline;
+
+  /// No description provided for @fundraisingDonationPaymentMethodSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You will finish payment in the secure provider window.'**
+  String get fundraisingDonationPaymentMethodSubtitle;
+
+  /// No description provided for @fundraisingDonationSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get fundraisingDonationSummaryTitle;
+
+  /// No description provided for @fundraisingDonationSummaryAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get fundraisingDonationSummaryAmount;
+
+  /// No description provided for @fundraisingDonationSummaryFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee'**
+  String get fundraisingDonationSummaryFee;
+
+  /// No description provided for @fundraisingDonationSummaryTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get fundraisingDonationSummaryTotal;
+
+  /// No description provided for @fundraisingDonationConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand that payment confirmation happens only after the server verifies the provider result.'**
+  String get fundraisingDonationConsent;
+
+  /// No description provided for @fundraisingDonationValidationAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a donation amount greater than 0.'**
+  String get fundraisingDonationValidationAmount;
+
+  /// No description provided for @fundraisingDonationValidationConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept the confirmation terms before continuing.'**
+  String get fundraisingDonationValidationConsent;
+
+  /// No description provided for @fundraisingDonationContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get fundraisingDonationContinue;
+
+  /// No description provided for @fundraisingDonationCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get fundraisingDonationCancel;
+
+  /// No description provided for @fundraisingDonationProcessingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing donation'**
+  String get fundraisingDonationProcessingTitle;
+
+  /// No description provided for @fundraisingDonationProcessingHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'We are confirming your donation'**
+  String get fundraisingDonationProcessingHeadline;
+
+  /// No description provided for @fundraisingDonationOpenProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Open payment provider'**
+  String get fundraisingDonationOpenProvider;
+
+  /// No description provided for @fundraisingDonationCheckStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Check status'**
+  String get fundraisingDonationCheckStatus;
+
+  /// No description provided for @fundraisingDonationStatusCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout created. Complete payment in the provider window.'**
+  String get fundraisingDonationStatusCreated;
+
+  /// No description provided for @fundraisingDonationStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment pending. Return after you complete the provider steps.'**
+  String get fundraisingDonationStatusPending;
+
+  /// No description provided for @fundraisingDonationStatusProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment received. Waiting for server confirmation.'**
+  String get fundraisingDonationStatusProcessing;
+
+  /// No description provided for @fundraisingDonationStatusSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation confirmed.'**
+  String get fundraisingDonationStatusSucceeded;
+
+  /// No description provided for @fundraisingDonationStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed.'**
+  String get fundraisingDonationStatusFailed;
+
+  /// No description provided for @fundraisingDonationStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment cancelled.'**
+  String get fundraisingDonationStatusCancelled;
+
+  /// No description provided for @fundraisingDonationStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout expired.'**
+  String get fundraisingDonationStatusExpired;
+
+  /// No description provided for @fundraisingDonationStatusOnHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation is being reviewed.'**
+  String get fundraisingDonationStatusOnHold;
+
+  /// No description provided for @fundraisingDonationResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation result'**
+  String get fundraisingDonationResultTitle;
+
+  /// No description provided for @fundraisingDonationSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation confirmed'**
+  String get fundraisingDonationSuccessTitle;
+
+  /// No description provided for @fundraisingDonationSuccessSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you. Your donation was confirmed by the server.'**
+  String get fundraisingDonationSuccessSubtitle;
+
+  /// No description provided for @fundraisingDonationHoldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation under review'**
+  String get fundraisingDonationHoldTitle;
+
+  /// No description provided for @fundraisingDonationHoldSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment was received, but the donation needs additional review.'**
+  String get fundraisingDonationHoldSubtitle;
+
+  /// No description provided for @fundraisingDonationFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation not completed'**
+  String get fundraisingDonationFailedTitle;
+
+  /// No description provided for @fundraisingDonationFailedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The donation could not be completed. You can try again with a new payment attempt.'**
+  String get fundraisingDonationFailedSubtitle;
+
+  /// No description provided for @fundraisingDonationReceiptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Donation receipt'**
+  String get fundraisingDonationReceiptTitle;
+
+  /// No description provided for @fundraisingDonationReceiptReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get fundraisingDonationReceiptReference;
+
+  /// No description provided for @fundraisingDonationReceiptDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get fundraisingDonationReceiptDate;
+
+  /// No description provided for @fundraisingDonationReceiptVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility'**
+  String get fundraisingDonationReceiptVisibility;
+
+  /// No description provided for @fundraisingDonationReceiptMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get fundraisingDonationReceiptMessage;
+
+  /// No description provided for @fundraisingDonationViewReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'View receipt'**
+  String get fundraisingDonationViewReceipt;
+
+  /// No description provided for @fundraisingDonationShareCampaign.
+  ///
+  /// In en, this message translates to:
+  /// **'Share campaign'**
+  String get fundraisingDonationShareCampaign;
+
+  /// No description provided for @fundraisingDonationRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry payment'**
+  String get fundraisingDonationRetry;
+
+  /// No description provided for @fundraisingDonationDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get fundraisingDonationDone;
+
+  /// No description provided for @fundraisingDonationMissingRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'This donation record is no longer available on this device.'**
+  String get fundraisingDonationMissingRecord;
+
+  /// No description provided for @fundraisingDonationCampaignLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign'**
+  String get fundraisingDonationCampaignLabel;
+
+  /// No description provided for @fundraisingDonationHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My donations'**
+  String get fundraisingDonationHistoryTitle;
+
+  /// No description provided for @fundraisingDonationHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No donation history is available yet on this device.'**
+  String get fundraisingDonationHistoryEmpty;
+
+  /// No description provided for @fundraisingDonationFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get fundraisingDonationFilterAll;
+
+  /// No description provided for @fundraisingDonationFilterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get fundraisingDonationFilterPending;
+
+  /// No description provided for @fundraisingDonationFilterSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Succeeded'**
+  String get fundraisingDonationFilterSucceeded;
+
+  /// No description provided for @fundraisingDonationFilterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get fundraisingDonationFilterFailed;
 }
 
 class _AppLocalizationsDelegate

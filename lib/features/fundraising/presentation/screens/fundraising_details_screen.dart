@@ -1,4 +1,3 @@
-import 'package:furtail_app/core/analytics/analytics_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +16,7 @@ import '../providers/fundraising_providers.dart';
 import '../../widgets/donate_now_bar.dart';
 import 'fundraising_donations_screen.dart';
 import 'fundraising_edit_screen.dart';
+import 'fundraising_donation_result_screen.dart';
 import 'fundraising_update_editor_screen.dart';
 import 'fundraising_payout_methods_screen.dart';
 import 'fundraising_withdraw_request_screen.dart';
@@ -29,6 +29,7 @@ import '../widgets/details/fundraising_reactions_section.dart';
 import '../widgets/details/fundraising_donations_preview.dart';
 import '../widgets/details/fundraising_updates_section.dart';
 import '../widgets/details/fundraising_details_dialogs.dart';
+import '../widgets/fundraising_donation_checkout_sheet.dart';
 
 /// Donation/Fundraising single page.
 /// Refactored in Phase-2: details UI split into reusable components.
@@ -86,13 +87,17 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                                 );
                               },
                               onEdit: () async {
-                                final ok = await Navigator.of(context).push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) => FundraisingEditScreen(campaign: c),
-                                  ),
-                                );
+                                final ok = await Navigator.of(context)
+                                    .push<bool>(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            FundraisingEditScreen(campaign: c),
+                                      ),
+                                    );
                                 if (ok == true) {
-                                  ref.invalidate(fundraisingCampaignProvider(campaignId));
+                                  ref.invalidate(
+                                    fundraisingCampaignProvider(campaignId),
+                                  );
                                   ref.invalidate(fundraisingFeedProvider);
                                 }
                               },
@@ -100,46 +105,70 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                                   ? () {
                                       Navigator.of(context).push(
                                         MaterialPageRoute(
-                                          builder: (_) => const FundraisingPayoutMethodsScreen(),
+                                          builder: (_) =>
+                                              const FundraisingPayoutMethodsScreen(),
                                         ),
                                       );
                                     }
                                   : null,
                               onWithdraw: isOwner
                                   ? () async {
-                                      final ok = await Navigator.of(context).push<bool>(
-                                        MaterialPageRoute(
-                                          builder: (_) => FundraisingWithdrawRequestScreen(campaign: c),
-                                        ),
-                                      );
+                                      final ok = await Navigator.of(context)
+                                          .push<bool>(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  FundraisingWithdrawRequestScreen(
+                                                    campaign: c,
+                                                  ),
+                                            ),
+                                          );
                                       if (ok == true) {
-                                        ref.invalidate(fundraisingCampaignProvider(campaignId));
-                                        ref.invalidate(fundraisingWithdrawRequestsProvider(c.id));
+                                        ref.invalidate(
+                                          fundraisingCampaignProvider(
+                                            campaignId,
+                                          ),
+                                        );
+                                        ref.invalidate(
+                                          fundraisingWithdrawRequestsProvider(
+                                            c.id,
+                                          ),
+                                        );
                                       }
                                     }
                                   : null,
                               onPostUpdate: () async {
-                                final ok = await Navigator.of(context).push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) => FundraisingUpdateEditorScreen(campaignId: c.id),
-                                  ),
-                                );
+                                final ok = await Navigator.of(context)
+                                    .push<bool>(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            FundraisingUpdateEditorScreen(
+                                              campaignId: c.id,
+                                            ),
+                                      ),
+                                    );
                                 if (ok == true) {
-                                  ref.invalidate(fundraisingUpdatesProvider(c.id));
+                                  ref.invalidate(
+                                    fundraisingUpdatesProvider(c.id),
+                                  );
                                 }
                               },
                               onDelete: () async {
                                 final confirmed = await confirmDialog(
                                   context,
                                   title: 'Delete post?',
-                                  message: 'This fundraising post will be removed.',
+                                  message:
+                                      'This fundraising post will be removed.',
                                   okText: 'Delete',
                                 );
                                 if (confirmed != true) return;
-                                final repo = ref.read(fundraisingRepositoryProvider);
+                                final repo = ref.read(
+                                  fundraisingRepositoryProvider,
+                                );
                                 await repo.deleteCampaign(campaignId: c.id);
                                 ref.invalidate(fundraisingFeedProvider);
-                                if (context.mounted) Navigator.maybePop(context);
+                                if (context.mounted) {
+                                  Navigator.maybePop(context);
+                                }
                               },
                             ),
                             const SizedBox(height: 10),
@@ -149,28 +178,41 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                               const SizedBox.shrink(),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     c.title,
-                                    style: context.appText.displayMedium!.copyWith(fontWeight: FontWeight.w800, height: 1.05),
+                                    style: context.appText.displayMedium!
+                                        .copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.05,
+                                        ),
                                   ),
                                   const SizedBox(height: 8),
                                   if ((c.caption ?? '').trim().isNotEmpty)
-                                    ReadMoreText(text: c.caption!.trim(), maxLines: 3),
+                                    ReadMoreText(
+                                      text: c.caption!.trim(),
+                                      maxLines: 3,
+                                    ),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: FundraisingProgressSection(campaign: c),
                             ),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: FundraisingReactionsSection(
                                 postId: c.postId,
                                 fundraisingId: campaignId,
@@ -181,13 +223,18 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 12),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: FundraisingDonationsPreview(
                                 campaign: c,
                                 onViewAll: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (_) => FundraisingDonationsScreen(campaignId: c.id),
+                                      builder: (_) =>
+                                          FundraisingDonationsScreen(
+                                            campaignId: c.id,
+                                          ),
                                     ),
                                   );
                                 },
@@ -195,36 +242,54 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 10),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: FundraisingUpdatesHeader(
                                 isOwner: isOwner,
                                 onAdd: () async {
-                                  final ok = await Navigator.of(context).push<bool>(
-                                    MaterialPageRoute(
-                                      builder: (_) => FundraisingUpdateEditorScreen(campaignId: c.id),
-                                    ),
-                                  );
+                                  final ok = await Navigator.of(context)
+                                      .push<bool>(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              FundraisingUpdateEditorScreen(
+                                                campaignId: c.id,
+                                              ),
+                                        ),
+                                      );
                                   if (ok == true) {
-                                    ref.invalidate(fundraisingUpdatesProvider(c.id));
+                                    ref.invalidate(
+                                      fundraisingUpdatesProvider(c.id),
+                                    );
                                   }
                                 },
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: FundraisingUpdatesList(campaignId: c.id, isOwner: isOwner),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: FundraisingUpdatesList(
+                                campaignId: c.id,
+                                isOwner: isOwner,
+                              ),
                             ),
                             const SizedBox(height: 14),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Text(
                                 'Comments',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -250,20 +315,33 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                                     ),
                                     borderRadius: BorderRadius.circular(999),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(999),
-                                        border: Border.all(color: Colors.grey.shade200),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
                                       ),
                                       child: Row(
                                         children: const [
-                                          Icon(Icons.mode_comment_outlined, size: 18, color: Colors.black54),
+                                          Icon(
+                                            Icons.mode_comment_outlined,
+                                            size: 18,
+                                            color: Colors.black54,
+                                          ),
                                           SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
                                               'Write a comment…',
-                                              style: TextStyle(color: Colors.black54),
+                                              style: TextStyle(
+                                                color: Colors.black54,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -283,22 +361,75 @@ class FundraisingDetailsScreen extends ConsumerWidget {
                             elevation: 0,
                             child: DonateNowBar(
                               onDonate: () async {
-                                final amount = await askDonationAmount(context);
-                                if (amount == null) return;
-                                final repo = ref.read(fundraisingRepositoryProvider);
-                                await repo.donate(campaignId: c.id, amount: amount);
-                                await ref.read(analyticsServiceProvider).logDonationMade(
-                                      campaignId: c.id,
-                                      amount: amount,
+                                final draft =
+                                    await showFundraisingDonationCheckoutSheet(
+                                      context,
                                     );
-                                ref.invalidate(fundraisingCampaignProvider(campaignId));
-                                ref.invalidate(fundraisingFeedProvider);
-                                ref.invalidate(fundraisingDonationsProvider(campaignId));
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Donation successful')),
-                                  );
+                                if (draft == null || !context.mounted) return;
+                                final checkoutController = ref.read(
+                                  fundraisingDonationCheckoutControllerProvider,
+                                );
+                                await checkoutController.initialize();
+                                final record = await checkoutController
+                                    .startCheckout(
+                                      campaignId: c.id,
+                                      campaignTitle: c.title,
+                                      draft: draft,
+                                    );
+                                if (!context.mounted || record == null) {
+                                  final failure =
+                                      checkoutController.lastFailure;
+                                  if (failure?.message != null &&
+                                      context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(failure!.message!),
+                                      ),
+                                    );
+                                  }
+                                  return;
                                 }
+                                if (record.isTerminal) {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          FundraisingDonationResultScreen(
+                                            attemptId: record.attemptId,
+                                          ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                final opened = await checkoutController
+                                    .openProvider(record.attemptId);
+                                if (!context.mounted) return;
+                                if (!opened) {
+                                  final failure =
+                                      checkoutController.lastFailure;
+                                  if (failure?.message != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(failure!.message!),
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        FundraisingDonationProcessingScreen(
+                                          attemptId: record.attemptId,
+                                        ),
+                                  ),
+                                );
+                                ref.invalidate(
+                                  fundraisingCampaignProvider(campaignId),
+                                );
+                                ref.invalidate(fundraisingFeedProvider);
+                                ref.invalidate(
+                                  fundraisingDonationsProvider(campaignId),
+                                );
                               },
                             ),
                           ),

@@ -1055,4 +1055,184 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String get fundraisingValidationPayout =>
       'জমা দেওয়ার আগে একটি সক্রিয় পেআউট পদ্ধতি যোগ করুন।';
+
+  @override
+  String get fundraisingDonationCheckoutTitle => 'ডোনেশন সম্পূর্ণ করুন';
+
+  @override
+  String get fundraisingDonationCheckoutSubtitle =>
+      'পরিমাণ পর্যালোচনা করে সুরক্ষিত চেকআউটে এগিয়ে যান।';
+
+  @override
+  String get fundraisingDonationAmountLabel => 'ডোনেশনের পরিমাণ';
+
+  @override
+  String get fundraisingDonationVisibilityPublic => 'সর্বজনীন';
+
+  @override
+  String get fundraisingDonationVisibilityAnonymous => 'গোপন';
+
+  @override
+  String get fundraisingDonationMessageLabel => 'সহায়তার বার্তা';
+
+  @override
+  String get fundraisingDonationMessageHint =>
+      'ফান্ডরেইজারের জন্য একটি ঐচ্ছিক উৎসাহবার্তা';
+
+  @override
+  String get fundraisingDonationPaymentMethodTitle => 'পেমেন্ট পদ্ধতি';
+
+  @override
+  String get fundraisingDonationPaymentMethodOnline => 'অনলাইন পেমেন্ট';
+
+  @override
+  String get fundraisingDonationPaymentMethodSubtitle =>
+      'সুরক্ষিত প্রোভাইডার উইন্ডোতে পেমেন্ট সম্পন্ন হবে।';
+
+  @override
+  String get fundraisingDonationSummaryTitle => 'সারসংক্ষেপ';
+
+  @override
+  String get fundraisingDonationSummaryAmount => 'পরিমাণ';
+
+  @override
+  String get fundraisingDonationSummaryFee => 'ফি';
+
+  @override
+  String get fundraisingDonationSummaryTotal => 'মোট';
+
+  @override
+  String get fundraisingDonationConsent =>
+      'আমি বুঝি যে প্রোভাইডারের ফলাফল সার্ভার যাচাই করার পরে তবেই পেমেন্ট নিশ্চিত হবে।';
+
+  @override
+  String get fundraisingDonationValidationAmount =>
+      '০-এর বেশি একটি ডোনেশন পরিমাণ লিখুন।';
+
+  @override
+  String get fundraisingDonationValidationConsent =>
+      'এগিয়ে যাওয়ার আগে নিশ্চিতকরণ শর্ত মেনে নিন।';
+
+  @override
+  String get fundraisingDonationContinue => 'এগিয়ে যান';
+
+  @override
+  String get fundraisingDonationCancel => 'বাতিল';
+
+  @override
+  String get fundraisingDonationProcessingTitle => 'ডোনেশন প্রক্রিয়াধীন';
+
+  @override
+  String get fundraisingDonationProcessingHeadline =>
+      'আমরা আপনার ডোনেশন নিশ্চিত করছি';
+
+  @override
+  String get fundraisingDonationOpenProvider => 'পেমেন্ট প্রোভাইডার খুলুন';
+
+  @override
+  String get fundraisingDonationCheckStatus => 'স্ট্যাটাস দেখুন';
+
+  @override
+  String get fundraisingDonationStatusCreated =>
+      'চেকআউট তৈরি হয়েছে। প্রোভাইডার উইন্ডোতে পেমেন্ট সম্পন্ন করুন।';
+
+  @override
+  String get fundraisingDonationStatusPending =>
+      'পেমেন্ট অপেক্ষমান। প্রোভাইডারের ধাপ শেষ করে ফিরে আসুন।';
+
+  @override
+  String get fundraisingDonationStatusProcessing =>
+      'পেমেন্ট পাওয়া গেছে। সার্ভার নিশ্চিতকরণের অপেক্ষায় আছে।';
+
+  @override
+  String get fundraisingDonationStatusSucceeded => 'ডোনেশন নিশ্চিত হয়েছে।';
+
+  @override
+  String get fundraisingDonationStatusFailed => 'পেমেন্ট ব্যর্থ হয়েছে।';
+
+  @override
+  String get fundraisingDonationStatusCancelled => 'পেমেন্ট বাতিল হয়েছে।';
+
+  @override
+  String get fundraisingDonationStatusExpired => 'চেকআউটের সময় শেষ হয়েছে।';
+
+  @override
+  String get fundraisingDonationStatusOnHold => 'ডোনেশন পর্যালোচনায় আছে।';
+
+  @override
+  String get fundraisingDonationResultTitle => 'ডোনেশনের ফলাফল';
+
+  @override
+  String get fundraisingDonationSuccessTitle => 'ডোনেশন নিশ্চিত হয়েছে';
+
+  @override
+  String get fundraisingDonationSuccessSubtitle =>
+      'ধন্যবাদ। সার্ভার আপনার ডোনেশন নিশ্চিত করেছে।';
+
+  @override
+  String get fundraisingDonationHoldTitle => 'ডোনেশন পর্যালোচনায় আছে';
+
+  @override
+  String get fundraisingDonationHoldSubtitle =>
+      'পেমেন্ট পাওয়া গেছে, তবে ডোনেশনটি অতিরিক্ত পর্যালোচনা প্রয়োজন।';
+
+  @override
+  String get fundraisingDonationFailedTitle => 'ডোনেশন সম্পন্ন হয়নি';
+
+  @override
+  String get fundraisingDonationFailedSubtitle =>
+      'ডোনেশন সম্পন্ন করা যায়নি। নতুন পেমেন্ট প্রচেষ্টায় আবার চেষ্টা করতে পারেন।';
+
+  @override
+  String get fundraisingDonationReceiptTitle => 'ডোনেশন রসিদ';
+
+  @override
+  String get fundraisingDonationReceiptReference => 'রেফারেন্স';
+
+  @override
+  String get fundraisingDonationReceiptDate => 'তারিখ';
+
+  @override
+  String get fundraisingDonationReceiptVisibility => 'দৃশ্যমানতা';
+
+  @override
+  String get fundraisingDonationReceiptMessage => 'বার্তা';
+
+  @override
+  String get fundraisingDonationViewReceipt => 'রসিদ দেখুন';
+
+  @override
+  String get fundraisingDonationShareCampaign => 'ক্যাম্পেইন শেয়ার করুন';
+
+  @override
+  String get fundraisingDonationRetry => 'পেমেন্ট আবার চেষ্টা করুন';
+
+  @override
+  String get fundraisingDonationDone => 'সম্পন্ন';
+
+  @override
+  String get fundraisingDonationMissingRecord =>
+      'এই ডোনেশন রেকর্ডটি আর এই ডিভাইসে পাওয়া যাচ্ছে না।';
+
+  @override
+  String get fundraisingDonationCampaignLabel => 'ক্যাম্পেইন';
+
+  @override
+  String get fundraisingDonationHistoryTitle => 'আমার ডোনেশন';
+
+  @override
+  String get fundraisingDonationHistoryEmpty =>
+      'এই ডিভাইসে এখনো কোনো ডোনেশন ইতিহাস নেই।';
+
+  @override
+  String get fundraisingDonationFilterAll => 'সব';
+
+  @override
+  String get fundraisingDonationFilterPending => 'অপেক্ষমান';
+
+  @override
+  String get fundraisingDonationFilterSucceeded => 'সফল';
+
+  @override
+  String get fundraisingDonationFilterFailed => 'ব্যর্থ';
 }

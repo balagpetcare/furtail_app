@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'fundraising_account_setup_screen.dart';
 import 'fundraising_create_screen.dart';
+import 'fundraising_my_donations_screen.dart';
 import 'fundraising_withdraw_hub_screen.dart';
 
 class FundraisingCommonScaffold extends ConsumerWidget {
@@ -24,6 +25,9 @@ class FundraisingCommonScaffold extends ConsumerWidget {
   /// If true, shows Withdraw hub icon.
   final bool showWithdrawHub;
 
+  /// If true, shows donation history icon.
+  final bool showDonationHistory;
+
   /// Called when Filters pressed
   final VoidCallback? onOpenFilters;
 
@@ -36,6 +40,7 @@ class FundraisingCommonScaffold extends ConsumerWidget {
     this.showVerification = true,
     this.showCreate = false,
     this.showWithdrawHub = false,
+    this.showDonationHistory = false,
     this.onOpenFilters,
   });
 
@@ -57,6 +62,18 @@ class FundraisingCommonScaffold extends ConsumerWidget {
               )
             : null,
         actions: [
+          if (showDonationHistory)
+            IconButton(
+              tooltip: 'My Donations',
+              icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const FundraisingMyDonationsScreen(),
+                  ),
+                );
+              },
+            ),
           if (showWithdrawHub)
             IconButton(
               tooltip: 'Withdraw',

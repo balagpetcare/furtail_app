@@ -17,6 +17,7 @@ class FundraisingFeedScreen extends ConsumerWidget {
     return FundraisingCommonScaffold(
       title: 'All Donations',
       showBack: true,
+      showDonationHistory: true,
       showWithdrawHub: true,
       showFilters: true,
       showVerification: true,

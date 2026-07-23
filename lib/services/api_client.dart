@@ -100,7 +100,10 @@ class ApiClient {
   bool get hasAuthInterceptorForTest =>
       _dio.interceptors.whereType<AuthInterceptor>().isNotEmpty;
 
-  Future<Map<String, String>> _headers({required bool auth}) async {
+  Future<Map<String, String>> _headers({
+    required bool auth,
+    Map<String, String>? extraHeaders,
+  }) async {
     final headers = <String, String>{"Content-Type": "application/json"};
     // Phase 5: X-Country-Code for API policy/context
     final prefs = await SharedPreferences.getInstance();
@@ -109,6 +112,9 @@ class ApiClient {
     final state = prefs.getString("furtail_state_code");
     if (state != null && state.trim().isNotEmpty) {
       headers["X-State-Code"] = state.trim().toUpperCase();
+    }
+    if (extraHeaders != null && extraHeaders.isNotEmpty) {
+      headers.addAll(extraHeaders);
     }
     return headers;
   }
@@ -209,12 +215,16 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> get(String url, {bool auth = true}) async {
+  Future<dynamic> get(
+    String url, {
+    bool auth = true,
+    Map<String, String>? headers,
+  }) async {
     return _runHttp('GET', url, () async {
       final res = await _dio.get<dynamic>(
         url,
         options: Options(
-          headers: await _headers(auth: auth),
+          headers: await _headers(auth: auth, extraHeaders: headers),
           extra: {'auth': auth},
         ),
       );
@@ -226,13 +236,14 @@ class ApiClient {
     String url,
     Map<String, dynamic> body, {
     bool auth = true,
+    Map<String, String>? headers,
   }) async {
     return _runHttp('POST', url, () async {
       final res = await _dio.post<dynamic>(
         url,
         data: body,
         options: Options(
-          headers: await _headers(auth: auth),
+          headers: await _headers(auth: auth, extraHeaders: headers),
           extra: {'auth': auth},
         ),
       );
@@ -244,13 +255,14 @@ class ApiClient {
     String url,
     Map<String, dynamic> body, {
     bool auth = true,
+    Map<String, String>? headers,
   }) async {
     return _runHttp('PATCH', url, () async {
       final res = await _dio.patch<dynamic>(
         url,
         data: body,
         options: Options(
-          headers: await _headers(auth: auth),
+          headers: await _headers(auth: auth, extraHeaders: headers),
           extra: {'auth': auth},
         ),
       );
@@ -258,12 +270,16 @@ class ApiClient {
     });
   }
 
-  Future<dynamic> delete(String url, {bool auth = true}) async {
+  Future<dynamic> delete(
+    String url, {
+    bool auth = true,
+    Map<String, String>? headers,
+  }) async {
     return _runHttp('DELETE', url, () async {
       final res = await _dio.delete<dynamic>(
         url,
         options: Options(
-          headers: await _headers(auth: auth),
+          headers: await _headers(auth: auth, extraHeaders: headers),
           extra: {'auth': auth},
         ),
       );

@@ -2,6 +2,7 @@ import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'package:furtail_app/services/api_client.dart';
 
 import '../models/fundraising_draft_models.dart';
+import '../models/fundraising_donation_models.dart';
 import '../models/fundraising_models.dart';
 import '../models/fundraising_payout_models.dart';
 
@@ -117,10 +118,44 @@ class FundraisingRepository {
     return FundraisingDraftRecord.fromJson(_asMap(res));
   }
 
-  Future<void> donate({required int campaignId, required int amount}) async {
-    await _api.post(ApiEndpoints.fundraisingDonate(campaignId), {
-      'amount': amount,
-    }, auth: true);
+  Future<FundraisingDonationCheckoutResponse> createDonationCheckout({
+    required int campaignId,
+    required int amountMinor,
+    required String idempotencyKey,
+    required String returnUrl,
+    required String cancelUrl,
+    String currencyCode = 'BDT',
+  }) async {
+    final res = await _api.post(
+      ApiEndpoints.fundraisingDonate(campaignId),
+      <String, dynamic>{
+        'amount': amountMinor,
+        'currencyCode': currencyCode,
+        'returnUrl': returnUrl,
+        'cancelUrl': cancelUrl,
+      },
+      auth: true,
+      headers: <String, String>{'Idempotency-Key': idempotencyKey},
+    );
+    return FundraisingDonationCheckoutResponse.fromJson(_asMap(res));
+  }
+
+  Future<FundraisingDonationCheckoutResponse> pollDonationCheckout({
+    required int campaignId,
+    required int amountMinor,
+    required String idempotencyKey,
+    required String returnUrl,
+    required String cancelUrl,
+    String currencyCode = 'BDT',
+  }) {
+    return createDonationCheckout(
+      campaignId: campaignId,
+      amountMinor: amountMinor,
+      idempotencyKey: idempotencyKey,
+      returnUrl: returnUrl,
+      cancelUrl: cancelUrl,
+      currencyCode: currencyCode,
+    );
   }
 
   Future<FundraisingCampaign> updateCampaign({

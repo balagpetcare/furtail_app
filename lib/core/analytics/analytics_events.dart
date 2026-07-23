@@ -23,6 +23,14 @@ abstract final class AnalyticsEvents {
   static const String campaignPaymentStarted = 'campaign_payment_started';
   static const String campaignPaymentCompleted = 'campaign_payment_completed';
   static const String campaignPaymentFailed = 'campaign_payment_failed';
+  static const String fundraisingCheckoutOpened = 'fundraising_checkout_opened';
+  static const String fundraisingIntentCreated = 'fundraising_intent_created';
+  static const String fundraisingProviderOpened = 'fundraising_provider_opened';
+  static const String fundraisingDonationConfirmed =
+      'fundraising_donation_confirmed';
+  static const String fundraisingDonationFailed = 'fundraising_donation_failed';
+  static const String fundraisingCheckoutAbandoned =
+      'fundraising_checkout_abandoned';
   static const String abTestKey = 'ab_test_key';
   static const String abVariant = 'ab_variant';
 

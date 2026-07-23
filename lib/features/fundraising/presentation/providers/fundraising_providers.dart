@@ -1,15 +1,42 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:furtail_app/core/analytics/analytics_provider.dart';
 
 import 'package:furtail_app/services/api_client.dart';
+import '../../data/models/fundraising_donation_models.dart';
 import '../../data/models/fundraising_models.dart';
 import '../../data/models/fundraising_payout_models.dart';
 import '../../data/repositories/fundraising_repository.dart';
+import '../../data/services/fundraising_donation_checkout_storage.dart';
+import '../controllers/fundraising_donation_checkout_controller.dart';
 
 // ---------------- Repository ----------------
 final fundraisingRepositoryProvider = Provider<FundraisingRepository>((ref) {
   final client = ref.read(apiClientProvider);
   return FundraisingRepository(client);
 });
+
+final fundraisingDonationCheckoutStorageProvider =
+    Provider<FundraisingDonationCheckoutStorage>((ref) {
+      return FundraisingDonationCheckoutStorage();
+    });
+
+final fundraisingDonationCheckoutControllerProvider =
+    ChangeNotifierProvider<FundraisingDonationCheckoutController>((ref) {
+      return FundraisingDonationCheckoutController(
+        repository: ref.read(fundraisingRepositoryProvider),
+        storage: ref.read(fundraisingDonationCheckoutStorageProvider),
+        analyticsService: ref.read(analyticsServiceProvider),
+      );
+    });
+
+final fundraisingDonationHistoryProvider =
+    Provider<List<FundraisingDonationCheckoutRecord>>((ref) {
+      return ref.watch(
+        fundraisingDonationCheckoutControllerProvider.select(
+          (controller) => controller.history,
+        ),
+      );
+    });
 
 // ---------------- Feed Query State ----------------
 enum FundraisingSort {
@@ -132,6 +159,6 @@ final fundraisingMyPayoutMethodsProvider =
 
 final fundraisingWithdrawRequestsProvider = FutureProvider.autoDispose
     .family<List<FundraisingWithdrawRequest>, int?>((ref, campaignId) async {
-  final repo = ref.read(fundraisingRepositoryProvider);
-  return repo.listMyWithdrawRequests(campaignId: campaignId, limit: 50);
-});
+      final repo = ref.read(fundraisingRepositoryProvider);
+      return repo.listMyWithdrawRequests(campaignId: campaignId, limit: 50);
+    });

@@ -1053,4 +1053,184 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get fundraisingValidationPayout =>
       'Add an active payout method before submission.';
+
+  @override
+  String get fundraisingDonationCheckoutTitle => 'Complete your donation';
+
+  @override
+  String get fundraisingDonationCheckoutSubtitle =>
+      'Review the amount and continue to secure checkout.';
+
+  @override
+  String get fundraisingDonationAmountLabel => 'Donation amount';
+
+  @override
+  String get fundraisingDonationVisibilityPublic => 'Public';
+
+  @override
+  String get fundraisingDonationVisibilityAnonymous => 'Anonymous';
+
+  @override
+  String get fundraisingDonationMessageLabel => 'Support message';
+
+  @override
+  String get fundraisingDonationMessageHint =>
+      'Optional encouragement for the fundraiser';
+
+  @override
+  String get fundraisingDonationPaymentMethodTitle => 'Payment method';
+
+  @override
+  String get fundraisingDonationPaymentMethodOnline => 'Online payment';
+
+  @override
+  String get fundraisingDonationPaymentMethodSubtitle =>
+      'You will finish payment in the secure provider window.';
+
+  @override
+  String get fundraisingDonationSummaryTitle => 'Summary';
+
+  @override
+  String get fundraisingDonationSummaryAmount => 'Amount';
+
+  @override
+  String get fundraisingDonationSummaryFee => 'Fee';
+
+  @override
+  String get fundraisingDonationSummaryTotal => 'Total';
+
+  @override
+  String get fundraisingDonationConsent =>
+      'I understand that payment confirmation happens only after the server verifies the provider result.';
+
+  @override
+  String get fundraisingDonationValidationAmount =>
+      'Enter a donation amount greater than 0.';
+
+  @override
+  String get fundraisingDonationValidationConsent =>
+      'Accept the confirmation terms before continuing.';
+
+  @override
+  String get fundraisingDonationContinue => 'Continue';
+
+  @override
+  String get fundraisingDonationCancel => 'Cancel';
+
+  @override
+  String get fundraisingDonationProcessingTitle => 'Processing donation';
+
+  @override
+  String get fundraisingDonationProcessingHeadline =>
+      'We are confirming your donation';
+
+  @override
+  String get fundraisingDonationOpenProvider => 'Open payment provider';
+
+  @override
+  String get fundraisingDonationCheckStatus => 'Check status';
+
+  @override
+  String get fundraisingDonationStatusCreated =>
+      'Checkout created. Complete payment in the provider window.';
+
+  @override
+  String get fundraisingDonationStatusPending =>
+      'Payment pending. Return after you complete the provider steps.';
+
+  @override
+  String get fundraisingDonationStatusProcessing =>
+      'Payment received. Waiting for server confirmation.';
+
+  @override
+  String get fundraisingDonationStatusSucceeded => 'Donation confirmed.';
+
+  @override
+  String get fundraisingDonationStatusFailed => 'Payment failed.';
+
+  @override
+  String get fundraisingDonationStatusCancelled => 'Payment cancelled.';
+
+  @override
+  String get fundraisingDonationStatusExpired => 'Checkout expired.';
+
+  @override
+  String get fundraisingDonationStatusOnHold => 'Donation is being reviewed.';
+
+  @override
+  String get fundraisingDonationResultTitle => 'Donation result';
+
+  @override
+  String get fundraisingDonationSuccessTitle => 'Donation confirmed';
+
+  @override
+  String get fundraisingDonationSuccessSubtitle =>
+      'Thank you. Your donation was confirmed by the server.';
+
+  @override
+  String get fundraisingDonationHoldTitle => 'Donation under review';
+
+  @override
+  String get fundraisingDonationHoldSubtitle =>
+      'Your payment was received, but the donation needs additional review.';
+
+  @override
+  String get fundraisingDonationFailedTitle => 'Donation not completed';
+
+  @override
+  String get fundraisingDonationFailedSubtitle =>
+      'The donation could not be completed. You can try again with a new payment attempt.';
+
+  @override
+  String get fundraisingDonationReceiptTitle => 'Donation receipt';
+
+  @override
+  String get fundraisingDonationReceiptReference => 'Reference';
+
+  @override
+  String get fundraisingDonationReceiptDate => 'Date';
+
+  @override
+  String get fundraisingDonationReceiptVisibility => 'Visibility';
+
+  @override
+  String get fundraisingDonationReceiptMessage => 'Message';
+
+  @override
+  String get fundraisingDonationViewReceipt => 'View receipt';
+
+  @override
+  String get fundraisingDonationShareCampaign => 'Share campaign';
+
+  @override
+  String get fundraisingDonationRetry => 'Retry payment';
+
+  @override
+  String get fundraisingDonationDone => 'Done';
+
+  @override
+  String get fundraisingDonationMissingRecord =>
+      'This donation record is no longer available on this device.';
+
+  @override
+  String get fundraisingDonationCampaignLabel => 'Campaign';
+
+  @override
+  String get fundraisingDonationHistoryTitle => 'My donations';
+
+  @override
+  String get fundraisingDonationHistoryEmpty =>
+      'No donation history is available yet on this device.';
+
+  @override
+  String get fundraisingDonationFilterAll => 'All';
+
+  @override
+  String get fundraisingDonationFilterPending => 'Pending';
+
+  @override
+  String get fundraisingDonationFilterSucceeded => 'Succeeded';
+
+  @override
+  String get fundraisingDonationFilterFailed => 'Failed';
 }
