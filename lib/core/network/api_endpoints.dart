@@ -294,6 +294,14 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/fundraising/account/documents/$id";
   static String fundraisingCampaign(int id) =>
       "${ApiConfig.apiV1}/fundraising/campaigns/$id";
+  static String fundraisingCreateDraft() =>
+      "${ApiConfig.apiV1}/fundraising/campaigns/drafts";
+  static String fundraisingGetDraft(String id) =>
+      "${ApiConfig.apiV1}/fundraising/campaigns/$id/draft";
+  static String fundraisingUpdateDraft(String id) =>
+      "${ApiConfig.apiV1}/fundraising/campaigns/$id/draft";
+  static String fundraisingSubmitDraft(String id) =>
+      "${ApiConfig.apiV1}/fundraising/campaigns/$id/submit";
   static String fundraisingCreateCampaign() =>
       "${ApiConfig.apiV1}/fundraising/campaigns";
   static String fundraisingUpdateCampaign(int id) =>

@@ -625,4 +625,432 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dangerZone => 'Danger zone';
+
+  @override
+  String get fundraisingWizardTitle => 'Create fundraiser';
+
+  @override
+  String get fundraisingWizardStepEligibility => 'Eligibility';
+
+  @override
+  String get fundraisingWizardStepBeneficiary => 'Type & beneficiary';
+
+  @override
+  String get fundraisingWizardStepStory => 'Story & goal';
+
+  @override
+  String get fundraisingWizardStepCase => 'Case details';
+
+  @override
+  String get fundraisingWizardStepLocation => 'Location';
+
+  @override
+  String get fundraisingWizardStepEvidence => 'Evidence & media';
+
+  @override
+  String get fundraisingWizardStepPayout => 'Payout';
+
+  @override
+  String get fundraisingWizardStepPreview => 'Preview';
+
+  @override
+  String get fundraisingWizardEligibilityDescription =>
+      'Confirm your fundraising profile and verification before continuing.';
+
+  @override
+  String get fundraisingWizardBeneficiaryDescription =>
+      'Choose who this fundraiser supports and what type of need it covers.';
+
+  @override
+  String get fundraisingWizardStoryDescription =>
+      'Explain the story clearly and set a realistic fundraising goal.';
+
+  @override
+  String get fundraisingWizardCaseDescription =>
+      'Add pet or case details and break down the expected expense.';
+
+  @override
+  String get fundraisingWizardLocationDescription =>
+      'Select the Bangladesh location connected to this fundraiser.';
+
+  @override
+  String get fundraisingWizardEvidenceDescription =>
+      'Upload supporting photos, videos, and approved document evidence.';
+
+  @override
+  String get fundraisingWizardPayoutDescription =>
+      'Make sure you have an active payout method before submission.';
+
+  @override
+  String get fundraisingWizardPreviewDescription =>
+      'Review the campaign exactly as it will be submitted for review.';
+
+  @override
+  String get fundraisingBack => 'Back';
+
+  @override
+  String get fundraisingSaveDraft => 'Save draft';
+
+  @override
+  String get fundraisingDraftSaved => 'Draft saved';
+
+  @override
+  String get fundraisingAddPhotos => 'Add photos';
+
+  @override
+  String get fundraisingAddVideo => 'Add video';
+
+  @override
+  String get fundraisingAddDocuments => 'Add documents';
+
+  @override
+  String get fundraisingCategoryField => 'Fundraiser category';
+
+  @override
+  String get fundraisingCategoryTreatment => 'Treatment';
+
+  @override
+  String get fundraisingCategoryRescue => 'Rescue';
+
+  @override
+  String get fundraisingCategoryShelter => 'Shelter support';
+
+  @override
+  String get fundraisingCategoryFood => 'Food and care';
+
+  @override
+  String get fundraisingCategoryEquipment => 'Equipment';
+
+  @override
+  String get fundraisingCategoryOther => 'Other';
+
+  @override
+  String get fundraisingBeneficiaryTypeField => 'Beneficiary type';
+
+  @override
+  String get fundraisingBeneficiaryPet => 'Pet';
+
+  @override
+  String get fundraisingBeneficiaryPerson => 'Person';
+
+  @override
+  String get fundraisingBeneficiaryShelter => 'Shelter';
+
+  @override
+  String get fundraisingBeneficiaryOrganization => 'Organization';
+
+  @override
+  String get fundraisingBeneficiaryCommunity => 'Community';
+
+  @override
+  String get fundraisingBeneficiaryOther => 'Other';
+
+  @override
+  String get fundraisingBeneficiaryNameField => 'Beneficiary name';
+
+  @override
+  String get fundraisingTitleField => 'Campaign title';
+
+  @override
+  String get fundraisingStoryField => 'Story';
+
+  @override
+  String get fundraisingGoalField => 'Target amount (BDT)';
+
+  @override
+  String get fundraisingSelectDeadline => 'Select deadline';
+
+  @override
+  String get fundraisingPetField => 'Related pet';
+
+  @override
+  String get fundraisingNoPetSelected => 'No pet selected';
+
+  @override
+  String get fundraisingUrgencyField => 'Urgency';
+
+  @override
+  String get fundraisingUrgencyLow => 'Low';
+
+  @override
+  String get fundraisingUrgencyMedium => 'Medium';
+
+  @override
+  String get fundraisingUrgencyHigh => 'High';
+
+  @override
+  String get fundraisingUrgencyCritical => 'Critical';
+
+  @override
+  String get fundraisingTreatmentProviderField => 'Treatment provider';
+
+  @override
+  String get fundraisingExpenseSummaryTitle => 'Expense summary';
+
+  @override
+  String get fundraisingSuggestedGoalTitle => 'Suggested target';
+
+  @override
+  String get fundraisingSuggestedGoalBody =>
+      'Based on the expense breakdown, we suggest this target amount.';
+
+  @override
+  String get fundraisingUseSuggestedTarget => 'Use suggested target';
+
+  @override
+  String get fundraisingLocationNoteField => 'Location details';
+
+  @override
+  String get fundraisingLocationPreviewTitle => 'Selected location';
+
+  @override
+  String get fundraisingLocationPlaceholder => 'No location selected yet';
+
+  @override
+  String get fundraisingMediaEmptyTitle => 'Add evidence for this campaign';
+
+  @override
+  String get fundraisingMediaEmptyBody =>
+      'Include photos, videos, and approved documents so reviewers can verify the request.';
+
+  @override
+  String get fundraisingEligibilityStatusTitle => 'Fundraising account status';
+
+  @override
+  String get fundraisingEligibilityVerified => 'Verified';
+
+  @override
+  String get fundraisingEligibilityPending => 'Pending review';
+
+  @override
+  String get fundraisingEligibilityRejected => 'Rejected';
+
+  @override
+  String get fundraisingEligibilityDraft => 'Incomplete';
+
+  @override
+  String get fundraisingEligibilityProfileTitle => 'Complete your profile';
+
+  @override
+  String get fundraisingEligibilityProfileBody =>
+      'Add address and identity details before creating a fundraiser.';
+
+  @override
+  String get fundraisingEligibilityDocumentsTitle =>
+      'Upload verification documents';
+
+  @override
+  String get fundraisingEligibilityDocumentsBody =>
+      'Reviewers need your required documents before they can approve campaigns.';
+
+  @override
+  String get fundraisingEligibilityRejectedTitle =>
+      'Verification needs attention';
+
+  @override
+  String get fundraisingEligibilityRejectedBody =>
+      'Your verification was rejected. Review the feedback and update your information.';
+
+  @override
+  String get fundraisingEligibilityChecklistTitle => 'Before you continue';
+
+  @override
+  String get fundraisingEligibilityChecklistProfile =>
+      'Fundraising profile completed';
+
+  @override
+  String get fundraisingEligibilityChecklistDocuments =>
+      'Required documents uploaded';
+
+  @override
+  String get fundraisingEligibilityChecklistStatus =>
+      'Verification status allows submission';
+
+  @override
+  String get fundraisingCompleteVerification => 'Complete verification';
+
+  @override
+  String get fundraisingOpenDocuments => 'Open documents';
+
+  @override
+  String get fundraisingFixNow => 'Fix now';
+
+  @override
+  String get fundraisingReviewProfile => 'Review profile';
+
+  @override
+  String get fundraisingPayoutStatusTitle => 'Payout readiness';
+
+  @override
+  String get fundraisingPayoutStatusMissing =>
+      'Add an active payout method before submitting for review.';
+
+  @override
+  String get fundraisingPayoutStatusReady =>
+      'An active payout method is ready for this fundraiser.';
+
+  @override
+  String get fundraisingManagePayout => 'Manage payout methods';
+
+  @override
+  String get fundraisingPreviewSubmitTitle => 'Final review';
+
+  @override
+  String get fundraisingPreviewSubmitBody =>
+      'Submitting sends this fundraiser to the review queue with PENDING_REVIEW status.';
+
+  @override
+  String get fundraisingGoalLabel => 'Goal';
+
+  @override
+  String get fundraisingBeneficiaryLabel => 'Beneficiary';
+
+  @override
+  String get fundraisingBeneficiaryPlaceholder => 'Not provided yet';
+
+  @override
+  String get fundraisingLocationLabel => 'Location';
+
+  @override
+  String get fundraisingEvidenceLabel => 'Evidence';
+
+  @override
+  String get fundraisingPendingReviewBadge => 'Pending review';
+
+  @override
+  String get fundraisingPreviewTitlePlaceholder =>
+      'Your campaign title will appear here';
+
+  @override
+  String get fundraisingPreviewStoryPlaceholder =>
+      'Your story preview will appear here once you add details.';
+
+  @override
+  String get fundraisingSubmitForReview => 'Submit for review';
+
+  @override
+  String get fundraisingSubmittedTitle => 'Submitted for review';
+
+  @override
+  String get fundraisingSubmittedBody =>
+      'Your campaign draft is now in the review queue with PENDING_REVIEW status.';
+
+  @override
+  String get fundraisingDone => 'Done';
+
+  @override
+  String get fundraisingLeaveTitle => 'Leave fundraiser draft?';
+
+  @override
+  String get fundraisingLeaveBody =>
+      'You have unsaved changes. Save the draft before leaving or discard the latest edits.';
+
+  @override
+  String get fundraisingStay => 'Stay';
+
+  @override
+  String get fundraisingDiscard => 'Discard';
+
+  @override
+  String get fundraisingSaveAndLeave => 'Save and leave';
+
+  @override
+  String get fundraisingMissingLocalFile =>
+      'The selected file is no longer available on this device.';
+
+  @override
+  String get fundraisingErrorSessionExpired =>
+      'Your session has expired. Please sign in again.';
+
+  @override
+  String get fundraisingErrorTimeout =>
+      'The request timed out. Please try again.';
+
+  @override
+  String get fundraisingErrorOffline =>
+      'You appear to be offline. Check your connection and try again.';
+
+  @override
+  String get fundraisingErrorVerificationRejected =>
+      'Your fundraising verification needs to be updated before you can continue.';
+
+  @override
+  String get fundraisingErrorMediaFailed =>
+      'One or more uploads failed. Retry or remove the failed items to continue.';
+
+  @override
+  String get fundraisingErrorSaveFailed =>
+      'We could not save this draft right now. Your local recovery copy is still available.';
+
+  @override
+  String get fundraisingErrorSubmitFailed =>
+      'We could not submit this fundraiser for review. Please try again.';
+
+  @override
+  String get fundraisingErrorValidation =>
+      'Please complete the required fields for this step.';
+
+  @override
+  String get fundraisingErrorUnknown =>
+      'Something went wrong while preparing this fundraiser.';
+
+  @override
+  String get fundraisingValidationCompleteProfile =>
+      'Complete your fundraising profile first.';
+
+  @override
+  String get fundraisingValidationUploadDocuments =>
+      'Upload the required verification documents.';
+
+  @override
+  String get fundraisingValidationResolveRejection =>
+      'Resolve the verification rejection before continuing.';
+
+  @override
+  String get fundraisingValidationCategory => 'Select a fundraiser category.';
+
+  @override
+  String get fundraisingValidationBeneficiaryType =>
+      'Select a beneficiary type.';
+
+  @override
+  String get fundraisingValidationBeneficiaryName =>
+      'Enter the beneficiary name.';
+
+  @override
+  String get fundraisingValidationTitle =>
+      'Enter a campaign title with at least 6 characters.';
+
+  @override
+  String get fundraisingValidationStory =>
+      'Enter a clear story with at least 40 characters.';
+
+  @override
+  String get fundraisingValidationTargetAmount =>
+      'Enter a target amount greater than 0.';
+
+  @override
+  String get fundraisingValidationDeadline => 'Select a campaign deadline.';
+
+  @override
+  String get fundraisingValidationEstimatedExpense =>
+      'Add an estimated expense amount.';
+
+  @override
+  String get fundraisingValidationUrgency => 'Select the urgency level.';
+
+  @override
+  String get fundraisingValidationLocation => 'Select the campaign location.';
+
+  @override
+  String get fundraisingValidationMedia =>
+      'Upload at least one media or evidence item.';
+
+  @override
+  String get fundraisingValidationMediaBlocking =>
+      'Resolve failed or pending media items before continuing.';
+
+  @override
+  String get fundraisingValidationPayout =>
+      'Add an active payout method before submission.';
 }

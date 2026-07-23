@@ -624,4 +624,435 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get dangerZone => 'বিপদ জোন';
+
+  @override
+  String get fundraisingWizardTitle => 'ফান্ডরেইজার তৈরি করুন';
+
+  @override
+  String get fundraisingWizardStepEligibility => 'যোগ্যতা';
+
+  @override
+  String get fundraisingWizardStepBeneficiary => 'ধরন ও উপকারভোগী';
+
+  @override
+  String get fundraisingWizardStepStory => 'গল্প ও লক্ষ্য';
+
+  @override
+  String get fundraisingWizardStepCase => 'কেসের বিস্তারিত';
+
+  @override
+  String get fundraisingWizardStepLocation => 'অবস্থান';
+
+  @override
+  String get fundraisingWizardStepEvidence => 'প্রমাণ ও মিডিয়া';
+
+  @override
+  String get fundraisingWizardStepPayout => 'পেআউট';
+
+  @override
+  String get fundraisingWizardStepPreview => 'প্রিভিউ';
+
+  @override
+  String get fundraisingWizardEligibilityDescription =>
+      'আগে আপনার ফান্ডরেইজিং প্রোফাইল ও ভেরিফিকেশন অবস্থা নিশ্চিত করুন।';
+
+  @override
+  String get fundraisingWizardBeneficiaryDescription =>
+      'কার জন্য ফান্ডরেইজার এবং কোন ধরনের প্রয়োজন তা নির্বাচন করুন।';
+
+  @override
+  String get fundraisingWizardStoryDescription =>
+      'পরিষ্কারভাবে গল্প লিখুন এবং বাস্তবসম্মত লক্ষ্য নির্ধারণ করুন।';
+
+  @override
+  String get fundraisingWizardCaseDescription =>
+      'পোষা প্রাণী বা কেসের বিস্তারিত এবং সম্ভাব্য খরচ যোগ করুন।';
+
+  @override
+  String get fundraisingWizardLocationDescription =>
+      'এই ফান্ডরেইজারের সাথে সংশ্লিষ্ট বাংলাদেশের অবস্থান নির্বাচন করুন।';
+
+  @override
+  String get fundraisingWizardEvidenceDescription =>
+      'যাচাইয়ের জন্য সহায়ক ছবি, ভিডিও এবং অনুমোদিত ডকুমেন্ট আপলোড করুন।';
+
+  @override
+  String get fundraisingWizardPayoutDescription =>
+      'জমা দেওয়ার আগে অন্তত একটি সক্রিয় পেআউট পদ্ধতি আছে কি না নিশ্চিত করুন।';
+
+  @override
+  String get fundraisingWizardPreviewDescription =>
+      'রিভিউতে পাঠানোর আগে পুরো ক্যাম্পেইন দেখে নিন।';
+
+  @override
+  String get fundraisingBack => 'পেছনে';
+
+  @override
+  String get fundraisingSaveDraft => 'ড্রাফট সেভ করুন';
+
+  @override
+  String get fundraisingDraftSaved => 'ড্রাফট সেভ হয়েছে';
+
+  @override
+  String get fundraisingAddPhotos => 'ছবি যোগ করুন';
+
+  @override
+  String get fundraisingAddVideo => 'ভিডিও যোগ করুন';
+
+  @override
+  String get fundraisingAddDocuments => 'ডকুমেন্ট যোগ করুন';
+
+  @override
+  String get fundraisingCategoryField => 'ফান্ডরেইজার ক্যাটাগরি';
+
+  @override
+  String get fundraisingCategoryTreatment => 'চিকিৎসা';
+
+  @override
+  String get fundraisingCategoryRescue => 'রেসকিউ';
+
+  @override
+  String get fundraisingCategoryShelter => 'শেল্টার সহায়তা';
+
+  @override
+  String get fundraisingCategoryFood => 'খাদ্য ও যত্ন';
+
+  @override
+  String get fundraisingCategoryEquipment => 'ইকুইপমেন্ট';
+
+  @override
+  String get fundraisingCategoryOther => 'অন্যান্য';
+
+  @override
+  String get fundraisingBeneficiaryTypeField => 'উপকারভোগীর ধরন';
+
+  @override
+  String get fundraisingBeneficiaryPet => 'পোষা প্রাণী';
+
+  @override
+  String get fundraisingBeneficiaryPerson => 'ব্যক্তি';
+
+  @override
+  String get fundraisingBeneficiaryShelter => 'শেল্টার';
+
+  @override
+  String get fundraisingBeneficiaryOrganization => 'প্রতিষ্ঠান';
+
+  @override
+  String get fundraisingBeneficiaryCommunity => 'কমিউনিটি';
+
+  @override
+  String get fundraisingBeneficiaryOther => 'অন্যান্য';
+
+  @override
+  String get fundraisingBeneficiaryNameField => 'উপকারভোগীর নাম';
+
+  @override
+  String get fundraisingTitleField => 'ক্যাম্পেইনের শিরোনাম';
+
+  @override
+  String get fundraisingStoryField => 'গল্প';
+
+  @override
+  String get fundraisingGoalField => 'লক্ষ্যমাত্রা (BDT)';
+
+  @override
+  String get fundraisingSelectDeadline => 'শেষ তারিখ নির্বাচন করুন';
+
+  @override
+  String get fundraisingPetField => 'সংশ্লিষ্ট পোষা প্রাণী';
+
+  @override
+  String get fundraisingNoPetSelected => 'কোনো পোষা প্রাণী নির্বাচন করা হয়নি';
+
+  @override
+  String get fundraisingUrgencyField => 'জরুরিতা';
+
+  @override
+  String get fundraisingUrgencyLow => 'কম';
+
+  @override
+  String get fundraisingUrgencyMedium => 'মাঝারি';
+
+  @override
+  String get fundraisingUrgencyHigh => 'উচ্চ';
+
+  @override
+  String get fundraisingUrgencyCritical => 'অত্যন্ত জরুরি';
+
+  @override
+  String get fundraisingTreatmentProviderField => 'চিকিৎসা প্রদানকারী';
+
+  @override
+  String get fundraisingExpenseSummaryTitle => 'খরচের সারসংক্ষেপ';
+
+  @override
+  String get fundraisingSuggestedGoalTitle => 'প্রস্তাবিত লক্ষ্য';
+
+  @override
+  String get fundraisingSuggestedGoalBody =>
+      'খরচের বিবরণ অনুযায়ী এই লক্ষ্য পরিমাণটি প্রস্তাব করা হচ্ছে।';
+
+  @override
+  String get fundraisingUseSuggestedTarget => 'প্রস্তাবিত লক্ষ্য ব্যবহার করুন';
+
+  @override
+  String get fundraisingLocationNoteField => 'অবস্থানের বিস্তারিত';
+
+  @override
+  String get fundraisingLocationPreviewTitle => 'নির্বাচিত অবস্থান';
+
+  @override
+  String get fundraisingLocationPlaceholder =>
+      'এখনও কোনো অবস্থান নির্বাচন করা হয়নি';
+
+  @override
+  String get fundraisingMediaEmptyTitle => 'এই ক্যাম্পেইনের প্রমাণ যোগ করুন';
+
+  @override
+  String get fundraisingMediaEmptyBody =>
+      'রিভিউয়াররা যেন অনুরোধটি যাচাই করতে পারেন, সে জন্য ছবি, ভিডিও এবং অনুমোদিত ডকুমেন্ট দিন।';
+
+  @override
+  String get fundraisingEligibilityStatusTitle =>
+      'ফান্ডরেইজিং অ্যাকাউন্টের অবস্থা';
+
+  @override
+  String get fundraisingEligibilityVerified => 'ভেরিফায়েড';
+
+  @override
+  String get fundraisingEligibilityPending => 'রিভিউ চলছে';
+
+  @override
+  String get fundraisingEligibilityRejected => 'প্রত্যাখ্যাত';
+
+  @override
+  String get fundraisingEligibilityDraft => 'অসম্পূর্ণ';
+
+  @override
+  String get fundraisingEligibilityProfileTitle =>
+      'আপনার প্রোফাইল সম্পূর্ণ করুন';
+
+  @override
+  String get fundraisingEligibilityProfileBody =>
+      'ফান্ডরেইজার তৈরির আগে ঠিকানা ও পরিচয় সম্পর্কিত তথ্য যোগ করুন।';
+
+  @override
+  String get fundraisingEligibilityDocumentsTitle =>
+      'ভেরিফিকেশন ডকুমেন্ট আপলোড করুন';
+
+  @override
+  String get fundraisingEligibilityDocumentsBody =>
+      'ক্যাম্পেইন অনুমোদনের আগে প্রয়োজনীয় ডকুমেন্ট রিভিউয়ারদের দরকার হবে।';
+
+  @override
+  String get fundraisingEligibilityRejectedTitle =>
+      'ভেরিফিকেশনে সংশোধন প্রয়োজন';
+
+  @override
+  String get fundraisingEligibilityRejectedBody =>
+      'আপনার ভেরিফিকেশন প্রত্যাখ্যাত হয়েছে। কারণ দেখে তথ্য আপডেট করুন।';
+
+  @override
+  String get fundraisingEligibilityChecklistTitle => 'এগিয়ে যাওয়ার আগে';
+
+  @override
+  String get fundraisingEligibilityChecklistProfile =>
+      'ফান্ডরেইজিং প্রোফাইল সম্পূর্ণ';
+
+  @override
+  String get fundraisingEligibilityChecklistDocuments =>
+      'প্রয়োজনীয় ডকুমেন্ট আপলোড করা হয়েছে';
+
+  @override
+  String get fundraisingEligibilityChecklistStatus =>
+      'ভেরিফিকেশন স্ট্যাটাস জমা দেওয়ার উপযোগী';
+
+  @override
+  String get fundraisingCompleteVerification => 'ভেরিফিকেশন সম্পূর্ণ করুন';
+
+  @override
+  String get fundraisingOpenDocuments => 'ডকুমেন্ট খুলুন';
+
+  @override
+  String get fundraisingFixNow => 'এখনই ঠিক করুন';
+
+  @override
+  String get fundraisingReviewProfile => 'প্রোফাইল দেখুন';
+
+  @override
+  String get fundraisingPayoutStatusTitle => 'পেআউট প্রস্তুতি';
+
+  @override
+  String get fundraisingPayoutStatusMissing =>
+      'রিভিউতে পাঠানোর আগে একটি সক্রিয় পেআউট পদ্ধতি যোগ করুন।';
+
+  @override
+  String get fundraisingPayoutStatusReady =>
+      'এই ফান্ডরেইজারের জন্য একটি সক্রিয় পেআউট পদ্ধতি প্রস্তুত আছে।';
+
+  @override
+  String get fundraisingManagePayout => 'পেআউট পদ্ধতি পরিচালনা করুন';
+
+  @override
+  String get fundraisingPreviewSubmitTitle => 'চূড়ান্ত পর্যালোচনা';
+
+  @override
+  String get fundraisingPreviewSubmitBody =>
+      'জমা দিলে এই ফান্ডরেইজারটি PENDING_REVIEW অবস্থায় রিভিউ কিউতে যাবে।';
+
+  @override
+  String get fundraisingGoalLabel => 'লক্ষ্য';
+
+  @override
+  String get fundraisingBeneficiaryLabel => 'উপকারভোগী';
+
+  @override
+  String get fundraisingBeneficiaryPlaceholder => 'এখনও দেওয়া হয়নি';
+
+  @override
+  String get fundraisingLocationLabel => 'অবস্থান';
+
+  @override
+  String get fundraisingEvidenceLabel => 'প্রমাণ';
+
+  @override
+  String get fundraisingPendingReviewBadge => 'রিভিউ চলছে';
+
+  @override
+  String get fundraisingPreviewTitlePlaceholder =>
+      'আপনার ক্যাম্পেইনের শিরোনাম এখানে দেখা যাবে';
+
+  @override
+  String get fundraisingPreviewStoryPlaceholder =>
+      'বিস্তারিত যোগ করলে আপনার গল্পের প্রিভিউ এখানে দেখা যাবে।';
+
+  @override
+  String get fundraisingSubmitForReview => 'রিভিউতে জমা দিন';
+
+  @override
+  String get fundraisingSubmittedTitle => 'রিভিউতে জমা হয়েছে';
+
+  @override
+  String get fundraisingSubmittedBody =>
+      'আপনার ক্যাম্পেইন ড্রাফট এখন PENDING_REVIEW অবস্থায় রিভিউ কিউতে আছে।';
+
+  @override
+  String get fundraisingDone => 'সম্পন্ন';
+
+  @override
+  String get fundraisingLeaveTitle => 'ফান্ডরেইজার ড্রাফট ছেড়ে যাবেন?';
+
+  @override
+  String get fundraisingLeaveBody =>
+      'আপনার কিছু আনসেভড পরিবর্তন আছে। বের হওয়ার আগে ড্রাফট সেভ করুন অথবা সাম্প্রতিক পরিবর্তন বাতিল করুন।';
+
+  @override
+  String get fundraisingStay => 'থাকুন';
+
+  @override
+  String get fundraisingDiscard => 'বাতিল করুন';
+
+  @override
+  String get fundraisingSaveAndLeave => 'সেভ করে বের হন';
+
+  @override
+  String get fundraisingMissingLocalFile =>
+      'নির্বাচিত ফাইলটি আর এই ডিভাইসে পাওয়া যাচ্ছে না।';
+
+  @override
+  String get fundraisingErrorSessionExpired =>
+      'আপনার সেশন মেয়াদোত্তীর্ণ হয়েছে। আবার সাইন ইন করুন।';
+
+  @override
+  String get fundraisingErrorTimeout =>
+      'রিকোয়েস্টের সময়সীমা শেষ হয়েছে। আবার চেষ্টা করুন।';
+
+  @override
+  String get fundraisingErrorOffline =>
+      'আপনি অফলাইনে আছেন। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।';
+
+  @override
+  String get fundraisingErrorVerificationRejected =>
+      'আপনার ফান্ডরেইজিং ভেরিফিকেশন আপডেট না করা পর্যন্ত আপনি এগোতে পারবেন না।';
+
+  @override
+  String get fundraisingErrorMediaFailed =>
+      'এক বা একাধিক আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন অথবা ব্যর্থ আইটেম সরিয়ে দিন।';
+
+  @override
+  String get fundraisingErrorSaveFailed =>
+      'এখন ড্রাফট সেভ করা যায়নি। আপনার লোকাল রিকভারি কপি সংরক্ষিত আছে।';
+
+  @override
+  String get fundraisingErrorSubmitFailed =>
+      'ফান্ডরেইজারটি রিভিউতে জমা দেওয়া যায়নি। আবার চেষ্টা করুন।';
+
+  @override
+  String get fundraisingErrorValidation => 'এই ধাপের প্রয়োজনীয় তথ্য পূরণ করুন।';
+
+  @override
+  String get fundraisingErrorUnknown =>
+      'ফান্ডরেইজার প্রস্তুত করার সময় একটি সমস্যা হয়েছে।';
+
+  @override
+  String get fundraisingValidationCompleteProfile =>
+      'আগে আপনার ফান্ডরেইজিং প্রোফাইল সম্পূর্ণ করুন।';
+
+  @override
+  String get fundraisingValidationUploadDocuments =>
+      'প্রয়োজনীয় ভেরিফিকেশন ডকুমেন্ট আপলোড করুন।';
+
+  @override
+  String get fundraisingValidationResolveRejection =>
+      'এগিয়ে যাওয়ার আগে ভেরিফিকেশন প্রত্যাখ্যানের কারণ ঠিক করুন।';
+
+  @override
+  String get fundraisingValidationCategory =>
+      'একটি ফান্ডরেইজার ক্যাটাগরি নির্বাচন করুন।';
+
+  @override
+  String get fundraisingValidationBeneficiaryType =>
+      'একটি উপকারভোগীর ধরন নির্বাচন করুন।';
+
+  @override
+  String get fundraisingValidationBeneficiaryName => 'উপকারভোগীর নাম লিখুন।';
+
+  @override
+  String get fundraisingValidationTitle =>
+      'কমপক্ষে ৬ অক্ষরের একটি শিরোনাম লিখুন।';
+
+  @override
+  String get fundraisingValidationStory =>
+      'কমপক্ষে ৪০ অক্ষরের একটি পরিষ্কার গল্প লিখুন।';
+
+  @override
+  String get fundraisingValidationTargetAmount =>
+      '০-এর বেশি একটি লক্ষ্য পরিমাণ দিন।';
+
+  @override
+  String get fundraisingValidationDeadline => 'একটি শেষ তারিখ নির্বাচন করুন।';
+
+  @override
+  String get fundraisingValidationEstimatedExpense =>
+      'সম্ভাব্য খরচের পরিমাণ যোগ করুন।';
+
+  @override
+  String get fundraisingValidationUrgency => 'জরুরিতার মাত্রা নির্বাচন করুন।';
+
+  @override
+  String get fundraisingValidationLocation =>
+      'ক্যাম্পেইনের অবস্থান নির্বাচন করুন।';
+
+  @override
+  String get fundraisingValidationMedia =>
+      'অন্তত একটি মিডিয়া বা প্রমাণ আপলোড করুন।';
+
+  @override
+  String get fundraisingValidationMediaBlocking =>
+      'এগিয়ে যাওয়ার আগে ব্যর্থ বা অসম্পূর্ণ মিডিয়া আইটেম সমাধান করুন।';
+
+  @override
+  String get fundraisingValidationPayout =>
+      'জমা দেওয়ার আগে একটি সক্রিয় পেআউট পদ্ধতি যোগ করুন।';
 }

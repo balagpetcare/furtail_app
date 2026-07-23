@@ -1297,6 +1297,768 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Danger zone'**
   String get dangerZone;
+
+  /// No description provided for @fundraisingWizardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create fundraiser'**
+  String get fundraisingWizardTitle;
+
+  /// No description provided for @fundraisingWizardStepEligibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility'**
+  String get fundraisingWizardStepEligibility;
+
+  /// No description provided for @fundraisingWizardStepBeneficiary.
+  ///
+  /// In en, this message translates to:
+  /// **'Type & beneficiary'**
+  String get fundraisingWizardStepBeneficiary;
+
+  /// No description provided for @fundraisingWizardStepStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Story & goal'**
+  String get fundraisingWizardStepStory;
+
+  /// No description provided for @fundraisingWizardStepCase.
+  ///
+  /// In en, this message translates to:
+  /// **'Case details'**
+  String get fundraisingWizardStepCase;
+
+  /// No description provided for @fundraisingWizardStepLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get fundraisingWizardStepLocation;
+
+  /// No description provided for @fundraisingWizardStepEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence & media'**
+  String get fundraisingWizardStepEvidence;
+
+  /// No description provided for @fundraisingWizardStepPayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout'**
+  String get fundraisingWizardStepPayout;
+
+  /// No description provided for @fundraisingWizardStepPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get fundraisingWizardStepPreview;
+
+  /// No description provided for @fundraisingWizardEligibilityDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your fundraising profile and verification before continuing.'**
+  String get fundraisingWizardEligibilityDescription;
+
+  /// No description provided for @fundraisingWizardBeneficiaryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose who this fundraiser supports and what type of need it covers.'**
+  String get fundraisingWizardBeneficiaryDescription;
+
+  /// No description provided for @fundraisingWizardStoryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain the story clearly and set a realistic fundraising goal.'**
+  String get fundraisingWizardStoryDescription;
+
+  /// No description provided for @fundraisingWizardCaseDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add pet or case details and break down the expected expense.'**
+  String get fundraisingWizardCaseDescription;
+
+  /// No description provided for @fundraisingWizardLocationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the Bangladesh location connected to this fundraiser.'**
+  String get fundraisingWizardLocationDescription;
+
+  /// No description provided for @fundraisingWizardEvidenceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload supporting photos, videos, and approved document evidence.'**
+  String get fundraisingWizardEvidenceDescription;
+
+  /// No description provided for @fundraisingWizardPayoutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Make sure you have an active payout method before submission.'**
+  String get fundraisingWizardPayoutDescription;
+
+  /// No description provided for @fundraisingWizardPreviewDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the campaign exactly as it will be submitted for review.'**
+  String get fundraisingWizardPreviewDescription;
+
+  /// No description provided for @fundraisingBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get fundraisingBack;
+
+  /// No description provided for @fundraisingSaveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save draft'**
+  String get fundraisingSaveDraft;
+
+  /// No description provided for @fundraisingDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft saved'**
+  String get fundraisingDraftSaved;
+
+  /// No description provided for @fundraisingAddPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos'**
+  String get fundraisingAddPhotos;
+
+  /// No description provided for @fundraisingAddVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add video'**
+  String get fundraisingAddVideo;
+
+  /// No description provided for @fundraisingAddDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Add documents'**
+  String get fundraisingAddDocuments;
+
+  /// No description provided for @fundraisingCategoryField.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraiser category'**
+  String get fundraisingCategoryField;
+
+  /// No description provided for @fundraisingCategoryTreatment.
+  ///
+  /// In en, this message translates to:
+  /// **'Treatment'**
+  String get fundraisingCategoryTreatment;
+
+  /// No description provided for @fundraisingCategoryRescue.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescue'**
+  String get fundraisingCategoryRescue;
+
+  /// No description provided for @fundraisingCategoryShelter.
+  ///
+  /// In en, this message translates to:
+  /// **'Shelter support'**
+  String get fundraisingCategoryShelter;
+
+  /// No description provided for @fundraisingCategoryFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food and care'**
+  String get fundraisingCategoryFood;
+
+  /// No description provided for @fundraisingCategoryEquipment.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get fundraisingCategoryEquipment;
+
+  /// No description provided for @fundraisingCategoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get fundraisingCategoryOther;
+
+  /// No description provided for @fundraisingBeneficiaryTypeField.
+  ///
+  /// In en, this message translates to:
+  /// **'Beneficiary type'**
+  String get fundraisingBeneficiaryTypeField;
+
+  /// No description provided for @fundraisingBeneficiaryPet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pet'**
+  String get fundraisingBeneficiaryPet;
+
+  /// No description provided for @fundraisingBeneficiaryPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Person'**
+  String get fundraisingBeneficiaryPerson;
+
+  /// No description provided for @fundraisingBeneficiaryShelter.
+  ///
+  /// In en, this message translates to:
+  /// **'Shelter'**
+  String get fundraisingBeneficiaryShelter;
+
+  /// No description provided for @fundraisingBeneficiaryOrganization.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get fundraisingBeneficiaryOrganization;
+
+  /// No description provided for @fundraisingBeneficiaryCommunity.
+  ///
+  /// In en, this message translates to:
+  /// **'Community'**
+  String get fundraisingBeneficiaryCommunity;
+
+  /// No description provided for @fundraisingBeneficiaryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get fundraisingBeneficiaryOther;
+
+  /// No description provided for @fundraisingBeneficiaryNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Beneficiary name'**
+  String get fundraisingBeneficiaryNameField;
+
+  /// No description provided for @fundraisingTitleField.
+  ///
+  /// In en, this message translates to:
+  /// **'Campaign title'**
+  String get fundraisingTitleField;
+
+  /// No description provided for @fundraisingStoryField.
+  ///
+  /// In en, this message translates to:
+  /// **'Story'**
+  String get fundraisingStoryField;
+
+  /// No description provided for @fundraisingGoalField.
+  ///
+  /// In en, this message translates to:
+  /// **'Target amount (BDT)'**
+  String get fundraisingGoalField;
+
+  /// No description provided for @fundraisingSelectDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Select deadline'**
+  String get fundraisingSelectDeadline;
+
+  /// No description provided for @fundraisingPetField.
+  ///
+  /// In en, this message translates to:
+  /// **'Related pet'**
+  String get fundraisingPetField;
+
+  /// No description provided for @fundraisingNoPetSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No pet selected'**
+  String get fundraisingNoPetSelected;
+
+  /// No description provided for @fundraisingUrgencyField.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgency'**
+  String get fundraisingUrgencyField;
+
+  /// No description provided for @fundraisingUrgencyLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get fundraisingUrgencyLow;
+
+  /// No description provided for @fundraisingUrgencyMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get fundraisingUrgencyMedium;
+
+  /// No description provided for @fundraisingUrgencyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get fundraisingUrgencyHigh;
+
+  /// No description provided for @fundraisingUrgencyCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get fundraisingUrgencyCritical;
+
+  /// No description provided for @fundraisingTreatmentProviderField.
+  ///
+  /// In en, this message translates to:
+  /// **'Treatment provider'**
+  String get fundraisingTreatmentProviderField;
+
+  /// No description provided for @fundraisingExpenseSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense summary'**
+  String get fundraisingExpenseSummaryTitle;
+
+  /// No description provided for @fundraisingSuggestedGoalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested target'**
+  String get fundraisingSuggestedGoalTitle;
+
+  /// No description provided for @fundraisingSuggestedGoalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on the expense breakdown, we suggest this target amount.'**
+  String get fundraisingSuggestedGoalBody;
+
+  /// No description provided for @fundraisingUseSuggestedTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Use suggested target'**
+  String get fundraisingUseSuggestedTarget;
+
+  /// No description provided for @fundraisingLocationNoteField.
+  ///
+  /// In en, this message translates to:
+  /// **'Location details'**
+  String get fundraisingLocationNoteField;
+
+  /// No description provided for @fundraisingLocationPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location'**
+  String get fundraisingLocationPreviewTitle;
+
+  /// No description provided for @fundraisingLocationPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'No location selected yet'**
+  String get fundraisingLocationPlaceholder;
+
+  /// No description provided for @fundraisingMediaEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add evidence for this campaign'**
+  String get fundraisingMediaEmptyTitle;
+
+  /// No description provided for @fundraisingMediaEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Include photos, videos, and approved documents so reviewers can verify the request.'**
+  String get fundraisingMediaEmptyBody;
+
+  /// No description provided for @fundraisingEligibilityStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraising account status'**
+  String get fundraisingEligibilityStatusTitle;
+
+  /// No description provided for @fundraisingEligibilityVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get fundraisingEligibilityVerified;
+
+  /// No description provided for @fundraisingEligibilityPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending review'**
+  String get fundraisingEligibilityPending;
+
+  /// No description provided for @fundraisingEligibilityRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get fundraisingEligibilityRejected;
+
+  /// No description provided for @fundraisingEligibilityDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get fundraisingEligibilityDraft;
+
+  /// No description provided for @fundraisingEligibilityProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get fundraisingEligibilityProfileTitle;
+
+  /// No description provided for @fundraisingEligibilityProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add address and identity details before creating a fundraiser.'**
+  String get fundraisingEligibilityProfileBody;
+
+  /// No description provided for @fundraisingEligibilityDocumentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload verification documents'**
+  String get fundraisingEligibilityDocumentsTitle;
+
+  /// No description provided for @fundraisingEligibilityDocumentsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewers need your required documents before they can approve campaigns.'**
+  String get fundraisingEligibilityDocumentsBody;
+
+  /// No description provided for @fundraisingEligibilityRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification needs attention'**
+  String get fundraisingEligibilityRejectedTitle;
+
+  /// No description provided for @fundraisingEligibilityRejectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your verification was rejected. Review the feedback and update your information.'**
+  String get fundraisingEligibilityRejectedBody;
+
+  /// No description provided for @fundraisingEligibilityChecklistTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you continue'**
+  String get fundraisingEligibilityChecklistTitle;
+
+  /// No description provided for @fundraisingEligibilityChecklistProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraising profile completed'**
+  String get fundraisingEligibilityChecklistProfile;
+
+  /// No description provided for @fundraisingEligibilityChecklistDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Required documents uploaded'**
+  String get fundraisingEligibilityChecklistDocuments;
+
+  /// No description provided for @fundraisingEligibilityChecklistStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification status allows submission'**
+  String get fundraisingEligibilityChecklistStatus;
+
+  /// No description provided for @fundraisingCompleteVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete verification'**
+  String get fundraisingCompleteVerification;
+
+  /// No description provided for @fundraisingOpenDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Open documents'**
+  String get fundraisingOpenDocuments;
+
+  /// No description provided for @fundraisingFixNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix now'**
+  String get fundraisingFixNow;
+
+  /// No description provided for @fundraisingReviewProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Review profile'**
+  String get fundraisingReviewProfile;
+
+  /// No description provided for @fundraisingPayoutStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout readiness'**
+  String get fundraisingPayoutStatusTitle;
+
+  /// No description provided for @fundraisingPayoutStatusMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an active payout method before submitting for review.'**
+  String get fundraisingPayoutStatusMissing;
+
+  /// No description provided for @fundraisingPayoutStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'An active payout method is ready for this fundraiser.'**
+  String get fundraisingPayoutStatusReady;
+
+  /// No description provided for @fundraisingManagePayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage payout methods'**
+  String get fundraisingManagePayout;
+
+  /// No description provided for @fundraisingPreviewSubmitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Final review'**
+  String get fundraisingPreviewSubmitTitle;
+
+  /// No description provided for @fundraisingPreviewSubmitBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting sends this fundraiser to the review queue with PENDING_REVIEW status.'**
+  String get fundraisingPreviewSubmitBody;
+
+  /// No description provided for @fundraisingGoalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get fundraisingGoalLabel;
+
+  /// No description provided for @fundraisingBeneficiaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Beneficiary'**
+  String get fundraisingBeneficiaryLabel;
+
+  /// No description provided for @fundraisingBeneficiaryPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Not provided yet'**
+  String get fundraisingBeneficiaryPlaceholder;
+
+  /// No description provided for @fundraisingLocationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get fundraisingLocationLabel;
+
+  /// No description provided for @fundraisingEvidenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence'**
+  String get fundraisingEvidenceLabel;
+
+  /// No description provided for @fundraisingPendingReviewBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending review'**
+  String get fundraisingPendingReviewBadge;
+
+  /// No description provided for @fundraisingPreviewTitlePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your campaign title will appear here'**
+  String get fundraisingPreviewTitlePlaceholder;
+
+  /// No description provided for @fundraisingPreviewStoryPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your story preview will appear here once you add details.'**
+  String get fundraisingPreviewStoryPlaceholder;
+
+  /// No description provided for @fundraisingSubmitForReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit for review'**
+  String get fundraisingSubmitForReview;
+
+  /// No description provided for @fundraisingSubmittedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted for review'**
+  String get fundraisingSubmittedTitle;
+
+  /// No description provided for @fundraisingSubmittedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your campaign draft is now in the review queue with PENDING_REVIEW status.'**
+  String get fundraisingSubmittedBody;
+
+  /// No description provided for @fundraisingDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get fundraisingDone;
+
+  /// No description provided for @fundraisingLeaveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave fundraiser draft?'**
+  String get fundraisingLeaveTitle;
+
+  /// No description provided for @fundraisingLeaveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. Save the draft before leaving or discard the latest edits.'**
+  String get fundraisingLeaveBody;
+
+  /// No description provided for @fundraisingStay.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay'**
+  String get fundraisingStay;
+
+  /// No description provided for @fundraisingDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get fundraisingDiscard;
+
+  /// No description provided for @fundraisingSaveAndLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and leave'**
+  String get fundraisingSaveAndLeave;
+
+  /// No description provided for @fundraisingMissingLocalFile.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected file is no longer available on this device.'**
+  String get fundraisingMissingLocalFile;
+
+  /// No description provided for @fundraisingErrorSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has expired. Please sign in again.'**
+  String get fundraisingErrorSessionExpired;
+
+  /// No description provided for @fundraisingErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The request timed out. Please try again.'**
+  String get fundraisingErrorTimeout;
+
+  /// No description provided for @fundraisingErrorOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You appear to be offline. Check your connection and try again.'**
+  String get fundraisingErrorOffline;
+
+  /// No description provided for @fundraisingErrorVerificationRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Your fundraising verification needs to be updated before you can continue.'**
+  String get fundraisingErrorVerificationRejected;
+
+  /// No description provided for @fundraisingErrorMediaFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'One or more uploads failed. Retry or remove the failed items to continue.'**
+  String get fundraisingErrorMediaFailed;
+
+  /// No description provided for @fundraisingErrorSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not save this draft right now. Your local recovery copy is still available.'**
+  String get fundraisingErrorSaveFailed;
+
+  /// No description provided for @fundraisingErrorSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not submit this fundraiser for review. Please try again.'**
+  String get fundraisingErrorSubmitFailed;
+
+  /// No description provided for @fundraisingErrorValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete the required fields for this step.'**
+  String get fundraisingErrorValidation;
+
+  /// No description provided for @fundraisingErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while preparing this fundraiser.'**
+  String get fundraisingErrorUnknown;
+
+  /// No description provided for @fundraisingValidationCompleteProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your fundraising profile first.'**
+  String get fundraisingValidationCompleteProfile;
+
+  /// No description provided for @fundraisingValidationUploadDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload the required verification documents.'**
+  String get fundraisingValidationUploadDocuments;
+
+  /// No description provided for @fundraisingValidationResolveRejection.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve the verification rejection before continuing.'**
+  String get fundraisingValidationResolveRejection;
+
+  /// No description provided for @fundraisingValidationCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a fundraiser category.'**
+  String get fundraisingValidationCategory;
+
+  /// No description provided for @fundraisingValidationBeneficiaryType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a beneficiary type.'**
+  String get fundraisingValidationBeneficiaryType;
+
+  /// No description provided for @fundraisingValidationBeneficiaryName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the beneficiary name.'**
+  String get fundraisingValidationBeneficiaryName;
+
+  /// No description provided for @fundraisingValidationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a campaign title with at least 6 characters.'**
+  String get fundraisingValidationTitle;
+
+  /// No description provided for @fundraisingValidationStory.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a clear story with at least 40 characters.'**
+  String get fundraisingValidationStory;
+
+  /// No description provided for @fundraisingValidationTargetAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a target amount greater than 0.'**
+  String get fundraisingValidationTargetAmount;
+
+  /// No description provided for @fundraisingValidationDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a campaign deadline.'**
+  String get fundraisingValidationDeadline;
+
+  /// No description provided for @fundraisingValidationEstimatedExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an estimated expense amount.'**
+  String get fundraisingValidationEstimatedExpense;
+
+  /// No description provided for @fundraisingValidationUrgency.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the urgency level.'**
+  String get fundraisingValidationUrgency;
+
+  /// No description provided for @fundraisingValidationLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the campaign location.'**
+  String get fundraisingValidationLocation;
+
+  /// No description provided for @fundraisingValidationMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload at least one media or evidence item.'**
+  String get fundraisingValidationMedia;
+
+  /// No description provided for @fundraisingValidationMediaBlocking.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve failed or pending media items before continuing.'**
+  String get fundraisingValidationMediaBlocking;
+
+  /// No description provided for @fundraisingValidationPayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an active payout method before submission.'**
+  String get fundraisingValidationPayout;
 }
 
 class _AppLocalizationsDelegate
