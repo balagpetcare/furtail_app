@@ -13,6 +13,7 @@ import 'package:furtail_app/features/adoption/data/models/adoption_media_models.
 import 'package:furtail_app/features/adoption/data/models/adoption_listing_form_payload.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
+import 'package:furtail_app/features/media/data/authenticated_media_uploader.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_listing_preview_screen.dart';
 import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
 import 'package:furtail_app/features/common/data/repositories/bd_locations_repository.dart';
@@ -1600,10 +1601,14 @@ class _CreateAdoptionListingScreenState
   }
 
   String _friendlyError(Object e) {
+    if (e is MediaUploadException) return e.userMessage;
     final raw = e.toString().replaceFirst('Exception: ', '').trim();
     if (raw.contains('Token not found')) return 'Please sign in again.';
     if (raw.contains('Validation error'))
       return 'Some fields are invalid. Please review.';
+    if (raw.startsWith('{') || raw.startsWith('[')) {
+      return 'Could not save listing right now.';
+    }
     return raw.isEmpty ? 'Could not save listing right now.' : raw;
   }
 

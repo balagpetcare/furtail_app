@@ -1,17 +1,13 @@
-import 'dart:async' show EventSink, StreamTransformer, unawaited;
+import 'dart:async' show unawaited;
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
-
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-import 'package:path/path.dart' as p;
 
 import '../../../../core/auth/secure_storage_service.dart';
-import '../../../../core/network/api_config.dart';
 import '../../../../core/network/api_endpoints.dart';
-import '../../../../core/network/multipart_helper.dart';
+import '../../../media/data/authenticated_media_uploader.dart';
 
 import '../models/post_comment_model.dart';
 import '../models/post_model.dart';
@@ -31,35 +27,15 @@ class PagedPostsResult {
   });
 }
 
-class UploadedMediaResult {
-  final int id;
-  final String? url;
-  final String? hlsUrl;
-  final String? thumbnailUrl;
-  final String? type;
-
-  const UploadedMediaResult({
-    required this.id,
-    this.url,
-    this.hlsUrl,
-    this.thumbnailUrl,
-    this.type,
-  });
-
-  String? get previewUrl {
-    final hls = hlsUrl?.trim();
-    if (hls != null && hls.isNotEmpty) return hls;
-    final direct = url?.trim();
-    if (direct != null && direct.isNotEmpty) return direct;
-    return null;
-  }
-}
-
 class PostsRemoteDs {
   final SecureStorageService _secureStorage;
+  final AuthenticatedMediaUploader _mediaUploader;
 
-  PostsRemoteDs([SecureStorageService? secureStorage])
-    : _secureStorage = secureStorage ?? SecureStorageService();
+  PostsRemoteDs([
+    SecureStorageService? secureStorage,
+    AuthenticatedMediaUploader? mediaUploader,
+  ]) : _secureStorage = secureStorage ?? SecureStorageService(),
+       _mediaUploader = mediaUploader ?? AuthenticatedMediaUploader();
 
   Future<String?> _token() => _secureStorage.accessToken;
 
@@ -212,51 +188,21 @@ class PostsRemoteDs {
     String? quality,
     String? uploadContext,
   }) async {
-    final t = await _token();
-    if (t == null || t.isEmpty) {
-      throw Exception('No token found. Please login again.');
-    }
-
-    final uri = Uri.parse('${ApiConfig.apiV1}/media/upload');
-    final req = http.MultipartRequest('POST', uri);
-
-    req.headers['Authorization'] = 'Bearer $t';
-    req.files.add(await multipartFromAnyFile(file, fieldName: 'file'));
-
-    if (listingId != null) req.fields['listingId'] = listingId.toString();
-    if (draftId != null && draftId.isNotEmpty) req.fields['draftId'] = draftId;
-    if (uploadContext != null && uploadContext.isNotEmpty)
-      req.fields['uploadContext'] = uploadContext;
-    if (trimStartMs != null) req.fields['trimStartMs'] = trimStartMs.toString();
-    if (trimEndMs != null) req.fields['trimEndMs'] = trimEndMs.toString();
-    if (volume != null) req.fields['volume'] = volume.toString();
-    if (mute != null) req.fields['mute'] = mute ? '1' : '0';
-    if (coverTimestampMs != null)
-      req.fields['coverTimestampMs'] = coverTimestampMs.toString();
-    if (aspectRatio != null) req.fields['aspectRatio'] = aspectRatio;
-    if (quality != null) req.fields['quality'] = quality;
-
-    debugPrint(
-      '[PostsRemoteDs.uploadMedia] '
-      'endpoint=$uri '
-      'hasToken=true '
-      'fileField=file '
-      'extraFields=${req.fields.keys.toList()}',
+    return _mediaUploader.upload(
+      file: file,
+      fields: _buildUploadFields(
+        listingId: listingId,
+        draftId: draftId,
+        trimStartMs: trimStartMs,
+        trimEndMs: trimEndMs,
+        volume: volume,
+        mute: mute,
+        coverTimestampMs: coverTimestampMs,
+        aspectRatio: aspectRatio,
+        quality: quality,
+        uploadContext: uploadContext,
+      ),
     );
-
-    final streamed = await req.send();
-    final body = await streamed.stream.bytesToString();
-
-    if (streamed.statusCode != 200 && streamed.statusCode != 201) {
-      debugPrint(
-        '[PostsRemoteDs.uploadMedia] FAILED '
-        'statusCode=${streamed.statusCode} '
-        'body=${body.length > 800 ? body.substring(0, 800) : body}',
-      );
-      throw Exception('Upload failed (${streamed.statusCode}): $body');
-    }
-
-    return _decodeUploadedMedia(body);
   }
 
   /// Upload media with progress callback.
@@ -306,12 +252,11 @@ class PostsRemoteDs {
     String? aspectRatio,
     String? quality,
     String? uploadContext,
+    CancelToken? cancelToken,
   }) async {
-    // Progress streaming only when it's a real File
-    if (file is! File) {
-      // No reliable stream progress for XFile/content:// here; upload normally.
-      return uploadMediaDetailed(
-        file,
+    return _mediaUploader.upload(
+      file: file,
+      fields: _buildUploadFields(
         listingId: listingId,
         draftId: draftId,
         trimStartMs: trimStartMs,
@@ -322,98 +267,38 @@ class PostsRemoteDs {
         aspectRatio: aspectRatio,
         quality: quality,
         uploadContext: uploadContext,
-      );
-    }
-
-    final t = await _token();
-    if (t == null || t.isEmpty) {
-      throw Exception('No token found. Please login again.');
-    }
-
-    final int totalBytes = await file.length();
-    int sentBytes = 0;
-
-    final Stream<List<int>> fileStream = file.openRead().transform(
-      StreamTransformer<List<int>, List<int>>.fromHandlers(
-        handleData: (List<int> data, EventSink<List<int>> sink) {
-          sentBytes += data.length;
-          onProgress?.call(sentBytes, totalBytes);
-          sink.add(data);
-        },
       ),
+      onProgress: onProgress,
+      cancelToken: cancelToken,
     );
-
-    final uri = Uri.parse('${ApiConfig.apiV1}/media/upload');
-    final req = http.MultipartRequest('POST', uri);
-    req.headers['Authorization'] = 'Bearer $t';
-
-    final filename = p.basename(file.path);
-    req.files.add(
-      http.MultipartFile(
-        'file',
-        fileStream,
-        totalBytes,
-        filename: filename,
-        contentType:
-            getMimeTypeFromPath(filename) ??
-            MediaType('application', 'octet-stream'),
-      ),
-    );
-
-    if (listingId != null) req.fields['listingId'] = listingId.toString();
-    if (draftId != null && draftId.isNotEmpty) req.fields['draftId'] = draftId;
-    if (uploadContext != null && uploadContext.isNotEmpty)
-      req.fields['uploadContext'] = uploadContext;
-    if (trimStartMs != null) req.fields['trimStartMs'] = trimStartMs.toString();
-    if (trimEndMs != null) req.fields['trimEndMs'] = trimEndMs.toString();
-    if (volume != null) req.fields['volume'] = volume.toString();
-    if (mute != null) req.fields['mute'] = mute ? '1' : '0';
-    if (coverTimestampMs != null)
-      req.fields['coverTimestampMs'] = coverTimestampMs.toString();
-    if (aspectRatio != null) req.fields['aspectRatio'] = aspectRatio;
-    if (quality != null) req.fields['quality'] = quality;
-
-    debugPrint(
-      '[PostsRemoteDs.uploadMediaWithProgress] '
-      'endpoint=$uri '
-      'filename=$filename '
-      'sizeBytes=$totalBytes '
-      'sizeMB=${(totalBytes / 1048576).toStringAsFixed(2)} '
-      'hasToken=true '
-      'fileField=file '
-      'extraFields=${req.fields.keys.toList()}',
-    );
-
-    final streamed = await req.send();
-    final body = await streamed.stream.bytesToString();
-
-    if (streamed.statusCode != 200 && streamed.statusCode != 201) {
-      debugPrint(
-        '[PostsRemoteDs.uploadMediaWithProgress] FAILED '
-        'filename=$filename '
-        'statusCode=${streamed.statusCode} '
-        'body=${body.length > 800 ? body.substring(0, 800) : body}',
-      );
-      throw Exception('Upload failed (${streamed.statusCode}): $body');
-    }
-
-    return _decodeUploadedMedia(body);
   }
 
-  UploadedMediaResult _decodeUploadedMedia(String body) {
-    final decoded = jsonDecode(body);
-    final data = decoded['data'];
-    final mediaId = data?['id'];
-    if (mediaId == null) {
-      throw Exception('mediaId missing: $body');
-    }
-    return UploadedMediaResult(
-      id: (mediaId as num).toInt(),
-      url: data?['url']?.toString(),
-      hlsUrl: data?['hlsUrl']?.toString(),
-      thumbnailUrl: data?['thumbnailUrl']?.toString(),
-      type: data?['type']?.toString(),
-    );
+  Map<String, String> _buildUploadFields({
+    int? listingId,
+    String? draftId,
+    int? trimStartMs,
+    int? trimEndMs,
+    double? volume,
+    bool? mute,
+    int? coverTimestampMs,
+    String? aspectRatio,
+    String? quality,
+    String? uploadContext,
+  }) {
+    return <String, String>{
+      if (listingId != null) 'listingId': listingId.toString(),
+      if (draftId != null && draftId.isNotEmpty) 'draftId': draftId,
+      if (uploadContext != null && uploadContext.isNotEmpty)
+        'uploadContext': uploadContext,
+      if (trimStartMs != null) 'trimStartMs': trimStartMs.toString(),
+      if (trimEndMs != null) 'trimEndMs': trimEndMs.toString(),
+      if (volume != null) 'volume': volume.toString(),
+      if (mute != null) 'mute': mute ? '1' : '0',
+      if (coverTimestampMs != null)
+        'coverTimestampMs': coverTimestampMs.toString(),
+      if (aspectRatio != null) 'aspectRatio': aspectRatio,
+      if (quality != null) 'quality': quality,
+    };
   }
 
   Future<PostModel> createPost({

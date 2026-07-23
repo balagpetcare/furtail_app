@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../media/data/authenticated_media_uploader.dart';
 import '../providers/fundraising_providers.dart';
 import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import 'fundraising_account_setup_screen.dart';
@@ -262,11 +263,23 @@ class _FundraisingCreateScreenState
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed: $msg')));
+        ).showSnackBar(SnackBar(content: Text(_friendlyError(e))));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  String _friendlyError(Object error) {
+    if (error is MediaUploadException) {
+      return error.userMessage;
+    }
+
+    final raw = error.toString().replaceFirst('Exception: ', '').trim();
+    if (raw.startsWith('{') || raw.startsWith('[') || raw.isEmpty) {
+      return 'Could not complete that request right now. Please try again.';
+    }
+    return raw;
   }
 
   @override
@@ -501,12 +514,18 @@ class _FundraisingCreateScreenState
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.35),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.35,
+                                      ),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
                                       '${i + 1}/${_images.length}',
-                                      style: context.appText.labelMedium!.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                                      style: context.appText.labelMedium!
+                                          .copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ),
                                 ),

@@ -228,6 +228,32 @@ Future<void> _driveError(
   await Future<void>.delayed(const Duration(milliseconds: 50));
 }
 
+Future<void> _driveErrorForRequestOptions(
+  AuthInterceptor interceptor, {
+  required int statusCode,
+  required String code,
+  required RequestOptions requestOptions,
+}) async {
+  final err = DioException(
+    requestOptions: requestOptions,
+    response: Response(
+      requestOptions: requestOptions,
+      statusCode: statusCode,
+      data: {'success': false, 'code': code, 'message': code},
+    ),
+    type: DioExceptionType.badResponse,
+  );
+  final handler = ErrorInterceptorHandler();
+  // ignore: invalid_use_of_protected_member, unawaited_futures
+  handler.future.then<void>((_) {}, onError: (_) {});
+  try {
+    await interceptor.onError(err, handler);
+  } catch (_) {
+    // See _driveError above.
+  }
+  await Future<void>.delayed(const Duration(milliseconds: 50));
+}
+
 Dio _buildRetryDio(List<String?> capturedAuthHeaders) {
   final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1'));
   dio.interceptors.add(
@@ -245,6 +271,60 @@ Dio _buildRetryDio(List<String?> capturedAuthHeaders) {
     ),
   );
   return dio;
+}
+
+Dio _buildMultipartRetryDio({
+  required List<String?> capturedAuthHeaders,
+  required List<Map<String, String>> capturedFields,
+  required List<String> progressEvents,
+}) {
+  final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1'));
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        capturedAuthHeaders.add(options.headers['Authorization']?.toString());
+        final fields = <String, String>{};
+        final data = options.data;
+        if (data is FormData) {
+          for (final field in data.fields) {
+            fields[field.key] = field.value;
+          }
+        }
+        capturedFields.add(fields);
+        options.onSendProgress?.call(5, 10);
+        progressEvents.add('5/10');
+        options.onSendProgress?.call(10, 10);
+        progressEvents.add('10/10');
+        handler.resolve(
+          Response(
+            requestOptions: options,
+            statusCode: 201,
+            data: {
+              'success': true,
+              'data': {'id': 99},
+            },
+          ),
+        );
+      },
+    ),
+  );
+  return dio;
+}
+
+RequestOptions _multipartRequestOptions({
+  required String path,
+  required Map<String, String> fields,
+  ProgressCallback? onSendProgress,
+}) {
+  return RequestOptions(
+    path: path,
+    method: 'POST',
+    baseUrl: 'http://127.0.0.1:1',
+    headers: {'Authorization': 'Bearer expired-token'},
+    data: FormData.fromMap(fields),
+    extra: {'multipartRetryFactory': () async => FormData.fromMap(fields)},
+    onSendProgress: onSendProgress,
+  );
 }
 
 void main() {
@@ -478,5 +558,187 @@ void main() {
         );
       },
     );
+
+    test(
+      'expired multipart upload refreshes once, retries once, and keeps upload fields',
+      () async {
+        final capturedAuthHeaders = <String?>[];
+        final capturedFields = <Map<String, String>>[];
+        final progressEvents = <String>[];
+        final centralAuthApi = _CountingCentralAuthApi();
+        final interceptor = AuthInterceptor(
+          secureStorage: secureStorage,
+          centralAuthApi: centralAuthApi,
+          onSessionExpired: () {},
+          retryDio: _buildMultipartRetryDio(
+            capturedAuthHeaders: capturedAuthHeaders,
+            capturedFields: capturedFields,
+            progressEvents: progressEvents,
+          ),
+        );
+
+        await _driveErrorForRequestOptions(
+          interceptor,
+          statusCode: 401,
+          code: 'CENTRAL_TOKEN_EXPIRED',
+          requestOptions: _multipartRequestOptions(
+            path: '/media/upload',
+            fields: const {
+              'listingId': '42',
+              'draftId': 'draft-1',
+              'uploadContext': 'adoption',
+              'trimStartMs': '100',
+              'trimEndMs': '900',
+              'mute': '1',
+              'volume': '0.75',
+              'coverTimestampMs': '250',
+              'aspectRatio': '4:5',
+              'quality': 'high',
+            },
+            onSendProgress: (sent, total) {
+              progressEvents.add('$sent/$total');
+            },
+          ),
+        );
+
+        expect(centralAuthApi.refreshCallCount, equals(1));
+        expect(await secureStorage.refreshToken, equals('new-refresh-token'));
+        expect(capturedAuthHeaders, equals(['Bearer new-access-token']));
+        expect(
+          capturedFields.single,
+          equals(const {
+            'listingId': '42',
+            'draftId': 'draft-1',
+            'uploadContext': 'adoption',
+            'trimStartMs': '100',
+            'trimEndMs': '900',
+            'mute': '1',
+            'volume': '0.75',
+            'coverTimestampMs': '250',
+            'aspectRatio': '4:5',
+            'quality': 'high',
+          }),
+        );
+        expect(progressEvents, contains('10/10'));
+      },
+    );
+
+    test(
+      'three concurrent expired multipart uploads still share one refresh call',
+      () async {
+        final capturedAuthHeaders = <String?>[];
+        final capturedFields = <Map<String, String>>[];
+        final progressEvents = <String>[];
+        final centralAuthApi = _CountingCentralAuthApi();
+        final interceptor = AuthInterceptor(
+          secureStorage: secureStorage,
+          centralAuthApi: centralAuthApi,
+          onSessionExpired: () {},
+          retryDio: _buildMultipartRetryDio(
+            capturedAuthHeaders: capturedAuthHeaders,
+            capturedFields: capturedFields,
+            progressEvents: progressEvents,
+          ),
+        );
+
+        await Future.wait([
+          _driveErrorForRequestOptions(
+            interceptor,
+            statusCode: 401,
+            code: 'CENTRAL_TOKEN_EXPIRED',
+            requestOptions: _multipartRequestOptions(
+              path: '/media/upload/a',
+              fields: const {'draftId': 'a'},
+            ),
+          ),
+          _driveErrorForRequestOptions(
+            interceptor,
+            statusCode: 401,
+            code: 'CENTRAL_TOKEN_EXPIRED',
+            requestOptions: _multipartRequestOptions(
+              path: '/media/upload/b',
+              fields: const {'draftId': 'b'},
+            ),
+          ),
+          _driveErrorForRequestOptions(
+            interceptor,
+            statusCode: 401,
+            code: 'CENTRAL_TOKEN_EXPIRED',
+            requestOptions: _multipartRequestOptions(
+              path: '/media/upload/c',
+              fields: const {'draftId': 'c'},
+            ),
+          ),
+        ]);
+
+        expect(centralAuthApi.refreshCallCount, equals(1));
+        expect(await secureStorage.refreshToken, equals('new-refresh-token'));
+        expect(capturedAuthHeaders, everyElement('Bearer new-access-token'));
+      },
+    );
+
+    test(
+      'failed refresh for multipart upload clears the session exactly once',
+      () async {
+        final failingApi = _CountingCentralAuthApi(
+          refreshError: CentralAuthException(
+            message: 'Refresh token was revoked',
+            statusCode: 401,
+            code: 'TOKEN_REVOKED',
+          ),
+        );
+        var sessionExpiredCalls = 0;
+        final interceptor = AuthInterceptor(
+          secureStorage: secureStorage,
+          centralAuthApi: failingApi,
+          onSessionExpired: () => sessionExpiredCalls++,
+        );
+
+        await _driveErrorForRequestOptions(
+          interceptor,
+          statusCode: 401,
+          code: 'CENTRAL_TOKEN_EXPIRED',
+          requestOptions: _multipartRequestOptions(
+            path: '/media/upload',
+            fields: const {'draftId': 'revoked'},
+          ),
+        );
+
+        expect(failingApi.refreshCallCount, equals(1));
+        expect(sessionExpiredCalls, equals(1));
+        expect(await secureStorage.accessToken, isNull);
+        expect(await secureStorage.refreshToken, isNull);
+      },
+    );
+
+    test('non-auth 401 for multipart upload is not retried', () async {
+      final capturedAuthHeaders = <String?>[];
+      final capturedFields = <Map<String, String>>[];
+      final progressEvents = <String>[];
+      final centralAuthApi = _CountingCentralAuthApi();
+      final interceptor = AuthInterceptor(
+        secureStorage: secureStorage,
+        centralAuthApi: centralAuthApi,
+        onSessionExpired: () {},
+        retryDio: _buildMultipartRetryDio(
+          capturedAuthHeaders: capturedAuthHeaders,
+          capturedFields: capturedFields,
+          progressEvents: progressEvents,
+        ),
+      );
+
+      await _driveErrorForRequestOptions(
+        interceptor,
+        statusCode: 401,
+        code: 'ACCOUNT_SUSPENDED',
+        requestOptions: _multipartRequestOptions(
+          path: '/media/upload',
+          fields: const {'draftId': 'no-retry'},
+        ),
+      );
+
+      expect(centralAuthApi.refreshCallCount, equals(0));
+      expect(capturedAuthHeaders, isEmpty);
+    });
   });
 }

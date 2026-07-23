@@ -100,6 +100,10 @@ class AuthInterceptor extends Interceptor {
     retryOptions.headers['Authorization'] =
         'Bearer ${refreshOutcome.accessToken}';
     try {
+      final retryFactory = retryOptions.extra['multipartRetryFactory'];
+      if (retryFactory is Future<FormData> Function()) {
+        retryOptions.data = await retryFactory();
+      }
       final freshDio =
           retryDio ??
           Dio(

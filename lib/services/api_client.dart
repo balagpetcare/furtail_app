@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -7,7 +8,10 @@ import 'package:furtail_app/core/auth/auth_interceptor.dart';
 import 'package:furtail_app/core/auth/central_auth_api.dart';
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
+import 'package:furtail_app/core/network/multipart_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Dio-backed API client. Public method names/signatures/return
@@ -274,27 +278,132 @@ class ApiClient {
     bool auth = true,
     Map<String, String>? fields,
   }) async {
-    return _runHttp('POST', url, () async {
-      final formData = FormData.fromMap({
-        if (fields != null) ...fields,
-        fieldName: await MultipartFile.fromFile(filePath),
-      });
+    return multipartPostTyped<dynamic>(
+      url: url,
+      files: [ApiMultipartFilePart(fieldName: fieldName, file: File(filePath))],
+      fields: fields,
+      auth: auth,
+      parse: (decoded) => decoded,
+    );
+  }
 
-      // multipart requests still need country/state headers, and (when
+  Future<T> multipartPostTyped<T>({
+    required String url,
+    required List<ApiMultipartFilePart> files,
+    required T Function(dynamic decoded) parse,
+    bool auth = true,
+    Map<String, String>? fields,
+    ProgressCallback? onSendProgress,
+    CancelToken? cancelToken,
+  }) async {
+    return _runHttp('POST', url, () async {
+      final formData = await _buildFormData(
+        files: files,
+        fields: fields ?? const <String, String>{},
+      );
+
+      // Multipart requests still need country/state headers, and (when
       // `auth: true`) the Authorization header — the latter is normally
-      // attached by AuthInterceptor's onRequest hook, which runs for every
-      // Dio request including this one, so we don't attach it manually here.
+      // attached by AuthInterceptor's onRequest hook.
       final headers = await _headers(auth: auth);
       headers.remove('Content-Type'); // let Dio set the multipart boundary
 
       final res = await _dio.post<dynamic>(
         url,
         data: formData,
-        options: Options(headers: headers, extra: {'auth': auth}),
+        onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
+        options: Options(
+          headers: headers,
+          extra: {
+            'auth': auth,
+            'multipartRetryFactory': () => _buildFormData(
+              files: files,
+              fields: fields ?? const <String, String>{},
+            ),
+          },
+        ),
       );
-      return _safeDecode(res.data);
+      return parse(_handle(res, method: 'POST', url: url));
     });
   }
+
+  Future<FormData> _buildFormData({
+    required List<ApiMultipartFilePart> files,
+    required Map<String, String> fields,
+  }) async {
+    final formData = FormData();
+    for (final entry in fields.entries) {
+      formData.fields.add(MapEntry<String, String>(entry.key, entry.value));
+    }
+    for (final file in files) {
+      formData.files.add(
+        MapEntry<String, MultipartFile>(
+          file.fieldName,
+          await _toMultipartFile(file),
+        ),
+      );
+    }
+    return formData;
+  }
+
+  Future<MultipartFile> _toMultipartFile(ApiMultipartFilePart part) async {
+    final filename = part.filename ?? _defaultFilename(part.file);
+    final contentType = part.contentType ?? _mimeTypeFor(part.file, filename);
+
+    if (part.file is File) {
+      final file = part.file as File;
+      return MultipartFile.fromFile(
+        file.path,
+        filename: filename,
+        contentType: contentType,
+      );
+    }
+
+    if (part.file is XFile) {
+      final file = part.file as XFile;
+      return MultipartFile.fromBytes(
+        await file.readAsBytes(),
+        filename: filename,
+        contentType: contentType,
+      );
+    }
+
+    throw ArgumentError(
+      'Unsupported multipart file type: ${part.file.runtimeType}',
+    );
+  }
+
+  String _defaultFilename(Object file) {
+    if (file is File) {
+      return file.path.split(Platform.pathSeparator).last;
+    }
+    if (file is XFile) {
+      return file.name;
+    }
+    return 'upload.bin';
+  }
+
+  MediaType? _mimeTypeFor(Object file, String filename) {
+    if (file is File) {
+      return getMimeTypeFromPath(file.path);
+    }
+    return getMimeTypeFromPath(filename);
+  }
+}
+
+class ApiMultipartFilePart {
+  const ApiMultipartFilePart({
+    required this.fieldName,
+    required this.file,
+    this.filename,
+    this.contentType,
+  });
+
+  final String fieldName;
+  final Object file;
+  final String? filename;
+  final MediaType? contentType;
 }
 
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
