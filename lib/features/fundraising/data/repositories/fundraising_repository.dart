@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'package:furtail_app/services/api_client.dart';
 
+import '../fundraising_error_mapper.dart';
 import '../models/fundraising_draft_models.dart';
 import '../models/fundraising_donation_models.dart';
 import '../models/fundraising_models.dart';
@@ -424,12 +427,14 @@ class FundraisingRepository {
 
   Future<List<FundraisingWithdrawRequest>> listMyWithdrawRequests({
     int? campaignId,
+    String? status,
     int limit = 50,
     int? cursor,
   }) async {
     final res = await _api.get(
       ApiEndpoints.fundraisingWithdrawRequests(
         campaignId: campaignId,
+        status: status,
         limit: limit,
         cursor: cursor,
       ),
@@ -445,6 +450,17 @@ class FundraisingRepository {
         .toList();
   }
 
+  Future<FundraisingWithdrawBalanceSummary> fetchWithdrawBalanceSummary({
+    required int campaignId,
+  }) async {
+    final res = await _api.get(
+      ApiEndpoints.fundraisingWithdrawBalanceSummary(campaignId),
+      auth: true,
+    );
+    final data = _asMap(res);
+    return FundraisingWithdrawBalanceSummary.fromJson(data);
+  }
+
   Future<FundraisingWithdrawRequest> createWithdrawRequest({
     required int campaignId,
     required int amount,
@@ -452,12 +468,20 @@ class FundraisingRepository {
     String? note,
   }) async {
     final payload = {'amount': amount, 'methodId': methodId, 'note': note};
-    final res = await _api.post(
-      ApiEndpoints.fundraisingCreateWithdrawRequest(campaignId),
-      payload,
-      auth: true,
-    );
-    final data = _asMap(res);
-    return FundraisingWithdrawRequest.fromJson(data);
+    try {
+      final res = await _api.post(
+        ApiEndpoints.fundraisingCreateWithdrawRequest(campaignId),
+        payload,
+        auth: true,
+        headers: {
+          'Idempotency-Key':
+              'fundraising-withdraw-$campaignId-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(1 << 31)}',
+        },
+      );
+      final data = _asMap(res);
+      return FundraisingWithdrawRequest.fromJson(data);
+    } catch (error) {
+      throw FundraisingUserSafeException(mapFundraisingError(error));
+    }
   }
 }

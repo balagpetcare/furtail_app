@@ -349,6 +349,7 @@ const List<FundraisingPayoutMethod> _activePayoutMethods =
         catalogId: 1,
         label: 'Primary bKash',
         detailsJson: <String, dynamic>{'walletNumber': '01700000000'},
+        maskedSummary: 'Wallet ending 0000',
         isDefault: true,
         isActive: true,
       ),

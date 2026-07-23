@@ -355,17 +355,22 @@ class ApiEndpoints {
 
   static String fundraisingWithdrawRequests({
     int? campaignId,
+    String? status,
     int limit = 50,
     int? cursor,
   }) {
     final q = <String, String>{'limit': '$limit'};
     if (campaignId != null) q['campaignId'] = '$campaignId';
+    if (status != null && status.trim().isNotEmpty) q['status'] = status.trim();
     if (cursor != null) q['cursor'] = '$cursor';
     final qs = q.entries
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
     return "${ApiConfig.apiV1}/fundraising/withdraw/requests?$qs";
   }
+
+  static String fundraisingWithdrawBalanceSummary(int campaignId) =>
+      "${ApiConfig.apiV1}/fundraising/withdraw/balance-summary?campaignId=$campaignId";
 
   // ---------- WALLET (V1) ----------
   static String walletMe() => "${ApiConfig.apiV1}/wallet/me";
