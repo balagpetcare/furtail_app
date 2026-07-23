@@ -11,6 +11,8 @@ class UploadedMediaResult {
     this.hlsUrl,
     this.thumbnailUrl,
     this.type,
+    this.status,
+    this.mimeType,
   });
 
   final int id;
@@ -18,6 +20,8 @@ class UploadedMediaResult {
   final String? hlsUrl;
   final String? thumbnailUrl;
   final String? type;
+  final String? status;
+  final String? mimeType;
 
   String? get previewUrl {
     final hls = hlsUrl?.trim();
@@ -221,6 +225,8 @@ class AuthenticatedMediaUploader {
       hlsUrl: payload?['hlsUrl']?.toString(),
       thumbnailUrl: payload?['thumbnailUrl']?.toString(),
       type: payload?['type']?.toString(),
+      status: payload?['status']?.toString(),
+      mimeType: payload?['mimeType']?.toString() ?? payload?['mimetype']?.toString(),
     );
   }
 }

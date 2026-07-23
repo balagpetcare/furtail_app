@@ -159,6 +159,8 @@ class PostsRemoteDs {
     int? coverTimestampMs,
     String? aspectRatio,
     String? quality,
+    String? uploadContext,
+    String? folder,
   }) async {
     final result = await uploadMediaDetailed(
       file,
@@ -171,6 +173,8 @@ class PostsRemoteDs {
       coverTimestampMs: coverTimestampMs,
       aspectRatio: aspectRatio,
       quality: quality,
+      uploadContext: uploadContext,
+      folder: folder,
     );
     return result.id;
   }
@@ -187,6 +191,7 @@ class PostsRemoteDs {
     String? aspectRatio,
     String? quality,
     String? uploadContext,
+    String? folder,
   }) async {
     return _mediaUploader.upload(
       file: file,
@@ -201,6 +206,7 @@ class PostsRemoteDs {
         aspectRatio: aspectRatio,
         quality: quality,
         uploadContext: uploadContext,
+        folder: folder,
       ),
     );
   }
@@ -221,6 +227,7 @@ class PostsRemoteDs {
     String? aspectRatio,
     String? quality,
     String? uploadContext,
+    String? folder,
   }) async {
     final result = await uploadMediaDetailedWithProgress(
       file,
@@ -235,6 +242,7 @@ class PostsRemoteDs {
       aspectRatio: aspectRatio,
       quality: quality,
       uploadContext: uploadContext,
+      folder: folder,
     );
     return result.id;
   }
@@ -252,6 +260,7 @@ class PostsRemoteDs {
     String? aspectRatio,
     String? quality,
     String? uploadContext,
+    String? folder,
     CancelToken? cancelToken,
   }) async {
     return _mediaUploader.upload(
@@ -267,6 +276,7 @@ class PostsRemoteDs {
         aspectRatio: aspectRatio,
         quality: quality,
         uploadContext: uploadContext,
+        folder: folder,
       ),
       onProgress: onProgress,
       cancelToken: cancelToken,
@@ -284,6 +294,7 @@ class PostsRemoteDs {
     String? aspectRatio,
     String? quality,
     String? uploadContext,
+    String? folder,
   }) {
     return <String, String>{
       if (listingId != null) 'listingId': listingId.toString(),
@@ -298,6 +309,7 @@ class PostsRemoteDs {
         'coverTimestampMs': coverTimestampMs.toString(),
       if (aspectRatio != null) 'aspectRatio': aspectRatio,
       if (quality != null) 'quality': quality,
+      if (folder != null && folder.isNotEmpty) 'folder': folder,
     };
   }
 

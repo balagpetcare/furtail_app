@@ -1,18 +1,21 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
-import 'package:furtail_app/core/media/image_editor_screen.dart';
-import 'package:furtail_app/core/media/video_edit_screen.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:furtail_app/dtos/pets/animal_type_dto.dart';
 import 'package:furtail_app/dtos/pets/breed_dto.dart';
 import 'package:furtail_app/features/adoption/data/datasources/adoption_remote_ds.dart';
-import 'package:furtail_app/features/adoption/data/models/adoption_media_models.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_listing_form_payload.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
+import 'package:furtail_app/features/media/composer/media_composer_controller.dart';
+import 'package:furtail_app/features/media/composer/media_composer_policy.dart';
+import 'package:furtail_app/features/media/composer/media_composer_widgets.dart';
+import 'package:furtail_app/features/media/composer/media_draft_item.dart';
+import 'package:furtail_app/features/media/composer/media_preparation_service.dart';
 import 'package:furtail_app/features/media/data/authenticated_media_uploader.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_listing_preview_screen.dart';
 import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
@@ -24,9 +27,7 @@ import 'package:furtail_app/services/api_client.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -74,33 +75,6 @@ String _normalizeSpeciesKey(String value) {
     default:
       return value.trim().toUpperCase();
   }
-}
-
-String _normalizeEnumKey(String value) => value.trim().toUpperCase();
-
-String? _safeStringSelection(
-  String? current,
-  Iterable<String> options, {
-  required String Function(String value) normalize,
-}) {
-  if (current == null) return null;
-  final key = normalize(current);
-  final matches = options.where((option) => normalize(option) == key).toList();
-  return matches.length == 1 ? key : null;
-}
-
-List<String> _uniqueStrings(
-  Iterable<String> values, {
-  required String Function(String value) normalize,
-}) {
-  final seen = <String>{};
-  final out = <String>[];
-  for (final value in values) {
-    final key = normalize(value);
-    if (key.isEmpty || !seen.add(key)) continue;
-    out.add(key);
-  }
-  return out;
 }
 
 T? _safeObjectSelection<T>(
@@ -155,9 +129,9 @@ class _CreateAdoptionListingScreenState
   late final BdLocationsRepository _locationRepo;
   final _postsDs = PostsRemoteDs();
   final _picker = ImagePicker();
+  final _mediaPreparation = const MediaPreparationService();
   final _profileService = ProfileService();
-  final _localNotifications = FlutterLocalNotificationsPlugin();
-  static const int _uploadNotificationId = 9999;
+  late final MediaComposerController _mediaController;
 
   // controllers
   final _nameCtrl = TextEditingController();
@@ -301,7 +275,6 @@ class _CreateAdoptionListingScreenState
   String? _gpsText;
 
   // media
-  final List<AdoptionDraftMediaItem> _mediaItems = [];
   bool _mediaUploading = false;
   final Set<int> _editingIndexes = {};
   bool _pickingMedia = false;
@@ -318,8 +291,9 @@ class _CreateAdoptionListingScreenState
   // Public wrapper — page sub-widgets call this instead of setState directly
   void update(VoidCallback fn) => setState(fn);
 
-  bool get _hasFailedUploads => _mediaItems.any((item) => item.uploadFailed);
-  bool get _hasActiveUploads => _mediaItems.any((item) => item.isUploading);
+  List<MediaDraftItem> get _mediaItems => _mediaController.items;
+  bool get _hasFailedUploads => _mediaController.hasFailedItems;
+  bool get _hasActiveUploads => _mediaController.isUploading;
   bool get _hasIncompleteRequiredFields => !_validateAllSilently();
   // Pending items (local/ready-to-upload) do NOT block publish — _publishListing uploads them first.
   bool get _canPublishNow =>
@@ -351,11 +325,44 @@ class _CreateAdoptionListingScreenState
     final client = ApiClient();
     _repository = AdoptionRepository(AdoptionRemoteDs(client));
     _locationRepo = BdLocationsRepository(client);
+    _mediaController = MediaComposerController(
+      policy: MediaComposerPolicy.adoption,
+      draftStorageKey: 'adoption:${widget.existingListing?.id ?? 'new'}',
+      uploadMedia:
+          (
+            item, {
+            void Function(int sentBytes, int totalBytes)? onProgress,
+            CancelToken? cancelToken,
+          }) {
+            return _postsDs.uploadMediaDetailedWithProgress(
+              File(item.localPath!),
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+              listingId: widget.existingListing?.id,
+              draftId: item.id,
+              uploadContext: MediaComposerPolicy.adoption.uploadContext,
+              folder: MediaComposerPolicy.adoption.folder,
+              trimStartMs: item.isVideo ? item.trimStartMs : null,
+              trimEndMs: item.isVideo ? item.trimEndMs : null,
+              mute: item.isVideo ? item.mute : null,
+              volume: item.isVideo ? item.volume : null,
+              coverTimestampMs: item.isVideo ? item.coverTimestampMs : null,
+              aspectRatio: item.isVideo ? item.aspectRatio : null,
+              quality: item.isVideo ? item.quality : null,
+            );
+          },
+    );
+    _mediaController.addListener(_handleMediaControllerChanged);
     _prefillNonLocationFields();
     _checkAuth();
     _resolveBangladeshCountry();
     _loadAnimalTypes();
     _loadDivisions();
+  }
+
+  void _handleMediaControllerChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _prefillNonLocationFields() {
@@ -514,23 +521,31 @@ class _CreateAdoptionListingScreenState
           '${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}';
     }
 
-    for (final m in pet.media) {
-      _mediaItems.add(
-        AdoptionDraftMediaItem(
+    _mediaController.seedItemsIfEmpty(
+      pet.media.map((m) {
+        return MediaDraftItem(
           id: m.id?.toString() ?? UniqueKey().toString(),
-          file: File(''),
-          type: m.type,
-          mediaId: m.id,
-          url: m.displayUrl,
-          uploadState: AdoptionDraftMediaUploadState.uploaded,
+          type: m.isVideo ? MediaDraftType.video : MediaDraftType.image,
+          fileName: m.displayUrl.split('/').last,
+          originalSizeBytes: 0,
+          remoteMediaId: m.id,
+          remoteUrl: m.url,
+          remoteHlsUrl: m.hlsUrl,
+          remoteThumbnailUrl: m.thumbnailUrl,
+          remoteStatus: m.status,
+          mimeType: m.mimeType,
+          state: MediaDraftState.ready,
           progress: 1,
-        ),
-      );
-    }
+        );
+      }).toList(),
+    );
   }
 
   @override
   void dispose() {
+    _mediaController
+      ..removeListener(_handleMediaControllerChanged)
+      ..dispose();
     _pageController.dispose();
     _nameCtrl.dispose();
     _ageCtrl.dispose();
@@ -889,21 +904,15 @@ class _CreateAdoptionListingScreenState
       final list = await _picker.pickMultiImage(imageQuality: 90, limit: 8);
       if (list.isEmpty) return;
       if (!mounted) return;
-
-      final edited = await Navigator.of(context).push<ImageEditResult>(
-        MaterialPageRoute(
-          builder: (_) => ImageEditorScreen(
-            files: list.map((x) => File(x.path)).toList(),
-            initialIndex: 0,
-          ),
-        ),
+      final items = await _mediaPreparation.prepareImages(
+        context,
+        list.map((x) => File(x.path)).toList(),
       );
-      if (edited == null || !mounted) return;
-
-      final items = edited.files.map(AdoptionDraftMediaItem.image).toList();
-      setState(() {
-        _mediaItems.addAll(items);
-      });
+      if (items.isEmpty || !mounted) return;
+      await _mediaController.addItems(items);
+    } on MediaUploadException catch (error) {
+      if (!mounted) return;
+      _showSnack(error.userMessage);
     } finally {
       if (mounted) setState(() => _pickingMedia = false);
     }
@@ -919,38 +928,32 @@ class _CreateAdoptionListingScreenState
       );
       if (x == null) return;
       if (!mounted) return;
-      final edited = await Navigator.of(context).push<VideoEditResult>(
-        MaterialPageRoute(builder: (_) => VideoEditScreen(file: File(x.path))),
-      );
-      if (edited == null) return;
-
-      final item = await _buildVideoDraftItem(edited);
+      final item = await _mediaPreparation.prepareVideo(context, File(x.path));
+      if (item == null || !mounted) return;
+      await _mediaController.addItems(<MediaDraftItem>[item]);
+    } on MediaUploadException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _mediaItems.add(item);
-      });
+      _showSnack(error.userMessage);
     } finally {
       if (mounted) setState(() => _pickingMedia = false);
     }
   }
 
-  void _removeMedia(int index) {
-    if (index < 0 || index >= _mediaItems.length) return;
-    setState(() => _mediaItems.removeAt(index));
-  }
-
-  Future<File?> _resolveMediaFileForEdit(AdoptionDraftMediaItem item) async {
+  Future<File?> _resolveMediaFileForEdit(MediaDraftItem item) async {
     // Try local file first
-    if (item.file.path.isNotEmpty && item.file.existsSync()) {
-      return item.file;
+    final localPath = item.localPath;
+    if (localPath != null &&
+        localPath.isNotEmpty &&
+        File(localPath).existsSync()) {
+      return File(localPath);
     }
 
     // If no local file but URL exists, download to temp cache
-    if (item.url != null && item.url!.isNotEmpty) {
+    if (item.previewUrl != null && item.previewUrl!.isNotEmpty) {
       try {
         final http.Client httpClient = http.Client();
         final response = await httpClient
-            .get(Uri.parse(item.url!))
+            .get(Uri.parse(item.previewUrl!))
             .timeout(const Duration(seconds: 30));
         if (response.statusCode == 200) {
           final tempDir = await getTemporaryDirectory();
@@ -985,94 +988,29 @@ class _CreateAdoptionListingScreenState
       }
 
       if (item.isVideo) {
-        final edited = await Navigator.of(context).push<VideoEditResult>(
-          MaterialPageRoute(builder: (_) => VideoEditScreen(file: fileToEdit)),
-        );
-        if (edited == null || !mounted) return;
-        final updatedItem = await _buildVideoDraftItem(
-          edited,
+        final updatedItem = await _mediaPreparation.prepareVideo(
+          context,
+          fileToEdit,
           existingId: item.id,
+          isCover: item.isCover,
         );
-        if (!mounted) return;
-        setState(
-          () => _mediaItems[index] = updatedItem.copyWith(
-            uploadState: AdoptionDraftMediaUploadState.local,
-            progress: 0,
-            clearMediaId: true,
-            url: null,
-          ),
-        );
+        if (updatedItem == null || !mounted) return;
+        await _mediaController.replaceItem(item.id, updatedItem);
         return;
       }
 
       // Edit only the tapped image — pass single file, update only that slot.
-      final edited = await Navigator.of(context).push<ImageEditResult>(
-        MaterialPageRoute(
-          builder: (_) =>
-              ImageEditorScreen(files: [fileToEdit], initialIndex: 0),
-        ),
+      final updatedItem = await _mediaPreparation.prepareReplacementImage(
+        context,
+        fileToEdit,
+        existingId: item.id,
+        isCover: item.isCover,
       );
-      if (edited == null || !mounted) return;
-      if (edited.files.isNotEmpty) {
-        setState(() {
-          _mediaItems[index] = AdoptionDraftMediaItem.image(edited.files.first)
-              .copyWith(
-                uploadState: AdoptionDraftMediaUploadState.local,
-                progress: 0,
-                clearMediaId: true,
-                url: null,
-              );
-        });
-      }
+      if (updatedItem == null || !mounted) return;
+      await _mediaController.replaceItem(item.id, updatedItem);
     } finally {
       _editingIndexes.remove(index);
     }
-  }
-
-  Future<AdoptionDraftMediaItem> _buildVideoDraftItem(
-    VideoEditResult edited, {
-    String? existingId,
-  }) async {
-    File? thumb;
-    try {
-      thumb = edited.coverTimestampMs != null
-          ? await VideoCompress.getFileThumbnail(
-              edited.file.path,
-              quality: 60,
-              position: edited.coverTimestampMs!,
-            )
-          : await VideoCompress.getFileThumbnail(edited.file.path, quality: 50);
-    } catch (e) {
-      debugPrint('Error generating video thumbnail: $e');
-    }
-
-    if (existingId != null) {
-      return AdoptionDraftMediaItem(
-        id: existingId,
-        file: edited.file,
-        type: 'VIDEO',
-        thumbnail: thumb,
-        trimStartMs: edited.trimStartMs,
-        trimEndMs: edited.trimEndMs,
-        mute: edited.mute,
-        volume: edited.volume,
-        aspectRatio: edited.aspectRatio,
-        quality: edited.quality,
-        coverTimestampMs: edited.coverTimestampMs,
-      );
-    }
-
-    return AdoptionDraftMediaItem.video(
-      file: edited.file,
-      thumbnail: thumb,
-      trimStartMs: edited.trimStartMs,
-      trimEndMs: edited.trimEndMs,
-      mute: edited.mute,
-      volume: edited.volume,
-      aspectRatio: edited.aspectRatio,
-      quality: edited.quality,
-      coverTimestampMs: edited.coverTimestampMs,
-    );
   }
 
   void _showSnack(String message) {
@@ -1098,186 +1036,8 @@ class _CreateAdoptionListingScreenState
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
   }
 
-  void _updateMediaItemById(
-    String itemId,
-    AdoptionDraftMediaItem Function(AdoptionDraftMediaItem current) transform,
-  ) {
-    final index = _mediaItems.indexWhere((item) => item.id == itemId);
-    if (index < 0 || !mounted) return;
-    setState(() {
-      _mediaItems[index] = transform(_mediaItems[index]);
-    });
-  }
-
-  Future<int> _uploadSingleMedia(AdoptionDraftMediaItem item) async {
-    if (item.uploadComplete && item.mediaId != null) {
-      return item.mediaId!;
-    }
-
-    final filePath = item.file.path;
-    final fileExists =
-        filePath.isNotEmpty &&
-        item.file.existsSync() &&
-        item.file.lengthSync() > 0;
-    if (!fileExists) {
-      throw Exception(
-        'Media file is missing or empty: ${filePath.isEmpty ? "(unknown)" : filePath.split(Platform.isWindows ? "\\" : "/").last}. Please re-pick the media and try again.',
-      );
-    }
-
-    // Compress video before upload
-    File fileToUpload = item.file;
-    if (item.isVideo) {
-      _updateMediaItemById(
-        item.id,
-        (current) => current.copyWith(
-          uploadState: AdoptionDraftMediaUploadState.uploading,
-          progress: 0,
-          clearErrorMessage: true,
-        ),
-      );
-      try {
-        final info = await VideoCompress.compressVideo(
-          item.file.path,
-          quality: VideoQuality.MediumQuality,
-          deleteOrigin: false,
-          includeAudio: !item.mute,
-        );
-        if (info?.file != null && info!.file!.existsSync()) {
-          fileToUpload = info.file!;
-        }
-      } catch (e) {
-        debugPrint(
-          '[AdoptionUpload] Video compression failed, uploading original: $e',
-        );
-        // fall through to upload original
-      }
-    }
-
-    _updateMediaItemById(
-      item.id,
-      (current) => current.copyWith(
-        uploadState: AdoptionDraftMediaUploadState.uploading,
-        progress: 0,
-        clearErrorMessage: true,
-      ),
-    );
-
-    final fileSize = item.file.lengthSync();
-    final fileSizeMb = fileSize / (1024 * 1024);
-    final showNotification = item.isVideo && fileSizeMb >= 50;
-
-    if (showNotification) {
-      await _showUploadNotification(
-        'Uploading adoption ${item.isVideo ? 'video' : 'photo'}',
-        'Starting upload...',
-      );
-    }
-
-    try {
-      final uploaded = await _postsDs.uploadMediaDetailedWithProgress(
-        fileToUpload,
-        onProgress: (sentBytes, totalBytes) {
-          if (totalBytes <= 0) return;
-          final progress = sentBytes / totalBytes;
-          final progressPercent = (progress * 100).round();
-          _updateMediaItemById(
-            item.id,
-            (current) => current.copyWith(
-              uploadState: AdoptionDraftMediaUploadState.uploading,
-              progress: progress.clamp(0, 1).toDouble(),
-              clearErrorMessage: true,
-            ),
-          );
-          if (showNotification) {
-            _updateUploadNotification(
-              'Uploading adoption ${item.isVideo ? 'video' : 'photo'}',
-              '$progressPercent% complete',
-              progress: progressPercent,
-            );
-          }
-        },
-        listingId: widget.existingListing?.id,
-        draftId: item.id,
-        uploadContext: 'adoption',
-        trimStartMs: item.isVideo ? item.trimStartMs : null,
-        trimEndMs: item.isVideo ? item.trimEndMs : null,
-        mute: item.isVideo ? item.mute : null,
-        volume: item.isVideo ? item.volume : null,
-        coverTimestampMs: item.isVideo ? item.coverTimestampMs : null,
-        aspectRatio: item.isVideo ? item.aspectRatio : null,
-        quality: item.isVideo ? item.quality : null,
-      );
-      _updateMediaItemById(
-        item.id,
-        (current) => current.copyWith(
-          mediaId: uploaded.id,
-          uploadState: AdoptionDraftMediaUploadState.uploaded,
-          progress: 1,
-          url: uploaded.previewUrl,
-          clearErrorMessage: true,
-        ),
-      );
-      if (showNotification) {
-        await _showUploadNotification(
-          'Upload complete',
-          'Your adoption ${item.isVideo ? 'video' : 'photo'} is ready',
-        );
-      }
-      return uploaded.id;
-    } catch (error) {
-      final message = _friendlyError(error);
-      _updateMediaItemById(
-        item.id,
-        (current) => current.copyWith(
-          uploadState: AdoptionDraftMediaUploadState.failed,
-          progress: 0,
-          errorMessage: message,
-          clearMediaId: true,
-        ),
-      );
-      if (showNotification) {
-        await _showUploadNotification('Upload failed', message);
-      }
-      rethrow;
-    }
-  }
-
-  Future<void> _retryMediaUpload(int index) async {
-    if (index < 0 || index >= _mediaItems.length) return;
-    final item = _mediaItems[index];
-    if (item.isUploading) return;
-    _clearTransientUploadUi();
-    try {
-      await _uploadSingleMedia(_mediaItems[index]);
-    } catch (error) {
-      if (!mounted) return;
-      _showSnack(_friendlyError(error));
-    }
-  }
-
   Future<List<int>> _ensureMediaUploaded() async {
-    final ids = <int>[];
-    final failures = <String>[];
-    for (final item in List<AdoptionDraftMediaItem>.from(_mediaItems)) {
-      if (item.uploadComplete && item.mediaId != null) {
-        ids.add(item.mediaId!);
-        continue;
-      }
-      try {
-        ids.add(await _uploadSingleMedia(item));
-      } catch (_) {
-        final refreshed = _mediaItems.firstWhere(
-          (entry) => entry.id == item.id,
-          orElse: () => item,
-        );
-        failures.add(refreshed.errorMessage ?? 'Upload failed.');
-      }
-    }
-    if (failures.isNotEmpty) {
-      throw Exception(failures.first);
-    }
-    return ids;
+    return _mediaController.ensureUploaded();
   }
 
   // ─── validation ──────────────────────────────────────────────────────────
@@ -1400,7 +1160,7 @@ class _CreateAdoptionListingScreenState
     final resolvedMediaIds = mediaIds.isNotEmpty
         ? mediaIds
         : _mediaItems
-              .map((item) => item.mediaId)
+              .map((item) => item.remoteMediaId)
               .whereType<int>()
               .toList(growable: false);
     final ageText = getFormattedAge();
@@ -1610,57 +1370,6 @@ class _CreateAdoptionListingScreenState
       return 'Could not save listing right now.';
     }
     return raw.isEmpty ? 'Could not save listing right now.' : raw;
-  }
-
-  Future<void> _showUploadNotification(String title, String body) async {
-    try {
-      const androidDetails = AndroidNotificationDetails(
-        'adoption_uploads',
-        'Adoption Media Uploads',
-        channelDescription: 'Notifications for adoption listing media uploads',
-        importance: Importance.low,
-        priority: Priority.low,
-        ongoing: true,
-      );
-      const notificationDetails = NotificationDetails(android: androidDetails);
-      await _localNotifications.show(
-        _uploadNotificationId,
-        title,
-        body,
-        notificationDetails,
-      );
-    } catch (e) {
-      debugPrint('[Adoption] Failed to show notification: $e');
-    }
-  }
-
-  Future<void> _updateUploadNotification(
-    String title,
-    String body, {
-    int progress = 0,
-  }) async {
-    try {
-      final androidDetails = AndroidNotificationDetails(
-        'adoption_uploads',
-        'Adoption Media Uploads',
-        channelDescription: 'Notifications for adoption listing media uploads',
-        importance: Importance.low,
-        priority: Priority.low,
-        ongoing: progress < 100,
-        progress: 100,
-        indeterminate: progress <= 0,
-        showProgress: true,
-      );
-      final notificationDetails = NotificationDetails(android: androidDetails);
-      await _localNotifications.show(
-        _uploadNotificationId,
-        title,
-        body,
-        notificationDetails,
-      );
-    } catch (e) {
-      debugPrint('[Adoption] Failed to update notification: $e');
-    }
   }
 
   // ─── build ───────────────────────────────────────────────────────────────
@@ -2989,11 +2698,16 @@ class _MediaSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (s._mediaItems.isNotEmpty)
-          _MediaSectionCarousel(
-            items: s._mediaItems,
-            onEdit: s._editMediaAtIndex,
-            onRemove: s._removeMedia,
-            onRetry: s._retryMediaUpload,
+          MediaComposerList(
+            controller: s._mediaController,
+            onEditItem: (item) async {
+              final index = s._mediaItems.indexWhere(
+                (entry) => entry.id == item.id,
+              );
+              if (index >= 0) {
+                await s._editMediaAtIndex(index);
+              }
+            },
           ),
 
         const SizedBox(height: 10),
@@ -3028,45 +2742,8 @@ class _MediaSection extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────── Shared helpers ──────────────────────────────
-
-class _MediaSectionCarousel extends StatelessWidget {
-  final List<AdoptionDraftMediaItem> items;
-  final Future<void> Function(int index) onEdit;
-  final void Function(int index) onRemove;
-  final Future<void> Function(int index) onRetry;
-
-  const _MediaSectionCarousel({
-    required this.items,
-    required this.onEdit,
-    required this.onRemove,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 140,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return _DraftMediaTile(
-            item: item,
-            onEdit: () => onEdit(index),
-            onRemove: () => onRemove(index),
-            onRetry: () => onRetry(index),
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _ReviewMediaCarousel extends StatelessWidget {
-  final List<AdoptionDraftMediaItem> items;
+  final List<MediaDraftItem> items;
 
   const _ReviewMediaCarousel({required this.items});
 
@@ -3083,10 +2760,18 @@ class _ReviewMediaCarousel extends StatelessWidget {
             if (item.isVideo) {
               return _LocalVideoPreview(item: item);
             }
-            if (item.url != null && item.url!.isNotEmpty) {
-              return Image.network(item.url!, fit: BoxFit.cover);
+            if (item.previewUrl != null && item.previewUrl!.isNotEmpty) {
+              return Image.network(item.previewUrl!, fit: BoxFit.cover);
             }
-            return Image.file(item.file, fit: BoxFit.cover);
+            if (item.localPath != null && File(item.localPath!).existsSync()) {
+              return Image.file(File(item.localPath!), fit: BoxFit.cover);
+            }
+            return ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Center(
+                child: Icon(Icons.photo_library_outlined, size: 32),
+              ),
+            );
           },
         ),
       ),
@@ -3094,329 +2779,8 @@ class _ReviewMediaCarousel extends StatelessWidget {
   }
 }
 
-class _DraftMediaTile extends StatelessWidget {
-  final AdoptionDraftMediaItem item;
-  final VoidCallback onEdit;
-  final VoidCallback onRemove;
-  final VoidCallback onRetry;
-
-  const _DraftMediaTile({
-    required this.item,
-    required this.onEdit,
-    required this.onRemove,
-    required this.onRetry,
-  });
-
-  Widget _buildVideoThumbnail(BuildContext context) {
-    final thumb = item.thumbnail;
-    final url = item.url;
-
-    final hasValidThumbFile =
-        thumb != null && thumb.existsSync() && thumb.lengthSync() > 0;
-
-    if (hasValidThumbFile) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.file(
-            thumb,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildVideoPlaceholder(
-                context,
-                label: 'Video preview unavailable',
-              );
-            },
-          ),
-          _buildPlayOverlay(),
-        ],
-      );
-    } else if (url != null && url.isNotEmpty) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.network(
-            url,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildVideoPlaceholder(
-                context,
-                label: 'Video preview unavailable',
-              );
-            },
-          ),
-          _buildPlayOverlay(),
-        ],
-      );
-    } else {
-      return _buildVideoPlaceholder(
-        context,
-        label: 'Preparing video preview...',
-      );
-    }
-  }
-
-  Widget _buildPlayOverlay() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(color: Colors.black.withValues(alpha: 0.18)),
-        const Center(
-          child: Icon(Icons.play_circle_fill, color: Colors.white, size: 36),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVideoPlaceholder(BuildContext context, {required String label}) {
-    final fileName = item.file.path.isEmpty
-        ? ''
-        : item.file.path.split(Platform.isWindows ? '\\' : '/').last;
-    return Container(
-      color: Colors.black87,
-      padding: const EdgeInsets.all(6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.video_library_rounded,
-            color: Colors.white70,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 8),
-          ),
-          if (fileName.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              fileName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 8),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageThumbnail(BuildContext context) {
-    final url = item.url;
-    if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildImagePlaceholder(context, label: 'Image unavailable');
-        },
-      );
-    }
-
-    final fileExists =
-        item.file.path.isNotEmpty &&
-        item.file.existsSync() &&
-        item.file.lengthSync() > 0;
-    if (fileExists) {
-      return Image.file(
-        item.file,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildImagePlaceholder(context, label: 'Image unavailable');
-        },
-      );
-    }
-
-    return _buildImagePlaceholder(context, label: 'Image placeholder');
-  }
-
-  Widget _buildImagePlaceholder(BuildContext context, {required String label}) {
-    return Container(
-      color: Colors.grey.shade200,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.broken_image_outlined,
-              color: Colors.grey,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(color: Colors.grey, fontSize: 8),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final statusLabel = switch (item.uploadState) {
-      AdoptionDraftMediaUploadState.uploading =>
-        'Uploading ${(item.progress * 100).round()}%',
-      AdoptionDraftMediaUploadState.uploaded => 'Uploaded',
-      AdoptionDraftMediaUploadState.failed => 'Upload failed',
-      AdoptionDraftMediaUploadState.local => 'Ready to upload',
-    };
-    return Stack(
-      children: [
-        Container(
-          width: 140,
-          height: 140,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: cs.outlineVariant),
-            color: cs.surfaceContainerHighest,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(9),
-            child: item.isVideo
-                ? _buildVideoThumbnail(context)
-                : _buildImageThumbnail(context),
-          ),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!item.isUploading)
-                _TinyActionChip(icon: Icons.edit, onTap: onEdit),
-              if (!item.isUploading) const SizedBox(width: 4),
-              _TinyActionChip(icon: Icons.close, onTap: onRemove),
-            ],
-          ),
-        ),
-        if (item.isUploading)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.black.withValues(alpha: 0.35),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: LinearProgressIndicator(
-                  value: item.progress.clamp(0, 1),
-                ),
-              ),
-            ),
-          ),
-        Positioned(
-          left: 6,
-          bottom: 6,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: item.isVideo
-                  ? Colors.black.withValues(alpha: 0.65)
-                  : cs.primary.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              item.isVideo ? 'Video' : 'Photo',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: 6,
-          right: 6,
-          top: 96,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: item.uploadFailed
-                      ? cs.errorContainer.withValues(alpha: 0.95)
-                      : Colors.black.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  statusLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: item.uploadFailed
-                        ? cs.onErrorContainer
-                        : Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              if (item.uploadFailed) ...[
-                const SizedBox(height: 4),
-                SizedBox(
-                  height: 24,
-                  child: OutlinedButton(
-                    onPressed: onRetry,
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      side: BorderSide(color: cs.error),
-                      backgroundColor: cs.surface.withValues(alpha: 0.92),
-                    ),
-                    child: Text(
-                      'Retry',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: cs.error,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TinyActionChip extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _TinyActionChip({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black54,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 14, color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
-
 class _LocalVideoPreview extends StatefulWidget {
-  final AdoptionDraftMediaItem item;
+  final MediaDraftItem item;
 
   const _LocalVideoPreview({required this.item});
 
@@ -3441,11 +2805,12 @@ class _LocalVideoPreviewState extends State<_LocalVideoPreview> {
     VideoPlayerController controller;
 
     // Use uploaded URL if available, otherwise fallback to local file
-    if (widget.item.url != null && widget.item.url!.isNotEmpty) {
-      controller = VideoPlayerController.network(widget.item.url!);
-    } else if (widget.item.file.path.isNotEmpty &&
-        widget.item.file.existsSync()) {
-      controller = VideoPlayerController.file(widget.item.file);
+    if (widget.item.previewUrl != null && widget.item.previewUrl!.isNotEmpty) {
+      controller = VideoPlayerController.network(widget.item.previewUrl!);
+    } else if (widget.item.localPath != null &&
+        widget.item.localPath!.isNotEmpty &&
+        File(widget.item.localPath!).existsSync()) {
+      controller = VideoPlayerController.file(File(widget.item.localPath!));
     } else {
       // No valid source available - show error state
       _controller = null;
@@ -3468,7 +2833,8 @@ class _LocalVideoPreviewState extends State<_LocalVideoPreview> {
   @override
   void didUpdateWidget(covariant _LocalVideoPreview oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.file.path != widget.item.file.path) {
+    if (oldWidget.item.localPath != widget.item.localPath ||
+        oldWidget.item.previewUrl != widget.item.previewUrl) {
       final controller = _controller;
       _controller = null;
       _init = null;
@@ -3527,10 +2893,10 @@ class _LocalVideoPreviewState extends State<_LocalVideoPreview> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              if (widget.item.thumbnail != null &&
-                  widget.item.thumbnail!.path.isNotEmpty &&
-                  widget.item.thumbnail!.existsSync())
-                Image.file(widget.item.thumbnail!, fit: BoxFit.cover)
+              if (widget.item.thumbnailPath != null &&
+                  widget.item.thumbnailPath!.isNotEmpty &&
+                  File(widget.item.thumbnailPath!).existsSync())
+                Image.file(File(widget.item.thumbnailPath!), fit: BoxFit.cover)
               else
                 const ColoredBox(color: Colors.black87),
               Container(color: Colors.black.withValues(alpha: 0.18)),

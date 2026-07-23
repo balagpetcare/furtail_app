@@ -1,19 +1,30 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import '../../../media/composer/media_composer_controller.dart';
+import '../../../media/composer/media_composer_policy.dart';
+import '../../../media/composer/media_composer_widgets.dart';
+import '../../../media/composer/media_draft_item.dart';
+import '../../../media/composer/media_preparation_service.dart';
+import '../../../media/data/authenticated_media_uploader.dart';
+import '../../../posts/data/datasources/posts_remote_ds.dart';
 import '../../data/models/fundraising_models.dart';
 import '../providers/fundraising_providers.dart';
 
 class FundraisingUpdateEditorScreen extends ConsumerStatefulWidget {
+  const FundraisingUpdateEditorScreen({
+    super.key,
+    required this.campaignId,
+    this.existing,
+  });
+
   final int campaignId;
-  final FundraisingUpdateItem? existing; // null => create
-  const FundraisingUpdateEditorScreen({super.key, required this.campaignId, this.existing});
+  final FundraisingUpdateItem? existing;
 
   @override
   ConsumerState<FundraisingUpdateEditorScreen> createState() =>
@@ -22,90 +33,211 @@ class FundraisingUpdateEditorScreen extends ConsumerStatefulWidget {
 
 class _FundraisingUpdateEditorScreenState
     extends ConsumerState<FundraisingUpdateEditorScreen> {
+  static const List<String> _documentExtensions = <String>[
+    'pdf',
+    'jpg',
+    'jpeg',
+    'png',
+    'webp',
+  ];
+
   final _formKey = GlobalKey<FormState>();
   final _captionCtrl = TextEditingController();
-
   final _picker = ImagePicker();
   final _postsDs = PostsRemoteDs();
+  final _mediaPreparation = const MediaPreparationService();
 
-  final List<File> _images = [];
-  File? _video;
-  final List<File> _files = [];
+  late final MediaComposerController _mediaController;
+
   bool _saving = false;
+  bool _pickingMedia = false;
 
   @override
   void initState() {
     super.initState();
-    _captionCtrl.text = widget.existing?.caption?.toString() ?? '';
+    _captionCtrl.text = widget.existing?.caption ?? '';
+    _mediaController = MediaComposerController(
+      policy: MediaComposerPolicy.fundraising,
+      draftStorageKey:
+          'fundraising:update:${widget.existing?.id ?? 'new-${widget.campaignId}'}',
+      uploadMedia:
+          (
+            item, {
+            void Function(int sentBytes, int totalBytes)? onProgress,
+            CancelToken? cancelToken,
+          }) {
+            return _postsDs.uploadMediaDetailedWithProgress(
+              File(item.localPath!),
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+              draftId: item.id,
+              uploadContext: MediaComposerPolicy.fundraising.uploadContext,
+              folder: MediaComposerPolicy.fundraising.folder,
+              trimStartMs: item.isVideo ? item.trimStartMs : null,
+              trimEndMs: item.isVideo ? item.trimEndMs : null,
+              mute: item.isVideo ? item.mute : null,
+              volume: item.isVideo ? item.volume : null,
+              coverTimestampMs: item.isVideo ? item.coverTimestampMs : null,
+              aspectRatio: item.isVideo ? item.aspectRatio : null,
+              quality: item.isVideo ? item.quality : null,
+            );
+          },
+    );
+    _mediaController.addListener(_handleMediaChanged);
+    _mediaController.seedItemsIfEmpty(
+      (widget.existing?.media ?? const <FundraisingMediaItem>[])
+          .map(_draftFromRemoteMedia)
+          .toList(),
+    );
   }
 
   @override
   void dispose() {
+    _mediaController
+      ..removeListener(_handleMediaChanged)
+      ..dispose();
     _captionCtrl.dispose();
     super.dispose();
   }
 
-  Future<List<File>> _cropImagesOneByOne(List<XFile> picked) async {
-    final out = <File>[];
-    for (final x in picked) {
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: x.path,
-        compressQuality: 92,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Photo',
-            toolbarColor: Colors.black,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false,
-          ),
-          IOSUiSettings(title: 'Crop Photo'),
-        ],
-      );
-      out.add(File(cropped?.path ?? x.path));
-    }
-    return out;
+  void _handleMediaChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  MediaDraftItem _draftFromRemoteMedia(FundraisingMediaItem media) {
+    final normalizedType = media.type.trim().toUpperCase();
+    final isVideo = normalizedType.contains('VIDEO');
+    final isDocument =
+        normalizedType.contains('DOC') ||
+        normalizedType.contains('PDF') ||
+        normalizedType.contains('FILE');
+    return MediaDraftItem(
+      id: media.id.toString(),
+      type: isDocument
+          ? MediaDraftType.document
+          : (isVideo ? MediaDraftType.video : MediaDraftType.image),
+      fileName: media.url.split('/').last,
+      originalSizeBytes: 0,
+      remoteMediaId: media.id,
+      remoteUrl: media.url,
+      remoteThumbnailUrl: isVideo ? media.url : null,
+      state: MediaDraftState.ready,
+      progress: 1,
+    );
   }
 
   Future<void> _pickImages() async {
-    final list = await _picker.pickMultiImage(imageQuality: 100);
-    if (list.isEmpty) return;
-    final cropped = await _cropImagesOneByOne(list);
-    if (cropped.isEmpty) return;
-    setState(() {
-      _video = null;
-      _files.clear();
-      _images
-        ..clear()
-        ..addAll(cropped);
-    });
+    if (_pickingMedia) return;
+    _pickingMedia = true;
+    try {
+      final files = await _picker.pickMultiImage(imageQuality: 100);
+      if (files.isEmpty || !mounted) return;
+      final items = await _mediaPreparation.prepareImages(
+        context,
+        files.map((file) => File(file.path)).toList(),
+      );
+      if (items.isEmpty) return;
+      await _mediaController.addItems(items);
+    } on MediaUploadException catch (error) {
+      _showSnack(error.userMessage);
+    } finally {
+      _pickingMedia = false;
+    }
   }
 
   Future<void> _pickVideo() async {
-    final x = await _picker.pickVideo(source: ImageSource.gallery);
-    if (x == null) return;
-    setState(() {
-      _images.clear();
-      _files.clear();
-      _video = File(x.path);
-    });
+    if (_pickingMedia) return;
+    _pickingMedia = true;
+    try {
+      final file = await _picker.pickVideo(source: ImageSource.gallery);
+      if (file == null || !mounted) return;
+      final item = await _mediaPreparation.prepareVideo(
+        context,
+        File(file.path),
+      );
+      if (item == null) return;
+      await _mediaController.addItems(<MediaDraftItem>[item]);
+    } on MediaUploadException catch (error) {
+      _showSnack(error.userMessage);
+    } finally {
+      _pickingMedia = false;
+    }
   }
 
-  Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      type: FileType.custom,
-      allowedExtensions: const ['pdf', 'txt'],
-    );
-    final paths = result?.paths.whereType<String>().toList() ?? const [];
-    if (paths.isEmpty) return;
-    setState(() {
-      _images.clear();
-      _video = null;
-      _files
-        ..clear()
-        ..addAll(paths.map((p) => File(p)));
-    });
+  Future<void> _pickDocuments() async {
+    if (_pickingMedia) return;
+    _pickingMedia = true;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: _documentExtensions,
+      );
+      final paths =
+          result?.paths.whereType<String>().toList() ?? const <String>[];
+      if (paths.isEmpty) return;
+      await _mediaController.addItems(
+        _mediaPreparation.prepareDocuments(
+          paths.map((path) => File(path)).toList(),
+        ),
+      );
+    } on MediaUploadException catch (error) {
+      _showSnack(error.userMessage);
+    } finally {
+      _pickingMedia = false;
+    }
+  }
+
+  Future<void> _editMediaItem(MediaDraftItem item) async {
+    if (item.isUploading || item.isPreparing) return;
+    try {
+      if (item.isDocument) {
+        final replacement = await FilePicker.platform.pickFiles(
+          allowMultiple: false,
+          type: FileType.custom,
+          allowedExtensions: _documentExtensions,
+        );
+        final path = replacement?.files.single.path;
+        if (path == null) return;
+        await _mediaController.replaceItem(
+          item.id,
+          _mediaPreparation.prepareReplacementDocument(
+            File(path),
+            existingId: item.id,
+            isCover: item.isCover,
+          ),
+        );
+        return;
+      }
+
+      if (item.isVideo) {
+        final file = await _picker.pickVideo(source: ImageSource.gallery);
+        if (file == null || !mounted) return;
+        final replacement = await _mediaPreparation.prepareVideo(
+          context,
+          File(file.path),
+          existingId: item.id,
+          isCover: item.isCover,
+        );
+        if (replacement == null) return;
+        await _mediaController.replaceItem(item.id, replacement);
+        return;
+      }
+
+      final file = await _picker.pickImage(source: ImageSource.gallery);
+      if (file == null || !mounted) return;
+      final replacement = await _mediaPreparation.prepareReplacementImage(
+        context,
+        File(file.path),
+        existingId: item.id,
+        isCover: item.isCover,
+      );
+      if (replacement == null) return;
+      await _mediaController.replaceItem(item.id, replacement);
+    } on MediaUploadException catch (error) {
+      _showSnack(error.userMessage);
+    }
   }
 
   Future<void> _save() async {
@@ -115,17 +247,7 @@ class _FundraisingUpdateEditorScreenState
     setState(() => _saving = true);
     try {
       final repo = ref.read(fundraisingRepositoryProvider);
-
-      final mediaIds = <int>[];
-      for (final f in _images) {
-        mediaIds.add(await _postsDs.uploadMedia(f));
-      }
-      if (_video != null) {
-        mediaIds.add(await _postsDs.uploadMedia(_video!));
-      }
-      for (final f in _files) {
-        mediaIds.add(await _postsDs.uploadMedia(f));
-      }
+      final mediaIds = await _mediaController.ensureUploaded();
 
       if (widget.existing == null) {
         await repo.createUpdate(
@@ -137,24 +259,47 @@ class _FundraisingUpdateEditorScreenState
         await repo.updateUpdate(
           updateId: widget.existing!.id,
           caption: _captionCtrl.text.trim(),
-          mediaIds: mediaIds.isEmpty ? null : mediaIds,
+          mediaIds: mediaIds,
         );
       }
 
+      await _mediaController.clearPersistedDraft();
       ref.invalidate(fundraisingUpdatesProvider(widget.campaignId));
       if (!mounted) return;
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.existing == null ? 'Update posted' : 'Update updated')),
+        SnackBar(
+          content: Text(
+            widget.existing == null ? 'Update posted' : 'Update updated',
+          ),
+        ),
       );
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      _showSnack(_friendlyError(error));
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+      }
     }
+  }
+
+  String _friendlyError(Object error) {
+    if (error is MediaUploadException) {
+      return error.userMessage;
+    }
+
+    final raw = error.toString().replaceFirst('Exception: ', '').trim();
+    if (raw.startsWith('{') || raw.startsWith('[') || raw.isEmpty) {
+      return 'Could not complete that request right now. Please try again.';
+    }
+    return raw;
+  }
+
+  void _showSnack(String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -166,7 +311,7 @@ class _FundraisingUpdateEditorScreenState
         title: Text(isEdit ? 'Edit Update' : 'New Update'),
         actions: [
           TextButton(
-            onPressed: _saving ? null : _save,
+            onPressed: _saving || _mediaController.isPreparing ? null : _save,
             child: _saving
                 ? const SizedBox(
                     width: 18,
@@ -189,10 +334,9 @@ class _FundraisingUpdateEditorScreenState
                 labelText: 'Update text',
                 border: OutlineInputBorder(),
               ),
-              validator: (v) {
-                final t = (v ?? '').trim();
-                final hasExistingMedia = (widget.existing?.media.isNotEmpty ?? false);
-                if (t.isEmpty && _images.isEmpty && _video == null && _files.isEmpty && !hasExistingMedia) {
+              validator: (value) {
+                final text = (value ?? '').trim();
+                if (text.isEmpty && _mediaController.items.isEmpty) {
                   return 'Add text or attach something';
                 }
                 return null;
@@ -204,58 +348,37 @@ class _FundraisingUpdateEditorScreenState
               runSpacing: 8,
               children: [
                 OutlinedButton.icon(
-                  onPressed: _pickImages,
+                  onPressed: _saving ? null : _pickImages,
                   icon: const Icon(Icons.photo),
                   label: const Text('Photo'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: _pickVideo,
+                  onPressed: _saving ? null : _pickVideo,
                   icon: const Icon(Icons.videocam_outlined),
                   label: const Text('Video'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: _pickFiles,
+                  onPressed: _saving ? null : _pickDocuments,
                   icon: const Icon(Icons.attach_file),
-                  label: const Text('PDF/TXT'),
+                  label: const Text('Document'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            if (_images.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _images
-                    .map(
-                      (f) => ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.file(f, width: 90, height: 90, fit: BoxFit.cover),
-                      ),
-                    )
-                    .toList(),
+            if (_mediaController.items.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              MediaComposerList(
+                controller: _mediaController,
+                onEditItem: _editMediaItem,
               ),
-            if (_video != null) ...[
-              const SizedBox(height: 6),
-              Text('Video selected: ${_video!.path.split('/').last}'),
             ],
-            if (_files.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              ..._files.map((f) => Text('File: ${f.path.split('/').last}')),
-            ],
-            if (isEdit && widget.existing!.media.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              Text('Existing attachments (kept unless you add new ones)',
-                  style: Theme.of(context).textTheme.bodySmall),
+            if (_mediaController.hasFailedItems) ...[
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.existing!.media
-                    .map((m) => ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(m.url, width: 90, height: 90, fit: BoxFit.cover),
-                        ))
-                    .toList(),
+              Text(
+                'Retry or remove failed uploads before saving.',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ],

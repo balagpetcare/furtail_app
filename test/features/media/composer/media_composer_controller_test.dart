@@ -1,0 +1,312 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:furtail_app/features/media/composer/media_composer_controller.dart';
+import 'package:furtail_app/features/media/composer/media_composer_policy.dart';
+import 'package:furtail_app/features/media/composer/media_draft_item.dart';
+import 'package:furtail_app/features/media/data/authenticated_media_uploader.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('MediaComposerController', () {
+    late Directory tempDir;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      tempDir = await Directory.systemTemp.createTemp(
+        'media-composer-controller-test-',
+      );
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    test(
+      'supports mixed fundraiser media without clearing existing items',
+      () async {
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'mixed',
+          uploadMedia: _successfulUpload,
+        );
+
+        await controller.addItems(<MediaDraftItem>[
+          _imageItem(await _file(tempDir, 'photo.jpg')),
+          _videoItem(await _file(tempDir, 'clip.mp4')),
+          _documentItem(await _file(tempDir, 'proof.pdf')),
+        ]);
+
+        expect(controller.items, hasLength(3));
+        expect(controller.items.where((item) => item.isImage), hasLength(1));
+        expect(controller.items.where((item) => item.isVideo), hasLength(1));
+        expect(controller.items.where((item) => item.isDocument), hasLength(1));
+      },
+    );
+
+    test(
+      'retry uploads only the failed item and keeps successful uploads',
+      () async {
+        var attempts = 0;
+        final photo = _imageItem(await _file(tempDir, 'photo.jpg'));
+        final proof = _documentItem(await _file(tempDir, 'proof.pdf'));
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'retry',
+          uploadMedia: (item, {onProgress, cancelToken}) async {
+            if (item.id == proof.id && attempts++ == 0) {
+              throw const MediaUploadException(
+                kind: MediaUploadErrorKind.storageFailure,
+                userMessage: 'Please retry the failed upload.',
+              );
+            }
+            return _successfulUpload(
+              item,
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+            );
+          },
+        );
+
+        await controller.addItems(<MediaDraftItem>[photo, proof]);
+        await expectLater(
+          controller.ensureUploaded(),
+          throwsA(isA<MediaUploadException>()),
+        );
+        expect(
+          controller.items
+              .singleWhere((item) => item.id == photo.id)
+              .remoteMediaId,
+          isNotNull,
+        );
+        expect(
+          controller.items.singleWhere((item) => item.id == proof.id).state,
+          MediaDraftState.failed,
+        );
+
+        await controller.retryItem(proof.id);
+
+        final retried = controller.items.singleWhere(
+          (item) => item.id == proof.id,
+        );
+        expect(retried.remoteMediaId, isNotNull);
+        expect(
+          retried.state,
+          anyOf(MediaDraftState.ready, MediaDraftState.processing),
+        );
+      },
+    );
+
+    test(
+      'cancels an in-flight item without affecting completed uploads',
+      () async {
+        final first = _imageItem(await _file(tempDir, 'first.jpg'));
+        final second = _videoItem(await _file(tempDir, 'second.mp4'));
+        final gate = Completer<void>();
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'cancel',
+          uploadMedia: (item, {onProgress, cancelToken}) async {
+            if (item.id == first.id) {
+              await Future.any<void>(<Future<void>>[
+                gate.future,
+                cancelToken?.whenCancel.then((_) {}) ?? Future<void>.value(),
+              ]);
+            }
+            if (cancelToken?.isCancelled ?? false) {
+              throw const MediaUploadException(
+                kind: MediaUploadErrorKind.requestCancelled,
+                userMessage: 'Upload cancelled.',
+              );
+            }
+            return _successfulUpload(
+              item,
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+            );
+          },
+        );
+
+        await controller.addItems(<MediaDraftItem>[first, second]);
+        final uploadFuture = controller.ensureUploaded();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await controller.cancelItem(first.id);
+        gate.complete();
+
+        await expectLater(uploadFuture, throwsA(isA<MediaUploadException>()));
+        expect(
+          controller.items.singleWhere((item) => item.id == first.id).state,
+          MediaDraftState.cancelled,
+        );
+        expect(
+          controller.items
+              .singleWhere((item) => item.id == second.id)
+              .remoteMediaId,
+          isNotNull,
+        );
+      },
+    );
+
+    test('reorders items and promotes the chosen cover media', () async {
+      final first = _imageItem(await _file(tempDir, 'first.jpg'));
+      final second = _imageItem(await _file(tempDir, 'second.jpg'));
+      final third = _documentItem(await _file(tempDir, 'third.pdf'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'reorder',
+        uploadMedia: _successfulUpload,
+      );
+
+      await controller.addItems(<MediaDraftItem>[first, second, third]);
+      await controller.reorder(0, 3);
+      expect(controller.items.map((item) => item.id), <String>[
+        second.id,
+        third.id,
+        first.id,
+      ]);
+      expect(controller.items.first.isCover, isTrue);
+
+      await controller.setCover(first.id);
+      expect(controller.items.first.id, first.id);
+      expect(controller.items.first.isCover, isTrue);
+    });
+
+    test(
+      'partial failure blocks submission but preserves completed uploads',
+      () async {
+        final good = _imageItem(await _file(tempDir, 'good.jpg'));
+        final bad = _documentItem(await _file(tempDir, 'bad.pdf'));
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'partial',
+          uploadMedia: (item, {onProgress, cancelToken}) async {
+            if (item.id == bad.id) {
+              throw const MediaUploadException(
+                kind: MediaUploadErrorKind.fileTooLarge,
+                userMessage: 'Choose a smaller file.',
+              );
+            }
+            return _successfulUpload(
+              item,
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+            );
+          },
+        );
+
+        await controller.addItems(<MediaDraftItem>[good, bad]);
+        await expectLater(
+          controller.ensureUploaded(),
+          throwsA(isA<MediaUploadException>()),
+        );
+
+        expect(
+          controller.items
+              .singleWhere((item) => item.id == good.id)
+              .remoteMediaId,
+          isNotNull,
+        );
+        expect(
+          controller.items.singleWhere((item) => item.id == bad.id).state,
+          MediaDraftState.failed,
+        );
+      },
+    );
+
+    test(
+      'restores persisted draft items and keeps uploaded ids on reopen',
+      () async {
+        final localFile = await _file(tempDir, 'draft.jpg');
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'restore',
+          uploadMedia: _successfulUpload,
+        );
+        await controller.addItems(<MediaDraftItem>[
+          _imageItem(localFile),
+          MediaDraftItem(
+            id: 'remote-doc',
+            type: MediaDraftType.document,
+            localPath: localFile.path,
+            fileName: 'remote.pdf',
+            originalSizeBytes: 99,
+            remoteMediaId: 404,
+            remoteUrl: 'https://cdn.example.test/remote.pdf',
+            state: MediaDraftState.ready,
+            progress: 1,
+          ),
+        ]);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final reopened = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'restore',
+          uploadMedia: _successfulUpload,
+        );
+        await reopened.restore();
+
+        expect(reopened.items, hasLength(2));
+        expect(reopened.items.any((item) => item.remoteMediaId == 404), isTrue);
+        expect(reopened.items.first.isCover, isTrue);
+      },
+    );
+  });
+}
+
+Future<File> _file(Directory dir, String name) async {
+  final file = File('${dir.path}${Platform.pathSeparator}$name');
+  await file.writeAsBytes(<int>[1, 2, 3, 4, 5]);
+  return file;
+}
+
+MediaDraftItem _imageItem(File file) {
+  return MediaDraftItem.image(
+    id: 'image-${file.path.hashCode}',
+    localPath: file.path,
+    fileName: file.path.split(Platform.pathSeparator).last,
+    originalSizeBytes: file.lengthSync(),
+  );
+}
+
+MediaDraftItem _videoItem(File file) {
+  return MediaDraftItem.video(
+    id: 'video-${file.path.hashCode}',
+    localPath: file.path,
+    fileName: file.path.split(Platform.pathSeparator).last,
+    originalSizeBytes: file.lengthSync(),
+    thumbnailPath: file.path,
+  );
+}
+
+MediaDraftItem _documentItem(File file) {
+  return MediaDraftItem.document(
+    id: 'doc-${file.path.hashCode}',
+    localPath: file.path,
+    fileName: file.path.split(Platform.pathSeparator).last,
+    originalSizeBytes: file.lengthSync(),
+  );
+}
+
+Future<UploadedMediaResult> _successfulUpload(
+  MediaDraftItem item, {
+  void Function(int sentBytes, int totalBytes)? onProgress,
+  CancelToken? cancelToken,
+}) async {
+  onProgress?.call(50, 100);
+  onProgress?.call(100, 100);
+  return UploadedMediaResult(
+    id: item.id.hashCode.abs(),
+    url: 'https://cdn.example.test/${item.fileName}',
+    thumbnailUrl: item.isVideo
+        ? 'https://cdn.example.test/thumb-${item.fileName}.jpg'
+        : null,
+    type: item.isVideo ? 'VIDEO' : (item.isDocument ? 'DOCUMENT' : 'IMAGE'),
+    status: item.isVideo ? 'PROCESSING' : 'READY',
+  );
+}

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
-import 'package:furtail_app/features/adoption/data/models/adoption_media_models.dart';
+import 'package:furtail_app/features/media/composer/media_draft_item.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_listing_form_payload.dart';
@@ -76,7 +76,7 @@ Widget _mediaPlaceholder({
 class AdoptionListingPreviewScreen extends StatefulWidget {
   final AdoptionListingFormPayload payload;
   final AdoptionRepository repository;
-  final List<AdoptionDraftMediaItem> localMedia;
+  final List<MediaDraftItem> localMedia;
   final int? existingListingId;
 
   const AdoptionListingPreviewScreen({
@@ -533,7 +533,7 @@ class _AdoptionListingPreviewScreenState
 // ─────────────────────────────── Widgets ─────────────────────────────────────
 
 class _MediaCarousel extends StatelessWidget {
-  final List<AdoptionDraftMediaItem> items;
+  final List<MediaDraftItem> items;
   final PageController controller;
   final int pageIndex;
   final ValueChanged<int> onPageChanged;
@@ -560,15 +560,16 @@ class _MediaCarousel extends StatelessWidget {
               if (item.isVideo) {
                 return _PreviewVideoHero(item: item);
               }
-              if (_hasRemoteUrl(item.url)) {
+              if (_hasRemoteUrl(item.previewUrl)) {
                 return Image.network(
-                  item.url!,
+                  item.previewUrl!,
                   fit: BoxFit.cover,
                   width: double.infinity,
                   errorBuilder: (_, __, ___) {
-                    if (_hasLocalFile(item.file)) {
+                    final localPath = item.localPath;
+                    if (localPath != null && _hasLocalFile(File(localPath))) {
                       return Image.file(
-                        item.file,
+                        File(localPath),
                         fit: BoxFit.cover,
                         width: double.infinity,
                       );
@@ -582,9 +583,10 @@ class _MediaCarousel extends StatelessWidget {
                   },
                 );
               }
-              if (_hasLocalFile(item.file)) {
+              final localPath = item.localPath;
+              if (localPath != null && _hasLocalFile(File(localPath))) {
                 return Image.file(
-                  item.file,
+                  File(localPath),
                   fit: BoxFit.cover,
                   width: double.infinity,
                 );
@@ -648,7 +650,7 @@ class _MediaCarousel extends StatelessWidget {
 }
 
 class _PreviewVideoHero extends StatefulWidget {
-  final AdoptionDraftMediaItem item;
+  final MediaDraftItem item;
 
   const _PreviewVideoHero({required this.item});
 
@@ -669,11 +671,12 @@ class _PreviewVideoHeroState extends State<_PreviewVideoHero> {
 
   void _initController() {
     final token = ++_token;
-    final remote = _remoteUri(widget.item.url);
+    final remote = _remoteUri(widget.item.previewUrl);
+    final localPath = widget.item.localPath;
     final controller = remote != null
         ? VideoPlayerController.networkUrl(remote)
-        : _hasLocalFile(widget.item.file)
-        ? VideoPlayerController.file(widget.item.file)
+        : (localPath != null && _hasLocalFile(File(localPath)))
+        ? VideoPlayerController.file(File(localPath))
         : null;
     if (controller == null) {
       _controller = null;
@@ -695,8 +698,8 @@ class _PreviewVideoHeroState extends State<_PreviewVideoHero> {
   @override
   void didUpdateWidget(covariant _PreviewVideoHero oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.file.path != widget.item.file.path ||
-        oldWidget.item.url != widget.item.url) {
+    if (oldWidget.item.localPath != widget.item.localPath ||
+        oldWidget.item.previewUrl != widget.item.previewUrl) {
       final controller = _controller;
       _controller = null;
       _init = null;
@@ -738,9 +741,9 @@ class _PreviewVideoHeroState extends State<_PreviewVideoHero> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              if (widget.item.thumbnail != null &&
-                  _hasLocalFile(widget.item.thumbnail!))
-                Image.file(widget.item.thumbnail!, fit: BoxFit.cover)
+              if (widget.item.thumbnailPath != null &&
+                  _hasLocalFile(File(widget.item.thumbnailPath!)))
+                Image.file(File(widget.item.thumbnailPath!), fit: BoxFit.cover)
               else
                 const ColoredBox(color: Colors.black87),
               Container(color: Colors.black.withValues(alpha: 0.18)),
