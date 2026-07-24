@@ -226,7 +226,8 @@ class AuthenticatedMediaUploader {
       thumbnailUrl: payload?['thumbnailUrl']?.toString(),
       type: payload?['type']?.toString(),
       status: payload?['status']?.toString(),
-      mimeType: payload?['mimeType']?.toString() ?? payload?['mimetype']?.toString(),
+      mimeType:
+          payload?['mimeType']?.toString() ?? payload?['mimetype']?.toString(),
     );
   }
 }
