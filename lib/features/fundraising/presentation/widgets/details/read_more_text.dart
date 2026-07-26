@@ -14,7 +14,9 @@ class _ReadMoreTextState extends State<ReadMoreText> {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.35);
+    final style = Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(height: 1.35);
 
     return LayoutBuilder(
       builder: (ctx, constraints) {
@@ -33,7 +35,9 @@ class _ReadMoreTextState extends State<ReadMoreText> {
               widget.text,
               style: style,
               maxLines: _expanded ? null : widget.maxLines,
-              overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+              overflow: _expanded
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
             ),
             if (overflow)
               Align(

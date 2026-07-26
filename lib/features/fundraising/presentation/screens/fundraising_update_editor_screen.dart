@@ -13,6 +13,7 @@ import '../../../media/composer/media_draft_item.dart';
 import '../../../media/composer/media_preparation_service.dart';
 import '../../../media/data/authenticated_media_uploader.dart';
 import '../../../posts/data/datasources/posts_remote_ds.dart';
+import '../../data/fundraising_error_mapper.dart';
 import '../../data/models/fundraising_models.dart';
 import '../providers/fundraising_providers.dart';
 
@@ -51,6 +52,9 @@ class _FundraisingUpdateEditorScreenState
 
   bool _saving = false;
   bool _pickingMedia = false;
+
+  bool get _hasContent =>
+      _captionCtrl.text.trim().isNotEmpty || _mediaController.items.isNotEmpty;
 
   @override
   void initState() {
@@ -267,13 +271,6 @@ class _FundraisingUpdateEditorScreenState
       ref.invalidate(fundraisingUpdatesProvider(widget.campaignId));
       if (!mounted) return;
       Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.existing == null ? 'Update posted' : 'Update updated',
-          ),
-        ),
-      );
     } catch (error) {
       if (!mounted) return;
       _showSnack(_friendlyError(error));
@@ -289,11 +286,7 @@ class _FundraisingUpdateEditorScreenState
       return error.userMessage;
     }
 
-    final raw = error.toString().replaceFirst('Exception: ', '').trim();
-    if (raw.startsWith('{') || raw.startsWith('[') || raw.isEmpty) {
-      return 'Could not complete that request right now. Please try again.';
-    }
-    return raw;
+    return mapFundraisingError(error);
   }
 
   void _showSnack(String message) {
@@ -307,31 +300,52 @@ class _FundraisingUpdateEditorScreenState
     final isEdit = widget.existing != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEdit ? 'Edit Update' : 'New Update'),
-        actions: [
-          TextButton(
-            onPressed: _saving || _mediaController.isPreparing ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save'),
+      appBar: AppBar(title: Text(isEdit ? 'Edit Update' : 'New Update')),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            12 + MediaQuery.of(context).viewInsets.bottom,
           ),
-        ],
+          child: SizedBox(
+            height: 54,
+            child: FilledButton.icon(
+              onPressed: _saving || _mediaController.isPreparing || !_hasContent
+                  ? null
+                  : _save,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.publish_rounded),
+              label: Text(isEdit ? 'Publish Changes' : 'Publish Update'),
+            ),
+          ),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           children: [
+            Text(
+              'Keep supporters informed with text, photos, videos, or documents.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _captionCtrl,
               maxLines: 4,
               decoration: const InputDecoration(
                 labelText: 'Update text',
+                alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
@@ -366,6 +380,13 @@ class _FundraisingUpdateEditorScreenState
             ),
             if (_mediaController.items.isNotEmpty) ...[
               const SizedBox(height: 12),
+              Text(
+                'Attachments',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
               MediaComposerList(
                 controller: _mediaController,
                 onEditItem: _editMediaItem,

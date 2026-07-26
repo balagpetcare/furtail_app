@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -29,6 +30,7 @@ class ApiClientException implements Exception {
     this.method,
     this.url,
     this.responseData,
+    this.responseHeaders,
   });
 
   final String message;
@@ -38,6 +40,7 @@ class ApiClientException implements Exception {
   final String? method;
   final String? url;
   final Object? responseData;
+  final Map<String, List<String>>? responseHeaders;
 
   bool get isUnauthorized => statusCode == 401;
   bool get isForbidden => statusCode == 403;
@@ -145,6 +148,7 @@ class ApiClient {
       method: method,
       url: url,
       responseData: decoded,
+      responseHeaders: res.headers.map,
     );
   }
 
@@ -179,6 +183,7 @@ class ApiClient {
       method: method,
       url: url,
       responseData: decoded,
+      responseHeaders: error.response?.headers.map,
     );
   }
 
@@ -284,6 +289,78 @@ class ApiClient {
         ),
       );
       return _handle(res, method: 'DELETE', url: url);
+    });
+  }
+
+  Future<Uint8List> getBytes(
+    String url, {
+    bool auth = true,
+    Map<String, String>? headers,
+  }) async {
+    return _runHttp('GET', url, () async {
+      final res = await _dio.get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: await _headers(auth: auth, extraHeaders: headers),
+          extra: {'auth': auth},
+        ),
+      );
+      final decoded = _safeDecode(res.data);
+      if ((res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 300) {
+        if (decoded is Uint8List) return decoded;
+        if (decoded is List<int>) return Uint8List.fromList(decoded);
+        if (decoded is String) return Uint8List.fromList(utf8.encode(decoded));
+      }
+      throw ApiClientException(
+        message: _messageFromDecoded(decoded, fallback: 'API Error'),
+        statusCode: res.statusCode,
+        code: _codeFromDecoded(decoded),
+        method: 'GET',
+        url: url,
+        responseData: decoded,
+        responseHeaders: res.headers.map,
+      );
+    });
+  }
+
+  Future<ApiBinaryResponse> getBinary(
+    String url, {
+    bool auth = true,
+    Map<String, String>? headers,
+  }) async {
+    return _runHttp('GET', url, () async {
+      final res = await _dio.get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: await _headers(auth: auth, extraHeaders: headers),
+          extra: {'auth': auth},
+        ),
+      );
+      final decoded = _safeDecode(res.data);
+      if ((res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 300) {
+        final bytes = decoded is Uint8List
+            ? decoded
+            : decoded is List<int>
+            ? Uint8List.fromList(decoded)
+            : decoded is String
+            ? Uint8List.fromList(utf8.encode(decoded))
+            : Uint8List(0);
+        return ApiBinaryResponse(
+          bytes: bytes,
+          contentType: res.headers.value(Headers.contentTypeHeader),
+        );
+      }
+      throw ApiClientException(
+        message: _messageFromDecoded(decoded, fallback: 'API Error'),
+        statusCode: res.statusCode,
+        code: _codeFromDecoded(decoded),
+        method: 'GET',
+        url: url,
+        responseData: decoded,
+        responseHeaders: res.headers.map,
+      );
     });
   }
 
@@ -420,6 +497,13 @@ class ApiMultipartFilePart {
   final Object file;
   final String? filename;
   final MediaType? contentType;
+}
+
+class ApiBinaryResponse {
+  const ApiBinaryResponse({required this.bytes, this.contentType});
+
+  final Uint8List bytes;
+  final String? contentType;
 }
 
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {

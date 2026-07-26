@@ -629,6 +629,192 @@ class AppLocalizationsBn extends AppLocalizations {
   String get fundraisingWizardTitle => 'ফান্ডরেইজার তৈরি করুন';
 
   @override
+  String get fundraisingVerificationWizardTitle => 'ফান্ডরেইজিং যাচাইকরণ';
+
+  @override
+  String fundraisingWizardStepOf(int current, int total) {
+    return 'ধাপ $current এর $total';
+  }
+
+  @override
+  String get fundraisingVerificationStepAccountLocation =>
+      'অ্যাকাউন্ট ও অবস্থান';
+
+  @override
+  String get fundraisingVerificationStepIdentityDetails => 'পরিচয় বিবরণ';
+
+  @override
+  String get fundraisingVerificationStepDocuments => 'ডকুমেন্ট';
+
+  @override
+  String get fundraisingVerificationStepReviewConsent => 'পর্যালোচনা ও সম্মতি';
+
+  @override
+  String get fundraisingVerificationStepSubmissionStatus => 'জমা ও অবস্থা';
+
+  @override
+  String get fundraisingCancel => 'বাতিল';
+
+  @override
+  String get fundraisingStatusReady => 'প্রস্তুত';
+
+  @override
+  String get fundraisingStatusActionRequired => 'পদক্ষেপ প্রয়োজন';
+
+  @override
+  String get fundraisingStateCompleted => 'সম্পন্ন';
+
+  @override
+  String get fundraisingStateIncomplete => 'অসম্পূর্ণ';
+
+  @override
+  String get fundraisingStatePending => 'পর্যালোচনাধীন';
+
+  @override
+  String get fundraisingViewAction => 'দেখুন';
+
+  @override
+  String get fundraisingActionComplete => 'সম্পন্ন করুন';
+
+  @override
+  String get fundraisingActionEdit => 'সম্পাদনা করুন';
+
+  @override
+  String get fundraisingActionUpload => 'আপলোড করুন';
+
+  @override
+  String get fundraisingActionViewDocuments => 'ডকুমেন্ট দেখুন';
+
+  @override
+  String get fundraisingActionReview => 'পর্যালোচনা করুন';
+
+  @override
+  String get fundraisingEligibilityHelperText =>
+      'চালিয়ে যেতে প্রয়োজনীয় বিষয়গুলো সম্পন্ন করুন।';
+
+  @override
+  String get fundraisingEligibilityLoadingHelper =>
+      'আপনার যোগ্যতা যাচাই করা হচ্ছে…';
+
+  @override
+  String get fundraisingEligibilityErrorHelper =>
+      'যোগ্যতা যাচাই করা যায়নি। আবার চেষ্টা করুন।';
+
+  @override
+  String get fundraisingEligibilityErrorTitle => 'যোগ্যতা যাচাই করা যাচ্ছে না';
+
+  @override
+  String get fundraisingEligibilityErrorMessage =>
+      'আমরা আপনার ফান্ডরেইজিং যাচাইকরণ অবস্থা লোড করতে পারিনি। আপনার সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।';
+
+  @override
+  String get fundraisingEligibilitySummaryTitle => 'ফান্ডরেইজিং যোগ্যতা';
+
+  @override
+  String get fundraisingEligibilitySummaryReady =>
+      'সব প্রস্তুত। আপনি আপনার ফান্ডরেইজার তৈরি চালিয়ে যেতে পারেন।';
+
+  @override
+  String get fundraisingEligibilitySummaryActionRequired =>
+      'ফান্ডরেইজার তৈরি করার আগে নিচের বিষয়গুলো সম্পন্ন করুন।';
+
+  @override
+  String get fundraisingEligibilitySummaryPending =>
+      'আপনার অ্যাকাউন্ট পর্যালোচনাধীন থাকা অবস্থায়ও আপনি ফান্ডরেইজার তৈরি করতে পারেন। তহবিল তুলতে ভেরিফিকেশন অনুমোদন প্রয়োজন।';
+
+  @override
+  String get fundraisingEligibilitySummaryVerified =>
+      'আপনার ফান্ডরেইজিং অ্যাকাউন্ট যাচাই করা হয়েছে।';
+
+  @override
+  String get fundraisingEligibilitySummaryRejected =>
+      'আপনার যাচাইকরণ প্রত্যাখ্যান করা হয়েছে। বিস্তারিত দেখে তথ্য হালনাগাদ করুন।';
+
+  @override
+  String get fundraisingEligibilitySummaryRestricted =>
+      'আপনার ফান্ডরেইজিং অ্যাকাউন্ট সীমাবদ্ধ। ফান্ডরেইজার তৈরি করার আগে ভেরিফিকেশন সম্পন্ন করুন বা পর্যালোচনার জন্য অপেক্ষা করুন।';
+
+  @override
+  String get fundraisingEligibilityProfileRowTitle => 'ফান্ডরেইজিং প্রোফাইল';
+
+  @override
+  String get fundraisingEligibilityDocumentsRowTitle => 'যাচাইকরণ ডকুমেন্ট';
+
+  @override
+  String get fundraisingWizardStepDetails => 'ফান্ডরেইজার বিস্তারিত';
+
+  @override
+  String get fundraisingWizardStepMediaLocation => 'মিডিয়া ও অবস্থান';
+
+  @override
+  String get fundraisingWizardDetailsDescription =>
+      'প্রথমে মূল ফান্ডরেইজার তথ্য দিন, তারপর সময়সীমা এবং প্রয়োজনে অতিরিক্ত সহায়তার তথ্য যোগ করুন।';
+
+  @override
+  String get fundraisingWizardMediaLocationDescription =>
+      'সহায়ক মিডিয়া যোগ করুন এবং প্রকাশ্য ক্যাম্পেইনের অবস্থান নির্বাচন করুন। চাইলে ব্যক্তিগত GPS অবস্থান গোপন রেখে সংগ্রহ করা যাবে।';
+
+  @override
+  String get fundraisingFundingModeField => 'ফান্ডিং মোড';
+
+  @override
+  String get fundraisingFundingModeOneTime => 'এককালীন ফান্ডরেইজার';
+
+  @override
+  String get fundraisingFundingModeOngoing => 'চলমান সহায়তা';
+
+  @override
+  String get fundraisingDurationField => 'সময়সীমা';
+
+  @override
+  String fundraisingDurationPresetDays(int days) {
+    return '$days দিন';
+  }
+
+  @override
+  String get fundraisingDurationCustom => 'কাস্টম';
+
+  @override
+  String get fundraisingMonthlyGoalField => 'ঐচ্ছিক মাসিক লক্ষ্য (BDT)';
+
+  @override
+  String get fundraisingOptionalEstimatedTotalField =>
+      'ঐচ্ছিক মোট আনুমানিক (BDT)';
+
+  @override
+  String get fundraisingExpenseNotesField => 'সহজ খরচের নোট';
+
+  @override
+  String get fundraisingAddExpenseBreakdown => 'খরচের বিভাজন যোগ করুন';
+
+  @override
+  String get fundraisingHideExpenseBreakdown => 'খরচের বিভাজন লুকান';
+
+  @override
+  String get fundraisingPrivacyLocationCopy =>
+      'শুধু ব্যক্তিগত নিরাপত্তা অবস্থান সংরক্ষণ করতে চাইলে বর্তমান অবস্থান ব্যবহার করুন। এটি প্রকাশ্য ক্যাম্পেইনের অবস্থান বদলাবে না।';
+
+  @override
+  String get fundraisingUseCurrentLocation => 'বর্তমান অবস্থান ব্যবহার করুন';
+
+  @override
+  String get fundraisingCurrentLocationCaptured =>
+      'বর্তমান অবস্থান গোপনে সংরক্ষিত হয়েছে';
+
+  @override
+  String get fundraisingLocationPermissionFailed =>
+      'আপনার বর্তমান অবস্থান সংগ্রহ করা যায়নি।';
+
+  @override
+  String get fundraisingOngoingSupportLabel => 'চলমান সহায়তা';
+
+  @override
+  String get fundraisingNoEndDate => 'কোনো বাধ্যতামূলক শেষ তারিখ নেই।';
+
+  @override
+  String get fundraisingNextReviewField => 'পরবর্তী পর্যালোচনা';
+
+  @override
   String get fundraisingWizardStepEligibility => 'যোগ্যতা';
 
   @override
@@ -692,6 +878,18 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get fundraisingDraftSaved => 'ড্রাফট সেভ হয়েছে';
+
+  @override
+  String get fundraisingContinueToFundraiser => 'ফান্ডরেইজারে এগিয়ে যান';
+
+  @override
+  String get fundraisingRequired => 'প্রয়োজনীয়';
+
+  @override
+  String get fundraisingUploaded => 'আপলোড হয়েছে';
+
+  @override
+  String get fundraisingOptional => 'ঐচ্ছিক';
 
   @override
   String get fundraisingAddPhotos => 'ছবি যোগ করুন';
@@ -821,13 +1019,16 @@ class AppLocalizationsBn extends AppLocalizations {
   String get fundraisingEligibilityVerified => 'ভেরিফায়েড';
 
   @override
-  String get fundraisingEligibilityPending => 'রিভিউ চলছে';
+  String get fundraisingEligibilityPending => 'ভেরিফিকেশন অপেক্ষমান';
 
   @override
   String get fundraisingEligibilityRejected => 'প্রত্যাখ্যাত';
 
   @override
   String get fundraisingEligibilityDraft => 'অসম্পূর্ণ';
+
+  @override
+  String get fundraisingEligibilityRestricted => 'ভেরিফিকেশন সীমাবদ্ধ';
 
   @override
   String get fundraisingEligibilityProfileTitle =>
@@ -979,6 +1180,18 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String get fundraisingErrorMediaFailed =>
       'এক বা একাধিক আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন অথবা ব্যর্থ আইটেম সরিয়ে দিন।';
+
+  @override
+  String get fundraisingMediaNeedsAttention => 'মনোযোগ প্রয়োজন';
+
+  @override
+  String get fundraisingMediaRetry => 'আবার চেষ্টা করুন';
+
+  @override
+  String get fundraisingMediaRemove => 'সরান';
+
+  @override
+  String get fundraisingNeedsAttentionFix => 'ঠিক করুন';
 
   @override
   String get fundraisingErrorSaveFailed =>

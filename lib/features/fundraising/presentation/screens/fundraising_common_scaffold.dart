@@ -48,7 +48,13 @@ class FundraisingCommonScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        titleSpacing: 8,
+        actionsPadding: const EdgeInsets.only(right: 8),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(title, maxLines: 1, overflow: TextOverflow.visible),
+        ),
         leading: showBack
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new_rounded),
@@ -62,30 +68,6 @@ class FundraisingCommonScaffold extends ConsumerWidget {
               )
             : null,
         actions: [
-          if (showDonationHistory)
-            IconButton(
-              tooltip: 'My Donations',
-              icon: const Icon(Icons.receipt_long_outlined),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const FundraisingMyDonationsScreen(),
-                  ),
-                );
-              },
-            ),
-          if (showWithdrawHub)
-            IconButton(
-              tooltip: 'Withdraw',
-              icon: const Icon(Icons.account_balance_wallet_outlined),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const FundraisingWithdrawHubScreen(),
-                  ),
-                );
-              },
-            ),
           if (showFilters)
             IconButton(
               tooltip: 'Filters',
@@ -93,23 +75,9 @@ class FundraisingCommonScaffold extends ConsumerWidget {
               onPressed: onOpenFilters,
             ),
 
-          // ✅ Most important: Verification
-          if (showVerification)
-            IconButton(
-              tooltip: 'Verification',
-              icon: const Icon(Icons.verified_outlined),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const FundraisingAccountSetupScreen(),
-                  ),
-                );
-              },
-            ),
-
           if (showCreate)
             IconButton(
-              tooltip: 'Start Fund Raising',
+              tooltip: 'Create fundraiser',
               icon: const Icon(Icons.add_rounded),
               onPressed: () async {
                 final created = await Navigator.of(context).push<bool>(
@@ -122,8 +90,67 @@ class FundraisingCommonScaffold extends ConsumerWidget {
                 }
               },
             ),
+          if (showDonationHistory || showWithdrawHub || showVerification)
+            PopupMenuButton<int>(
+              tooltip: 'More',
+              onSelected: (value) {
+                switch (value) {
+                  case 1:
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FundraisingMyDonationsScreen(),
+                      ),
+                    );
+                    break;
+                  case 2:
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FundraisingWithdrawHubScreen(),
+                      ),
+                    );
+                    break;
+                  case 3:
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const FundraisingAccountSetupScreen(),
+                      ),
+                    );
+                    break;
+                }
+              },
+              itemBuilder: (context) => <PopupMenuEntry<int>>[
+                if (showDonationHistory)
+                  const PopupMenuItem<int>(
+                    value: 1,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.receipt_long_outlined),
+                      title: Text('My donations'),
+                    ),
+                  ),
+                if (showWithdrawHub)
+                  const PopupMenuItem<int>(
+                    value: 2,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.account_balance_wallet_outlined),
+                      title: Text('Payouts and withdrawals'),
+                    ),
+                  ),
+                if (showVerification)
+                  const PopupMenuItem<int>(
+                    value: 3,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.verified_user_outlined),
+                      title: Text('Fundraising verification'),
+                    ),
+                  ),
+              ],
+            ),
         ],
       ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: body,
     );
   }

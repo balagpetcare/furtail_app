@@ -230,7 +230,11 @@ class _ComposerCard extends StatelessWidget {
     if (thumbPath != null &&
         thumbPath.isNotEmpty &&
         File(thumbPath).existsSync()) {
-      return Image.file(File(thumbPath), fit: BoxFit.cover);
+      return Image.file(
+        File(thumbPath),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _previewPlaceholder(item),
+      );
     }
 
     final localPath = item.localPath;
@@ -238,14 +242,26 @@ class _ComposerCard extends StatelessWidget {
         localPath != null &&
         localPath.isNotEmpty &&
         File(localPath).existsSync()) {
-      return Image.file(File(localPath), fit: BoxFit.cover);
+      return Image.file(
+        File(localPath),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _previewPlaceholder(item),
+      );
     }
 
     final previewUrl = item.remoteThumbnailUrl ?? item.previewUrl;
     if (previewUrl != null && previewUrl.isNotEmpty) {
-      return Image.network(previewUrl, fit: BoxFit.cover);
+      return Image.network(
+        previewUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _previewPlaceholder(item),
+      );
     }
 
+    return _previewPlaceholder(item);
+  }
+
+  Widget _previewPlaceholder(MediaDraftItem item) {
     return Container(
       color: Colors.black12,
       child: Center(

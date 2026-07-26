@@ -349,22 +349,72 @@ class FundraisingDonationCheckoutController extends ChangeNotifier {
           message: 'Please check your connection and try the payment again.',
         );
       }
-      if (error.statusCode == 400) {
+
+      // Map specific donation error codes to user-friendly messages
+      final errorMessages = <String, String>{
+        'CAMPAIGN_NOT_FOUND': 'This fundraiser does not exist.',
+        'CAMPAIGN_DELETED': 'This fundraiser has been removed.',
+        'CAMPAIGN_STATUS_DRAFT': 'This fundraiser has not been published yet.',
+        'CAMPAIGN_STATUS_PENDING_REVIEW':
+            'This fundraiser is available for donations while review is pending.',
+        'CAMPAIGN_STATUS_PAUSED':
+            'This fundraiser is paused and not accepting donations.',
+        'CAMPAIGN_STATUS_FUNDED':
+            'This fundraiser reached its goal and is not accepting more donations.',
+        'CAMPAIGN_STATUS_COMPLETED': 'This fundraiser has been completed.',
+        'CAMPAIGN_STATUS_EXPIRED': 'This fundraiser has expired.',
+        'CAMPAIGN_STATUS_REJECTED':
+            'This fundraiser was rejected and cannot receive donations.',
+        'CAMPAIGN_STATUS_CANCELLED': 'This fundraiser has been cancelled.',
+        'CAMPAIGN_STATUS_SUSPENDED': 'This fundraiser is suspended.',
+        'CAMPAIGN_STATUS_ARCHIVED': 'This fundraiser is archived.',
+        'PAYMENT_PROVIDER_ERROR': 'Payment provider error. Please try again.',
+        'INVALID_REDIRECT_URL':
+            'Payment configuration error. Please contact support.',
+        'DONATION_VALIDATION_FAILED': 'Please enter a valid donation amount.',
+      };
+
+      // Check for mapped error codes
+      if (error.code != null && errorMessages.containsKey(error.code)) {
         return FundraisingDonationFailure(
           type: FundraisingDonationErrorType.validation,
           code: error.code,
-          message: error.message,
+          message: errorMessages[error.code]!,
         );
       }
+
+      // Handle generic status codes
+      if (error.statusCode == 400) {
+        final message = error.message.trim();
+        return FundraisingDonationFailure(
+          type: FundraisingDonationErrorType.validation,
+          code: error.code,
+          message: message.isNotEmpty
+              ? message
+              : 'Invalid donation request. Please try again.',
+        );
+      }
+      if (error.statusCode == 404) {
+        return FundraisingDonationFailure(
+          type: FundraisingDonationErrorType.validation,
+          code: error.code,
+          message: 'This fundraiser could not be found.',
+        );
+      }
+
+      final message = error.message.trim();
       return FundraisingDonationFailure(
         type: FundraisingDonationErrorType.paymentFailed,
         code: error.code,
-        message: error.message,
+        message: message.isNotEmpty
+            ? message
+            : 'Payment failed. Please try again.',
       );
     }
-    return FundraisingDonationFailure(
+    return const FundraisingDonationFailure(
       type: FundraisingDonationErrorType.unknown,
-      message: error.toString(),
+      message:
+          'Something went wrong while starting the payment. Please try again.',
     );
   }
 

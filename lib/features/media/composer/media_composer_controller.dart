@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:furtail_app/features/media/composer/fundraising_media_validation.dart';
 import 'package:furtail_app/features/media/composer/media_composer_policy.dart';
 import 'package:furtail_app/features/media/composer/media_draft_item.dart';
 import 'package:furtail_app/features/media/data/authenticated_media_uploader.dart';
@@ -32,10 +33,33 @@ class MediaComposerController extends ChangeNotifier {
   final Map<String, CancelToken> _cancelTokens = <String, CancelToken>{};
 
   bool _restored = false;
+  bool _disposed = false;
+  Future<List<int>>? _ensureUploadedInFlight;
 
   List<MediaDraftItem> get items => List<MediaDraftItem>.unmodifiable(_items);
-  bool get hasFailedItems => _items.any((item) => item.hasFailed);
+  bool get hasItems => _items.isNotEmpty;
+  bool get hasFailedItems => mediaValidation.hasFailedItems;
   bool get hasBlockingItems => _items.any((item) => item.blocksSubmission);
+  bool get hasPendingItems => mediaValidation.hasPendingItems;
+  int get activeUploadCount =>
+      _items.where((item) => item.isUploading || item.isPreparing).length;
+  FundraisingMediaValidationResult get mediaValidation =>
+      evaluateFundraisingMedia(_items);
+  bool get allItemsReady =>
+      _items.isNotEmpty &&
+      _items.every(
+        (item) =>
+            item.remoteMediaId != null &&
+            (item.state == MediaDraftState.ready ||
+                item.state == MediaDraftState.uploaded),
+      );
+  MediaDraftItem? get firstFailedItem {
+    for (final item in _items) {
+      if (item.hasFailed) return item;
+    }
+    return null;
+  }
+
   bool get isUploading => _items.any((item) => item.isUploading);
   bool get isPreparing => _items.any((item) => item.isPreparing);
 
@@ -155,6 +179,16 @@ class MediaComposerController extends ChangeNotifier {
   }
 
   Future<List<int>> ensureUploaded() async {
+    final existing = _ensureUploadedInFlight;
+    if (existing != null) return existing;
+    final future = _ensureUploaded().whenComplete(() {
+      _ensureUploadedInFlight = null;
+    });
+    _ensureUploadedInFlight = future;
+    return future;
+  }
+
+  Future<List<int>> _ensureUploaded() async {
     await restore();
     final queued = _items
         .where((item) => item.remoteMediaId == null)
@@ -220,6 +254,22 @@ class MediaComposerController extends ChangeNotifier {
     final item = list.removeAt(index);
     list.insert(0, item);
     _replaceItems(list);
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    for (final token in _cancelTokens.values) {
+      token.cancel('disposed');
+    }
+    _cancelTokens.clear();
+    super.dispose();
   }
 
   String get _storageKey => 'media_composer.$draftStorageKey';

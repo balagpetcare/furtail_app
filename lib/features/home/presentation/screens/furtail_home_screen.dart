@@ -4,7 +4,7 @@ import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:furtail_app/core/auth/auth_controller.dart';
+import 'package:furtail_app/core/auth/logout_reset.dart';
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/config/policy_features_provider.dart';
 import 'package:furtail_app/core/network/connectivity_service.dart';
@@ -72,6 +72,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
   // ── Scroll-based hide/show for header & bottom nav ─────────────
   bool _isHeaderVisible = true;
+  bool _loggingOut = false;
   double _lastScrollOffset = 0;
   static const double _scrollThreshold = 8.0;
 
@@ -503,12 +504,14 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
       if (!ok || !mounted) return;
     }
 
-    // Close drawer (if open) before navigating
-    if (mounted) {
-      try {
-        Navigator.of(context).pop();
-      } catch (_) {}
-    }
+    // The drawer closes itself via Scaffold.closeDrawer() in BPACustomDrawer
+    // before invoking onSelect, so there is nothing to dismiss here.
+    //
+    // Do NOT re-close it with Navigator.pop(): by this point the drawer's
+    // LocalHistoryEntry is already gone, so the pop would remove the *page
+    // route* instead. FurtailHomeScreen is hosted by the first route (the
+    // AuthGate route), so that pop emptied Navigator._history and triggered
+    // the `_history.isNotEmpty` assertion — the logout crash.
     if (!mounted) return;
 
     // Helper: push a simple placeholder screen.
@@ -675,28 +678,17 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
       case BPADrawerDestination.logout:
         {
+          if (_loggingOut) return;
+          _loggingOut = true;
           try {
-            await ref
-                .read(notificationControllerProvider.notifier)
-                .unregisterPush();
-          } catch (_) {}
-          if (!mounted) return;
-
-          // Clears the real Central Auth session (secure storage + best-effort
-          // server-side revoke) — this used to only remove legacy display-cache
-          // prefs, leaving the actual access/refresh token pair intact.
-          await ref.read(authControllerProvider.notifier).logout();
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('userName');
-          await prefs.remove('userEmail');
-          ref.read(currentUserProvider.notifier).clear();
-
-          if (!mounted) return;
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-            (route) => false,
-          );
+            // Clears the real Central Auth session (secure storage +
+            // best-effort server-side revoke) plus every user-scoped
+            // provider cache, and flips AuthController to unauthenticated
+            // exactly once.
+            await resetSessionScopedState(ref);
+          } finally {
+            _loggingOut = false;
+          }
           return;
         }
 

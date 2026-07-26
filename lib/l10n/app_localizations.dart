@@ -1304,6 +1304,336 @@ abstract class AppLocalizations {
   /// **'Create fundraiser'**
   String get fundraisingWizardTitle;
 
+  /// No description provided for @fundraisingVerificationWizardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraising verification'**
+  String get fundraisingVerificationWizardTitle;
+
+  /// No description provided for @fundraisingWizardStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String fundraisingWizardStepOf(int current, int total);
+
+  /// No description provided for @fundraisingVerificationStepAccountLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & Location'**
+  String get fundraisingVerificationStepAccountLocation;
+
+  /// No description provided for @fundraisingVerificationStepIdentityDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity Details'**
+  String get fundraisingVerificationStepIdentityDetails;
+
+  /// No description provided for @fundraisingVerificationStepDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get fundraisingVerificationStepDocuments;
+
+  /// No description provided for @fundraisingVerificationStepReviewConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Review & Consent'**
+  String get fundraisingVerificationStepReviewConsent;
+
+  /// No description provided for @fundraisingVerificationStepSubmissionStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission & Status'**
+  String get fundraisingVerificationStepSubmissionStatus;
+
+  /// No description provided for @fundraisingCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get fundraisingCancel;
+
+  /// No description provided for @fundraisingStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get fundraisingStatusReady;
+
+  /// No description provided for @fundraisingStatusActionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Action required'**
+  String get fundraisingStatusActionRequired;
+
+  /// No description provided for @fundraisingStateCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get fundraisingStateCompleted;
+
+  /// No description provided for @fundraisingStateIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get fundraisingStateIncomplete;
+
+  /// No description provided for @fundraisingStatePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get fundraisingStatePending;
+
+  /// No description provided for @fundraisingViewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get fundraisingViewAction;
+
+  /// No description provided for @fundraisingActionComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get fundraisingActionComplete;
+
+  /// No description provided for @fundraisingActionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get fundraisingActionEdit;
+
+  /// No description provided for @fundraisingActionUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get fundraisingActionUpload;
+
+  /// No description provided for @fundraisingActionViewDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'View documents'**
+  String get fundraisingActionViewDocuments;
+
+  /// No description provided for @fundraisingActionReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get fundraisingActionReview;
+
+  /// No description provided for @fundraisingEligibilityHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the required items to continue.'**
+  String get fundraisingEligibilityHelperText;
+
+  /// No description provided for @fundraisingEligibilityLoadingHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your eligibility…'**
+  String get fundraisingEligibilityLoadingHelper;
+
+  /// No description provided for @fundraisingEligibilityErrorHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Eligibility could not be checked. Try again.'**
+  String get fundraisingEligibilityErrorHelper;
+
+  /// No description provided for @fundraisingEligibilityErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to check eligibility'**
+  String get fundraisingEligibilityErrorTitle;
+
+  /// No description provided for @fundraisingEligibilityErrorMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t load your fundraising verification status. Check your connection and try again.'**
+  String get fundraisingEligibilityErrorMessage;
+
+  /// No description provided for @fundraisingEligibilitySummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraising eligibility'**
+  String get fundraisingEligibilitySummaryTitle;
+
+  /// No description provided for @fundraisingEligibilitySummaryReady.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all set. You can continue building your fundraiser.'**
+  String get fundraisingEligibilitySummaryReady;
+
+  /// No description provided for @fundraisingEligibilitySummaryActionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the items below before you can create a fundraiser.'**
+  String get fundraisingEligibilitySummaryActionRequired;
+
+  /// No description provided for @fundraisingEligibilitySummaryPending.
+  ///
+  /// In en, this message translates to:
+  /// **'You can create fundraisers while your account is under review. Verification approval is required before withdrawing funds.'**
+  String get fundraisingEligibilitySummaryPending;
+
+  /// No description provided for @fundraisingEligibilitySummaryVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Your fundraising account is verified.'**
+  String get fundraisingEligibilitySummaryVerified;
+
+  /// No description provided for @fundraisingEligibilitySummaryRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Your verification was rejected. Review the details and update your information.'**
+  String get fundraisingEligibilitySummaryRejected;
+
+  /// No description provided for @fundraisingEligibilitySummaryRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your fundraising account is restricted. Complete verification or wait for review before creating a fundraiser.'**
+  String get fundraisingEligibilitySummaryRestricted;
+
+  /// No description provided for @fundraisingEligibilityProfileRowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraising profile'**
+  String get fundraisingEligibilityProfileRowTitle;
+
+  /// No description provided for @fundraisingEligibilityDocumentsRowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification documents'**
+  String get fundraisingEligibilityDocumentsRowTitle;
+
+  /// No description provided for @fundraisingWizardStepDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Fundraiser details'**
+  String get fundraisingWizardStepDetails;
+
+  /// No description provided for @fundraisingWizardStepMediaLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Media & location'**
+  String get fundraisingWizardStepMediaLocation;
+
+  /// No description provided for @fundraisingWizardDetailsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the core fundraiser details first, then choose the duration and any optional support details.'**
+  String get fundraisingWizardDetailsDescription;
+
+  /// No description provided for @fundraisingWizardMediaLocationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add supporting media and select the public campaign location. Private GPS capture is optional and stays private.'**
+  String get fundraisingWizardMediaLocationDescription;
+
+  /// No description provided for @fundraisingFundingModeField.
+  ///
+  /// In en, this message translates to:
+  /// **'Funding mode'**
+  String get fundraisingFundingModeField;
+
+  /// No description provided for @fundraisingFundingModeOneTime.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time fundraiser'**
+  String get fundraisingFundingModeOneTime;
+
+  /// No description provided for @fundraisingFundingModeOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing support'**
+  String get fundraisingFundingModeOngoing;
+
+  /// No description provided for @fundraisingDurationField.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get fundraisingDurationField;
+
+  /// No description provided for @fundraisingDurationPresetDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String fundraisingDurationPresetDays(int days);
+
+  /// No description provided for @fundraisingDurationCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get fundraisingDurationCustom;
+
+  /// No description provided for @fundraisingMonthlyGoalField.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional monthly goal (BDT)'**
+  String get fundraisingMonthlyGoalField;
+
+  /// No description provided for @fundraisingOptionalEstimatedTotalField.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional estimated total (BDT)'**
+  String get fundraisingOptionalEstimatedTotalField;
+
+  /// No description provided for @fundraisingExpenseNotesField.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple expense notes'**
+  String get fundraisingExpenseNotesField;
+
+  /// No description provided for @fundraisingAddExpenseBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Add expense breakdown'**
+  String get fundraisingAddExpenseBreakdown;
+
+  /// No description provided for @fundraisingHideExpenseBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide expense breakdown'**
+  String get fundraisingHideExpenseBreakdown;
+
+  /// No description provided for @fundraisingPrivacyLocationCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Use current location only if you want to capture a private security location. It will not change the public campaign location.'**
+  String get fundraisingPrivacyLocationCopy;
+
+  /// No description provided for @fundraisingUseCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use current location'**
+  String get fundraisingUseCurrentLocation;
+
+  /// No description provided for @fundraisingCurrentLocationCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location captured privately'**
+  String get fundraisingCurrentLocationCaptured;
+
+  /// No description provided for @fundraisingLocationPermissionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not capture your current location.'**
+  String get fundraisingLocationPermissionFailed;
+
+  /// No description provided for @fundraisingOngoingSupportLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing support'**
+  String get fundraisingOngoingSupportLabel;
+
+  /// No description provided for @fundraisingNoEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No mandatory end date.'**
+  String get fundraisingNoEndDate;
+
+  /// No description provided for @fundraisingNextReviewField.
+  ///
+  /// In en, this message translates to:
+  /// **'Next review'**
+  String get fundraisingNextReviewField;
+
   /// No description provided for @fundraisingWizardStepEligibility.
   ///
   /// In en, this message translates to:
@@ -1417,6 +1747,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Draft saved'**
   String get fundraisingDraftSaved;
+
+  /// No description provided for @fundraisingContinueToFundraiser.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to fundraiser'**
+  String get fundraisingContinueToFundraiser;
+
+  /// No description provided for @fundraisingRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Required'**
+  String get fundraisingRequired;
+
+  /// No description provided for @fundraisingUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploaded'**
+  String get fundraisingUploaded;
+
+  /// No description provided for @fundraisingOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get fundraisingOptional;
 
   /// No description provided for @fundraisingAddPhotos.
   ///
@@ -1667,7 +2021,7 @@ abstract class AppLocalizations {
   /// No description provided for @fundraisingEligibilityPending.
   ///
   /// In en, this message translates to:
-  /// **'Pending review'**
+  /// **'Verification pending'**
   String get fundraisingEligibilityPending;
 
   /// No description provided for @fundraisingEligibilityRejected.
@@ -1681,6 +2035,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Incomplete'**
   String get fundraisingEligibilityDraft;
+
+  /// No description provided for @fundraisingEligibilityRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification restricted'**
+  String get fundraisingEligibilityRestricted;
 
   /// No description provided for @fundraisingEligibilityProfileTitle.
   ///
@@ -1940,6 +2300,30 @@ abstract class AppLocalizations {
   /// **'One or more uploads failed. Retry or remove the failed items to continue.'**
   String get fundraisingErrorMediaFailed;
 
+  /// No description provided for @fundraisingMediaNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get fundraisingMediaNeedsAttention;
+
+  /// No description provided for @fundraisingMediaRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get fundraisingMediaRetry;
+
+  /// No description provided for @fundraisingMediaRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get fundraisingMediaRemove;
+
+  /// No description provided for @fundraisingNeedsAttentionFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix'**
+  String get fundraisingNeedsAttentionFix;
+
   /// No description provided for @fundraisingErrorSaveFailed.
   ///
   /// In en, this message translates to:
@@ -2045,7 +2429,7 @@ abstract class AppLocalizations {
   /// No description provided for @fundraisingValidationMedia.
   ///
   /// In en, this message translates to:
-  /// **'Upload at least one media or evidence item.'**
+  /// **'Add at least one photo, video, or supporting document.'**
   String get fundraisingValidationMedia;
 
   /// No description provided for @fundraisingValidationMediaBlocking.

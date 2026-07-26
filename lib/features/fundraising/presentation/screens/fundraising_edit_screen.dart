@@ -14,6 +14,7 @@ import '../../../media/composer/media_draft_item.dart';
 import '../../../media/composer/media_preparation_service.dart';
 import '../../../media/data/authenticated_media_uploader.dart';
 import '../../../posts/data/datasources/posts_remote_ds.dart';
+import '../../data/fundraising_error_mapper.dart';
 import '../../data/models/fundraising_models.dart';
 import '../providers/fundraising_providers.dart';
 
@@ -383,11 +384,7 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
       return error.userMessage;
     }
 
-    final raw = error.toString().replaceFirst('Exception: ', '').trim();
-    if (raw.startsWith('{') || raw.startsWith('[') || raw.isEmpty) {
-      return 'Could not complete that request right now. Please try again.';
-    }
-    return raw;
+    return mapFundraisingError(error);
   }
 
   void _showSnack(String message) {

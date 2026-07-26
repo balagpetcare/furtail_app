@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
+import 'package:furtail_app/features/fundraising/presentation/utils/fundraising_formatters.dart';
 
 class FundraisingDonationsPreview extends StatelessWidget {
   final FundraisingCampaign campaign;
   final VoidCallback onViewAll;
 
-  const FundraisingDonationsPreview({super.key, required this.campaign, required this.onViewAll});
+  const FundraisingDonationsPreview({
+    super.key,
+    required this.campaign,
+    required this.onViewAll,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +23,15 @@ class FundraisingDonationsPreview extends StatelessWidget {
             Expanded(
               child: Text(
                 'Recent Donations',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
-            TextButton(onPressed: onViewAll, child: const Text('View all donations')),
+            TextButton(
+              onPressed: onViewAll,
+              child: const Text('View all donations'),
+            ),
           ],
         ),
         if (campaign.last3Donors.isEmpty)
@@ -37,7 +47,8 @@ class FundraisingDonationsPreview extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 16,
-                    backgroundImage: (d.avatarUrl != null && d.avatarUrl!.isNotEmpty)
+                    backgroundImage:
+                        (d.avatarUrl != null && d.avatarUrl!.isNotEmpty)
                         ? NetworkImage(d.avatarUrl!)
                         : null,
                     child: (d.avatarUrl == null || d.avatarUrl!.isEmpty)
@@ -55,7 +66,7 @@ class FundraisingDonationsPreview extends StatelessWidget {
                   ),
                   if (d.amount != null)
                     Text(
-                      'donated ৳${d.amount}',
+                      'donated ${formatFundraisingMoney(context, d.amount!)}',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                 ],

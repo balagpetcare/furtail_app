@@ -15,9 +15,7 @@ class FundraisingCommentsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Comments ($commentCount)')),
-      body: SafeArea(
-        child: CommentsSheet(postId: postId),
-      ),
+      body: SafeArea(child: CommentsSheet(postId: postId)),
     );
   }
 }

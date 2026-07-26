@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 /// Recommended usage:
 /// - Physical device: `flutter run --dart-define-from-file=env/mobile-dev.json`
 /// - Emulator:        `flutter run --dart-define-from-file=env/emulator-dev.json`
-/// - Or override:     `flutter run --dart-define=API_BASE_URL=http://192.168.10.108:7200/api/v1`
+/// - Or override:     `flutter run --dart-define=API_BASE_URL=http://192.168.10.111:7200/api/v1`
 ///
 /// API_BASE_URL may include or omit the /api/v1 suffix — both forms are handled.
 class AppConfig {
@@ -20,7 +20,7 @@ class AppConfig {
     if (kIsWeb) {
       return 'http://localhost:7200';
     } else if (Platform.isAndroid) {
-      return 'http://192.168.10.108:7200';
+      return 'http://192.168.10.111:7200';
     } else {
       return 'http://localhost:7200';
     }
@@ -59,6 +59,6 @@ class AppConfig {
     return url;
   }
 
-  /// Full /api/v1 prefix, e.g. http://192.168.10.108:7200/api/v1
+  /// Full /api/v1 prefix, e.g. http://192.168.10.111:7200/api/v1
   static String get apiV1 => '$apiBaseUrl/api/v1';
 }

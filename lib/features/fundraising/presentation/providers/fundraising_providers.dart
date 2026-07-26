@@ -7,6 +7,7 @@ import '../../data/models/fundraising_models.dart';
 import '../../data/models/fundraising_payout_models.dart';
 import '../../data/repositories/fundraising_repository.dart';
 import '../../data/services/fundraising_donation_checkout_storage.dart';
+import '../../data/services/fundraising_verification_recovery_service.dart';
 import '../controllers/fundraising_donation_checkout_controller.dart';
 
 // ---------------- Repository ----------------
@@ -139,9 +140,14 @@ final fundraisingUpdatesProvider = FutureProvider.autoDispose
 
 // ---------------- Account (verification profile) ----------------
 final fundraisingMyAccountProvider =
-    FutureProvider.autoDispose<FundraisingAccount>((ref) async {
+    FutureProvider.autoDispose<FundraisingAccount?>((ref) async {
       final repo = ref.read(fundraisingRepositoryProvider);
       return repo.fetchMyAccount();
+    });
+
+final fundraisingVerificationRecoveryServiceProvider =
+    Provider<FundraisingVerificationRecoveryService>((ref) {
+      return FundraisingVerificationRecoveryService();
     });
 
 // ---------------- Payout catalog + my methods (Phase C) ----------------

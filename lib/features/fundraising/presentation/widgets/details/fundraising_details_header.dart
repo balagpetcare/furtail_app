@@ -59,9 +59,9 @@ class FundraisingDetailsHeader extends StatelessWidget {
                 ),
                 Text(
                   fundraisingTimeAgo(createdAt),
-                  style: AppTypography.caption(context).copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTypography.caption(
+                    context,
+                  ).copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),

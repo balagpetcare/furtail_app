@@ -34,7 +34,9 @@ abstract final class AppTheme {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         surfaceTintColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        // AppBar background is colorScheme.primary (blue) — light/white status
+        // bar icons are required for readable contrast against it.
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         titleTextStyle: AppTypography.buildTextTheme().titleLarge?.copyWith(
           color: colorScheme.onPrimary,
           fontWeight: FontWeight.w600,
@@ -49,10 +51,7 @@ abstract final class AppTheme {
           side: BorderSide(color: colorScheme.outline),
         ),
       ),
-      dividerTheme: DividerThemeData(
-        color: colorScheme.outline,
-        thickness: 1,
-      ),
+      dividerTheme: DividerThemeData(color: colorScheme.outline, thickness: 1),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.primary,

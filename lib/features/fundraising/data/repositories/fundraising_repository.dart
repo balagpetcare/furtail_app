@@ -3,11 +3,19 @@ import 'dart:math';
 import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'package:furtail_app/services/api_client.dart';
 
+import '../fundraising_debug_logger.dart';
 import '../fundraising_error_mapper.dart';
 import '../models/fundraising_draft_models.dart';
 import '../models/fundraising_donation_models.dart';
 import '../models/fundraising_models.dart';
 import '../models/fundraising_payout_models.dart';
+
+class FundraisingPage<T> {
+  const FundraisingPage({required this.items, required this.nextCursor});
+
+  final List<T> items;
+  final String? nextCursor;
+}
 
 class FundraisingRepository {
   final ApiClient _api;
@@ -17,20 +25,176 @@ class FundraisingRepository {
     if (res is Map && res['data'] is Map) {
       return Map<String, dynamic>.from(res['data'] as Map);
     }
-    if (res is Map) {
+    if (res is Map && !res.containsKey('data')) {
       return Map<String, dynamic>.from(res);
     }
-    return const <String, dynamic>{};
+    throw const FormatException(
+      'Unexpected fundraising API response: object payload required.',
+    );
   }
 
   List<dynamic> _asList(dynamic res) {
-    if (res is Map && res['data'] is List) return res['data'] as List<dynamic>;
-    if (res is List) return res;
-    return const <dynamic>[];
+    if (res is Map && res['data'] is List) {
+      return List<dynamic>.from(res['data'] as List);
+    }
+    if (res is Map && res['data'] is Map) {
+      final data = Map<String, dynamic>.from(res['data'] as Map);
+      final items = data['items'];
+      if (items is List) return List<dynamic>.from(items);
+    }
+    if (res is Map && res['items'] is List) {
+      return List<dynamic>.from(res['items'] as List);
+    }
+    if (res is List) return List<dynamic>.from(res);
+    throw const FormatException(
+      'Unexpected fundraising API response: list payload required.',
+    );
+  }
+
+  List<Map<String, dynamic>> _asObjectList(dynamic res) {
+    final values = _asList(res);
+    if (values.any((value) => value is! Map)) {
+      throw const FormatException(
+        'Unexpected fundraising API response: object list required.',
+      );
+    }
+    return values
+        .map((value) => Map<String, dynamic>.from(value as Map))
+        .toList(growable: false);
+  }
+
+  FundraisingPage<T> _asObjectPage<T>(
+    dynamic res,
+    T Function(Map<String, dynamic> json) parser,
+  ) {
+    final envelope = _asMap(res);
+    final nextCursor = envelope['nextCursor']?.toString();
+    final items = _asObjectList(res).map(parser).toList(growable: false);
+    return FundraisingPage<T>(items: items, nextCursor: nextCursor);
+  }
+
+  bool _isAccountNotFoundError(Object error) {
+    if (error is ApiClientException) {
+      final code = (error.code ?? '').trim().toUpperCase();
+      return (error.statusCode ?? 0) == 404 ||
+          code.contains('NOT_FOUND') ||
+          code.contains('ACCOUNT_NOT_FOUND') ||
+          code.contains('FUNDRAISING_ACCOUNT_MISSING');
+    }
+    return false;
+  }
+
+  List<String> _topLevelKeys(dynamic value) {
+    if (value is Map) {
+      final keys = value.keys.map((key) => key.toString()).toList();
+      keys.sort();
+      return keys;
+    }
+    if (value is ApiClientException) {
+      return _topLevelKeys(value.responseData);
+    }
+    return const <String>[];
+  }
+
+  bool _looksLikeAccountMap(Map<String, dynamic> json) {
+    return json.containsKey('id') && json.containsKey('status');
+  }
+
+  Map<String, dynamic>? _extractAccountPayload(
+    dynamic res, {
+    required String operation,
+  }) {
+    if (res == null) {
+      return null;
+    }
+
+    if (res is String || res is List) {
+      throw const FundraisingAccountParseException(
+        'Unexpected fundraising account payload type.',
+      );
+    }
+
+    if (res is! Map) {
+      throw const FundraisingAccountParseException(
+        'Unexpected fundraising account payload type.',
+      );
+    }
+
+    final map = Map<String, dynamic>.from(res);
+    final data = map['data'];
+
+    if (data == null) {
+      if (_looksLikeAccountMap(map)) {
+        return map;
+      }
+      return null;
+    }
+
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    if (data is String || data is List) {
+      throw const FundraisingAccountParseException(
+        'Unexpected fundraising account payload type.',
+      );
+    }
+
+    if (_looksLikeAccountMap(map)) {
+      return map;
+    }
+
+    throw const FundraisingAccountParseException(
+      'Unexpected fundraising account payload type.',
+    );
+  }
+
+  FundraisingAccount _parseAccountResponse(
+    dynamic res, {
+    required String operation,
+  }) {
+    try {
+      final data = _extractAccountPayload(res, operation: operation);
+      if (data == null) {
+        throw const FundraisingAccountParseException(
+          'Missing fundraising account payload.',
+        );
+      }
+      return FundraisingAccount.fromJson(data);
+    } on FundraisingAccountParseException catch (error) {
+      logFundraisingRequestDebug(
+        operation: operation,
+        method: 'GET',
+        endpointPath: ApiEndpoints.fundraisingAccountMe(),
+        error: error,
+        responseTopLevelKeys: _topLevelKeys(res),
+      );
+      rethrow;
+    }
   }
 
   Future<List<FundraisingCampaign>> fetchFeed({
     int limit = 50,
+    String? cursor,
+    bool? verified,
+    String? category,
+    String? location,
+    String? sort,
+  }) async {
+    final page = await fetchFeedPage(
+      limit: limit,
+      cursor: cursor,
+      verified: verified,
+      category: category,
+      location: location,
+      sort: sort,
+    );
+    return page.items;
+  }
+
+  Future<FundraisingPage<FundraisingCampaign>> fetchFeedPage({
+    int limit = 50,
+    String? cursor,
     bool? verified,
     String? category,
     String? location,
@@ -39,6 +203,7 @@ class FundraisingRepository {
     final res = await _api.get(
       ApiEndpoints.fundraisingFeed(
         limit: limit,
+        cursor: cursor,
         verified: verified,
         category: category,
         location: location,
@@ -46,14 +211,7 @@ class FundraisingRepository {
       ),
       auth: true,
     );
-    final feedBody = _asMap(res);
-    final data = feedBody['items'] is List
-        ? feedBody['items'] as List
-        : _asList(res);
-    return data
-        .whereType<Map>()
-        .map((e) => FundraisingCampaign.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    return _asObjectPage(res, FundraisingCampaign.fromJson);
   }
 
   // ✅ Only campaigns created by the current user (for Unified Withdraw Hub).
@@ -62,11 +220,8 @@ class FundraisingRepository {
       ApiEndpoints.fundraisingMyCampaigns(limit: limit),
       auth: true,
     );
-    final data = _asList(res);
-    return data
-        .whereType<Map>()
-        .map((e) => FundraisingCampaign.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    final data = _asObjectList(res);
+    return data.map(FundraisingCampaign.fromJson).toList(growable: false);
   }
 
   Future<FundraisingCampaign> fetchCampaign(int id) async {
@@ -168,7 +323,13 @@ class FundraisingRepository {
     String? category,
     String? locationText,
     int? targetAmount,
+    int? targetAmountMinor,
+    int? monthlyGoalMinor,
+    String? fundingMode,
+    DateTime? startsAt,
+    DateTime? endsAt,
     DateTime? deadline,
+    DateTime? nextReviewAt,
     String? status,
     List<int>? mediaIds,
   }) async {
@@ -178,7 +339,13 @@ class FundraisingRepository {
       if (category != null) 'category': category,
       if (locationText != null) 'locationText': locationText,
       if (targetAmount != null) 'targetAmount': targetAmount,
+      if (targetAmountMinor != null) 'targetAmountMinor': targetAmountMinor,
+      if (monthlyGoalMinor != null) 'monthlyGoalMinor': monthlyGoalMinor,
+      if (fundingMode != null) 'fundingMode': fundingMode,
+      if (startsAt != null) 'startsAt': startsAt.toIso8601String(),
+      if (endsAt != null) 'endsAt': endsAt.toIso8601String(),
       if (deadline != null) 'deadline': deadline.toIso8601String(),
+      if (nextReviewAt != null) 'nextReviewAt': nextReviewAt.toIso8601String(),
       if (status != null) 'status': status,
       if (mediaIds != null) 'mediaIds': mediaIds,
     };
@@ -201,7 +368,7 @@ class FundraisingRepository {
   Future<List<DonationItem>> listDonations({
     required int campaignId,
     int limit = 50,
-    int? cursor,
+    String? cursor,
   }) async {
     final res = await _api.get(
       ApiEndpoints.fundraisingCampaignDonations(
@@ -211,17 +378,27 @@ class FundraisingRepository {
       ),
       auth: true,
     );
-    final data = _asList(res);
-    return data
-        .whereType<Map>()
-        .map((e) => DonationItem.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    final data = _asObjectList(res);
+    return data.map(DonationItem.fromJson).toList(growable: false);
   }
 
   Future<List<FundraisingUpdateItem>> listUpdates({
     required int campaignId,
     int limit = 50,
-    int? cursor,
+    String? cursor,
+  }) async {
+    final page = await listUpdatesPage(
+      campaignId: campaignId,
+      limit: limit,
+      cursor: cursor,
+    );
+    return page.items;
+  }
+
+  Future<FundraisingPage<FundraisingUpdateItem>> listUpdatesPage({
+    required int campaignId,
+    int limit = 50,
+    String? cursor,
   }) async {
     final res = await _api.get(
       ApiEndpoints.fundraisingCampaignUpdates(
@@ -231,13 +408,7 @@ class FundraisingRepository {
       ),
       auth: true,
     );
-    final data = _asList(res);
-    return data
-        .whereType<Map>()
-        .map(
-          (e) => FundraisingUpdateItem.fromJson(Map<String, dynamic>.from(e)),
-        )
-        .toList();
+    return _asObjectPage(res, FundraisingUpdateItem.fromJson);
   }
 
   Future<FundraisingUpdateItem> createUpdate({
@@ -281,26 +452,104 @@ class FundraisingRepository {
   }
 
   // ------------------ Fundraising account (verification) ------------------
-  Future<FundraisingAccount> fetchMyAccount() async {
-    final res = await _api.get(ApiEndpoints.fundraisingAccountMe(), auth: true);
-    final data = _asMap(res);
-    return FundraisingAccount.fromJson(data);
+  Future<FundraisingAccount?> fetchMyAccount() async {
+    List<String> responseTopLevelKeys = const <String>[];
+    try {
+      final res = await _api.get(
+        ApiEndpoints.fundraisingAccountMe(),
+        auth: true,
+      );
+      responseTopLevelKeys = _topLevelKeys(res);
+      final payload = _extractAccountPayload(
+        res,
+        operation: 'fundraising.account.fetchMyAccount',
+      );
+      if (payload == null) return null;
+      return FundraisingAccount.fromJson(payload);
+    } catch (error) {
+      if (_isAccountNotFoundError(error)) {
+        return null;
+      }
+      if (error is FundraisingAccountParseException) {
+        logFundraisingRequestDebug(
+          operation: 'fundraising.account.fetchMyAccount',
+          method: 'GET',
+          endpointPath: ApiEndpoints.fundraisingAccountMe(),
+          error: error,
+          responseTopLevelKeys: responseTopLevelKeys,
+        );
+        rethrow;
+      }
+      logFundraisingRequestDebug(
+        operation: 'fundraising.account.fetchMyAccount',
+        method: 'GET',
+        endpointPath: ApiEndpoints.fundraisingAccountMe(),
+        error: error,
+        responseTopLevelKeys: responseTopLevelKeys,
+      );
+      rethrow;
+    }
   }
 
   Future<FundraisingAccount> updateMyAccount(
     Map<String, dynamic> payload,
   ) async {
-    final res = await _api.patch(
-      ApiEndpoints.fundraisingAccountUpdate(),
-      payload,
-      auth: true,
-    );
-    final data = _asMap(res);
-    return FundraisingAccount.fromJson(data);
+    List<String> responseTopLevelKeys = const <String>[];
+    try {
+      final res = await _api.patch(
+        ApiEndpoints.fundraisingAccountUpdate(),
+        payload,
+        auth: true,
+      );
+      responseTopLevelKeys = _topLevelKeys(res);
+      return _parseAccountResponse(
+        res,
+        operation: 'fundraising.account.updateMyAccount',
+      );
+    } catch (error) {
+      if (error is FundraisingAccountParseException) {
+        logFundraisingRequestDebug(
+          operation: 'fundraising.account.updateMyAccount',
+          method: 'PATCH',
+          endpointPath: ApiEndpoints.fundraisingAccountUpdate(),
+          error: error,
+          responseTopLevelKeys: responseTopLevelKeys,
+        );
+        rethrow;
+      }
+      if (error is ApiClientException) {
+        logFundraisingRequestDebug(
+          operation: 'fundraising.account.updateMyAccount',
+          method: 'PATCH',
+          endpointPath: ApiEndpoints.fundraisingAccountUpdate(),
+          error: error,
+          responseTopLevelKeys: responseTopLevelKeys,
+        );
+        rethrow;
+      }
+      logFundraisingRequestDebug(
+        operation: 'fundraising.account.updateMyAccount',
+        method: 'PATCH',
+        endpointPath: ApiEndpoints.fundraisingAccountUpdate(),
+        error: error,
+        responseTopLevelKeys: responseTopLevelKeys,
+      );
+      rethrow;
+    }
   }
 
   Future<void> submitMyAccount() async {
-    await _api.post(ApiEndpoints.fundraisingAccountSubmit(), {}, auth: true);
+    try {
+      await _api.post(ApiEndpoints.fundraisingAccountSubmit(), {}, auth: true);
+    } catch (error) {
+      logFundraisingRequestDebug(
+        operation: 'fundraising.account.submitMyAccount',
+        method: 'POST',
+        endpointPath: ApiEndpoints.fundraisingAccountSubmit(),
+        error: error,
+      );
+      rethrow;
+    }
   }
 
   Future<void> addDocument({
@@ -325,8 +574,14 @@ class FundraisingRepository {
     required String caption,
     required String category,
     required String locationText,
-    required int targetAmount,
-    required DateTime deadline,
+    int? targetAmount,
+    int? targetAmountMinor,
+    int? monthlyGoalMinor,
+    String fundingMode = 'ONE_TIME',
+    DateTime? startsAt,
+    DateTime? endsAt,
+    DateTime? deadline,
+    DateTime? nextReviewAt,
     List<int> mediaIds = const [],
   }) async {
     final payload = {
@@ -334,8 +589,14 @@ class FundraisingRepository {
       'caption': caption,
       'category': category,
       'locationText': locationText,
-      'targetAmount': targetAmount,
-      'deadline': deadline.toIso8601String(),
+      if (targetAmount != null) 'targetAmount': targetAmount,
+      if (targetAmountMinor != null) 'targetAmountMinor': targetAmountMinor,
+      if (monthlyGoalMinor != null) 'monthlyGoalMinor': monthlyGoalMinor,
+      'fundingMode': fundingMode,
+      if (startsAt != null) 'startsAt': startsAt.toIso8601String(),
+      if (endsAt != null) 'endsAt': endsAt.toIso8601String(),
+      if (deadline != null) 'deadline': deadline.toIso8601String(),
+      if (nextReviewAt != null) 'nextReviewAt': nextReviewAt.toIso8601String(),
       'mediaIds': mediaIds,
     };
 
@@ -354,11 +615,8 @@ class FundraisingRepository {
       ApiEndpoints.fundraisingPayoutCatalog(all: all),
       auth: true,
     );
-    final data = _asList(res);
-    return data
-        .whereType<Map>()
-        .map((e) => PayoutCatalogItem.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    final data = _asObjectList(res);
+    return data.map(PayoutCatalogItem.fromJson).toList(growable: false);
   }
 
   Future<List<FundraisingPayoutMethod>> listMyPayoutMethods() async {
@@ -366,13 +624,8 @@ class FundraisingRepository {
       ApiEndpoints.fundraisingPayoutMethods(),
       auth: true,
     );
-    final data = _asList(res);
-    return data
-        .whereType<Map>()
-        .map(
-          (e) => FundraisingPayoutMethod.fromJson(Map<String, dynamic>.from(e)),
-        )
-        .toList();
+    final data = _asObjectList(res);
+    return data.map(FundraisingPayoutMethod.fromJson).toList(growable: false);
   }
 
   Future<FundraisingPayoutMethod> createMyPayoutMethod({
@@ -440,14 +693,10 @@ class FundraisingRepository {
       ),
       auth: true,
     );
-    final data = _asList(res);
+    final data = _asObjectList(res);
     return data
-        .whereType<Map>()
-        .map(
-          (e) =>
-              FundraisingWithdrawRequest.fromJson(Map<String, dynamic>.from(e)),
-        )
-        .toList();
+        .map(FundraisingWithdrawRequest.fromJson)
+        .toList(growable: false);
   }
 
   Future<FundraisingWithdrawBalanceSummary> fetchWithdrawBalanceSummary({

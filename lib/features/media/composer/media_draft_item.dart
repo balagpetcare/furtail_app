@@ -142,15 +142,13 @@ class MediaDraftItem {
   bool get isCancelled => state == MediaDraftState.cancelled;
   bool get isReadyForSubmit =>
       remoteMediaId != null &&
-      (state == MediaDraftState.ready ||
-          state == MediaDraftState.processing ||
-          state == MediaDraftState.uploaded);
+      (state == MediaDraftState.ready || state == MediaDraftState.uploaded);
   bool get blocksSubmission =>
       state == MediaDraftState.failed ||
       state == MediaDraftState.cancelled ||
-      state == MediaDraftState.local ||
       state == MediaDraftState.preparing ||
-      state == MediaDraftState.uploading;
+      state == MediaDraftState.uploading ||
+      state == MediaDraftState.processing;
 
   String? get previewUrl {
     final hls = remoteHlsUrl?.trim();

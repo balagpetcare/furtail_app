@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:furtail_app/core/media/media_url.dart';
+import 'package:furtail_app/features/fundraising/data/services/fundraising_date_serializer.dart';
+
+import '../services/fundraising_json.dart';
 
 enum FundraisingWizardStep {
-  eligibility,
   fundraiserType,
   storyAndGoal,
   caseDetails,
@@ -12,6 +14,8 @@ enum FundraisingWizardStep {
   payoutReadiness,
   preview,
 }
+
+const int kFundraisingWizardStepCount = 3;
 
 enum FundraisingWizardErrorType {
   validation,
@@ -73,7 +77,7 @@ class FundraisingExpenseItem {
     return FundraisingExpenseItem(
       code: json['code']?.toString() ?? '',
       label: json['label']?.toString() ?? '',
-      amountMinor: (json['amountMinor'] as num?)?.toInt(),
+      amountMinor: fundraisingInt(json['amountMinor']),
     );
   }
 }
@@ -87,9 +91,14 @@ class FundraisingDraftRecord {
     this.title,
     this.caption,
     this.category,
+    this.fundingMode = 'ONE_TIME',
     this.currencyCode = 'BDT',
     this.targetAmountMinor,
+    this.monthlyGoalMinor,
+    this.startsAt,
+    this.endsAt,
     this.deadline,
+    this.nextReviewAt,
     this.beneficiaryType,
     this.beneficiaryName,
     this.petId,
@@ -118,9 +127,14 @@ class FundraisingDraftRecord {
   final String? title;
   final String? caption;
   final String? category;
+  final String fundingMode;
   final String currencyCode;
   final int? targetAmountMinor;
+  final int? monthlyGoalMinor;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
   final DateTime? deadline;
+  final DateTime? nextReviewAt;
   final String? beneficiaryType;
   final String? beneficiaryName;
   final int? petId;
@@ -153,7 +167,7 @@ class FundraisingDraftRecord {
       final media = (map['media'] is Map)
           ? Map<String, dynamic>.from(map['media'] as Map)
           : const <String, dynamic>{};
-      final id = (media['id'] as num?)?.toInt();
+      final id = fundraisingInt(media['id']);
       if (id != null) mediaIds.add(id);
       final url = media['url']?.toString();
       if (url != null && url.trim().isNotEmpty) {
@@ -161,22 +175,27 @@ class FundraisingDraftRecord {
       }
     }
     return FundraisingDraftRecord(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: fundraisingInt(json['id']) ?? 0,
       status: (json['status'] ?? 'DRAFT').toString(),
       publicId: json['publicId']?.toString(),
       slug: json['slug']?.toString(),
       title: json['title']?.toString(),
       caption: post['caption']?.toString(),
       category: json['category']?.toString(),
+      fundingMode: (json['fundingMode'] ?? 'ONE_TIME').toString(),
       currencyCode: (json['currencyCode'] ?? 'BDT').toString(),
       targetAmountMinor: _parseMoneyMinor(
         json['targetAmountMinor'],
         fallback: json['targetAmount'],
       ),
-      deadline: _parseDate(json['deadline']),
+      monthlyGoalMinor: _parseMoneyMinor(json['monthlyGoalMinor']),
+      startsAt: _parseDate(json['startsAt']),
+      endsAt: _parseDate(json['endsAt'] ?? json['deadline']),
+      deadline: _parseDate(json['deadline'] ?? json['endsAt']),
+      nextReviewAt: _parseDate(json['nextReviewAt']),
       beneficiaryType: json['beneficiaryType']?.toString(),
       beneficiaryName: json['beneficiaryName']?.toString(),
-      petId: (json['petId'] as num?)?.toInt(),
+      petId: fundraisingInt(json['petId']),
       urgency: json['urgency']?.toString(),
       treatmentProvider: json['treatmentProvider']?.toString(),
       estimatedExpenseMinor: _parseMoneyMinor(
@@ -187,14 +206,14 @@ class FundraisingDraftRecord {
           ? Map<String, dynamic>.from(json['spendingPlan'] as Map)
           : null,
       locationText: json['locationText']?.toString(),
-      countryId: (json['countryId'] as num?)?.toInt(),
-      stateId: (json['stateId'] as num?)?.toInt(),
-      cityId: (json['cityId'] as num?)?.toInt(),
-      subDistrictId: (json['subDistrictId'] as num?)?.toInt(),
-      bdDivisionId: (json['bdDivisionId'] as num?)?.toInt(),
-      bdDistrictId: (json['bdDistrictId'] as num?)?.toInt(),
-      bdUpazilaId: (json['bdUpazilaId'] as num?)?.toInt(),
-      bdAreaId: (json['bdAreaId'] as num?)?.toInt(),
+      countryId: fundraisingInt(json['countryId']),
+      stateId: fundraisingInt(json['stateId']),
+      cityId: fundraisingInt(json['cityId']),
+      subDistrictId: fundraisingInt(json['subDistrictId']),
+      bdDivisionId: fundraisingInt(json['bdDivisionId']),
+      bdDistrictId: fundraisingInt(json['bdDistrictId']),
+      bdUpazilaId: fundraisingInt(json['bdUpazilaId']),
+      bdAreaId: fundraisingInt(json['bdAreaId']),
       submittedAt: _parseDate(json['submittedAt']),
       mediaIds: mediaIds,
       mediaUrls: mediaUrls,
@@ -226,15 +245,21 @@ class FundraisingDraftRecovery {
     this.title = '',
     this.story = '',
     this.category = '',
+    this.fundingMode = 'ONE_TIME',
     this.currencyCode = 'BDT',
     this.targetAmountMinor,
+    this.monthlyGoalMinor,
+    this.startsAt,
+    this.endsAt,
     this.deadline,
+    this.nextReviewAt,
     this.beneficiaryType = 'PET',
     this.beneficiaryName = '',
     this.petId,
     this.urgency,
     this.treatmentProvider = '',
     this.estimatedExpenseMinor,
+    this.expenseNotes = '',
     this.locationText = '',
     this.countryId,
     this.stateId,
@@ -249,6 +274,10 @@ class FundraisingDraftRecovery {
     this.upazilaName,
     this.areaName,
     this.customLocationNote = '',
+    this.securityLatitude,
+    this.securityLongitude,
+    this.securityLocationAccuracy,
+    this.securityLocationCapturedAt,
     this.expenses = const <FundraisingExpenseItem>[],
     this.mediaIds = const <int>[],
     this.updatedAt,
@@ -262,15 +291,21 @@ class FundraisingDraftRecovery {
   final String title;
   final String story;
   final String category;
+  final String fundingMode;
   final String currencyCode;
   final int? targetAmountMinor;
+  final int? monthlyGoalMinor;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
   final DateTime? deadline;
+  final DateTime? nextReviewAt;
   final String beneficiaryType;
   final String beneficiaryName;
   final int? petId;
   final String? urgency;
   final String treatmentProvider;
   final int? estimatedExpenseMinor;
+  final String expenseNotes;
   final String locationText;
   final int? countryId;
   final int? stateId;
@@ -285,6 +320,10 @@ class FundraisingDraftRecovery {
   final String? upazilaName;
   final String? areaName;
   final String customLocationNote;
+  final double? securityLatitude;
+  final double? securityLongitude;
+  final double? securityLocationAccuracy;
+  final DateTime? securityLocationCapturedAt;
   final List<FundraisingExpenseItem> expenses;
   final List<int> mediaIds;
   final DateTime? updatedAt;
@@ -332,15 +371,23 @@ class FundraisingDraftRecovery {
       'title': title,
       'story': story,
       'category': category,
+      'fundingMode': fundingMode,
       'currencyCode': currencyCode,
       'targetAmountMinor': targetAmountMinor,
-      'deadline': deadline?.toIso8601String(),
+      'monthlyGoalMinor': monthlyGoalMinor,
+      'startsAt': FundraisingDateSerializer.serializeToUtcIso8601(startsAt),
+      'endsAt': FundraisingDateSerializer.serializeToUtcIso8601(endsAt),
+      'deadline': FundraisingDateSerializer.serializeToUtcIso8601(deadline),
+      'nextReviewAt': FundraisingDateSerializer.serializeToUtcIso8601(
+        nextReviewAt,
+      ),
       'beneficiaryType': beneficiaryType,
       'beneficiaryName': beneficiaryName,
       'petId': petId,
       'urgency': urgency,
       'treatmentProvider': treatmentProvider,
       'estimatedExpenseMinor': estimatedExpenseMinor,
+      'expenseNotes': expenseNotes,
       'locationText': locationText,
       'countryId': countryId,
       'stateId': stateId,
@@ -355,9 +402,18 @@ class FundraisingDraftRecovery {
       'upazilaName': upazilaName,
       'areaName': areaName,
       'customLocationNote': customLocationNote,
+      'securityLatitude': securityLatitude,
+      'securityLongitude': securityLongitude,
+      'securityLocationAccuracy': securityLocationAccuracy,
+      'securityLocationCapturedAt':
+          FundraisingDateSerializer.serializeToUtcIso8601(
+            securityLocationCapturedAt,
+          ),
       'expenses': expenses.map((item) => item.toJson()).toList(),
       'mediaIds': mediaIds,
-      'updatedAt': (updatedAt ?? DateTime.now()).toIso8601String(),
+      'updatedAt': FundraisingDateSerializer.serializeToUtcIso8601(
+        updatedAt ?? DateTime.now(),
+      ),
     };
   }
 
@@ -383,8 +439,10 @@ class FundraisingDraftRecovery {
               FundraisingExpenseItem.fromJson(Map<String, dynamic>.from(entry)),
         )
         .toList();
+    final rawStepIndex = fundraisingInt(json['stepIndex']) ?? 0;
+    final stepIndex = rawStepIndex > 0 ? rawStepIndex - 1 : 0;
     return FundraisingDraftRecovery(
-      remoteDraftId: (json['remoteDraftId'] as num?)?.toInt(),
+      remoteDraftId: fundraisingInt(json['remoteDraftId']),
       remoteDraftPublicId: json['remoteDraftPublicId']?.toString(),
       createIdempotencyKey:
           json['createIdempotencyKey']?.toString() ??
@@ -392,38 +450,62 @@ class FundraisingDraftRecovery {
       submitIdempotencyKey:
           json['submitIdempotencyKey']?.toString() ??
           empty.submitIdempotencyKey,
-      stepIndex: (json['stepIndex'] as num?)?.toInt() ?? 0,
+      stepIndex: stepIndex,
       title: json['title']?.toString() ?? '',
       story: json['story']?.toString() ?? '',
       category: json['category']?.toString() ?? '',
+      fundingMode: json['fundingMode']?.toString() ?? 'ONE_TIME',
       currencyCode: json['currencyCode']?.toString() ?? 'BDT',
-      targetAmountMinor: (json['targetAmountMinor'] as num?)?.toInt(),
-      deadline: FundraisingDraftRecord._parseDate(json['deadline']),
+      targetAmountMinor: fundraisingInt(json['targetAmountMinor']),
+      monthlyGoalMinor: fundraisingInt(json['monthlyGoalMinor']),
+      startsAt: FundraisingDateSerializer.parseLegacyDateField(
+        json['startsAt'],
+      ),
+      endsAt: FundraisingDateSerializer.parseLegacyDateField(
+        json['endsAt'] ?? json['deadline'],
+      ),
+      deadline: FundraisingDateSerializer.parseLegacyDateField(
+        json['deadline'] ?? json['endsAt'],
+      ),
+      nextReviewAt: FundraisingDateSerializer.parseLegacyDateField(
+        json['nextReviewAt'],
+      ),
       beneficiaryType: json['beneficiaryType']?.toString() ?? 'PET',
       beneficiaryName: json['beneficiaryName']?.toString() ?? '',
-      petId: (json['petId'] as num?)?.toInt(),
+      petId: fundraisingInt(json['petId']),
       urgency: json['urgency']?.toString(),
       treatmentProvider: json['treatmentProvider']?.toString() ?? '',
-      estimatedExpenseMinor: (json['estimatedExpenseMinor'] as num?)?.toInt(),
+      estimatedExpenseMinor: fundraisingInt(json['estimatedExpenseMinor']),
+      expenseNotes: json['expenseNotes']?.toString() ?? '',
       locationText: json['locationText']?.toString() ?? '',
-      countryId: (json['countryId'] as num?)?.toInt(),
-      stateId: (json['stateId'] as num?)?.toInt(),
-      cityId: (json['cityId'] as num?)?.toInt(),
-      subDistrictId: (json['subDistrictId'] as num?)?.toInt(),
-      bdDivisionId: (json['bdDivisionId'] as num?)?.toInt(),
-      bdDistrictId: (json['bdDistrictId'] as num?)?.toInt(),
-      bdUpazilaId: (json['bdUpazilaId'] as num?)?.toInt(),
-      bdAreaId: (json['bdAreaId'] as num?)?.toInt(),
+      countryId: fundraisingInt(json['countryId']),
+      stateId: fundraisingInt(json['stateId']),
+      cityId: fundraisingInt(json['cityId']),
+      subDistrictId: fundraisingInt(json['subDistrictId']),
+      bdDivisionId: fundraisingInt(json['bdDivisionId']),
+      bdDistrictId: fundraisingInt(json['bdDistrictId']),
+      bdUpazilaId: fundraisingInt(json['bdUpazilaId']),
+      bdAreaId: fundraisingInt(json['bdAreaId']),
       divisionName: json['divisionName']?.toString(),
       districtName: json['districtName']?.toString(),
       upazilaName: json['upazilaName']?.toString(),
       areaName: json['areaName']?.toString(),
       customLocationNote: json['customLocationNote']?.toString() ?? '',
+      securityLatitude: fundraisingDouble(json['securityLatitude']),
+      securityLongitude: fundraisingDouble(json['securityLongitude']),
+      securityLocationAccuracy: fundraisingDouble(json['securityLocationAccuracy']),
+      securityLocationCapturedAt:
+          FundraisingDateSerializer.parseLegacyDateField(
+            json['securityLocationCapturedAt'],
+          ),
       expenses: expenses.isEmpty ? empty.expenses : expenses,
       mediaIds: ((json['mediaIds'] as List?) ?? const <dynamic>[])
-          .map((entry) => (entry as num).toInt())
-          .toList(),
-      updatedAt: FundraisingDraftRecord._parseDate(json['updatedAt']),
+          .map(fundraisingInt)
+          .whereType<int>()
+          .toList(growable: false),
+      updatedAt: FundraisingDateSerializer.parseLegacyDateField(
+        json['updatedAt'],
+      ),
     );
   }
 
@@ -439,9 +521,14 @@ class FundraisingDraftRecovery {
       title: draft.title ?? current.title,
       story: draft.caption ?? current.story,
       category: draft.category ?? current.category,
+      fundingMode: draft.fundingMode,
       currencyCode: draft.currencyCode,
       targetAmountMinor: draft.targetAmountMinor ?? current.targetAmountMinor,
+      monthlyGoalMinor: draft.monthlyGoalMinor ?? current.monthlyGoalMinor,
+      startsAt: draft.startsAt ?? current.startsAt,
+      endsAt: draft.endsAt ?? current.endsAt,
       deadline: draft.deadline ?? current.deadline,
+      nextReviewAt: draft.nextReviewAt ?? current.nextReviewAt,
       beneficiaryType: draft.beneficiaryType ?? current.beneficiaryType,
       beneficiaryName: draft.beneficiaryName ?? current.beneficiaryName,
       petId: draft.petId ?? current.petId,
@@ -449,6 +536,7 @@ class FundraisingDraftRecovery {
       treatmentProvider: draft.treatmentProvider ?? current.treatmentProvider,
       estimatedExpenseMinor:
           draft.estimatedExpenseMinor ?? current.estimatedExpenseMinor,
+      expenseNotes: current.expenseNotes,
       locationText: draft.locationText ?? current.locationText,
       countryId: draft.countryId ?? current.countryId,
       stateId: draft.stateId ?? current.stateId,
@@ -474,11 +562,20 @@ class FundraisingDraftRecovery {
     String? title,
     String? story,
     String? category,
+    String? fundingMode,
     String? currencyCode,
     int? targetAmountMinor,
     bool clearTargetAmountMinor = false,
+    int? monthlyGoalMinor,
+    bool clearMonthlyGoalMinor = false,
+    DateTime? startsAt,
+    bool clearStartsAt = false,
+    DateTime? endsAt,
+    bool clearEndsAt = false,
     DateTime? deadline,
     bool clearDeadline = false,
+    DateTime? nextReviewAt,
+    bool clearNextReviewAt = false,
     String? beneficiaryType,
     String? beneficiaryName,
     int? petId,
@@ -488,6 +585,7 @@ class FundraisingDraftRecovery {
     String? treatmentProvider,
     int? estimatedExpenseMinor,
     bool clearEstimatedExpenseMinor = false,
+    String? expenseNotes,
     String? locationText,
     int? countryId,
     bool clearCountryId = false,
@@ -514,6 +612,14 @@ class FundraisingDraftRecovery {
     String? areaName,
     bool clearAreaName = false,
     String? customLocationNote,
+    double? securityLatitude,
+    bool clearSecurityLatitude = false,
+    double? securityLongitude,
+    bool clearSecurityLongitude = false,
+    double? securityLocationAccuracy,
+    bool clearSecurityLocationAccuracy = false,
+    DateTime? securityLocationCapturedAt,
+    bool clearSecurityLocationCapturedAt = false,
     List<FundraisingExpenseItem>? expenses,
     List<int>? mediaIds,
     DateTime? updatedAt,
@@ -529,11 +635,20 @@ class FundraisingDraftRecovery {
       title: title ?? this.title,
       story: story ?? this.story,
       category: category ?? this.category,
+      fundingMode: fundingMode ?? this.fundingMode,
       currencyCode: currencyCode ?? this.currencyCode,
       targetAmountMinor: clearTargetAmountMinor
           ? null
           : (targetAmountMinor ?? this.targetAmountMinor),
+      monthlyGoalMinor: clearMonthlyGoalMinor
+          ? null
+          : (monthlyGoalMinor ?? this.monthlyGoalMinor),
+      startsAt: clearStartsAt ? null : (startsAt ?? this.startsAt),
+      endsAt: clearEndsAt ? null : (endsAt ?? this.endsAt),
       deadline: clearDeadline ? null : (deadline ?? this.deadline),
+      nextReviewAt: clearNextReviewAt
+          ? null
+          : (nextReviewAt ?? this.nextReviewAt),
       beneficiaryType: beneficiaryType ?? this.beneficiaryType,
       beneficiaryName: beneficiaryName ?? this.beneficiaryName,
       petId: clearPetId ? null : (petId ?? this.petId),
@@ -542,6 +657,7 @@ class FundraisingDraftRecovery {
       estimatedExpenseMinor: clearEstimatedExpenseMinor
           ? null
           : (estimatedExpenseMinor ?? this.estimatedExpenseMinor),
+      expenseNotes: expenseNotes ?? this.expenseNotes,
       locationText: locationText ?? this.locationText,
       countryId: clearCountryId ? null : (countryId ?? this.countryId),
       stateId: clearStateId ? null : (stateId ?? this.stateId),
@@ -566,6 +682,18 @@ class FundraisingDraftRecovery {
       upazilaName: clearUpazilaName ? null : (upazilaName ?? this.upazilaName),
       areaName: clearAreaName ? null : (areaName ?? this.areaName),
       customLocationNote: customLocationNote ?? this.customLocationNote,
+      securityLatitude: clearSecurityLatitude
+          ? null
+          : (securityLatitude ?? this.securityLatitude),
+      securityLongitude: clearSecurityLongitude
+          ? null
+          : (securityLongitude ?? this.securityLongitude),
+      securityLocationAccuracy: clearSecurityLocationAccuracy
+          ? null
+          : (securityLocationAccuracy ?? this.securityLocationAccuracy),
+      securityLocationCapturedAt: clearSecurityLocationCapturedAt
+          ? null
+          : (securityLocationCapturedAt ?? this.securityLocationCapturedAt),
       expenses: expenses ?? this.expenses,
       mediaIds: mediaIds ?? this.mediaIds,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -585,7 +713,7 @@ class FundraisingDraftRecovery {
           FundraisingExpenseItem(
             code: map['code']?.toString() ?? '',
             label: map['label']?.toString() ?? '',
-            amountMinor: (map['amountMinor'] as num?)?.toInt(),
+            amountMinor: fundraisingInt(map['amountMinor']),
           ),
         );
       }

@@ -135,6 +135,8 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/common/bd/upazilas?districtId=$districtId";
   static String bdAreas({required int upazilaId}) =>
       "${ApiConfig.apiV1}/common/bd/areas?upazilaId=$upazilaId";
+  static String locationMasterValidateSelection() =>
+      "${ApiConfig.apiV1}/location-master/validate-selection";
 
   // ---------- CENTRALIZED LOCATION MASTER ----------
   static String locationMasterDivisions({
@@ -254,12 +256,15 @@ class ApiEndpoints {
   /// Supported params (server): limit, verified, category, location, sort
   static String fundraisingFeed({
     int limit = 50,
+    String? cursor,
     bool? verified,
     String? category,
     String? location,
     String? sort,
   }) {
     final qp = <String, String>{'limit': '$limit'};
+    if (cursor != null && cursor.trim().isNotEmpty)
+      qp['cursor'] = cursor.trim();
     if (verified != null) qp['verified'] = verified.toString();
     if (category != null && category.trim().isNotEmpty) {
       qp['category'] = category.trim();
@@ -314,7 +319,7 @@ class ApiEndpoints {
   static String fundraisingCampaignDonations(
     int id, {
     int limit = 50,
-    int? cursor,
+    String? cursor,
   }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';
@@ -327,7 +332,7 @@ class ApiEndpoints {
   static String fundraisingCampaignUpdates(
     int id, {
     int limit = 50,
-    int? cursor,
+    String? cursor,
   }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';

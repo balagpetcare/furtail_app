@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../services/fundraising_json.dart';
+
 enum FundraisingDonationCheckoutStatus {
   created,
   paymentPending,
@@ -78,7 +80,7 @@ class FundraisingDonationIntentSnapshot {
     Map<String, dynamic> json,
   ) {
     return FundraisingDonationIntentSnapshot(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: fundraisingInt(json['id']) ?? 0,
       publicId: json['publicId']?.toString() ?? '',
       referenceId: json['referenceId']?.toString() ?? '',
       status: json['status']?.toString() ?? 'PENDING',
@@ -117,7 +119,7 @@ class FundraisingDonationPaymentSnapshot {
       redirectUrl: json['redirectUrl']?.toString(),
       providerPaymentId: json['providerPaymentId']?.toString(),
       logId: json['logId']?.toString(),
-      paymentAttemptId: (json['paymentAttemptId'] as num?)?.toInt(),
+      paymentAttemptId: fundraisingInt(json['paymentAttemptId']),
     );
   }
 }
@@ -297,7 +299,7 @@ class FundraisingDonationCheckoutRecord {
     final failureJson = json['failure'];
     return FundraisingDonationCheckoutRecord(
       attemptId: json['attemptId']?.toString() ?? '',
-      campaignId: (json['campaignId'] as num?)?.toInt() ?? 0,
+      campaignId: fundraisingInt(json['campaignId']) ?? 0,
       campaignTitle: json['campaignTitle']?.toString() ?? '',
       amountMinor: _parseInt(json['amountMinor']),
       currencyCode: json['currencyCode']?.toString() ?? 'BDT',
@@ -308,7 +310,7 @@ class FundraisingDonationCheckoutRecord {
       consentAccepted: json['consentAccepted'] == true,
       createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
       updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
-      intentId: (json['intentId'] as num?)?.toInt(),
+      intentId: fundraisingInt(json['intentId']),
       intentPublicId: json['intentPublicId']?.toString(),
       referenceId: json['referenceId']?.toString(),
       provider: json['provider']?.toString(),

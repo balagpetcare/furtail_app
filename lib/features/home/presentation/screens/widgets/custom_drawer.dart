@@ -92,7 +92,16 @@ class _FurtailAppDrawerState extends State<FurtailAppDrawer> {
   }
 
   void _onTap(BPADrawerDestination dest) {
-    Navigator.pop(context);
+    // Close the drawer through the Scaffold API, never through Navigator.pop().
+    // Scaffold's drawer is backed by a LocalHistoryEntry on the enclosing
+    // route, so a bare Navigator.pop() here pops the *page route* whenever the
+    // drawer is already closed — on the first route that empties
+    // Navigator._history and trips the `_history.isNotEmpty` assertion.
+    // closeDrawer() is a no-op when no drawer is open, so it is always safe.
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold?.isDrawerOpen ?? false) {
+      scaffold!.closeDrawer();
+    }
     widget.onSelect(dest);
   }
 

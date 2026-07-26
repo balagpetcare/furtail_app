@@ -8,11 +8,11 @@ import 'base_url_validator.dart';
 /// Recommended usage:
 /// - Physical device: `flutter run --dart-define-from-file=env/mobile-dev.json`
 /// - Emulator:        `flutter run --dart-define-from-file=env/emulator-dev.json`
-/// - Or override:     `--dart-define=API_BASE_URL=http://192.168.10.108:7200/api/v1`
+/// - Or override:     `--dart-define=API_BASE_URL=http://192.168.10.111:7200/api/v1`
 ///
 /// API_BASE_URL may include or omit the /api/v1 suffix — both forms are handled.
 class ApiConfig {
-  /// API base host (without /api/v1), e.g. `http://192.168.10.108:7200`
+  /// API base host (without /api/v1), e.g. `http://192.168.10.111:7200`
   static String get host {
     const fromBase = String.fromEnvironment('API_BASE_URL', defaultValue: '');
     if (fromBase.isNotEmpty) {
@@ -28,7 +28,7 @@ class ApiConfig {
     if (kIsWeb) {
       return 'http://localhost:7200';
     } else if (Platform.isAndroid) {
-      return 'http://192.168.10.108:7200';
+      return 'http://192.168.10.111:7200';
     } else {
       return 'http://localhost:7200';
     }
@@ -51,7 +51,7 @@ class ApiConfig {
     return url;
   }
 
-  /// Full /api/v1 prefix, e.g. http://192.168.10.108:7200/api/v1
+  /// Full /api/v1 prefix, e.g. http://192.168.10.111:7200/api/v1
   static String get apiV1 => '$host/api/v1';
 
   /// User scoped base

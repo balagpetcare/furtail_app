@@ -15,11 +15,7 @@ class FundraisingInlineCommentsPreview extends StatelessWidget {
   });
 
   void _openAll(BuildContext context) {
-    showCommentsBottomSheet(
-      context,
-      postId: postId,
-      autoFocusComposer: false,
-    );
+    showCommentsBottomSheet(context, postId: postId, autoFocusComposer: false);
   }
 
   @override

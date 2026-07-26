@@ -1,3 +1,5 @@
+import '../services/fundraising_json.dart';
+
 class PayoutCatalogItem {
   final int id;
   final String name;
@@ -13,7 +15,7 @@ class PayoutCatalogItem {
 
   factory PayoutCatalogItem.fromJson(Map<String, dynamic> json) {
     return PayoutCatalogItem(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id: fundraisingInt(json['id']) ?? 0,
       name: (json['name'] ?? '').toString(),
       type: (json['type'] ?? '').toString(),
       isActive: (json['isActive'] as bool?) ?? true,
@@ -44,8 +46,8 @@ class FundraisingPayoutMethod {
 
   factory FundraisingPayoutMethod.fromJson(Map<String, dynamic> json) {
     return FundraisingPayoutMethod(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      catalogId: (json['catalogId'] as num?)?.toInt() ?? 0,
+      id: fundraisingInt(json['id']) ?? 0,
+      catalogId: fundraisingInt(json['catalogId']) ?? 0,
       label: json['label']?.toString(),
       detailsJson: (json['detailsJson'] is Map)
           ? Map<String, dynamic>.from(json['detailsJson'])
@@ -119,11 +121,11 @@ class FundraisingWithdrawBalanceSummary {
   ) {
     return FundraisingWithdrawBalanceSummary(
       currencyCode: (json['currencyCode'] ?? 'BDT').toString(),
-      totalRaisedMinor: (json['totalRaisedMinor'] as num?)?.toInt() ?? 0,
-      pendingMinor: (json['pendingMinor'] as num?)?.toInt() ?? 0,
-      availableMinor: (json['availableMinor'] as num?)?.toInt() ?? 0,
-      reservedMinor: (json['reservedMinor'] as num?)?.toInt() ?? 0,
-      transferredMinor: (json['transferredMinor'] as num?)?.toInt() ?? 0,
+      totalRaisedMinor: fundraisingInt(json['totalRaisedMinor']) ?? 0,
+      pendingMinor: fundraisingInt(json['pendingMinor']) ?? 0,
+      availableMinor: fundraisingInt(json['availableMinor']) ?? 0,
+      reservedMinor: fundraisingInt(json['reservedMinor']) ?? 0,
+      transferredMinor: fundraisingInt(json['transferredMinor']) ?? 0,
     );
   }
 }
@@ -177,9 +179,9 @@ class FundraisingWithdrawRequest {
   factory FundraisingWithdrawRequest.fromJson(Map<String, dynamic> json) {
     final timelineRaw = (json['timeline'] as List?) ?? const [];
     return FundraisingWithdrawRequest(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      campaignId: (json['campaignId'] as num?)?.toInt() ?? 0,
-      amount: (json['amount'] as num?)?.toInt() ?? 0,
+      id: fundraisingInt(json['id']) ?? 0,
+      campaignId: fundraisingInt(json['campaignId']) ?? 0,
+      amount: fundraisingInt(json['amount']) ?? 0,
       status: (json['status'] ?? '').toString(),
       note: json['note']?.toString(),
       failureReason: json['failureReason']?.toString(),

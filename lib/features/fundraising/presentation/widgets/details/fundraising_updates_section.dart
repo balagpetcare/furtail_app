@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 
 import 'package:furtail_app/core/constants/app_colors.dart';
+import 'package:furtail_app/features/fundraising/data/fundraising_error_mapper.dart';
 import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_update_editor_screen.dart';
@@ -15,7 +16,11 @@ import 'read_more_text.dart';
 class FundraisingUpdatesHeader extends StatelessWidget {
   final bool isOwner;
   final VoidCallback onAdd;
-  const FundraisingUpdatesHeader({super.key, required this.isOwner, required this.onAdd});
+  const FundraisingUpdatesHeader({
+    super.key,
+    required this.isOwner,
+    required this.onAdd,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +29,9 @@ class FundraisingUpdatesHeader extends StatelessWidget {
         Expanded(
           child: Text(
             'Updates',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         if (isOwner)
@@ -41,7 +48,11 @@ class FundraisingUpdatesHeader extends StatelessWidget {
 class FundraisingUpdatesList extends ConsumerWidget {
   final int campaignId;
   final bool isOwner;
-  const FundraisingUpdatesList({super.key, required this.campaignId, required this.isOwner});
+  const FundraisingUpdatesList({
+    super.key,
+    required this.campaignId,
+    required this.isOwner,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,10 +63,22 @@ class FundraisingUpdatesList extends ConsumerWidget {
         padding: EdgeInsets.all(12),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Text(e.toString()),
-      ),
+      error: (error, _) {
+        final safeError = mapFundraisingSafeError(error);
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              Expanded(child: Text(fundraisingErrorDescription(safeError))),
+              TextButton(
+                onPressed: () =>
+                    ref.invalidate(fundraisingUpdatesProvider(campaignId)),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      },
       data: (list) {
         if (list.isEmpty) {
           return const Padding(
@@ -109,10 +132,13 @@ class FundraisingUpdateCard extends ConsumerWidget {
               CircleAvatar(
                 radius: 14,
                 backgroundImage:
-                    (update.author.avatarUrl != null && update.author.avatarUrl!.isNotEmpty)
-                        ? NetworkImage(update.author.avatarUrl!)
-                        : null,
-                child: (update.author.avatarUrl == null || update.author.avatarUrl!.isEmpty)
+                    (update.author.avatarUrl != null &&
+                        update.author.avatarUrl!.isNotEmpty)
+                    ? NetworkImage(update.author.avatarUrl!)
+                    : null,
+                child:
+                    (update.author.avatarUrl == null ||
+                        update.author.avatarUrl!.isEmpty)
                     ? const Icon(Icons.person, size: 14)
                     : null,
               ),
@@ -128,8 +154,8 @@ class FundraisingUpdateCard extends ConsumerWidget {
                     Text(
                       fundraisingTimeAgo(update.createdAt),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -147,11 +173,13 @@ class FundraisingUpdateCard extends ConsumerWidget {
                           ),
                         ),
                       );
+                      if (!context.mounted) return;
                       if (ok == true) {
                         ref.invalidate(fundraisingUpdatesProvider(campaignId));
                       }
                     }
                     if (v == 'delete') {
+                      if (!context.mounted) return;
                       final confirmed = await confirmDialog(
                         context,
                         title: 'Delete update?',
@@ -160,6 +188,7 @@ class FundraisingUpdateCard extends ConsumerWidget {
                       );
                       if (confirmed != true) return;
                       await repo.deleteUpdate(updateId: update.id);
+                      if (!context.mounted) return;
                       ref.invalidate(fundraisingUpdatesProvider(campaignId));
                     }
                   },
@@ -191,12 +220,18 @@ class FundraisingUpdateCard extends ConsumerWidget {
                       width: 120,
                       height: 92,
                       fit: BoxFit.cover,
-                      placeholder: (_, _) => Container(color: Colors.black12, width: 120, height: 92),
+                      placeholder: (_, _) => Container(
+                        color: Colors.black12,
+                        width: 120,
+                        height: 92,
+                      ),
                       errorWidget: (_, _, _) => Container(
                         color: Colors.black12,
                         width: 120,
                         height: 92,
-                        child: const Center(child: Icon(Icons.broken_image_outlined, size: 18)),
+                        child: const Center(
+                          child: Icon(Icons.broken_image_outlined, size: 18),
+                        ),
                       ),
                     ),
                   );

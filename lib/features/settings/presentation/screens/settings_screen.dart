@@ -7,7 +7,7 @@ import 'package:furtail_app/core/analytics/analytics_service.dart';
 import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
 import 'package:furtail_app/core/media/media_playback_controller.dart';
 import 'package:furtail_app/core/localization/locale_controller.dart';
-import 'package:furtail_app/features/auth/presentation/screens/login_screen.dart';
+import 'package:furtail_app/core/auth/logout_reset.dart';
 
 import '../providers/settings_providers.dart';
 import '../widgets/settings_widgets.dart';
@@ -27,6 +27,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final media = MediaPlaybackController.instance;
+  bool _loggingOut = false;
 
   @override
   void initState() {
@@ -72,9 +73,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: t.privacySettingsDesc,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const PrivacySettingsScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const PrivacySettingsScreen()),
                   ),
                 ),
                 Divider(height: 1, color: cs.outline),
@@ -101,9 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: t.notificationPreferencesDesc,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const NotificationPreferencesScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen()),
               ),
             ),
           ),
@@ -120,9 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: t.mediaAndStorageDesc,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const MediaStorageSettingsScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const MediaStorageSettingsScreen()),
                   ),
                 ),
                 Divider(height: 1, color: cs.outline),
@@ -170,10 +165,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 ListTile(
                   leading: Icon(Icons.light_mode_outlined, color: cs.primary),
-                  title: Text(
-                    t.themeLight,
-                    style: AppTypography.menuTitle(context),
-                  ),
+                  title: Text(t.themeLight, style: AppTypography.menuTitle(context)),
                   subtitle: Text(
                     'Furtail uses a consistent light theme on all devices.',
                     style: AppTypography.drawerSubtitle(context),
@@ -263,10 +255,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   leading: Icon(Icons.info_outline, color: cs.primary),
                   title: Text(t.appVersion),
-                  trailing: const Text(
-                    '10.0.0',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  trailing: const Text('10.0.0', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -291,40 +280,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showComingSoon(BuildContext context, AppLocalizations t) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(t.comingSoon),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.comingSoon), behavior: SnackBarBehavior.floating));
   }
 
   Future<void> _confirmLogout(BuildContext context, AppLocalizations t) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t.logoutConfirmTitle),
-        content: Text(t.logoutConfirmMessage),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t.cancel)),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t.logout),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
+    // Perform logout with no possibility of a stale context or duplicate taps
+    if (_loggingOut) return;
+    _loggingOut = true;
 
-    await ref.read(settingsLogoutProvider)();
-    await AnalyticsService.instance.clearUserId();
-    await CrashReportingService.instance.clearUserId();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (route) => false,
-    );
+    try {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(t.logoutConfirmTitle),
+          content: Text(t.logoutConfirmMessage),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t.logout)),
+          ],
+        ),
+      );
+
+      // If not confirmed or widget disposed, reset flag and return early
+      if (ok != true) {
+        _loggingOut = false;
+        return;
+      }
+
+      if (!mounted) {
+        _loggingOut = false;
+        return;
+      }
+
+      // === CRITICAL: All navigation and state changes below this point ===
+      // After this point, the context is owned by AuthGate, not this screen.
+      // Do NOT use imperative navigation after state change.
+
+      // Clear device token and local settings (best-effort).
+      await ref.read(settingsRepositoryProvider).logout();
+
+      // CRITICAL: Clear all cached session state. This SYNCHRONOUSLY:
+      // 1. Clears tokens from secure storage
+      // 2. Changes auth status to unauthenticated
+      // 3. Triggers AuthGate rebuild → LoginScreen display
+      // This happens in the same microtask, so no race condition.
+      await resetSessionScopedState(ref);
+
+      // Clear analytics identifiers (best-effort).
+      await AnalyticsService.instance.clearUserId();
+      await CrashReportingService.instance.clearUserId();
+
+      // !! NEVER navigate after resetSessionScopedState !!
+      // AuthGate has already rebuilt and now owns the navigation tree.
+      // The context here may be disposed. Even if mounted, using it to pop
+      // or push could cause Navigator._history to become inconsistent.
+      // Do NOT call Navigator.pop(), pushNamed, or any navigation method.
+    } finally {
+      // Reset flag ONLY if widget is still alive (may have been disposed).
+      // This is a defensive check; the flag was already checked at entry,
+      // so this only triggers on mounted: false (simultaneous disposal).
+      if (mounted) {
+        _loggingOut = false;
+      }
+    }
   }
-
 }

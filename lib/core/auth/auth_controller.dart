@@ -146,6 +146,14 @@ class FurtailProfileException implements Exception {
   String toString() => message;
 }
 
+/// Debug-only auth tracing. Never logs tokens, authorization headers,
+/// cookies, PKCE values, personal information, or secure-storage contents.
+void _authLog(String message) {
+  if (kDebugMode) {
+    debugPrint('[auth/logout] $message');
+  }
+}
+
 /// Owns the native, in-app Central Auth session: REST login/registration,
 /// bootstrap/session-restore, token refresh coordination, and logout. No
 /// browser, Custom Tab, or WebView is ever involved — every network call
@@ -723,22 +731,37 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  /// Safely perform logout, preventing duplicate requests and ensuring all
+  /// local session state is cleared before attempting remote logout.
+  /// Remote logout failures never block local session cleanup.
   Future<void> logout() async {
+    _authLog('AuthController.logout start');
+    // Fetch tokens before clearing storage so remote logout can use them.
     final accessToken = await _secureStorage.accessToken;
     final refreshToken = await _secureStorage.refreshToken;
+
+    // Clear all local session state immediately (secure storage, auth state).
+    // This ensures the router sees unauthenticated state BEFORE any other
+    // operation, even if remote logout fails or times out.
     await _secureStorage.clear();
     state = const AuthState(status: AuthStatus.unauthenticated);
+    _authLog('local session cleared; published unauthenticated');
+
+    // Attempt remote logout without allowing failures to block local cleanup.
     if (accessToken != null) {
       try {
         await _centralAuthApi.logout(accessToken, refreshToken: refreshToken);
       } catch (_) {
-        // Ignore network failures on logout; local session is cleared regardless.
+        // Best-effort: network failures, timeouts, etc. never block the
+        // unauthenticated state that's already published above.
       }
     }
+    _authLog('AuthController.logout complete');
   }
 
   /// Invoked by [AuthInterceptor] when a refresh attempt fails (401/403 on
-  /// a Furtail API call that couldn't be recovered).
+  /// a Furtail API call that couldn't be recovered). Forces immediate logout
+  /// without awaiting remote logout, since the session is already invalid.
   void forceLogout() {
     unawaited(_secureStorage.clear());
     state = const AuthState(status: AuthStatus.unauthenticated);

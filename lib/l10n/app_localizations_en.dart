@@ -630,6 +630,193 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fundraisingWizardTitle => 'Create fundraiser';
 
   @override
+  String get fundraisingVerificationWizardTitle => 'Fundraising verification';
+
+  @override
+  String fundraisingWizardStepOf(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get fundraisingVerificationStepAccountLocation => 'Account & Location';
+
+  @override
+  String get fundraisingVerificationStepIdentityDetails => 'Identity Details';
+
+  @override
+  String get fundraisingVerificationStepDocuments => 'Documents';
+
+  @override
+  String get fundraisingVerificationStepReviewConsent => 'Review & Consent';
+
+  @override
+  String get fundraisingVerificationStepSubmissionStatus =>
+      'Submission & Status';
+
+  @override
+  String get fundraisingCancel => 'Cancel';
+
+  @override
+  String get fundraisingStatusReady => 'Ready';
+
+  @override
+  String get fundraisingStatusActionRequired => 'Action required';
+
+  @override
+  String get fundraisingStateCompleted => 'Completed';
+
+  @override
+  String get fundraisingStateIncomplete => 'Incomplete';
+
+  @override
+  String get fundraisingStatePending => 'Pending';
+
+  @override
+  String get fundraisingViewAction => 'View';
+
+  @override
+  String get fundraisingActionComplete => 'Complete';
+
+  @override
+  String get fundraisingActionEdit => 'Edit';
+
+  @override
+  String get fundraisingActionUpload => 'Upload';
+
+  @override
+  String get fundraisingActionViewDocuments => 'View documents';
+
+  @override
+  String get fundraisingActionReview => 'Review';
+
+  @override
+  String get fundraisingEligibilityHelperText =>
+      'Complete the required items to continue.';
+
+  @override
+  String get fundraisingEligibilityLoadingHelper =>
+      'Checking your eligibility…';
+
+  @override
+  String get fundraisingEligibilityErrorHelper =>
+      'Eligibility could not be checked. Try again.';
+
+  @override
+  String get fundraisingEligibilityErrorTitle => 'Unable to check eligibility';
+
+  @override
+  String get fundraisingEligibilityErrorMessage =>
+      'We couldn\'t load your fundraising verification status. Check your connection and try again.';
+
+  @override
+  String get fundraisingEligibilitySummaryTitle => 'Fundraising eligibility';
+
+  @override
+  String get fundraisingEligibilitySummaryReady =>
+      'You\'re all set. You can continue building your fundraiser.';
+
+  @override
+  String get fundraisingEligibilitySummaryActionRequired =>
+      'Finish the items below before you can create a fundraiser.';
+
+  @override
+  String get fundraisingEligibilitySummaryPending =>
+      'You can create fundraisers while your account is under review. Verification approval is required before withdrawing funds.';
+
+  @override
+  String get fundraisingEligibilitySummaryVerified =>
+      'Your fundraising account is verified.';
+
+  @override
+  String get fundraisingEligibilitySummaryRejected =>
+      'Your verification was rejected. Review the details and update your information.';
+
+  @override
+  String get fundraisingEligibilitySummaryRestricted =>
+      'Your fundraising account is restricted. Complete verification or wait for review before creating a fundraiser.';
+
+  @override
+  String get fundraisingEligibilityProfileRowTitle => 'Fundraising profile';
+
+  @override
+  String get fundraisingEligibilityDocumentsRowTitle =>
+      'Verification documents';
+
+  @override
+  String get fundraisingWizardStepDetails => 'Fundraiser details';
+
+  @override
+  String get fundraisingWizardStepMediaLocation => 'Media & location';
+
+  @override
+  String get fundraisingWizardDetailsDescription =>
+      'Add the core fundraiser details first, then choose the duration and any optional support details.';
+
+  @override
+  String get fundraisingWizardMediaLocationDescription =>
+      'Add supporting media and select the public campaign location. Private GPS capture is optional and stays private.';
+
+  @override
+  String get fundraisingFundingModeField => 'Funding mode';
+
+  @override
+  String get fundraisingFundingModeOneTime => 'One-time fundraiser';
+
+  @override
+  String get fundraisingFundingModeOngoing => 'Ongoing support';
+
+  @override
+  String get fundraisingDurationField => 'Duration';
+
+  @override
+  String fundraisingDurationPresetDays(int days) {
+    return '$days days';
+  }
+
+  @override
+  String get fundraisingDurationCustom => 'Custom';
+
+  @override
+  String get fundraisingMonthlyGoalField => 'Optional monthly goal (BDT)';
+
+  @override
+  String get fundraisingOptionalEstimatedTotalField =>
+      'Optional estimated total (BDT)';
+
+  @override
+  String get fundraisingExpenseNotesField => 'Simple expense notes';
+
+  @override
+  String get fundraisingAddExpenseBreakdown => 'Add expense breakdown';
+
+  @override
+  String get fundraisingHideExpenseBreakdown => 'Hide expense breakdown';
+
+  @override
+  String get fundraisingPrivacyLocationCopy =>
+      'Use current location only if you want to capture a private security location. It will not change the public campaign location.';
+
+  @override
+  String get fundraisingUseCurrentLocation => 'Use current location';
+
+  @override
+  String get fundraisingCurrentLocationCaptured =>
+      'Current location captured privately';
+
+  @override
+  String get fundraisingLocationPermissionFailed =>
+      'We could not capture your current location.';
+
+  @override
+  String get fundraisingOngoingSupportLabel => 'Ongoing support';
+
+  @override
+  String get fundraisingNoEndDate => 'No mandatory end date.';
+
+  @override
+  String get fundraisingNextReviewField => 'Next review';
+
+  @override
   String get fundraisingWizardStepEligibility => 'Eligibility';
 
   @override
@@ -693,6 +880,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fundraisingDraftSaved => 'Draft saved';
+
+  @override
+  String get fundraisingContinueToFundraiser => 'Continue to fundraiser';
+
+  @override
+  String get fundraisingRequired => 'Required';
+
+  @override
+  String get fundraisingUploaded => 'Uploaded';
+
+  @override
+  String get fundraisingOptional => 'Optional';
 
   @override
   String get fundraisingAddPhotos => 'Add photos';
@@ -820,13 +1019,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fundraisingEligibilityVerified => 'Verified';
 
   @override
-  String get fundraisingEligibilityPending => 'Pending review';
+  String get fundraisingEligibilityPending => 'Verification pending';
 
   @override
   String get fundraisingEligibilityRejected => 'Rejected';
 
   @override
   String get fundraisingEligibilityDraft => 'Incomplete';
+
+  @override
+  String get fundraisingEligibilityRestricted => 'Verification restricted';
 
   @override
   String get fundraisingEligibilityProfileTitle => 'Complete your profile';
@@ -979,6 +1181,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'One or more uploads failed. Retry or remove the failed items to continue.';
 
   @override
+  String get fundraisingMediaNeedsAttention => 'Needs attention';
+
+  @override
+  String get fundraisingMediaRetry => 'Retry';
+
+  @override
+  String get fundraisingMediaRemove => 'Remove';
+
+  @override
+  String get fundraisingNeedsAttentionFix => 'Fix';
+
+  @override
   String get fundraisingErrorSaveFailed =>
       'We could not save this draft right now. Your local recovery copy is still available.';
 
@@ -1044,7 +1258,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fundraisingValidationMedia =>
-      'Upload at least one media or evidence item.';
+      'Add at least one photo, video, or supporting document.';
 
   @override
   String get fundraisingValidationMediaBlocking =>

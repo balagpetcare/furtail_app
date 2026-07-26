@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:furtail_app/core/auth/auth_controller.dart';
 import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:furtail_app/services/api_client.dart';
 
@@ -21,28 +20,34 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
 });
 
 final notificationPreferencesProvider =
-    AsyncNotifierProvider<NotificationPreferencesNotifier, NotificationPreferences>(
-  NotificationPreferencesNotifier.new,
-);
+    AsyncNotifierProvider<
+      NotificationPreferencesNotifier,
+      NotificationPreferences
+    >(NotificationPreferencesNotifier.new);
 
-class NotificationPreferencesNotifier extends AsyncNotifier<NotificationPreferences> {
+class NotificationPreferencesNotifier
+    extends AsyncNotifier<NotificationPreferences> {
   @override
   Future<NotificationPreferences> build() async {
     return ref.read(settingsRepositoryProvider).getNotificationPreferences();
   }
 
-  Future<void> apply(NotificationPreferences Function(NotificationPreferences) fn) async {
+  Future<void> apply(
+    NotificationPreferences Function(NotificationPreferences) fn,
+  ) async {
     final current = state.asData?.value ?? const NotificationPreferences();
     final next = fn(current);
     state = AsyncData(next);
-    await ref.read(settingsRepositoryProvider).saveNotificationPreferences(next);
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveNotificationPreferences(next);
   }
 }
 
 final privacySettingsProvider =
     AsyncNotifierProvider<PrivacySettingsNotifier, PrivacySettings>(
-  PrivacySettingsNotifier.new,
-);
+      PrivacySettingsNotifier.new,
+    );
 
 class PrivacySettingsNotifier extends AsyncNotifier<PrivacySettings> {
   @override
@@ -60,8 +65,8 @@ class PrivacySettingsNotifier extends AsyncNotifier<PrivacySettings> {
 
 final blockedUsersProvider =
     AsyncNotifierProvider<BlockedUsersNotifier, List<BlockedUser>>(
-  BlockedUsersNotifier.new,
-);
+      BlockedUsersNotifier.new,
+    );
 
 class BlockedUsersNotifier extends AsyncNotifier<List<BlockedUser>> {
   @override
@@ -71,19 +76,23 @@ class BlockedUsersNotifier extends AsyncNotifier<List<BlockedUser>> {
 
   Future<void> block(BlockedUser user) async {
     await ref.read(settingsRepositoryProvider).blockUser(user);
-    state = AsyncData(await ref.read(settingsRepositoryProvider).getBlockedUsers());
+    state = AsyncData(
+      await ref.read(settingsRepositoryProvider).getBlockedUsers(),
+    );
   }
 
   Future<void> unblock(int userId) async {
     await ref.read(settingsRepositoryProvider).unblockUser(userId);
-    state = AsyncData(await ref.read(settingsRepositoryProvider).getBlockedUsers());
+    state = AsyncData(
+      await ref.read(settingsRepositoryProvider).getBlockedUsers(),
+    );
   }
 }
 
 final storageUsageProvider =
     AsyncNotifierProvider<StorageUsageNotifier, StorageUsageInfo>(
-  StorageUsageNotifier.new,
-);
+      StorageUsageNotifier.new,
+    );
 
 class StorageUsageNotifier extends AsyncNotifier<StorageUsageInfo> {
   @override
@@ -105,13 +114,6 @@ class StorageUsageNotifier extends AsyncNotifier<StorageUsageInfo> {
   }
 }
 
-final settingsLogoutProvider = Provider<Future<void> Function()>((ref) {
-  return () async {
-    await ref.read(settingsRepositoryProvider).logout();
-    await ref.read(authControllerProvider.notifier).logout();
-  };
-});
-
 // ── Media upload settings ──────────────────────────────────────────────────
 
 final _mediaUploadDatasource = Provider<SettingsLocalDatasource>(
@@ -120,8 +122,8 @@ final _mediaUploadDatasource = Provider<SettingsLocalDatasource>(
 
 final mediaUploadSettingsProvider =
     AsyncNotifierProvider<MediaUploadSettingsNotifier, MediaUploadSettings>(
-  MediaUploadSettingsNotifier.new,
-);
+      MediaUploadSettingsNotifier.new,
+    );
 
 class MediaUploadSettingsNotifier extends AsyncNotifier<MediaUploadSettings> {
   @override
@@ -129,7 +131,9 @@ class MediaUploadSettingsNotifier extends AsyncNotifier<MediaUploadSettings> {
     return ref.read(_mediaUploadDatasource).loadMediaUploadSettings();
   }
 
-  Future<void> patch(MediaUploadSettings Function(MediaUploadSettings) fn) async {
+  Future<void> patch(
+    MediaUploadSettings Function(MediaUploadSettings) fn,
+  ) async {
     final current = state.asData?.value ?? const MediaUploadSettings();
     final next = fn(current);
     state = AsyncData(next);

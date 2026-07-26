@@ -172,7 +172,17 @@ class MediaUploadException implements Exception {
   static String _sanitizeMessage(String? raw, {required String fallback}) {
     final message = (raw ?? '').replaceFirst('Exception: ', '').trim();
     if (message.isEmpty) return fallback;
+    final normalized = message.toLowerCase();
     if (message.startsWith('{') || message.startsWith('[')) return fallback;
+    if (normalized.contains('prisma') ||
+        normalized.contains('dioexception') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('invalid image data') ||
+        normalized.contains('stack trace') ||
+        normalized.contains('sqlstate') ||
+        normalized.contains('postgres')) {
+      return fallback;
+    }
     return message;
   }
 

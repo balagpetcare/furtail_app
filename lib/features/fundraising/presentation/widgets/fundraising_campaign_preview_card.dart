@@ -21,8 +21,13 @@ class FundraisingCampaignPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final money = NumberFormat.decimalPattern('en');
-    final targetMinor = draft.targetAmountMinor ?? draft.suggestedTargetMinor;
+    final mode = draft.fundingMode.trim().toUpperCase();
+    final oneTime = mode.isEmpty || mode == 'ONE_TIME';
+    final targetMinor = oneTime
+        ? (draft.targetAmountMinor ?? draft.suggestedTargetMinor)
+        : draft.monthlyGoalMinor;
     final hero = mediaItems.isNotEmpty ? mediaItems.first : null;
+    final endsAt = draft.endsAt ?? draft.deadline;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -65,6 +70,13 @@ class FundraisingCampaignPreviewCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
+                _FactChip(
+                  label: t.fundraisingFundingModeField,
+                  value: oneTime
+                      ? t.fundraisingFundingModeOneTime
+                      : t.fundraisingFundingModeOngoing,
+                ),
+                const SizedBox(height: 10),
                 Text(
                   draft.title.trim().isEmpty
                       ? t.fundraisingPreviewTitlePlaceholder
@@ -86,14 +98,26 @@ class FundraisingCampaignPreviewCard extends StatelessWidget {
                   runSpacing: 12,
                   children: [
                     _FactChip(
-                      label: t.fundraisingGoalLabel,
-                      value: 'BDT ${money.format(targetMinor)}',
+                      label: oneTime
+                          ? t.fundraisingGoalLabel
+                          : t.fundraisingMonthlyGoalField,
+                      value: targetMinor == null
+                          ? t.fundraisingOptional
+                          : 'BDT ${money.format(targetMinor)}',
                     ),
                     _FactChip(
                       label: t.fundraisingBeneficiaryLabel,
                       value: draft.beneficiaryName.trim().isEmpty
                           ? t.fundraisingBeneficiaryPlaceholder
                           : draft.beneficiaryName.trim(),
+                    ),
+                    _FactChip(
+                      label: t.fundraisingDurationField,
+                      value: oneTime
+                          ? (endsAt == null
+                                ? t.fundraisingSelectDeadline
+                                : DateFormat.yMMMd().format(endsAt))
+                          : t.fundraisingOngoingSupportLabel,
                     ),
                     _FactChip(
                       label: t.fundraisingLocationLabel,
@@ -107,6 +131,13 @@ class FundraisingCampaignPreviewCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (!oneTime && draft.nextReviewAt != null) ...[
+                  const SizedBox(height: 16),
+                  _FactChip(
+                    label: t.fundraisingNextReviewField,
+                    value: DateFormat.yMMMd().format(draft.nextReviewAt!),
+                  ),
+                ],
                 if (draft.expenses.any(
                   (entry) => (entry.amountMinor ?? 0) > 0,
                 )) ...[
@@ -195,13 +226,23 @@ class _HeroPreview extends StatelessWidget {
 
     final previewUrl = item!.previewUrl;
     if (previewUrl != null && previewUrl.isNotEmpty) {
-      return Image.network(previewUrl, fit: BoxFit.cover);
+      return Image.network(
+        previewUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _previewPlaceholder(context),
+      );
     }
 
     if (item!.thumbnailPath != null &&
         item!.thumbnailPath!.isNotEmpty &&
         File(item!.thumbnailPath!).existsSync()) {
-      return Image.file(File(item!.thumbnailPath!), fit: BoxFit.cover);
+      return Image.file(
+        File(item!.thumbnailPath!),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _previewPlaceholder(context),
+      );
     }
 
     if (item!.localPath != null &&
@@ -214,9 +255,18 @@ class _HeroPreview extends StatelessWidget {
           child: const Icon(Icons.description_outlined, size: 48),
         );
       }
-      return Image.file(File(item!.localPath!), fit: BoxFit.cover);
+      return Image.file(
+        File(item!.localPath!),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _previewPlaceholder(context),
+      );
     }
 
+    return _previewPlaceholder(context);
+  }
+
+  Widget _previewPlaceholder(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       alignment: Alignment.center,

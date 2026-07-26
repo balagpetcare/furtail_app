@@ -64,12 +64,12 @@ flutter build appbundle --release
 
 - **LAN (real device / same WiFi):**
   ```bash
-  flutter run --dart-define=API_HOST=http://192.168.10.111:3000
+  flutter run --dart-define=API_HOST=http://192.168.10.111:7200
   ```
 
 - **Android Emulator:**
   ```bash
-  flutter run --dart-define=API_HOST=http://10.0.2.2:3000
+  flutter run --dart-define=API_HOST=http://10.0.2.2:7200
   ```
 
-ডিফল্ট হিসেবে `http://192.168.10.111:3000` সেট করা আছে (ApiConfig).
+ডিফল্ট হিসেবে `http://192.168.10.111:7200` সেট করা আছে (ApiConfig)। এই IP পরিবর্তন হলে (PC-র নেটওয়ার্ক IP বদলালে) `lib/core/network/api_config.dart`, `lib/core/config/app_config.dart`, ও `env/mobile-dev.json`-এ IP আপডেট করতে হবে।

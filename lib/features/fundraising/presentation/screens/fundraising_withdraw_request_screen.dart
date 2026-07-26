@@ -2,9 +2,11 @@ import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/fundraising_error_mapper.dart';
 import '../../data/models/fundraising_models.dart';
 import '../../data/models/fundraising_payout_models.dart';
 import '../providers/fundraising_providers.dart';
+import '../utils/fundraising_formatters.dart';
 
 import 'fundraising_common_scaffold.dart';
 
@@ -16,10 +18,12 @@ class FundraisingWithdrawRequestScreen extends ConsumerStatefulWidget {
   const FundraisingWithdrawRequestScreen({super.key, required this.campaign});
 
   @override
-  ConsumerState<FundraisingWithdrawRequestScreen> createState() => _FundraisingWithdrawRequestScreenState();
+  ConsumerState<FundraisingWithdrawRequestScreen> createState() =>
+      _FundraisingWithdrawRequestScreenState();
 }
 
-class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWithdrawRequestScreen> {
+class _FundraisingWithdrawRequestScreenState
+    extends ConsumerState<FundraisingWithdrawRequestScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
@@ -43,12 +47,19 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
     // a "reserved" amount from pending requests so the UI shows a realistic max.
     final reqData = requestsAsync.asData?.value;
     final pending = (reqData ?? const <FundraisingWithdrawRequest>[])
-        .where((r) => r.status == 'SUBMITTED' || r.status == 'UNDER_REVIEW' || r.status == 'APPROVED')
+        .where(
+          (r) =>
+              r.status == 'SUBMITTED' ||
+              r.status == 'UNDER_REVIEW' ||
+              r.status == 'APPROVED',
+        )
         .toList();
     final hasPending = pending.isNotEmpty;
     final reserved = pending.fold<int>(0, (sum, r) => sum + r.amount);
     final availableBase = c.stats.availableAmount;
-    final available = (availableBase - reserved) < 0 ? 0 : (availableBase - reserved);
+    final available = (availableBase - reserved) < 0
+        ? 0
+        : (availableBase - reserved);
     final requestsLoaded = requestsAsync.asData != null;
     final canCreateRequest = requestsLoaded && !hasPending;
 
@@ -61,7 +72,11 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           children: [
-            _SummaryCard(raised: c.stats.raisedAmount, withdrawn: c.stats.withdrawnAmount, available: available),
+            _SummaryCard(
+              raised: c.stats.raisedAmount,
+              withdrawn: c.stats.withdrawnAmount,
+              available: available,
+            ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(14),
@@ -70,12 +85,16 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFEAEAEA)),
                 boxShadow: const [
-                  BoxShadow(color: Color(0x0F000000), blurRadius: 10, offset: Offset(0, 4)),
+                  BoxShadow(
+                    color: Color(0x0F000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
                 ],
               ),
               child: methodsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text(e.toString()),
+                error: (error, _) => Text(mapFundraisingError(error)),
                 data: (methods) {
                   final active = methods.where((m) => m.isActive).toList();
                   if (active.isEmpty) {
@@ -87,7 +106,9 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                           style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 6),
-                        const Text('Please add a payout method first from Payout Methods screen.'),
+                        const Text(
+                          'Please add a payout method first from Payout Methods screen.',
+                        ),
                         const SizedBox(height: 12),
                         FilledButton.icon(
                           onPressed: () => Navigator.pop(context),
@@ -99,14 +120,24 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                   }
 
                   // Preselect default
-                  _methodId ??= active.firstWhere((m) => m.isDefault, orElse: () => active.first).id;
+                  _methodId ??= active
+                      .firstWhere(
+                        (m) => m.isDefault,
+                        orElse: () => active.first,
+                      )
+                      .id;
 
                   return Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Request withdrawal', style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900)),
+                        Text(
+                          'Request withdrawal',
+                          style: context.appText.bodyLarge!.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                         const SizedBox(height: 10),
                         if (!requestsLoaded)
                           Container(
@@ -115,7 +146,9 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF7E6),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFFD18A)),
+                              border: Border.all(
+                                color: const Color(0xFFFFD18A),
+                              ),
                             ),
                             child: const Text(
                               'Loading your existing withdraw requests… Please wait a moment.',
@@ -129,13 +162,17 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF1F1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFFFB4B4)),
+                              border: Border.all(
+                                color: const Color(0xFFFFB4B4),
+                              ),
                             ),
                             child: Text(
                               reserved > 0
                                   ? 'You already have a pending withdraw request (৳$reserved). Please wait for admin review before submitting another.'
                                   : 'You already have a pending withdraw request. Please wait for admin review before submitting another.',
-                              style: const TextStyle(fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         const SizedBox(height: 12),
@@ -150,20 +187,26 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                             final raw = (v ?? '').trim();
                             if (raw.isEmpty) return 'Amount is required';
                             final n = int.tryParse(raw);
-                            if (n == null || n <= 0) return 'Enter a valid amount';
-                            if (n > available) return 'Amount exceeds available balance';
+                            if (n == null || n <= 0)
+                              return 'Enter a valid amount';
+                            if (n > available)
+                              return 'Amount exceeds available balance';
                             return null;
                           },
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<int>(
                           initialValue: _methodId,
-                          decoration: const InputDecoration(labelText: 'Payout method'),
+                          decoration: const InputDecoration(
+                            labelText: 'Payout method',
+                          ),
                           items: active
-                              .map((m) => DropdownMenuItem(
-                                    value: m.id,
-                                    child: Text(m.displayName),
-                                  ))
+                              .map(
+                                (m) => DropdownMenuItem(
+                                  value: m.id,
+                                  child: Text(m.displayName),
+                                ),
+                              )
                               .toList(),
                           onChanged: (v) => setState(() => _methodId = v),
                         ),
@@ -183,36 +226,64 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
                             onPressed: (_submitting || !canCreateRequest)
                                 ? null
                                 : () async {
-                                    if (!_formKey.currentState!.validate()) return;
+                                    if (!_formKey.currentState!.validate())
+                                      return;
                                     setState(() => _submitting = true);
                                     try {
-                                      final repo = ref.read(fundraisingRepositoryProvider);
-                                      final amount = int.parse(_amountCtrl.text.trim());
+                                      final repo = ref.read(
+                                        fundraisingRepositoryProvider,
+                                      );
+                                      final amount = int.parse(
+                                        _amountCtrl.text.trim(),
+                                      );
                                       final methodId = _methodId!;
                                       await repo.createWithdrawRequest(
                                         campaignId: c.id,
                                         amount: amount,
                                         methodId: methodId,
-                                        note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+                                        note: _noteCtrl.text.trim().isEmpty
+                                            ? null
+                                            : _noteCtrl.text.trim(),
                                       );
-                                      ref.invalidate(fundraisingWithdrawRequestsProvider(c.id));
-                                      ref.invalidate(fundraisingCampaignProvider(c.id));
+                                      ref.invalidate(
+                                        fundraisingWithdrawRequestsProvider(
+                                          c.id,
+                                        ),
+                                      );
+                                      ref.invalidate(
+                                        fundraisingCampaignProvider(c.id),
+                                      );
                                       if (!mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Withdraw request submitted.')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Withdraw request submitted.',
+                                          ),
+                                        ),
                                       );
                                       Navigator.pop(context, true);
                                     } catch (e) {
                                       if (!mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(e.toString())),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(mapFundraisingError(e))),
                                       );
                                     } finally {
-                                      if (mounted) setState(() => _submitting = false);
+                                      if (mounted)
+                                        setState(() => _submitting = false);
                                     }
                                   },
                             child: _submitting
-                                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : const Text('Submit request'),
                           ),
                         ),
@@ -223,15 +294,20 @@ class _FundraisingWithdrawRequestScreenState extends ConsumerState<FundraisingWi
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Your recent withdraw requests', style: TextStyle(fontWeight: FontWeight.w900)),
+            const Text(
+              'Your recent withdraw requests',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
             const SizedBox(height: 8),
             requestsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text(e.toString()),
+              error: (error, _) => Text(mapFundraisingError(error)),
               data: (items) {
                 if (items.isEmpty) return const Text('No requests yet.');
                 return Column(
-                  children: items.map((r) => _WithdrawRequestTile(item: r)).toList(),
+                  children: items
+                      .map((r) => _WithdrawRequestTile(item: r))
+                      .toList(),
                 );
               },
             ),
@@ -247,7 +323,11 @@ class _SummaryCard extends StatelessWidget {
   final int withdrawn;
   final int available;
 
-  const _SummaryCard({required this.raised, required this.withdrawn, required this.available});
+  const _SummaryCard({
+    required this.raised,
+    required this.withdrawn,
+    required this.available,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +336,10 @@ class _SummaryCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodySmall),
-          Text('৳$value', style: const TextStyle(fontWeight: FontWeight.w900)),
+          Text(
+            formatFundraisingMoney(context, value),
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
         ],
       );
     }
@@ -264,12 +347,11 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEAEAEA)),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0F000000), blurRadius: 10, offset: Offset(0, 4)),
-        ],
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       child: Column(
         children: [
@@ -304,12 +386,18 @@ class _WithdrawRequestTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('৳${item.amount}', style: const TextStyle(fontWeight: FontWeight.w900)),
+                Text(
+                  formatFundraisingMoney(context, item.amount),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
                 const SizedBox(height: 2),
                 Text(item.status, style: Theme.of(context).textTheme.bodySmall),
                 if ((m?.displayName ?? '').isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(m!.displayName, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    m!.displayName,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ],
             ),

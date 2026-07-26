@@ -44,6 +44,15 @@ final bdAreasProvider = FutureProvider.family<List<BdArea>, int>((
   return repo.getAreas(upazilaId: upazilaId);
 });
 
+/// Unions (by upazila)
+final bdUnionsProvider = FutureProvider.family<List<BdUnion>, int>((
+  ref,
+  upazilaId,
+) async {
+  final repo = ref.read(bdLocationsRepositoryProvider);
+  return repo.getUnions(upazilaId: upazilaId);
+});
+
 /// City Corporations (by district)  ✅ repo অনুযায়ী BdArea list
 final bdCityCorporationsProvider = FutureProvider.family<List<BdArea>, int>((
   ref,

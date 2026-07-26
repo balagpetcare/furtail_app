@@ -442,7 +442,7 @@ class _PayoutMethodEditorDialogState
               if (!context.mounted) return;
               ScaffoldMessenger.of(
                 context,
-              ).showSnackBar(SnackBar(content: Text(e.toString())));
+              ).showSnackBar(SnackBar(content: Text(mapFundraisingError(e))));
             }
           },
           child: Text(isEdit ? 'Save' : 'Add'),

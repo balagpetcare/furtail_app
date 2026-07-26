@@ -51,6 +51,36 @@ void main() {
     );
 
     test(
+      'shares one upload queue across concurrent ensureUploaded calls',
+      () async {
+        var uploads = 0;
+        final item = _imageItem(await _file(tempDir, 'queue.jpg'));
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'queue',
+          uploadMedia: (media, {onProgress, cancelToken}) async {
+            uploads += 1;
+            return _successfulUpload(
+              media,
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+            );
+          },
+        );
+
+        await controller.addItems(<MediaDraftItem>[item]);
+        final results = await Future.wait<List<int>>(<Future<List<int>>>[
+          controller.ensureUploaded(),
+          controller.ensureUploaded(),
+        ]);
+
+        expect(uploads, 1);
+        expect(results, everyElement(isNotEmpty));
+        expect(controller.allItemsReady, isTrue);
+      },
+    );
+
+    test(
       'retry uploads only the failed item and keeps successful uploads',
       () async {
         var attempts = 0;
@@ -218,6 +248,183 @@ void main() {
         );
       },
     );
+
+    test('failed item blocks submission', () async {
+      final broken = _documentItem(await _file(tempDir, 'broken.pdf'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'blocks-submission',
+        uploadMedia: (item, {onProgress, cancelToken}) async {
+          throw const MediaUploadException(
+            kind: MediaUploadErrorKind.storageFailure,
+            userMessage: 'Please retry the failed upload.',
+          );
+        },
+      );
+
+      await controller.addItems(<MediaDraftItem>[broken]);
+      await expectLater(
+        controller.ensureUploaded(),
+        throwsA(isA<MediaUploadException>()),
+      );
+
+      expect(controller.hasFailedItems, isTrue);
+      expect(controller.hasBlockingItems, isTrue);
+      expect(controller.mediaValidation.canContinue, isFalse);
+    });
+
+    test('retry transitions failed to uploading to ready', () async {
+      final observedStates = <MediaDraftState>[];
+      var attempts = 0;
+      final item = _imageItem(await _file(tempDir, 'flaky.jpg'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'retry-transitions',
+        uploadMedia: (media, {onProgress, cancelToken}) async {
+          attempts += 1;
+          if (attempts == 1) {
+            throw const MediaUploadException(
+              kind: MediaUploadErrorKind.storageFailure,
+              userMessage: 'Please retry the failed upload.',
+            );
+          }
+          return _successfulUpload(
+            media,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          );
+        },
+      );
+
+      await controller.addItems(<MediaDraftItem>[item]);
+      await expectLater(
+        controller.ensureUploaded(),
+        throwsA(isA<MediaUploadException>()),
+      );
+      expect(controller.items.single.state, MediaDraftState.failed);
+
+      controller.addListener(() {
+        observedStates.add(controller.items.single.state);
+      });
+      await controller.retryItem(item.id);
+
+      expect(observedStates, contains(MediaDraftState.uploading));
+      expect(controller.items.single.state, MediaDraftState.ready);
+    });
+
+    test('removing failed item recalculates validation', () async {
+      final good = _imageItem(await _file(tempDir, 'good.jpg'));
+      final broken = _documentItem(await _file(tempDir, 'broken.pdf'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'remove-recalculates',
+        uploadMedia: (item, {onProgress, cancelToken}) async {
+          if (item.id == broken.id) {
+            throw const MediaUploadException(
+              kind: MediaUploadErrorKind.storageFailure,
+              userMessage: 'Please retry the failed upload.',
+            );
+          }
+          return _successfulUpload(
+            item,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          );
+        },
+      );
+
+      await controller.addItems(<MediaDraftItem>[good, broken]);
+      await expectLater(
+        controller.ensureUploaded(),
+        throwsA(isA<MediaUploadException>()),
+      );
+      expect(controller.mediaValidation.canContinue, isFalse);
+
+      await controller.removeItem(broken.id);
+
+      expect(controller.hasFailedItems, isFalse);
+      expect(controller.mediaValidation.canContinue, isTrue);
+    });
+
+    test('activeUploadCount returns to zero once uploads settle', () async {
+      final first = _imageItem(await _file(tempDir, 'first.jpg'));
+      final second = _imageItem(await _file(tempDir, 'second.jpg'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'active-upload-count',
+        uploadMedia: _successfulUpload,
+      );
+
+      await controller.addItems(<MediaDraftItem>[first, second]);
+      await controller.ensureUploaded();
+
+      expect(controller.activeUploadCount, 0);
+    });
+
+    test('duplicate retry does not start a second upload', () async {
+      var uploadCalls = 0;
+      final gate = Completer<void>();
+      final item = _imageItem(await _file(tempDir, 'pending.jpg'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'duplicate-retry',
+        uploadMedia: (media, {onProgress, cancelToken}) async {
+          uploadCalls += 1;
+          await gate.future;
+          return _successfulUpload(
+            media,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          );
+        },
+      );
+
+      await controller.addItems(<MediaDraftItem>[item]);
+      final firstRetry = controller.retryItem(item.id);
+      final secondRetry = controller.retryItem(item.id);
+      gate.complete();
+      await Future.wait<void>(<Future<void>>[firstRetry, secondRetry]);
+
+      expect(uploadCalls, 1);
+    });
+
+    test('disposal cancels in-flight upload tasks', () async {
+      var wasCancelledBeforeCompletion = false;
+      final gate = Completer<void>();
+      final item = _imageItem(await _file(tempDir, 'cancel-on-dispose.jpg'));
+      final controller = MediaComposerController(
+        policy: MediaComposerPolicy.fundraising,
+        draftStorageKey: 'disposal-cancels',
+        uploadMedia: (media, {onProgress, cancelToken}) async {
+          await Future.any<void>(<Future<void>>[
+            gate.future,
+            cancelToken?.whenCancel ?? Future<void>.value(),
+          ]);
+          if (cancelToken?.isCancelled ?? false) {
+            wasCancelledBeforeCompletion = true;
+            throw const MediaUploadException(
+              kind: MediaUploadErrorKind.requestCancelled,
+              userMessage: 'Upload cancelled.',
+            );
+          }
+          return _successfulUpload(
+            media,
+            onProgress: onProgress,
+            cancelToken: cancelToken,
+          );
+        },
+      );
+
+      await controller.addItems(<MediaDraftItem>[item]);
+      final uploadFuture = controller.ensureUploaded();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      controller.dispose();
+      gate.complete();
+
+      await expectLater(uploadFuture, throwsA(isA<MediaUploadException>()));
+      expect(wasCancelledBeforeCompletion, isTrue);
+    });
 
     test(
       'restores persisted draft items and keeps uploaded ids on reopen',

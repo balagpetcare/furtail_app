@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'dart:io';
 
@@ -10,15 +12,17 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:furtail_app/features/fundraising/data/models/fundraising_draft_models.dart';
+import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 import 'package:furtail_app/features/fundraising/data/repositories/fundraising_repository.dart';
 import 'package:furtail_app/features/fundraising/data/services/fundraising_draft_recovery_service.dart';
 import 'package:furtail_app/features/fundraising/presentation/controllers/fundraising_create_wizard_controller.dart';
 import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
-import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_account_documents_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_account_setup_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_payout_methods_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_campaign_preview_card.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_create_wizard_widgets.dart';
+import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_media_needs_attention_panel.dart';
+import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_status_views.dart';
 import 'package:furtail_app/features/location/presentation/widgets/location_selector_widget.dart';
 import 'package:furtail_app/features/media/composer/media_composer_controller.dart';
 import 'package:furtail_app/features/media/composer/media_composer_policy.dart';
@@ -29,7 +33,10 @@ import 'package:furtail_app/features/media/data/authenticated_media_uploader.dar
 import 'package:furtail_app/features/pets/domain/entities/pet_entity.dart';
 import 'package:furtail_app/features/pets/presentation/providers/pet_providers.dart';
 import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
+import 'package:furtail_app/features/fundraising/data/fundraising_error_mapper.dart';
+import 'package:furtail_app/core/permissions/permission_service.dart';
 import 'package:furtail_app/l10n/app_localizations.dart';
+import 'package:geolocator/geolocator.dart';
 
 class FundraisingCreateScreen extends ConsumerStatefulWidget {
   const FundraisingCreateScreen({
@@ -56,6 +63,13 @@ class FundraisingCreateScreen extends ConsumerStatefulWidget {
 
 class _FundraisingCreateScreenState
     extends ConsumerState<FundraisingCreateScreen> {
+  static const List<FundraisingWizardStep> _activeSteps =
+      <FundraisingWizardStep>[
+        FundraisingWizardStep.fundraiserType,
+        FundraisingWizardStep.location,
+        FundraisingWizardStep.preview,
+      ];
+
   static const List<String> _documentExtensions = <String>[
     'pdf',
     'jpg',
@@ -100,21 +114,30 @@ class _FundraisingCreateScreenState
   late final TextEditingController _titleCtrl;
   late final TextEditingController _storyCtrl;
   late final TextEditingController _goalCtrl;
+  late final TextEditingController _targetCtrl;
+  late final TextEditingController _monthlyGoalCtrl;
   late final TextEditingController _beneficiaryCtrl;
   late final TextEditingController _treatmentProviderCtrl;
+  late final TextEditingController _estimatedTotalCtrl;
+  late final TextEditingController _expenseNotesCtrl;
   late final TextEditingController _customLocationCtrl;
 
   final Map<String, TextEditingController> _expenseControllers =
       <String, TextEditingController>{};
 
   final ScrollController _scrollController = ScrollController();
+  final PermissionService _permissionService = PermissionService();
 
   bool _ownsWizardController = false;
   bool _ownsMediaController = false;
   bool _syncingFields = false;
   bool _initializing = true;
   bool _pickingMedia = false;
+  bool _showExpenseBreakdown = false;
+  bool _capturingCurrentLocation = false;
   bool _showValidation = false;
+  bool _routingToVerification = false;
+  FundraisingSafeError? _preflightError;
 
   List<PetEntity> _pets = const <PetEntity>[];
 
@@ -167,8 +190,12 @@ class _FundraisingCreateScreenState
     _titleCtrl = TextEditingController();
     _storyCtrl = TextEditingController();
     _goalCtrl = TextEditingController();
+    _targetCtrl = TextEditingController();
+    _monthlyGoalCtrl = TextEditingController();
     _beneficiaryCtrl = TextEditingController();
     _treatmentProviderCtrl = TextEditingController();
+    _estimatedTotalCtrl = TextEditingController();
+    _expenseNotesCtrl = TextEditingController();
     _customLocationCtrl = TextEditingController();
 
     _wizardController.addListener(_handleWizardChanged);
@@ -178,12 +205,78 @@ class _FundraisingCreateScreenState
 
   Future<void> _initializeAsync() async {
     await _mediaController.restore();
+    if (!mounted) return;
+    unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
+
+    final FundraisingRepository repo =
+        widget.repository ?? ref.read(fundraisingRepositoryProvider);
+    FundraisingAccount? account;
+    try {
+      account = await repo.fetchMyAccount();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _preflightError = mapFundraisingSafeError(error);
+        _initializing = false;
+      });
+      return;
+    }
+
+    if (!mounted) return;
+    final readiness =
+        account?.readiness ?? FundraisingAccountReadiness.fromAccount(null);
+    if (!readiness.canStartFundraiser) {
+      if (_routingToVerification) return;
+      _routingToVerification = true;
+      final shouldContinue = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => FundraisingAccountSetupScreen(
+            initialAccount: account,
+            initialReadiness: readiness,
+          ),
+        ),
+      );
+      _routingToVerification = false;
+      if (!mounted) return;
+      if (shouldContinue == true) {
+        try {
+          account = await repo.fetchMyAccount();
+        } catch (error) {
+          setState(() {
+            _preflightError = mapFundraisingSafeError(error);
+            _initializing = false;
+          });
+          return;
+        }
+        if (!mounted) return;
+        final refreshed =
+            account?.readiness ?? FundraisingAccountReadiness.fromAccount(null);
+        if (!refreshed.canStartFundraiser) {
+          Navigator.of(context).maybePop();
+          return;
+        }
+        _wizardController.seedAccount(account);
+        await _wizardController.initialize();
+        if (!mounted) return;
+        await _loadPets();
+        if (!mounted) return;
+        _buildExpenseControllers();
+        _applyDraftToTextFields();
+        _syncUploadedMediaIds();
+        setState(() => _initializing = false);
+        return;
+      }
+      Navigator.of(context).maybePop();
+      return;
+    }
+
+    _wizardController.seedAccount(account);
     await _wizardController.initialize();
     await _loadPets();
+    if (!mounted) return;
     _buildExpenseControllers();
     _applyDraftToTextFields();
     _syncUploadedMediaIds();
-    if (!mounted) return;
     setState(() => _initializing = false);
   }
 
@@ -246,8 +339,14 @@ class _FundraisingCreateScreenState
     _titleCtrl.text = draft.title;
     _storyCtrl.text = draft.story;
     _goalCtrl.text = _formatMinorAsDisplay(draft.targetAmountMinor);
+    _targetCtrl.text = _formatMinorAsDisplay(draft.targetAmountMinor);
+    _monthlyGoalCtrl.text = _formatMinorAsDisplay(draft.monthlyGoalMinor);
     _beneficiaryCtrl.text = draft.beneficiaryName;
     _treatmentProviderCtrl.text = draft.treatmentProvider;
+    _estimatedTotalCtrl.text = _formatMinorAsDisplay(
+      draft.estimatedExpenseMinor,
+    );
+    _expenseNotesCtrl.text = draft.expenseNotes;
     _customLocationCtrl.text = draft.customLocationNote;
     for (final expense in draft.expenses) {
       final controller = _expenseControllers[expense.code];
@@ -278,6 +377,15 @@ class _FundraisingCreateScreenState
   }
 
   Future<bool> _confirmExit() async {
+    // The wizard form never opened, so nothing in this session is the user's
+    // work to lose: preflight failed, or we are still initializing. Media
+    // restored by `_initializeAsync` before the account fetch must not be
+    // mistaken for an edit the user made here.
+    if (_preflightError != null ||
+        _initializing ||
+        !_wizardController.initialized) {
+      return true;
+    }
     if (!_wizardController.draft.hasMeaningfulContent &&
         _mediaController.items.isEmpty) {
       return true;
@@ -327,6 +435,7 @@ class _FundraisingCreateScreenState
       );
       if (items.isEmpty) return;
       await _mediaController.addItems(items);
+      unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
     } catch (error) {
       _showError(_localizedMediaError(error));
     } finally {
@@ -346,6 +455,7 @@ class _FundraisingCreateScreenState
       );
       if (item == null) return;
       await _mediaController.addItems(<MediaDraftItem>[item]);
+      unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
     } catch (error) {
       _showError(_localizedMediaError(error));
     } finally {
@@ -370,6 +480,7 @@ class _FundraisingCreateScreenState
           paths.map((path) => File(path)).toList(),
         ),
       );
+      unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
     } catch (error) {
       _showError(_localizedMediaError(error));
     } finally {
@@ -396,6 +507,7 @@ class _FundraisingCreateScreenState
             isCover: item.isCover,
           ),
         );
+        unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
         return;
       }
 
@@ -416,6 +528,7 @@ class _FundraisingCreateScreenState
         );
         if (replacement == null) return;
         await _mediaController.replaceItem(item.id, replacement);
+        unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
         return;
       }
 
@@ -427,31 +540,17 @@ class _FundraisingCreateScreenState
       );
       if (replacement == null) return;
       await _mediaController.replaceItem(item.id, replacement);
+      unawaited(_mediaController.ensureUploaded().catchError((_) => <int>[]));
     } catch (error) {
       _showError(_localizedMediaError(error));
     }
-  }
-
-  Future<void> _openAccountSetup() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const FundraisingAccountSetupScreen()),
-    );
-    await _wizardController.refreshEligibility();
-  }
-
-  Future<void> _openDocuments() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const FundraisingAccountDocumentsScreen(),
-      ),
-    );
-    await _wizardController.refreshEligibility();
   }
 
   Future<void> _openPayoutMethods() async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const FundraisingPayoutMethodsScreen()),
     );
+    if (!mounted) return;
     await _wizardController.refreshEligibility();
   }
 
@@ -468,9 +567,86 @@ class _FundraisingCreateScreenState
     if (picked == null) return;
     await _wizardController.updateDraft(
       (current) => current.copyWith(
+        endsAt: DateTime(picked.year, picked.month, picked.day, 23, 59),
         deadline: DateTime(picked.year, picked.month, picked.day, 23, 59),
       ),
     );
+  }
+
+  Future<void> _setDurationPreset(int days) async {
+    final now = DateTime.now();
+    await _wizardController.updateDraft(
+      (current) => current.copyWith(
+        fundingMode: 'ONE_TIME',
+        startsAt: current.startsAt ?? now,
+        endsAt: DateTime(
+          now.year,
+          now.month,
+          now.day,
+          23,
+          59,
+        ).add(Duration(days: days)),
+        deadline: DateTime(
+          now.year,
+          now.month,
+          now.day,
+          23,
+          59,
+        ).add(Duration(days: days)),
+        clearNextReviewAt: true,
+      ),
+    );
+  }
+
+  Future<void> _setFundingMode(String value) async {
+    final normalized = value.trim().toUpperCase();
+    await _wizardController.updateDraft(
+      (current) => current.copyWith(
+        fundingMode: normalized.isEmpty ? 'ONE_TIME' : normalized,
+        startsAt: normalized == 'ONGOING'
+            ? (current.startsAt ?? DateTime.now())
+            : current.startsAt,
+        nextReviewAt: normalized == 'ONGOING'
+            ? (current.nextReviewAt ??
+                  DateTime.now().add(const Duration(days: 30)))
+            : current.nextReviewAt,
+      ),
+    );
+  }
+
+  Future<void> _useCurrentLocation() async {
+    if (_capturingCurrentLocation) return;
+    _capturingCurrentLocation = true;
+    try {
+      final t = AppLocalizations.of(context)!;
+      final permissionGranted = await _permissionService.ensure(
+        AppPermission.locationWhenInUse,
+      );
+      if (!permissionGranted || !mounted) return;
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (!mounted) return;
+      await _wizardController.updateDraft(
+        (current) => current.copyWith(
+          securityLatitude: position.latitude,
+          securityLongitude: position.longitude,
+          securityLocationAccuracy: position.accuracy.toDouble(),
+          securityLocationCapturedAt: DateTime.now(),
+        ),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t.fundraisingCurrentLocationCaptured)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showError(
+        AppLocalizations.of(context)!.fundraisingLocationPermissionFailed,
+      );
+    } finally {
+      _capturingCurrentLocation = false;
+    }
   }
 
   Future<void> _updateExpense(String code, int? amountMinor) {
@@ -497,10 +673,9 @@ class _FundraisingCreateScreenState
   }
 
   Future<void> _saveDraftManually() async {
-    await _wizardController.persistRecovery();
     await _wizardController.saveDraftNow();
     if (!mounted) return;
-    final failure = _wizardController.lastFailure;
+    final failure = _wizardController.draftFailure;
     if (failure != null) {
       _showError(_localizedFailureMessage(failure));
       return;
@@ -515,7 +690,7 @@ class _FundraisingCreateScreenState
   Future<void> _useSuggestedTarget() async {
     final suggested = _wizardController.draft.suggestedTargetMinor;
     if (suggested <= 0) return;
-    _goalCtrl.text = _formatMinorAsDisplay(suggested);
+    _targetCtrl.text = _formatMinorAsDisplay(suggested);
     await _wizardController.updateDraft(
       (current) => current.copyWith(targetAmountMinor: suggested),
     );
@@ -523,9 +698,9 @@ class _FundraisingCreateScreenState
 
   Future<void> _continueOrSubmit() async {
     final currentStep =
-        FundraisingWizardStep.values[_wizardController.draft.stepIndex.clamp(
+        _activeSteps[_wizardController.draft.stepIndex.clamp(
           0,
-          FundraisingWizardStep.values.length - 1,
+          _activeSteps.length - 1,
         )];
     final validation = _validationMessagesForStep(currentStep);
     if (validation.isNotEmpty) {
@@ -544,7 +719,7 @@ class _FundraisingCreateScreenState
         final result = await _wizardController.submitForReview();
         if (!mounted) return;
         if (result == null || result.status.toUpperCase() != 'PENDING_REVIEW') {
-          final failure = _wizardController.lastFailure;
+          final failure = _wizardController.submissionFailure;
           _showError(
             _localizedFailureMessage(
               failure ??
@@ -588,6 +763,12 @@ class _FundraisingCreateScreenState
     );
     setState(() => _showValidation = false);
     _scrollToTop();
+  }
+
+  Future<void> _cancelWizard() async {
+    final shouldPop = await _confirmExit();
+    if (!shouldPop || !mounted) return;
+    Navigator.of(context).pop();
   }
 
   void _goBackStep() {
@@ -635,15 +816,21 @@ class _FundraisingCreateScreenState
       case FundraisingWizardErrorType.mediaFailure:
         return failure.message ?? t.fundraisingErrorMediaFailed;
       case FundraisingWizardErrorType.saveFailed:
-        return t.fundraisingErrorSaveFailed;
+        return failure.message ?? t.fundraisingErrorSaveFailed;
       case FundraisingWizardErrorType.submitFailed:
-        return t.fundraisingErrorSubmitFailed;
+        return failure.message ?? t.fundraisingErrorSubmitFailed;
       case FundraisingWizardErrorType.validation:
-        return t.fundraisingErrorValidation;
+        return failure.message ?? t.fundraisingErrorValidation;
       case FundraisingWizardErrorType.unknown:
-        return t.fundraisingErrorUnknown;
+        return failure.message ?? t.fundraisingErrorUnknown;
     }
   }
+
+  String _preflightErrorTitle(FundraisingSafeError? error) =>
+      fundraisingErrorTitle(error);
+
+  String _preflightErrorDescription(FundraisingSafeError? error) =>
+      fundraisingErrorDescription(error);
 
   String _localizedMediaError(Object error) {
     if (error is MediaUploadException) {
@@ -663,51 +850,128 @@ class _FundraisingCreateScreenState
     final t = AppLocalizations.of(context)!;
     final codes = _wizardController.validationCodesForStep(
       step,
-      hasBlockingMedia: _mediaController.hasBlockingItems,
+      mediaValidation: _mediaController.mediaValidation,
     );
-    return codes.map((code) {
-      switch (code) {
-        case 'complete_profile':
-          return t.fundraisingValidationCompleteProfile;
-        case 'upload_documents':
-          return t.fundraisingValidationUploadDocuments;
-        case 'resolve_rejection':
-          return t.fundraisingValidationResolveRejection;
-        case 'category_required':
-          return t.fundraisingValidationCategory;
-        case 'beneficiary_type_required':
-          return t.fundraisingValidationBeneficiaryType;
-        case 'beneficiary_name_required':
-          return t.fundraisingValidationBeneficiaryName;
-        case 'title_too_short':
-          return t.fundraisingValidationTitle;
-        case 'story_too_short':
-          return t.fundraisingValidationStory;
-        case 'target_amount_required':
-          return t.fundraisingValidationTargetAmount;
-        case 'deadline_required':
-          return t.fundraisingValidationDeadline;
-        case 'estimated_expense_required':
-          return t.fundraisingValidationEstimatedExpense;
-        case 'urgency_required':
-          return t.fundraisingValidationUrgency;
-        case 'location_required':
-          return t.fundraisingValidationLocation;
-        case 'media_required':
-          return t.fundraisingValidationMedia;
-        case 'media_blocking':
-          return t.fundraisingValidationMediaBlocking;
-        case 'add_payout_method':
-          return t.fundraisingValidationPayout;
-        default:
-          return t.fundraisingErrorValidation;
-      }
-    }).toList();
+    return codes.map((code) => _messageForValidationCode(t, code)).toList();
+  }
+
+  String _messageForValidationCode(AppLocalizations t, String code) {
+    switch (code) {
+      case 'complete_profile':
+        return t.fundraisingValidationCompleteProfile;
+      case 'upload_documents':
+        return t.fundraisingValidationUploadDocuments;
+      case 'resolve_rejection':
+        return t.fundraisingValidationResolveRejection;
+      case 'category_required':
+        return t.fundraisingValidationCategory;
+      case 'beneficiary_type_required':
+        return t.fundraisingValidationBeneficiaryType;
+      case 'beneficiary_name_required':
+        return t.fundraisingValidationBeneficiaryName;
+      case 'title_too_short':
+        return t.fundraisingValidationTitle;
+      case 'story_too_short':
+        return t.fundraisingValidationStory;
+      case 'target_amount_required':
+        return t.fundraisingValidationTargetAmount;
+      case 'deadline_required':
+        return t.fundraisingValidationDeadline;
+      case 'estimated_expense_required':
+        return t.fundraisingValidationEstimatedExpense;
+      case 'urgency_required':
+        return t.fundraisingValidationUrgency;
+      case 'location_required':
+        return t.fundraisingValidationLocation;
+      case 'media_required':
+        return t.fundraisingValidationMedia;
+      case 'media_blocking':
+        return _mediaController.firstFailedItem?.errorMessage ??
+            t.fundraisingValidationMediaBlocking;
+      default:
+        return t.fundraisingErrorValidation;
+    }
+  }
+
+  /// The step a Needs-attention entry for [code] should jump back to.
+  FundraisingWizardStep _stepForValidationCode(String code) {
+    switch (code) {
+      case 'location_required':
+      case 'media_required':
+      case 'media_blocking':
+        return FundraisingWizardStep.location;
+      default:
+        return FundraisingWizardStep.fundraiserType;
+    }
+  }
+
+  /// Every real blocker currently preventing submission, each paired with
+  /// the step it can be fixed on. Never includes an account-verification or
+  /// payout-method entry — neither is required to submit a fundraiser, and
+  /// a pending (not-yet-VERIFIED) account is not a blocker by itself.
+  List<({String message, FundraisingWizardStep step})>
+  _previewNeedsAttention() {
+    final t = AppLocalizations.of(context)!;
+    final codes = _wizardController.validationCodesForStep(
+      FundraisingWizardStep.preview,
+      mediaValidation: _mediaController.mediaValidation,
+    );
+    return codes
+        .map(
+          (code) => (
+            message: _messageForValidationCode(t, code),
+            step: _stepForValidationCode(code),
+          ),
+        )
+        .toList();
+  }
+
+  List<String> _evidenceValidationCodes() {
+    final items = _mediaController.items;
+    if (items.isEmpty) {
+      return <String>['media_required'];
+    }
+
+    final failed = items.where((item) => item.hasFailed || item.isCancelled);
+    final failedItem = failed.isNotEmpty ? failed.first : null;
+    if (failedItem != null) {
+      return <String>[
+        if ((failedItem.errorMessage ?? '').trim().isNotEmpty) 'media_failed',
+        if ((failedItem.errorMessage ?? '').trim().isEmpty) 'media_blocking',
+      ];
+    }
+
+    final pending = items.any(
+      (item) =>
+          item.state == MediaDraftState.local ||
+          item.isPreparing ||
+          item.isUploading ||
+          item.state == MediaDraftState.processing,
+    );
+    if (pending) {
+      return <String>['media_blocking'];
+    }
+
+    final ready = items.every(
+      (item) =>
+          item.remoteMediaId != null &&
+          (item.state == MediaDraftState.ready ||
+              item.state == MediaDraftState.uploaded),
+    );
+    if (!ready) {
+      return <String>['media_blocking'];
+    }
+
+    return const <String>[];
+  }
+
+  bool _canContinueFromCurrentStep(FundraisingWizardStep step) {
+    return _validationMessagesForStep(step).isEmpty;
   }
 
   Set<FundraisingWizardStep> _completedSteps() {
     final completed = <FundraisingWizardStep>{};
-    for (final step in FundraisingWizardStep.values) {
+    for (final step in _activeSteps) {
       if (step == FundraisingWizardStep.preview) continue;
       if (_validationMessagesForStep(step).isEmpty) {
         completed.add(step);
@@ -776,8 +1040,12 @@ class _FundraisingCreateScreenState
     _titleCtrl.dispose();
     _storyCtrl.dispose();
     _goalCtrl.dispose();
+    _targetCtrl.dispose();
+    _monthlyGoalCtrl.dispose();
     _beneficiaryCtrl.dispose();
     _treatmentProviderCtrl.dispose();
+    _estimatedTotalCtrl.dispose();
+    _expenseNotesCtrl.dispose();
     _customLocationCtrl.dispose();
     for (final controller in _expenseControllers.values) {
       controller.dispose();
@@ -791,19 +1059,44 @@ class _FundraisingCreateScreenState
     final t = AppLocalizations.of(context)!;
     final currentStepIndex = _wizardController.draft.stepIndex.clamp(
       0,
-      FundraisingWizardStep.values.length - 1,
+      _activeSteps.length - 1,
     );
-    final currentStep = FundraisingWizardStep.values[currentStepIndex];
+    final currentStep = _activeSteps[currentStepIndex];
     final validationMessages = _showValidation
         ? _validationMessagesForStep(currentStep)
         : const <String>[];
+    final isBusy =
+        _initializing ||
+        (_wizardController.initialized && _wizardController.isLoading);
 
     return WillPopScope(
       onWillPop: _confirmExit,
       child: Scaffold(
-        appBar: AppBar(title: Text(t.fundraisingWizardTitle)),
-        body: _initializing || _wizardController.isLoading
-            ? const Center(child: CircularProgressIndicator())
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          title: Text(t.fundraisingWizardTitle),
+        ),
+        body: isBusy
+            ? Center(
+                child: FundraisingLoadingView(
+                  message: 'Preparing your fundraiser...',
+                ),
+              )
+            : _preflightError != null
+            ? FundraisingErrorView(
+                title: _preflightErrorTitle(_preflightError),
+                message: _preflightErrorDescription(_preflightError),
+                onRetry: () async {
+                  setState(() {
+                    _preflightError = null;
+                    _initializing = true;
+                  });
+                  await _initializeAsync();
+                },
+              )
             : Column(
                 children: [
                   FundraisingWizardProgressHeader(
@@ -816,21 +1109,17 @@ class _FundraisingCreateScreenState
                       bottom: false,
                       child: SingleChildScrollView(
                         controller: _scrollController,
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: EdgeInsets.fromLTRB(
                           16,
                           8,
                           16,
-                          140 + MediaQuery.of(context).viewInsets.bottom,
+                          184 + MediaQuery.of(context).viewInsets.bottom,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              _stepTitle(t, currentStep),
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 8),
                             Text(
                               _stepDescription(t, currentStep),
                               style: Theme.of(context).textTheme.bodyMedium,
@@ -850,59 +1139,43 @@ class _FundraisingCreateScreenState
                   ),
                 ],
               ),
-        bottomNavigationBar: FundraisingWizardBottomBar(
-          canGoBack: _wizardController.draft.stepIndex > 0,
-          onBack: _goBackStep,
-          onSaveDraft: _saveDraftManually,
-          onContinue: _continueOrSubmit,
-          continueLabel: currentStep == FundraisingWizardStep.preview
-              ? t.fundraisingSubmitForReview
-              : t.continueLabel,
-          busy: _wizardController.isSaving || _wizardController.isSubmitting,
-        ),
+        bottomNavigationBar: (isBusy || _preflightError != null)
+            ? null
+            : FundraisingWizardBottomBar(
+                canGoBack: _wizardController.draft.stepIndex > 0,
+                onBack: _goBackStep,
+                onCancel: _cancelWizard,
+                onSaveDraft: _saveDraftManually,
+                onContinue: _continueOrSubmit,
+                continueLabel: currentStep == FundraisingWizardStep.preview
+                    ? t.fundraisingSubmitForReview
+                    : t.continueLabel,
+                busy:
+                    _wizardController.isSaving ||
+                    _wizardController.isSubmitting,
+                showSaveDraft: true,
+                continueEnabled:
+                    !_wizardController.isSaving &&
+                    !_wizardController.isSubmitting &&
+                    _canContinueFromCurrentStep(currentStep),
+                helperText: _showValidation && validationMessages.isNotEmpty
+                    ? validationMessages.first
+                    : null,
+              ),
       ),
     );
   }
 
-  String _stepTitle(AppLocalizations t, FundraisingWizardStep step) {
-    switch (step) {
-      case FundraisingWizardStep.eligibility:
-        return t.fundraisingWizardStepEligibility;
-      case FundraisingWizardStep.fundraiserType:
-        return t.fundraisingWizardStepBeneficiary;
-      case FundraisingWizardStep.storyAndGoal:
-        return t.fundraisingWizardStepStory;
-      case FundraisingWizardStep.caseDetails:
-        return t.fundraisingWizardStepCase;
-      case FundraisingWizardStep.location:
-        return t.fundraisingWizardStepLocation;
-      case FundraisingWizardStep.evidence:
-        return t.fundraisingWizardStepEvidence;
-      case FundraisingWizardStep.payoutReadiness:
-        return t.fundraisingWizardStepPayout;
-      case FundraisingWizardStep.preview:
-        return t.fundraisingWizardStepPreview;
-    }
-  }
-
   String _stepDescription(AppLocalizations t, FundraisingWizardStep step) {
     switch (step) {
-      case FundraisingWizardStep.eligibility:
-        return t.fundraisingWizardEligibilityDescription;
       case FundraisingWizardStep.fundraiserType:
-        return t.fundraisingWizardBeneficiaryDescription;
-      case FundraisingWizardStep.storyAndGoal:
-        return t.fundraisingWizardStoryDescription;
-      case FundraisingWizardStep.caseDetails:
-        return t.fundraisingWizardCaseDescription;
+        return t.fundraisingWizardDetailsDescription;
       case FundraisingWizardStep.location:
-        return t.fundraisingWizardLocationDescription;
-      case FundraisingWizardStep.evidence:
-        return t.fundraisingWizardEvidenceDescription;
-      case FundraisingWizardStep.payoutReadiness:
-        return t.fundraisingWizardPayoutDescription;
+        return t.fundraisingWizardMediaLocationDescription;
       case FundraisingWizardStep.preview:
         return t.fundraisingWizardPreviewDescription;
+      default:
+        return t.fundraisingWizardDetailsDescription;
     }
   }
 
@@ -912,100 +1185,573 @@ class _FundraisingCreateScreenState
     FundraisingWizardStep step,
   ) {
     switch (step) {
-      case FundraisingWizardStep.eligibility:
-        return _buildEligibilityStep(context, t);
       case FundraisingWizardStep.fundraiserType:
-        return _buildBeneficiaryStep(context, t);
-      case FundraisingWizardStep.storyAndGoal:
-        return _buildStoryStep(context, t);
-      case FundraisingWizardStep.caseDetails:
-        return _buildCaseStep(context, t);
+        return _buildDetailsStep(context, t);
       case FundraisingWizardStep.location:
-        return _buildLocationStep(context, t);
-      case FundraisingWizardStep.evidence:
-        return _buildEvidenceStep(context, t);
-      case FundraisingWizardStep.payoutReadiness:
-        return _buildPayoutStep(context, t);
+        return _buildMediaLocationStep(context, t);
       case FundraisingWizardStep.preview:
         return _buildPreviewStep(context, t);
+      default:
+        return _buildDetailsStep(context, t);
     }
   }
 
-  Widget _buildEligibilityStep(BuildContext context, AppLocalizations t) {
-    final account = _wizardController.account;
-    final status = account?.status.toUpperCase() ?? 'DRAFT';
+  Widget _buildDetailsStep(BuildContext context, AppLocalizations t) {
+    final draft = _wizardController.draft;
+    final mode = draft.fundingMode.trim().toUpperCase();
+    final oneTime = mode.isEmpty || mode == 'ONE_TIME';
+    final hasRelevantCaseFields =
+        draft.category == 'TREATMENT' || draft.beneficiaryType == 'PET';
+    final endsAt = draft.endsAt ?? draft.deadline;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FundraisingInfoCard(
-          title: t.fundraisingEligibilityStatusTitle,
-          body: _statusDescription(t, status),
-          trailing: FilledButton(
-            onPressed: _openAccountSetup,
-            child: Text(t.fundraisingCompleteVerification),
+        FundraisingSectionCard(
+          title: t.fundraisingWizardStepDetails,
+          subtitle: t.fundraisingWizardDetailsDescription,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FundraisingDropdownField<String>(
+                value: draft.category.trim().isEmpty ? null : draft.category,
+                labelText: t.fundraisingCategoryField,
+                items: _categoryValues
+                    .map(
+                      (value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(_categoryLabel(t, value)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(category: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingDropdownField<String>(
+                value: draft.beneficiaryType,
+                labelText: t.fundraisingBeneficiaryTypeField,
+                items: _beneficiaryTypes
+                    .map(
+                      (value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(_beneficiaryLabel(t, value)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(beneficiaryType: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _beneficiaryCtrl,
+                labelText: t.fundraisingBeneficiaryNameField,
+                minLines: 1,
+                maxLines: 2,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(beneficiaryName: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _titleCtrl,
+                labelText: t.fundraisingTitleField,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(title: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _storyCtrl,
+                labelText: t.fundraisingStoryField,
+                minLines: 5,
+                maxLines: 9,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(story: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingDropdownField<String>(
+                value: mode.isEmpty ? 'ONE_TIME' : mode,
+                labelText: t.fundraisingFundingModeField,
+                items: [
+                  DropdownMenuItem<String>(
+                    value: 'ONE_TIME',
+                    child: Text(t.fundraisingFundingModeOneTime),
+                  ),
+                  DropdownMenuItem<String>(
+                    value: 'ONGOING',
+                    child: Text(t.fundraisingFundingModeOngoing),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  unawaited(_setFundingMode(value));
+                },
+              ),
+              const SizedBox(height: 14),
+              if (oneTime) ...[
+                FundraisingAmountField(
+                  controller: _targetCtrl,
+                  labelText: t.fundraisingGoalField,
+                  onChanged: (_) {
+                    if (_syncingFields) return;
+                    final parsed = _normalizeFormattedAmount(_targetCtrl);
+                    unawaited(
+                      _wizardController.updateDraft(
+                        (current) => current.copyWith(
+                          targetAmountMinor: parsed,
+                          clearTargetAmountMinor: parsed == null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  t.fundraisingDurationField,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final days in const [7, 14, 30, 60, 90])
+                      ChoiceChip(
+                        label: Text(
+                          t.fundraisingDurationPresetDays(days),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        selected: _selectedDurationPresetDays(endsAt) == days,
+                        onSelected: (_) => unawaited(_setDurationPreset(days)),
+                      ),
+                    ChoiceChip(
+                      label: Text(t.fundraisingDurationCustom),
+                      selected:
+                          endsAt != null &&
+                          _selectedDurationPresetDays(endsAt) == null,
+                      onSelected: (_) => unawaited(_selectDeadline()),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _selectDeadline,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: Text(
+                      endsAt == null
+                          ? t.fundraisingSelectDeadline
+                          : DateFormat.yMMMd().format(endsAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                FundraisingAmountField(
+                  controller: _monthlyGoalCtrl,
+                  labelText: t.fundraisingMonthlyGoalField,
+                  onChanged: (_) {
+                    if (_syncingFields) return;
+                    final parsed = _normalizeFormattedAmount(_monthlyGoalCtrl);
+                    unawaited(
+                      _wizardController.updateDraft(
+                        (current) => current.copyWith(
+                          monthlyGoalMinor: parsed,
+                          clearMonthlyGoalMinor: parsed == null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                FundraisingInfoCard(
+                  title: t.fundraisingOngoingSupportLabel,
+                  body: t.fundraisingNoEndDate,
+                ),
+              ],
+              const SizedBox(height: 14),
+              if (hasRelevantCaseFields) ...[
+                FundraisingTextField(
+                  controller: _treatmentProviderCtrl,
+                  labelText: t.fundraisingTreatmentProviderField,
+                  onChanged: (value) {
+                    unawaited(
+                      _wizardController.updateDraft(
+                        (current) => current.copyWith(treatmentProvider: value),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                FundraisingDropdownField<String>(
+                  value: draft.urgency,
+                  labelText: t.fundraisingUrgencyField,
+                  items: _urgencyValues
+                      .map(
+                        (value) => DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(_urgencyLabel(t, value)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    unawaited(
+                      _wizardController.updateDraft(
+                        (current) => current.copyWith(
+                          urgency: value,
+                          clearUrgency: value == null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+              ],
+              const SizedBox(height: 14),
+              FundraisingAmountField(
+                controller: _estimatedTotalCtrl,
+                labelText: t.fundraisingOptionalEstimatedTotalField,
+                onChanged: (_) {
+                  if (_syncingFields) return;
+                  final parsed = _normalizeFormattedAmount(_estimatedTotalCtrl);
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        estimatedExpenseMinor: parsed,
+                        clearEstimatedExpenseMinor: parsed == null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _expenseNotesCtrl,
+                labelText: t.fundraisingExpenseNotesField,
+                minLines: 2,
+                maxLines: 4,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(expenseNotes: value),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              TextButton.icon(
+                onPressed: () {
+                  setState(
+                    () => _showExpenseBreakdown = !_showExpenseBreakdown,
+                  );
+                },
+                icon: Icon(
+                  _showExpenseBreakdown
+                      ? Icons.expand_less_rounded
+                      : Icons.add_circle_outline_rounded,
+                ),
+                label: Text(
+                  _showExpenseBreakdown
+                      ? t.fundraisingHideExpenseBreakdown
+                      : t.fundraisingAddExpenseBreakdown,
+                ),
+              ),
+              if (_showExpenseBreakdown) ...[
+                const SizedBox(height: 12),
+                Text(
+                  t.fundraisingExpenseSummaryTitle,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                ..._wizardController.draft.expenses.map((expense) {
+                  final controller = _expenseControllers[expense.code]!;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: FundraisingAmountField(
+                      controller: controller,
+                      labelText: expense.label,
+                      onChanged: (_) {
+                        if (_syncingFields) return;
+                        final parsed = _normalizeFormattedAmount(controller);
+                        _updateExpense(expense.code, parsed);
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ],
           ),
         ),
-        const SizedBox(height: 14),
-        if (_wizardController.missingVerificationActions.contains(
-          'complete_profile',
-        ))
-          FundraisingInfoCard(
-            title: t.fundraisingEligibilityProfileTitle,
-            body: t.fundraisingEligibilityProfileBody,
-            trailing: TextButton(
-              onPressed: _openAccountSetup,
-              child: Text(t.fundraisingFixNow),
-            ),
+      ],
+    );
+  }
+
+  int? _selectedDurationPresetDays(DateTime? endsAt) {
+    if (endsAt == null) return null;
+    final normalizedStart = DateTime.now();
+    final normalizedEnd = DateTime(endsAt.year, endsAt.month, endsAt.day);
+    final days = normalizedEnd
+        .difference(
+          DateTime(
+            normalizedStart.year,
+            normalizedStart.month,
+            normalizedStart.day,
           ),
-        if (_wizardController.missingVerificationActions.contains(
-          'upload_documents',
-        )) ...[
-          const SizedBox(height: 14),
-          FundraisingInfoCard(
-            title: t.fundraisingEligibilityDocumentsTitle,
-            body: t.fundraisingEligibilityDocumentsBody,
-            trailing: TextButton(
-              onPressed: _openDocuments,
-              child: Text(t.fundraisingOpenDocuments),
-            ),
+        )
+        .inDays;
+    return const <int>{7, 14, 30, 60, 90}.contains(days) ? days : null;
+  }
+
+  Widget _buildMediaLocationStep(BuildContext context, AppLocalizations t) {
+    final draft = _wizardController.draft;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FundraisingSectionCard(
+          title: t.fundraisingWizardStepMediaLocation,
+          subtitle: t.fundraisingWizardMediaLocationDescription,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FundraisingInlineMessage(
+                variant: FundraisingInlineMessageVariant.info,
+                icon: Icons.lock_outline_rounded,
+                message: t.fundraisingPrivacyLocationCopy,
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _capturingCurrentLocation
+                      ? null
+                      : _useCurrentLocation,
+                  icon: _capturingCurrentLocation
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.my_location_outlined),
+                  label: Text(
+                    t.fundraisingUseCurrentLocation,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              if ((draft.securityLatitude != null &&
+                  draft.securityLongitude != null)) ...[
+                const SizedBox(height: 10),
+                FundraisingInfoCard(
+                  title: t.fundraisingCurrentLocationCaptured,
+                  body:
+                      '${draft.securityLatitude!.toStringAsFixed(5)}, ${draft.securityLongitude!.toStringAsFixed(5)}',
+                ),
+              ],
+              const SizedBox(height: 16),
+              LocationSelectorWidget(
+                divisionId: draft.bdDivisionId,
+                districtId: draft.bdDistrictId,
+                upazilaId: draft.bdUpazilaId,
+                unionId: draft.bdAreaId,
+                divisionName: draft.divisionName,
+                districtName: draft.districtName,
+                upazilaName: draft.upazilaName,
+                unionName: draft.areaName,
+                required: true,
+                onDivisionChanged: (id, name) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        bdDivisionId: id,
+                        clearBdDivisionId: id == null,
+                        divisionName: name,
+                        clearDivisionName: name == null,
+                        bdDistrictId: null,
+                        clearBdDistrictId: true,
+                        bdUpazilaId: null,
+                        clearBdUpazilaId: true,
+                        bdAreaId: null,
+                        clearBdAreaId: true,
+                        districtName: null,
+                        clearDistrictName: true,
+                        upazilaName: null,
+                        clearUpazilaName: true,
+                        areaName: null,
+                        clearAreaName: true,
+                        locationText: _buildLocationText(
+                          areaName: null,
+                          upazilaName: null,
+                          districtName: null,
+                          divisionName: name,
+                          customNote: current.customLocationNote,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                onDistrictChanged: (id, name) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        bdDistrictId: id,
+                        clearBdDistrictId: id == null,
+                        districtName: name,
+                        clearDistrictName: name == null,
+                        bdUpazilaId: null,
+                        clearBdUpazilaId: true,
+                        bdAreaId: null,
+                        clearBdAreaId: true,
+                        upazilaName: null,
+                        clearUpazilaName: true,
+                        areaName: null,
+                        clearAreaName: true,
+                        locationText: _buildLocationText(
+                          areaName: null,
+                          upazilaName: null,
+                          districtName: name,
+                          divisionName: current.divisionName,
+                          customNote: current.customLocationNote,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                onUpazilaChanged: (id, name) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        bdUpazilaId: id,
+                        clearBdUpazilaId: id == null,
+                        upazilaName: name,
+                        clearUpazilaName: name == null,
+                        bdAreaId: null,
+                        clearBdAreaId: true,
+                        areaName: null,
+                        clearAreaName: true,
+                        locationText: _buildLocationText(
+                          areaName: null,
+                          upazilaName: name,
+                          districtName: current.districtName,
+                          divisionName: current.divisionName,
+                          customNote: current.customLocationNote,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                onUnionChanged: (id, name) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        bdAreaId: id,
+                        clearBdAreaId: id == null,
+                        areaName: name,
+                        clearAreaName: name == null,
+                        locationText: _buildLocationText(
+                          areaName: name,
+                          upazilaName: current.upazilaName,
+                          districtName: current.districtName,
+                          divisionName: current.divisionName,
+                          customNote: current.customLocationNote,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _customLocationCtrl,
+                labelText: t.fundraisingLocationNoteField,
+                minLines: 2,
+                maxLines: 3,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        customLocationNote: value,
+                        locationText: _buildLocationText(
+                          areaName: current.areaName,
+                          upazilaName: current.upazilaName,
+                          districtName: current.districtName,
+                          divisionName: current.divisionName,
+                          customNote: value,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _WizardActionButton(
+                    icon: Icons.photo_library_outlined,
+                    label: t.fundraisingAddPhotos,
+                    onTap: _pickImages,
+                  ),
+                  _WizardActionButton(
+                    icon: Icons.videocam_outlined,
+                    label: t.fundraisingAddVideo,
+                    onTap: _pickVideo,
+                  ),
+                  _WizardActionButton(
+                    icon: Icons.description_outlined,
+                    label: t.fundraisingAddDocuments,
+                    onTap: _pickDocuments,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (_mediaController.items.isNotEmpty)
+                MediaComposerList(
+                  controller: _mediaController,
+                  onEditItem: _editMediaItem,
+                )
+              else
+                FundraisingInfoCard(
+                  title: t.fundraisingMediaEmptyTitle,
+                  body: t.fundraisingMediaEmptyBody,
+                ),
+            ],
           ),
-        ],
-        if (_wizardController.missingVerificationActions.contains(
-          'resolve_rejection',
-        )) ...[
-          const SizedBox(height: 14),
-          FundraisingInfoCard(
-            title: t.fundraisingEligibilityRejectedTitle,
-            body: t.fundraisingEligibilityRejectedBody,
-            trailing: TextButton(
-              onPressed: _openAccountSetup,
-              child: Text(t.fundraisingReviewProfile),
-            ),
-          ),
-        ],
-        const SizedBox(height: 16),
-        Text(
-          t.fundraisingEligibilityChecklistTitle,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 10),
-        _ChecklistTile(
-          label: t.fundraisingEligibilityChecklistProfile,
-          done: !(_wizardController.missingVerificationActions.contains(
-            'complete_profile',
-          )),
-        ),
-        _ChecklistTile(
-          label: t.fundraisingEligibilityChecklistDocuments,
-          done: !(_wizardController.missingVerificationActions.contains(
-            'upload_documents',
-          )),
-        ),
-        _ChecklistTile(
-          label: t.fundraisingEligibilityChecklistStatus,
-          done: !_wizardController.isVerificationRejected,
         ),
       ],
     );
@@ -1013,144 +1759,142 @@ class _FundraisingCreateScreenState
 
   Widget _buildBeneficiaryStep(BuildContext context, AppLocalizations t) {
     final draft = _wizardController.draft;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          value: draft.category.trim().isEmpty ? null : draft.category,
-          decoration: InputDecoration(
+    return FundraisingSectionCard(
+      title: t.fundraisingWizardStepBeneficiary,
+      subtitle: t.fundraisingWizardBeneficiaryDescription,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FundraisingDropdownField<String>(
+            value: draft.category.trim().isEmpty ? null : draft.category,
             labelText: t.fundraisingCategoryField,
-            border: const OutlineInputBorder(),
-          ),
-          items: _categoryValues
-              .map(
-                (value) => DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(_categoryLabel(t, value)),
+            items: _categoryValues
+                .map(
+                  (value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(_categoryLabel(t, value)),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(category: value),
                 ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value == null) return;
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(category: value),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          value: draft.beneficiaryType,
-          decoration: InputDecoration(
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          FundraisingDropdownField<String>(
+            value: draft.beneficiaryType,
             labelText: t.fundraisingBeneficiaryTypeField,
-            border: const OutlineInputBorder(),
-          ),
-          items: _beneficiaryTypes
-              .map(
-                (value) => DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(_beneficiaryLabel(t, value)),
+            items: _beneficiaryTypes
+                .map(
+                  (value) => DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(_beneficiaryLabel(t, value)),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              if (value == null) return;
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(beneficiaryType: value),
                 ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value == null) return;
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(beneficiaryType: value),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _beneficiaryCtrl,
-          minLines: 1,
-          maxLines: 2,
-          decoration: InputDecoration(
-            labelText: t.fundraisingBeneficiaryNameField,
-            border: const OutlineInputBorder(),
+              );
+            },
           ),
-          onChanged: (value) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(beneficiaryName: value),
-              ),
-            );
-          },
-        ),
-      ],
+          const SizedBox(height: 14),
+          FundraisingTextField(
+            controller: _beneficiaryCtrl,
+            labelText: t.fundraisingBeneficiaryNameField,
+            minLines: 1,
+            maxLines: 2,
+            onChanged: (value) {
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(beneficiaryName: value),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildStoryStep(BuildContext context, AppLocalizations t) {
     final draft = _wizardController.draft;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
-          controller: _titleCtrl,
-          decoration: InputDecoration(
-            labelText: t.fundraisingTitleField,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (value) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(title: value),
+        FundraisingSectionCard(
+          title: t.fundraisingWizardStepStory,
+          subtitle: t.fundraisingWizardStoryDescription,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FundraisingTextField(
+                controller: _titleCtrl,
+                labelText: t.fundraisingTitleField,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(title: value),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _storyCtrl,
-          minLines: 6,
-          maxLines: 10,
-          decoration: InputDecoration(
-            labelText: t.fundraisingStoryField,
-            alignLabelWithHint: true,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (value) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(story: value),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _storyCtrl,
+                labelText: t.fundraisingStoryField,
+                minLines: 5,
+                maxLines: 9,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(story: value),
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _goalCtrl,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: t.fundraisingGoalField,
-            prefixText: 'BDT ',
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (_) {
-            if (_syncingFields) return;
-            final parsed = _normalizeFormattedAmount(_goalCtrl);
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  targetAmountMinor: parsed,
-                  clearTargetAmountMinor: parsed == null,
+              const SizedBox(height: 14),
+              FundraisingAmountField(
+                controller: _goalCtrl,
+                labelText: t.fundraisingGoalField,
+                onChanged: (_) {
+                  if (_syncingFields) return;
+                  final parsed = _normalizeFormattedAmount(_goalCtrl);
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        targetAmountMinor: parsed,
+                        clearTargetAmountMinor: parsed == null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _selectDeadline,
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: Text(
+                    draft.deadline == null
+                        ? t.fundraisingSelectDeadline
+                        : DateFormat.yMMMd().format(draft.deadline!),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _selectDeadline,
-          icon: const Icon(Icons.calendar_month_outlined),
-          label: Text(
-            draft.deadline == null
-                ? t.fundraisingSelectDeadline
-                : DateFormat.yMMMd().format(draft.deadline!),
+            ],
           ),
         ),
       ],
@@ -1160,109 +1904,145 @@ class _FundraisingCreateScreenState
   Widget _buildCaseStep(BuildContext context, AppLocalizations t) {
     final draft = _wizardController.draft;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_pets.isNotEmpty) ...[
-          DropdownButtonFormField<int>(
-            value: draft.petId,
-            decoration: InputDecoration(
-              labelText: t.fundraisingPetField,
-              border: const OutlineInputBorder(),
-            ),
-            items: [
-              DropdownMenuItem<int>(
-                value: null,
-                child: Text(t.fundraisingNoPetSelected),
+        FundraisingSectionCard(
+          title: t.fundraisingWizardStepCase,
+          subtitle: t.fundraisingWizardCaseDescription,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_pets.isNotEmpty) ...[
+                FundraisingDropdownField<int>(
+                  value: draft.petId,
+                  labelText: t.fundraisingPetField,
+                  items: [
+                    DropdownMenuItem<int>(
+                      value: null,
+                      child: Text(t.fundraisingNoPetSelected),
+                    ),
+                    ..._pets.map(
+                      (pet) => DropdownMenuItem<int>(
+                        value: pet.id,
+                        child: Text(pet.name),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    unawaited(
+                      _wizardController.updateDraft(
+                        (current) => current.copyWith(
+                          petId: value,
+                          clearPetId: value == null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+              ],
+              FundraisingDropdownField<String>(
+                value: draft.urgency,
+                labelText: t.fundraisingUrgencyField,
+                items: _urgencyValues
+                    .map(
+                      (value) => DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(_urgencyLabel(t, value)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(
+                        urgency: value,
+                        clearUrgency: value == null,
+                      ),
+                    ),
+                  );
+                },
               ),
-              ..._pets.map(
-                (pet) =>
-                    DropdownMenuItem<int>(value: pet.id, child: Text(pet.name)),
+              const SizedBox(height: 14),
+              FundraisingTextField(
+                controller: _treatmentProviderCtrl,
+                labelText: t.fundraisingTreatmentProviderField,
+                onChanged: (value) {
+                  unawaited(
+                    _wizardController.updateDraft(
+                      (current) => current.copyWith(treatmentProvider: value),
+                    ),
+                  );
+                },
               ),
+              const SizedBox(height: 18),
+              Text(
+                t.fundraisingExpenseSummaryTitle,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 10),
+              ..._wizardController.draft.expenses.map((expense) {
+                final controller = _expenseControllers[expense.code]!;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: FundraisingAmountField(
+                    controller: controller,
+                    labelText: expense.label,
+                    onChanged: (_) {
+                      if (_syncingFields) return;
+                      final parsed = _normalizeFormattedAmount(controller);
+                      _updateExpense(expense.code, parsed);
+                    },
+                  ),
+                );
+              }),
             ],
-            onChanged: (value) {
-              unawaited(
-                _wizardController.updateDraft(
-                  (current) =>
-                      current.copyWith(petId: value, clearPetId: value == null),
-                ),
-              );
-            },
           ),
-          const SizedBox(height: 16),
-        ],
-        DropdownButtonFormField<String>(
-          value: draft.urgency,
-          decoration: InputDecoration(
-            labelText: t.fundraisingUrgencyField,
-            border: const OutlineInputBorder(),
-          ),
-          items: _urgencyValues
-              .map(
-                (value) => DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(_urgencyLabel(t, value)),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  urgency: value,
-                  clearUrgency: value == null,
-                ),
-              ),
-            );
-          },
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: _treatmentProviderCtrl,
-          decoration: InputDecoration(
-            labelText: t.fundraisingTreatmentProviderField,
-            border: const OutlineInputBorder(),
-          ),
-          onChanged: (value) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(treatmentProvider: value),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final narrow = constraints.maxWidth < 400;
+            final amount = _moneyFormat.format(
+              _wizardController.draft.suggestedTargetMinor,
+            );
+            return FundraisingSectionCard(
+              title: t.fundraisingSuggestedGoalTitle,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'BDT $amount',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    t.fundraisingSuggestedGoalBody,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: narrow ? double.infinity : null,
+                    child: FilledButton.tonal(
+                      onPressed:
+                          _wizardController.draft.suggestedTargetMinor > 0
+                          ? _useSuggestedTarget
+                          : null,
+                      child: Text(
+                        t.fundraisingUseSuggestedTarget,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           },
-        ),
-        const SizedBox(height: 18),
-        Text(
-          t.fundraisingExpenseSummaryTitle,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 10),
-        ..._wizardController.draft.expenses.map((expense) {
-          final controller = _expenseControllers[expense.code]!;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: TextFormField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: expense.label,
-                prefixText: 'BDT ',
-                border: const OutlineInputBorder(),
-              ),
-            ),
-          );
-        }),
-        FundraisingInfoCard(
-          title: t.fundraisingSuggestedGoalTitle,
-          body:
-              '${t.fundraisingSuggestedGoalBody} BDT ${_moneyFormat.format(_wizardController.draft.suggestedTargetMinor)}',
-          trailing: TextButton(
-            onPressed: _wizardController.draft.suggestedTargetMinor > 0
-                ? _useSuggestedTarget
-                : null,
-            child: Text(t.fundraisingUseSuggestedTarget),
-          ),
         ),
       ],
     );
@@ -1270,211 +2050,266 @@ class _FundraisingCreateScreenState
 
   Widget _buildLocationStep(BuildContext context, AppLocalizations t) {
     final draft = _wizardController.draft;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        LocationSelectorWidget(
-          divisionId: draft.bdDivisionId,
-          districtId: draft.bdDistrictId,
-          upazilaId: draft.bdUpazilaId,
-          unionId: draft.bdAreaId,
-          divisionName: draft.divisionName,
-          districtName: draft.districtName,
-          upazilaName: draft.upazilaName,
-          unionName: draft.areaName,
-          required: true,
-          onDivisionChanged: (id, name) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  bdDivisionId: id,
-                  clearBdDivisionId: id == null,
-                  divisionName: name,
-                  clearDivisionName: name == null,
-                  bdDistrictId: null,
-                  clearBdDistrictId: true,
-                  bdUpazilaId: null,
-                  clearBdUpazilaId: true,
-                  bdAreaId: null,
-                  clearBdAreaId: true,
-                  districtName: null,
-                  clearDistrictName: true,
-                  upazilaName: null,
-                  clearUpazilaName: true,
-                  areaName: null,
-                  clearAreaName: true,
-                  locationText: _buildLocationText(
-                    areaName: null,
-                    upazilaName: null,
-                    districtName: null,
+    return FundraisingSectionCard(
+      title: t.fundraisingWizardStepLocation,
+      subtitle: t.fundraisingWizardLocationDescription,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LocationSelectorWidget(
+            divisionId: draft.bdDivisionId,
+            districtId: draft.bdDistrictId,
+            upazilaId: draft.bdUpazilaId,
+            unionId: draft.bdAreaId,
+            divisionName: draft.divisionName,
+            districtName: draft.districtName,
+            upazilaName: draft.upazilaName,
+            unionName: draft.areaName,
+            required: true,
+            onDivisionChanged: (id, name) {
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(
+                    bdDivisionId: id,
+                    clearBdDivisionId: id == null,
                     divisionName: name,
-                    customNote: current.customLocationNote,
-                  ),
-                ),
-              ),
-            );
-          },
-          onDistrictChanged: (id, name) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  bdDistrictId: id,
-                  clearBdDistrictId: id == null,
-                  districtName: name,
-                  clearDistrictName: name == null,
-                  bdUpazilaId: null,
-                  clearBdUpazilaId: true,
-                  bdAreaId: null,
-                  clearBdAreaId: true,
-                  upazilaName: null,
-                  clearUpazilaName: true,
-                  areaName: null,
-                  clearAreaName: true,
-                  locationText: _buildLocationText(
-                    areaName: null,
+                    clearDivisionName: name == null,
+                    bdDistrictId: null,
+                    clearBdDistrictId: true,
+                    bdUpazilaId: null,
+                    clearBdUpazilaId: true,
+                    bdAreaId: null,
+                    clearBdAreaId: true,
+                    districtName: null,
+                    clearDistrictName: true,
                     upazilaName: null,
-                    districtName: name,
-                    divisionName: current.divisionName,
-                    customNote: current.customLocationNote,
-                  ),
-                ),
-              ),
-            );
-          },
-          onUpazilaChanged: (id, name) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  bdUpazilaId: id,
-                  clearBdUpazilaId: id == null,
-                  upazilaName: name,
-                  clearUpazilaName: name == null,
-                  bdAreaId: null,
-                  clearBdAreaId: true,
-                  areaName: null,
-                  clearAreaName: true,
-                  locationText: _buildLocationText(
+                    clearUpazilaName: true,
                     areaName: null,
+                    clearAreaName: true,
+                    locationText: _buildLocationText(
+                      areaName: null,
+                      upazilaName: null,
+                      districtName: null,
+                      divisionName: name,
+                      customNote: current.customLocationNote,
+                    ),
+                  ),
+                ),
+              );
+            },
+            onDistrictChanged: (id, name) {
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(
+                    bdDistrictId: id,
+                    clearBdDistrictId: id == null,
+                    districtName: name,
+                    clearDistrictName: name == null,
+                    bdUpazilaId: null,
+                    clearBdUpazilaId: true,
+                    bdAreaId: null,
+                    clearBdAreaId: true,
+                    upazilaName: null,
+                    clearUpazilaName: true,
+                    areaName: null,
+                    clearAreaName: true,
+                    locationText: _buildLocationText(
+                      areaName: null,
+                      upazilaName: null,
+                      districtName: name,
+                      divisionName: current.divisionName,
+                      customNote: current.customLocationNote,
+                    ),
+                  ),
+                ),
+              );
+            },
+            onUpazilaChanged: (id, name) {
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(
+                    bdUpazilaId: id,
+                    clearBdUpazilaId: id == null,
                     upazilaName: name,
-                    districtName: current.districtName,
-                    divisionName: current.divisionName,
-                    customNote: current.customLocationNote,
+                    clearUpazilaName: name == null,
+                    bdAreaId: null,
+                    clearBdAreaId: true,
+                    areaName: null,
+                    clearAreaName: true,
+                    locationText: _buildLocationText(
+                      areaName: null,
+                      upazilaName: name,
+                      districtName: current.districtName,
+                      divisionName: current.divisionName,
+                      customNote: current.customLocationNote,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-          onUnionChanged: (id, name) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  bdAreaId: id,
-                  clearBdAreaId: id == null,
-                  areaName: name,
-                  clearAreaName: name == null,
-                  locationText: _buildLocationText(
+              );
+            },
+            onUnionChanged: (id, name) {
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(
+                    bdAreaId: id,
+                    clearBdAreaId: id == null,
                     areaName: name,
-                    upazilaName: current.upazilaName,
-                    districtName: current.districtName,
-                    divisionName: current.divisionName,
-                    customNote: current.customLocationNote,
+                    clearAreaName: name == null,
+                    locationText: _buildLocationText(
+                      areaName: name,
+                      upazilaName: current.upazilaName,
+                      districtName: current.districtName,
+                      divisionName: current.divisionName,
+                      customNote: current.customLocationNote,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _customLocationCtrl,
-          minLines: 2,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: t.fundraisingLocationNoteField,
-            alignLabelWithHint: true,
-            border: const OutlineInputBorder(),
+              );
+            },
           ),
-          onChanged: (value) {
-            unawaited(
-              _wizardController.updateDraft(
-                (current) => current.copyWith(
-                  customLocationNote: value,
-                  locationText: _buildLocationText(
-                    areaName: current.areaName,
-                    upazilaName: current.upazilaName,
-                    districtName: current.districtName,
-                    divisionName: current.divisionName,
-                    customNote: value,
+          const SizedBox(height: 14),
+          FundraisingTextField(
+            controller: _customLocationCtrl,
+            labelText: t.fundraisingLocationNoteField,
+            minLines: 2,
+            maxLines: 3,
+            onChanged: (value) {
+              unawaited(
+                _wizardController.updateDraft(
+                  (current) => current.copyWith(
+                    customLocationNote: value,
+                    locationText: _buildLocationText(
+                      areaName: current.areaName,
+                      upazilaName: current.upazilaName,
+                      districtName: current.districtName,
+                      divisionName: current.divisionName,
+                      customNote: value,
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        FundraisingInfoCard(
-          title: t.fundraisingLocationPreviewTitle,
-          body: draft.locationText.trim().isEmpty
-              ? t.fundraisingLocationPlaceholder
-              : draft.locationText.trim(),
-        ),
-      ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          FundraisingInfoCard(
+            title: t.fundraisingLocationPreviewTitle,
+            body: draft.locationText.trim().isEmpty
+                ? t.fundraisingLocationPlaceholder
+                : draft.locationText.trim(),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildEvidenceStep(BuildContext context, AppLocalizations t) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            _WizardActionChip(
-              icon: Icons.photo_library_outlined,
-              label: t.fundraisingAddPhotos,
-              onTap: _pickImages,
+    final evidenceMessages = _evidenceStepGuidance(t);
+    return FundraisingSectionCard(
+      title: t.fundraisingWizardStepEvidence,
+      subtitle: t.fundraisingWizardEvidenceDescription,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (evidenceMessages.isNotEmpty) ...[
+            FundraisingInlineMessage(
+              variant: evidenceMessages.first == t.fundraisingValidationMedia
+                  ? FundraisingInlineMessageVariant.info
+                  : FundraisingInlineMessageVariant.warning,
+              message: evidenceMessages.first,
+              icon: evidenceMessages.first == t.fundraisingValidationMedia
+                  ? Icons.info_outline_rounded
+                  : Icons.warning_amber_rounded,
             ),
-            _WizardActionChip(
-              icon: Icons.videocam_outlined,
-              label: t.fundraisingAddVideo,
-              onTap: _pickVideo,
-            ),
-            _WizardActionChip(
-              icon: Icons.description_outlined,
-              label: t.fundraisingAddDocuments,
-              onTap: _pickDocuments,
-            ),
+            const SizedBox(height: 14),
           ],
-        ),
-        const SizedBox(height: 16),
-        if (_mediaController.items.isNotEmpty)
-          MediaComposerList(
-            controller: _mediaController,
-            onEditItem: _editMediaItem,
-          )
-        else
-          FundraisingInfoCard(
-            title: t.fundraisingMediaEmptyTitle,
-            body: t.fundraisingMediaEmptyBody,
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _WizardActionButton(
+                icon: Icons.photo_library_outlined,
+                label: t.fundraisingAddPhotos,
+                onTap: _pickImages,
+              ),
+              _WizardActionButton(
+                icon: Icons.videocam_outlined,
+                label: t.fundraisingAddVideo,
+                onTap: _pickVideo,
+              ),
+              _WizardActionButton(
+                icon: Icons.description_outlined,
+                label: t.fundraisingAddDocuments,
+                onTap: _pickDocuments,
+              ),
+            ],
           ),
-      ],
+          const SizedBox(height: 16),
+          if (_mediaController.items.isNotEmpty)
+            MediaComposerList(
+              controller: _mediaController,
+              onEditItem: _editMediaItem,
+            )
+          else
+            FundraisingInfoCard(
+              title: t.fundraisingMediaEmptyTitle,
+              body: t.fundraisingMediaEmptyBody,
+            ),
+        ],
+      ),
     );
+  }
+
+  List<String> _evidenceStepGuidance(AppLocalizations t) {
+    final codes = _evidenceValidationCodes();
+    if (codes.isEmpty) return const <String>[];
+    return codes
+        .map((code) {
+          switch (code) {
+            case 'media_required':
+              return t.fundraisingValidationMedia;
+            case 'media_failed':
+              return _mediaController.firstFailedItem?.errorMessage ??
+                  t.fundraisingValidationMediaBlocking;
+            case 'media_blocking':
+            default:
+              return t.fundraisingValidationMediaBlocking;
+          }
+        })
+        .toList(growable: false);
   }
 
   Widget _buildPayoutStep(BuildContext context, AppLocalizations t) {
     final methods = _wizardController.payoutMethods;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FundraisingInfoCard(
+        FundraisingSectionCard(
           title: t.fundraisingPayoutStatusTitle,
-          body: methods.isEmpty
-              ? t.fundraisingPayoutStatusMissing
-              : t.fundraisingPayoutStatusReady,
-          trailing: FilledButton(
-            onPressed: _openPayoutMethods,
-            child: Text(t.fundraisingManagePayout),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FundraisingInlineMessage(
+                variant: methods.isEmpty
+                    ? FundraisingInlineMessageVariant.warning
+                    : FundraisingInlineMessageVariant.success,
+                message: methods.isEmpty
+                    ? t.fundraisingPayoutStatusMissing
+                    : t.fundraisingPayoutStatusReady,
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: _openPayoutMethods,
+                  child: Text(
+                    t.fundraisingManagePayout,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         if (methods.isNotEmpty) ...[
@@ -1494,9 +2329,64 @@ class _FundraisingCreateScreenState
   }
 
   Widget _buildPreviewStep(BuildContext context, AppLocalizations t) {
+    final mediaValidation = _mediaController.mediaValidation;
+    // Failed media items get their own panel with real retry/remove actions,
+    // so exclude the generic 'media_blocking' entry below when it's shown —
+    // otherwise the same problem would be listed twice.
+    final needsAttention = _previewNeedsAttention()
+        .where(
+          (entry) =>
+              !(mediaValidation.hasFailedItems &&
+                  entry.message == t.fundraisingValidationMediaBlocking),
+        )
+        .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (needsAttention.isNotEmpty) ...[
+          FundraisingSectionCard(
+            title: t.fundraisingMediaNeedsAttention,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final entry in needsAttention) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: FundraisingInlineMessage(
+                          variant: FundraisingInlineMessageVariant.warning,
+                          icon: Icons.warning_amber_rounded,
+                          message: entry.message,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => _jumpToStep(entry.step),
+                        child: Text(t.fundraisingNeedsAttentionFix),
+                      ),
+                    ],
+                  ),
+                  if (entry != needsAttention.last) const SizedBox(height: 10),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (mediaValidation.hasFailedItems) ...[
+          FundraisingMediaNeedsAttentionPanel(
+            items: _mediaController.items,
+            title: t.fundraisingMediaNeedsAttention,
+            retryLabel: t.fundraisingMediaRetry,
+            removeLabel: t.fundraisingMediaRemove,
+            blockingFallbackMessage: t.fundraisingValidationMediaBlocking,
+            onRetry: (itemId) => unawaited(_mediaController.retryItem(itemId)),
+            onRemove: (itemId) =>
+                unawaited(_mediaController.removeItem(itemId)),
+          ),
+          const SizedBox(height: 16),
+        ],
         FundraisingCampaignPreviewCard(
           draft: _wizardController.draft,
           mediaItems: _mediaController.items,
@@ -1508,19 +2398,6 @@ class _FundraisingCreateScreenState
         ),
       ],
     );
-  }
-
-  String _statusDescription(AppLocalizations t, String status) {
-    switch (status) {
-      case 'VERIFIED':
-        return t.fundraisingEligibilityVerified;
-      case 'PENDING':
-        return t.fundraisingEligibilityPending;
-      case 'REJECTED':
-        return t.fundraisingEligibilityRejected;
-      default:
-        return t.fundraisingEligibilityDraft;
-    }
   }
 
   String _buildLocationText({
@@ -1549,34 +2426,8 @@ class _FundraisingCreateScreenState
   }
 }
 
-class _ChecklistTile extends StatelessWidget {
-  const _ChecklistTile({required this.label, required this.done});
-
-  final String label;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Icon(
-            done ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
-            color: done
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: Text(label)),
-        ],
-      ),
-    );
-  }
-}
-
-class _WizardActionChip extends StatelessWidget {
-  const _WizardActionChip({
+class _WizardActionButton extends StatelessWidget {
+  const _WizardActionButton({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -1589,11 +2440,11 @@ class _WizardActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
-      child: ActionChip(
-        avatar: Icon(icon, size: 18),
-        label: Text(label),
+      height: 52,
+      child: FilledButton.tonalIcon(
         onPressed: onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
   }

@@ -58,16 +58,16 @@ class _FundraisingReactionsSectionState
       } else {
         await _postsDs.likePost(widget.postId);
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _liked = wasLiked;
         _likes += wasLiked ? 1 : -1;
         if (_likes < 0) _likes = 0;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Like failed: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('We could not update your reaction. Please try again.')));
     } finally {
       if (mounted) setState(() => _likeBusy = false);
     }

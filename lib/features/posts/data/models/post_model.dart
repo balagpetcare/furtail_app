@@ -8,10 +8,17 @@ import 'package:furtail_app/features/fundraising/data/models/fundraising_models.
 /// Keep all fields optional so older backend payloads (id only) still work.
 class FundraisingEmbedModel {
   final int id;
+  final String? publicId;
+  final String? slug;
   final String? title;
   final int? targetAmount;
+  final int? targetAmountMinor;
   final int? raisedAmount;
+  final int? donorsCount;
+  final String? currencyCode;
+  final String? status;
   final DateTime? deadline;
+  final String? coverMediaUrl;
   final bool? isAccountVerified;
   final String? category;
   final String? locationText;
@@ -19,10 +26,17 @@ class FundraisingEmbedModel {
 
   const FundraisingEmbedModel({
     required this.id,
+    required this.publicId,
+    required this.slug,
     required this.title,
     required this.targetAmount,
+    required this.targetAmountMinor,
     required this.raisedAmount,
+    required this.donorsCount,
+    required this.currencyCode,
+    required this.status,
     required this.deadline,
+    required this.coverMediaUrl,
     required this.isAccountVerified,
     required this.category,
     required this.locationText,
@@ -49,13 +63,28 @@ class FundraisingEmbedModel {
         .toList();
 
     return FundraisingEmbedModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
+      id:
+          PostModel._parseIntValue(
+            json['id'] ?? json['fundraiserId'] ?? json['campaignId'],
+          ) ??
+          0,
+      publicId: json['publicId']?.toString(),
+      slug: json['slug']?.toString(),
       title: json['title']?.toString(),
-      targetAmount: (json['targetAmount'] as num?)?.toInt(),
-      raisedAmount:
-          (stats['raisedAmount'] as num?)?.toInt() ??
-          (json['raisedAmount'] as num?)?.toInt(),
+      targetAmount: PostModel._parseIntValue(json['targetAmount']),
+      targetAmountMinor: PostModel._parseIntValue(json['targetAmountMinor']),
+      raisedAmount: PostModel._parseIntValue(
+        stats['raisedAmount'] ??
+            json['raisedAmount'] ??
+            json['raisedAmountMinor'],
+      ),
+      donorsCount: PostModel._parseIntValue(
+        stats['donorsCount'] ?? json['donorsCount'],
+      ),
+      currencyCode: json['currencyCode']?.toString(),
+      status: json['status']?.toString(),
       deadline: deadline,
+      coverMediaUrl: json['coverMediaUrl']?.toString(),
       isAccountVerified:
           (account['status']?.toString().toUpperCase() == 'VERIFIED')
           ? true
@@ -66,7 +95,7 @@ class FundraisingEmbedModel {
     );
   }
 
-  int get safeTarget => targetAmount ?? 0;
+  int get safeTarget => targetAmountMinor ?? targetAmount ?? 0;
   int get safeRaised => raisedAmount ?? 0;
 
   int get remainingAmount {
@@ -319,6 +348,17 @@ class PostModel {
     return null;
   }
 
+  static int? _readFundraiserIdFromPayload(dynamic raw) {
+    if (raw is! Map<String, dynamic>) return null;
+    return _parseIntValue(
+      raw['id'] ??
+          raw['fundraiserId'] ??
+          raw['campaignId'] ??
+          raw['campaign']?['id'] ??
+          raw['fundraiser']?['id'],
+    );
+  }
+
   static int _readCount(
     Map<String, dynamic> counts,
     Map<String, dynamic> json,
@@ -375,8 +415,18 @@ class PostModel {
     final countJson = (json['_count'] as Map<String, dynamic>?) ?? {};
 
     final fundraisingRaw =
-        (json['fundraisingCampaign'] as Map<String, dynamic>?);
-    final fundraisingId = (fundraisingRaw?['id'] as num?)?.toInt();
+        ((json['fundraisingCampaign'] ??
+                    json['fundraisingEmbed'] ??
+                    json['fundraiser'])
+                as Map?)
+            ?.cast<String, dynamic>();
+    final fundraisingId =
+        _readFundraiserIdFromPayload(fundraisingRaw) ??
+        _parseIntValue(
+          json['fundraisingCampaignId'] ??
+              json['fundraiserId'] ??
+              json['campaignId'],
+        );
     final hasMoreThanId =
         fundraisingRaw != null && (fundraisingRaw.keys.length > 1);
     final embed = (fundraisingId != null && hasMoreThanId)
@@ -472,16 +522,14 @@ class PostModel {
       activityId: (activity['id'] ?? json['activityId'])?.toString(),
       activityLabel: (activity['label'] ?? json['activityLabel'])?.toString(),
       activityEmoji: (activity['emoji'] ?? json['activityEmoji'])?.toString(),
-      shareCount: _readCount(
-        const <String, dynamic>{},
-        json,
-        const ['shareCount', 'sharesCount'],
-      ),
-      viewCount: _readCount(
-        const <String, dynamic>{},
-        json,
-        const ['viewCount', 'viewsCount'],
-      ),
+      shareCount: _readCount(const <String, dynamic>{}, json, const [
+        'shareCount',
+        'sharesCount',
+      ]),
+      viewCount: _readCount(const <String, dynamic>{}, json, const [
+        'viewCount',
+        'viewsCount',
+      ]),
       isReportedByMe: (json['isReportedByMe'] as bool?) ?? false,
       isFollowingAuthor: (json['isFollowingAuthor'] as bool?) ?? false,
       sponsoredLabel: json['sponsoredLabel']?.toString(),

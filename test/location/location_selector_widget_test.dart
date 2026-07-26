@@ -4,6 +4,7 @@ import 'package:furtail_app/features/location/presentation/widgets/location_sele
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 void main() {
   testWidgets('LocationSelectorWidget selects division from bottom sheet', (
@@ -86,5 +87,43 @@ void main() {
     expect(selectedDivisionId, 1);
     expect(selectedDivisionName, 'Dhaka');
   });
-}
 
+  testWidgets('shows a retry action when location catalogs fail to load', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          locationDivisionsProvider.overrideWith((ref) async {
+            throw ApiClientException(
+              message: 'Connection refused',
+              dioExceptionType: 'connectionError',
+            );
+          }),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: LocationSelectorWidget(
+              divisionId: null,
+              districtId: null,
+              upazilaId: null,
+              unionId: null,
+              onDivisionChanged: null,
+              onDistrictChanged: null,
+              onUpazilaChanged: null,
+              onUnionChanged: null,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Some location data failed to load. Please retry.'),
+      findsOneWidget,
+    );
+    expect(find.text('Try again'), findsOneWidget);
+  });
+}

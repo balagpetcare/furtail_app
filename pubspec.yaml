@@ -41,6 +41,7 @@ dependencies:
   flutter_riverpod: ^2.5.1
   file_picker: ^8.0.3
   share_plus: ^10.0.2
+  pdfx: ^2.9.2
   # Phase 3: location picker (OSM, no Google)
   flutter_map: ^6.1.0
   latlong2: ^0.9.0

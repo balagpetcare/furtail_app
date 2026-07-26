@@ -1,5 +1,4 @@
 import 'package:furtail_app/core/theme/app_typography.dart';
-import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,6 +22,7 @@ import 'package:furtail_app/features/posts/presentation/widgets/post_background_
 import 'package:furtail_app/features/posts/presentation/widgets/post_card_header.dart';
 import 'package:furtail_app/features/posts/presentation/widgets/post_card_actions.dart';
 import 'package:furtail_app/features/posts/presentation/widgets/post_card_comment_preview.dart';
+import 'package:furtail_app/features/fundraising/presentation/utils/fundraising_formatters.dart';
 
 class PostCard extends StatefulWidget {
   final PostModel post;
@@ -213,9 +213,9 @@ class _PostCardState extends State<PostCard> {
     try {
       await PostsRemoteDs().deletePost(postId: post.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted âœ…')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Post deleted âœ…')));
       widget.onNeedRefresh?.call();
     } catch (e) {
       if (!mounted) return;
@@ -393,13 +393,14 @@ class _PostCardState extends State<PostCard> {
                   ),
 
                 // â”€â”€ Lost Pet Alert highlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                if (post.postType == 'LOST_PET')
-                  _buildLostPetDetails(post),
+                if (post.postType == 'LOST_PET') _buildLostPetDetails(post),
 
                 if ((post.caption ?? '').isNotEmpty)
                   () {
                     if (_isBackgroundTextPost(post)) {
-                      final style = PostBackgroundStyle.find(post.backgroundStyle);
+                      final style = PostBackgroundStyle.find(
+                        post.backgroundStyle,
+                      );
                       return ShortPostBackgroundBox(
                         caption: cleanPostBodyForDisplay(post.caption!),
                         style: style,
@@ -447,11 +448,7 @@ class _PostCardState extends State<PostCard> {
                         id: fundraisingId,
                       );
                     } else {
-                      ShareService.share(
-                        context,
-                        type: 'post',
-                        id: post.id,
-                      );
+                      ShareService.share(context, type: 'post', id: post.id);
                     }
                   },
                 ),
@@ -498,15 +495,30 @@ class _PostCardState extends State<PostCard> {
     String label;
     switch (type) {
       case 'HEALTH_UPDATE':
-        icon = Icons.favorite_outline; color = const Color(0xFFE91E63); label = 'Health Update'; break;
+        icon = Icons.favorite_outline;
+        color = const Color(0xFFE91E63);
+        label = 'Health Update';
+        break;
       case 'VACCINATION':
-        icon = Icons.vaccines_outlined; color = const Color(0xFF4CAF50); label = 'Vaccination'; break;
+        icon = Icons.vaccines_outlined;
+        color = const Color(0xFF4CAF50);
+        label = 'Vaccination';
+        break;
       case 'LOST_PET':
-        icon = Icons.report_problem_rounded; color = const Color(0xFFF44336); label = 'Lost Pet Alert'; break;
+        icon = Icons.report_problem_rounded;
+        color = const Color(0xFFF44336);
+        label = 'Lost Pet Alert';
+        break;
       case 'ADOPTION':
-        icon = Icons.pets_rounded; color = const Color(0xFF9C27B0); label = 'Adoption'; break;
+        icon = Icons.pets_rounded;
+        color = const Color(0xFF9C27B0);
+        label = 'Adoption';
+        break;
       case 'SERVICE_REVIEW':
-        icon = Icons.star_outline; color = const Color(0xFFFF9800); label = 'Service Review'; break;
+        icon = Icons.star_outline;
+        color = const Color(0xFFFF9800);
+        label = 'Service Review';
+        break;
       default:
         return const SizedBox.shrink();
     }
@@ -523,7 +535,11 @@ class _PostCardState extends State<PostCard> {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -557,7 +573,11 @@ class _PostCardState extends State<PostCard> {
                   Expanded(
                     child: Text(
                       post.lostPetName!,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.red.shade800),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.red.shade800,
+                      ),
                     ),
                   ),
                 ],
@@ -566,7 +586,11 @@ class _PostCardState extends State<PostCard> {
           if (hasLocation)
             Row(
               children: [
-                Icon(Icons.location_on_outlined, size: 14, color: Colors.red.shade600),
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 14,
+                  color: Colors.red.shade600,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -592,146 +616,9 @@ class _FundraisingEmbedBlock extends StatelessWidget {
   final PostModel post;
   const _FundraisingEmbedBlock({required this.post});
 
-  String _money(int v) => v.toString(); // keep simple; you can localize later
-
-  // ---- Donor helpers (runtime-safe: works even if fields vary) ----
-  String _donorName(dynamic d) {
-    try {
-      final n = (d?.name ?? d?.fullName ?? '').toString().trim();
-      return n.isEmpty ? 'Donor' : n;
-    } catch (_) {
-      return 'Donor';
-    }
-  }
-
-  int _donorAmount(dynamic d) {
-    try {
-      final v =
-          d?.amount ?? d?.donationAmount ?? d?.totalAmount ?? d?.value ?? 0;
-      if (v is int) return v;
-      if (v is double) return v.round();
-      return int.tryParse(v.toString()) ?? 0;
-    } catch (_) {
-      return 0;
-    }
-  }
-
-  String? _donorAvatar(dynamic d) {
-    try {
-      final u = (d?.photoUrl ?? d?.avatarUrl ?? d?.imageUrl ?? '')
-          .toString()
-          .trim();
-      return u.isEmpty ? null : u;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  DateTime? _donorWhen(dynamic d) {
-    try {
-      final v = d?.donatedAt ?? d?.createdAt ?? d?.at ?? d?.time;
-      if (v is DateTime) return v;
-      final s = v?.toString();
-      if (s == null || s.trim().isEmpty) return null;
-      return DateTime.tryParse(s);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  String _whenText(DateTime? dt) {
-    if (dt == null) return '';
-    // Simple readable format without intl dependency.
-    final y = dt.year.toString().padLeft(4, '0');
-    final m = dt.month.toString().padLeft(2, '0');
-    final d = dt.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
-  }
-
-  dynamic _embedDonor(dynamic embed, String key) {
-    try {
-      if (key == 'top') return embed?.topDonor ?? embed?.highestDonor;
-      if (key == 'first') return embed?.firstDonor;
-      if (key == 'last') return embed?.lastDonor ?? embed?.latestDonor;
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Widget _donorRow(
-    BuildContext context, {
-    required String title,
-    required dynamic donor,
-  }) {
-    final name = _donorName(donor);
-    final amount = _donorAmount(donor);
-    final when = _whenText(_donorWhen(donor));
-    final avatar = _donorAvatar(donor);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.bpaCardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.outlineColor),
-      ),
-      child: Row(
-        children: [
-          FurtailNetworkAvatar(
-            imageUrl: avatar,
-            displayName: name,
-            radius: 16,
-            backgroundColor: context.colorScheme.surfaceContainerHighest,
-            foregroundColor: context.mutedTextColor,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.caption(context).copyWith(
-                    color: context.mutedTextColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.appText.labelLarge!.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                if (when.isNotEmpty) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    when,
-                    style: context.appText.labelMedium!.copyWith(
-                      color: Colors.black45,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            amount > 0 ? 'à§³${_money(amount)}' : '',
-            style: context.appText.bodyLarge!.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final embed = post.fundraisingEmbed;
     final cid = post.fundraisingCampaignId;
 
@@ -741,13 +628,22 @@ class _FundraisingEmbedBlock extends StatelessWidget {
 
     final target = embed?.safeTarget ?? 0;
     final raised = embed?.safeRaised ?? 0;
-    final hasAmounts = target > 0 || raised > 0;
-    final progress = embed?.progress ?? 0;
+    final canonicalRaised = raised < 0 ? 0 : raised;
+    final safeTarget = target < 0 ? 0 : target;
+    final rawProgress = safeTarget <= 0 ? 0.0 : canonicalRaised / safeTarget;
+    final progress = rawProgress.isFinite ? rawProgress.clamp(0.0, 1.0) : 0.0;
+    final percent = safeTarget <= 0
+        ? 0
+        : ((canonicalRaised / safeTarget) * 100).round();
 
     final remainingDays = embed?.remainingDays;
     final deadlineText = (remainingDays == null)
         ? null
-        : (remainingDays <= 0 ? 'Ending today' : '$remainingDays days left');
+        : (remainingDays < 0
+              ? 'Expired'
+              : remainingDays == 0
+              ? 'শেষ দিন'
+              : '$remainingDays days left');
 
     // Build locationText from DB-backed fields if available (district + area),
     // fallback to API-provided embed.locationText.
@@ -779,149 +675,188 @@ class _FundraisingEmbedBlock extends StatelessWidget {
       } catch (_) {}
     }
 
-    final donors = embed?.last3Donors ?? const [];
+    final coverUrl = embed?.coverMediaUrl;
+    void openDetails() {
+      if (cid != null) {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.fundraisingDetails,
+          arguments: {'campaignId': cid},
+        );
+        return;
+      }
+      Navigator.pushNamed(context, AppRoutes.donation);
+    }
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFF),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE3ECFF)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.appText.titleMedium!.copyWith(
-                    fontWeight: FontWeight.bold,
+    return Semantics(
+      button: true,
+      label:
+          '$title. ${formatFundraisingMoney(context, canonicalRaised)} raised.',
+      child: Material(
+        color: colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: openDetails,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (coverUrl != null && coverUrl.trim().isNotEmpty)
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: FurtailCachedImage(
+                        imageUrl: coverUrl,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.appText.titleMedium!.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (embed?.isAccountVerified == true) ...[
+                            const SizedBox(width: 8),
+                            _MiniPill(
+                              label: 'Verified',
+                              icon: Icons.verified_rounded,
+                            ),
+                          ],
+                        ],
+                      ),
+                      if ((post.caption ?? '').trim().isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          post.caption!.trim(),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.appText.bodyMedium!.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (locationText.isNotEmpty)
+                            _MiniPill(
+                              label: locationText,
+                              icon: Icons.place_outlined,
+                            ),
+                          if (deadlineText != null)
+                            _MiniPill(
+                              label: deadlineText,
+                              icon: Icons.schedule_outlined,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              formatFundraisingMoney(context, canonicalRaised),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.appText.titleMedium!.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            safeTarget > 0 ? '$percent%' : '0%',
+                            style: context.appText.labelLarge!.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'of ${formatFundraisingMoney(context, safeTarget)} target',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.appText.bodySmall!.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Semantics(
+                        label:
+                            'Funding progress ${safeTarget > 0 ? percent : 0} percent',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 8,
+                            backgroundColor:
+                                colorScheme.surfaceContainerHighest,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if ((embed?.donorsCount ?? 0) > 0) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          '${embed!.donorsCount} supporters',
+                          style: context.appText.bodySmall!.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: openDetails,
+                          icon: const Icon(Icons.volunteer_activism_outlined),
+                          label: const Text('Donate now'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.donateBlue,
+                            foregroundColor: colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              if (embed?.isAccountVerified == true) ...[
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.verified,
-                  size: 16,
-                  color: context.colorScheme.primary,
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Category + Deadline (wrap)
-          if (embed?.category != null || deadlineText != null)
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                if ((embed?.category ?? '').trim().isNotEmpty)
-                  _MiniPill(label: embed!.category!.trim()),
-                if (deadlineText != null)
-                  _MiniPill(label: deadlineText, icon: Icons.timer_outlined),
               ],
             ),
-
-          // Location (single line, overflow-safe)
-          if (locationText.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            _MiniPill(
-              label: embed!.locationText!.trim(),
-              icon: Icons.place_outlined,
-            ),
-          ],
-
-          if (hasAmounts) ...[
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: const Color(0xFFEAF0FF),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${_money(raised)} raised / ${_money(target)} target',
-              style: context.appText.bodySmall!.copyWith(color: Colors.black54),
-            ),
-          ],
-
-          if (donors.isNotEmpty ||
-              _embedDonor(embed, 'top') != null ||
-              _embedDonor(embed, 'first') != null ||
-              _embedDonor(embed, 'last') != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Donations',
-              style: context.appText.labelMedium!.copyWith(
-                color: Colors.black54,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-
-            // Priority: API-provided donors (top/first/last). Fallback: last3Donors list.
-            _donorRow(
-              context,
-              title: 'Top donor',
-              donor:
-                  _embedDonor(embed, 'top') ??
-                  (donors.isNotEmpty ? donors.first : null),
-            ),
-            const SizedBox(height: 6),
-            _donorRow(
-              context,
-              title: 'First donor',
-              donor:
-                  _embedDonor(embed, 'first') ??
-                  (donors.length > 1
-                      ? donors[1]
-                      : (donors.isNotEmpty ? donors.first : null)),
-            ),
-            const SizedBox(height: 6),
-            _donorRow(
-              context,
-              title: 'Latest donor',
-              donor:
-                  _embedDonor(embed, 'last') ??
-                  (donors.isNotEmpty ? donors.last : null),
-            ),
-          ],
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                if (cid != null) {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.fundraisingDetails,
-                    arguments: {'campaignId': cid},
-                  );
-                  return;
-                }
-                Navigator.pushNamed(context, AppRoutes.donation);
-              },
-              icon: const Icon(Icons.volunteer_activism_outlined),
-              label: const Text('Donate Now'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.donateBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -981,7 +916,13 @@ class _MediaBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final list = post.media;
-    final mediaList = list.where((m) => m.type.toUpperCase() == 'IMAGE' || m.type.toUpperCase() == 'VIDEO').toList();
+    final mediaList = list
+        .where(
+          (m) =>
+              m.type.toUpperCase() == 'IMAGE' ||
+              m.type.toUpperCase() == 'VIDEO',
+        )
+        .toList();
     final files = list
         .where((m) => m.type.toUpperCase() == 'FILE')
         .where((m) => !_looksLikeVideoUrl(m.url))
@@ -995,10 +936,7 @@ class _MediaBlock extends StatelessWidget {
           Navigator.pushNamed(
             context,
             AppRoutes.postMediaDetail,
-            arguments: {
-              'post': post,
-              'initialIndex': index,
-            },
+            arguments: {'post': post, 'initialIndex': index},
           );
         },
       );
@@ -1157,5 +1095,3 @@ class _ReadMoreTextState extends State<_ReadMoreText> {
     );
   }
 }
-
-

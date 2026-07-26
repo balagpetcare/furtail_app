@@ -43,7 +43,8 @@ class AppRouter {
         // itself is now a pure presentational widget shown during
         // AuthStatus.unknown.
         return MaterialPageRoute(
-          builder: (_) => const AuthGate(authenticatedChild: FurtailHomeScreen()),
+          builder: (_) =>
+              const AuthGate(authenticatedChild: FurtailHomeScreen()),
         );
 
       case AppRoutes.countryPicker:
@@ -193,7 +194,13 @@ class AppRouter {
 
       case AppRoutes.fundraisingDetails:
         final args = (settings.arguments as Map?) ?? {};
-        final campaignId = (args['campaignId'] as int?) ?? 0;
+        final rawCampaignId = args['campaignId'] ?? args['fundraiserId'];
+        final campaignId = rawCampaignId is int
+            ? rawCampaignId
+            : int.tryParse(rawCampaignId?.toString() ?? '');
+        if (campaignId == null || campaignId <= 0) {
+          return _notFound('Fundraiser not available');
+        }
         return MaterialPageRoute(
           builder: (_) => FundraisingDetailsScreen(campaignId: campaignId),
         );

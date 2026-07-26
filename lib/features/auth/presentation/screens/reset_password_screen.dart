@@ -34,8 +34,7 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String? initialToken;
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() =>
-      _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -91,25 +90,18 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     try {
       await ref
           .read(authControllerProvider.notifier)
-          .resetPassword(
-            token: _tokenController.text.trim(),
-            password: _passwordController.text,
-          );
+          .resetPassword(token: _tokenController.text.trim(), password: _passwordController.text);
       if (mounted) setState(() => _done = true);
     } on CentralAuthException catch (e) {
       if (!mounted) return;
       setState(() {
         _errorMessage = e.isNetworkError
             ? 'Could not reach the server. Check your connection and try again.'
-            : (e.message.isNotEmpty
-                  ? e.message
-                  : 'Something went wrong. Please try again.');
+            : (e.message.isNotEmpty ? e.message : 'Something went wrong. Please try again.');
       });
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _errorMessage = 'Something went wrong. Please try again.',
-        );
+        setState(() => _errorMessage = 'Something went wrong. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -128,10 +120,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: primary),
-        title: Text(
-          t.resetPasswordTitle,
-          style: const TextStyle(color: Colors.black87),
-        ),
+        title: Text(t.resetPasswordTitle, style: const TextStyle(color: Colors.black87)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -155,9 +144,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         controller: _tokenController,
                         hintText: t.resetPasswordTokenHint,
                         prefixIcon: Icons.vpn_key_outlined,
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? t.authFieldRequired
-                            : null,
+                        validator: (v) =>
+                            (v == null || v.trim().isEmpty) ? t.authFieldRequired : null,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthTextField(
@@ -175,9 +163,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         hintText: t.resetPasswordConfirmHint,
                         prefixIcon: Icons.lock_outline,
                         isPassword: true,
-                        validator: (v) => v != _passwordController.text
-                            ? t.authPasswordMismatch
-                            : null,
+                        validator: (v) =>
+                            v != _passwordController.text ? t.authPasswordMismatch : null,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       AuthButton(
@@ -203,23 +190,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildPolicyHints(
-    AppLocalizations t,
-    CentralAuthPasswordPolicy policy,
-  ) {
+  Widget _buildPolicyHints(AppLocalizations t, CentralAuthPasswordPolicy policy) {
     final current = _passwordController.text;
     final violations = policy.violations(current);
     final rows = <(String, bool)>[
-      (
-        t.resetPasswordPolicyMinLength(policy.minLength),
-        !violations.contains('minLength'),
-      ),
+      (t.resetPasswordPolicyMinLength(policy.minLength), !violations.contains('minLength')),
       if (policy.requiresUppercase)
         (t.resetPasswordPolicyUppercase, !violations.contains('uppercase')),
-      if (policy.requiresNumber)
-        (t.resetPasswordPolicyNumber, !violations.contains('number')),
-      if (policy.requiresSymbol)
-        (t.resetPasswordPolicySymbol, !violations.contains('symbol')),
+      if (policy.requiresNumber) (t.resetPasswordPolicyNumber, !violations.contains('number')),
+      if (policy.requiresSymbol) (t.resetPasswordPolicySymbol, !violations.contains('symbol')),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,9 +234,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: AppSpacing.xxl),
-        Center(
-          child: Icon(Icons.check_circle_outline, size: 64, color: primary),
-        ),
+        Center(child: Icon(Icons.check_circle_outline, size: 64, color: primary)),
         const SizedBox(height: AppSpacing.lg),
         Text(
           t.resetPasswordSuccess,
@@ -268,7 +245,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         AuthButton(
           text: t.authLogin,
           color: primary,
-          onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+          onPressed: () {
+            // Safe navigation: use maybePop instead of unsafe popUntil.
+            // maybePop() never empties the Navigator stack — it pops only if
+            // there's a route to pop, and leaves the bottom route intact.
+            // If already at the bottom (login screen), this is a no-op.
+            Navigator.of(context).maybePop();
+          },
         ),
       ],
     );

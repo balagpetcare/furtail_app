@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
-Future<int?> askDonationAmount(BuildContext context, {int defaultAmount = 500}) async {
+Future<int?> askDonationAmount(
+  BuildContext context, {
+  int defaultAmount = 500,
+}) async {
   final controller = TextEditingController(text: defaultAmount.toString());
   return showDialog<int>(
     context: context,
@@ -21,9 +24,9 @@ Future<int?> askDonationAmount(BuildContext context, {int defaultAmount = 500}) 
             onPressed: () {
               final n = int.tryParse(controller.text.trim());
               if (n == null || n <= 0) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Invalid amount')),
-                );
+                ScaffoldMessenger.of(
+                  ctx,
+                ).showSnackBar(const SnackBar(content: Text('Invalid amount')));
                 return;
               }
               Navigator.of(ctx).pop(n);
