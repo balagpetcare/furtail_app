@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+const bool _e2eTestMode = bool.fromEnvironment('E2E_TEST_MODE');
 
 /// Wraps [FlutterSecureStorage] for the Central Auth OAuth2 token pair.
 ///
@@ -8,6 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// [LocalStorage] display-cache helpers, not here.
 class SecureStorageService {
   final FlutterSecureStorage _storage;
+  static _TestSecureStorageState? _testState;
 
   SecureStorageService({FlutterSecureStorage? storage})
     : _storage = storage ?? const FlutterSecureStorage();
@@ -19,6 +23,12 @@ class SecureStorageService {
     required String accessToken,
     required String refreshToken,
   }) async {
+    if (_e2eTestMode && _testState != null) {
+      _testState!
+        ..accessToken = accessToken
+        ..refreshToken = refreshToken;
+      return;
+    }
     final previousAccessToken = await _storage.read(key: _accessTokenKey);
     final previousRefreshToken = await _storage.read(key: _refreshTokenKey);
 
@@ -51,19 +61,57 @@ class SecureStorageService {
     }
   }
 
-  Future<String?> get accessToken async => _storage.read(key: _accessTokenKey);
+  Future<String?> get accessToken async {
+    if (_e2eTestMode && _testState != null) {
+      return _testState!.accessToken;
+    }
+    return _storage.read(key: _accessTokenKey);
+  }
 
-  Future<String?> get refreshToken async =>
-      _storage.read(key: _refreshTokenKey);
+  Future<String?> get refreshToken async {
+    if (_e2eTestMode && _testState != null) {
+      return _testState!.refreshToken;
+    }
+    return _storage.read(key: _refreshTokenKey);
+  }
 
   Future<bool> get hasSession async => (await accessToken) != null;
 
   Future<void> clear() async {
+    if (_e2eTestMode && _testState != null) {
+      _testState!
+        ..accessToken = null
+        ..refreshToken = null;
+      return;
+    }
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
+  }
+
+  @visibleForTesting
+  static void installTestState({String? accessToken, String? refreshToken}) {
+    if (!_e2eTestMode) {
+      throw StateError('E2E test storage can only be installed in test mode.');
+    }
+    _testState = _TestSecureStorageState(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+  }
+
+  @visibleForTesting
+  static void clearTestState() {
+    _testState = null;
   }
 }
 
 final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageService();
 });
+
+class _TestSecureStorageState {
+  _TestSecureStorageState({this.accessToken, this.refreshToken});
+
+  String? accessToken;
+  String? refreshToken;
+}

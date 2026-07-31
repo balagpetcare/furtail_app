@@ -2405,7 +2405,7 @@ abstract class AppLocalizations {
   /// No description provided for @fundraisingValidationDeadline.
   ///
   /// In en, this message translates to:
-  /// **'Select a campaign deadline.'**
+  /// **'Please add a campaign deadline.'**
   String get fundraisingValidationDeadline;
 
   /// No description provided for @fundraisingValidationEstimatedExpense.
@@ -2435,8 +2435,14 @@ abstract class AppLocalizations {
   /// No description provided for @fundraisingValidationMediaBlocking.
   ///
   /// In en, this message translates to:
-  /// **'Resolve failed or pending media items before continuing.'**
+  /// **'One or more uploaded files are unavailable. Please upload them again.'**
   String get fundraisingValidationMediaBlocking;
+
+  /// No description provided for @fundraisingValidationMediaUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait until all media uploads are complete.'**
+  String get fundraisingValidationMediaUploading;
 
   /// No description provided for @fundraisingValidationPayout.
   ///

@@ -153,15 +153,27 @@ class ApiClient {
   }
 
   String _messageFromDecoded(dynamic decoded, {required String fallback}) {
-    if (decoded is Map && decoded['message'] != null) {
-      return decoded['message'].toString();
+    if (decoded is Map) {
+      final nestedError = decoded['error'];
+      if (nestedError is Map && nestedError['message'] != null) {
+        return nestedError['message'].toString();
+      }
+      if (decoded['message'] != null) {
+        return decoded['message'].toString();
+      }
     }
     return fallback;
   }
 
   String? _codeFromDecoded(dynamic decoded) {
-    if (decoded is Map && decoded['code'] != null) {
-      return decoded['code'].toString();
+    if (decoded is Map) {
+      final nestedError = decoded['error'];
+      if (nestedError is Map && nestedError['code'] != null) {
+        return nestedError['code'].toString();
+      }
+      if (decoded['code'] != null) {
+        return decoded['code'].toString();
+      }
     }
     return null;
   }
@@ -370,11 +382,13 @@ class ApiClient {
     required String filePath,
     bool auth = true,
     Map<String, String>? fields,
+    Map<String, String>? headers,
   }) async {
     return multipartPostTyped<dynamic>(
       url: url,
       files: [ApiMultipartFilePart(fieldName: fieldName, file: File(filePath))],
       fields: fields,
+      headers: headers,
       auth: auth,
       parse: (decoded) => decoded,
     );
@@ -386,6 +400,7 @@ class ApiClient {
     required T Function(dynamic decoded) parse,
     bool auth = true,
     Map<String, String>? fields,
+    Map<String, String>? headers,
     ProgressCallback? onSendProgress,
     CancelToken? cancelToken,
   }) async {
@@ -398,8 +413,10 @@ class ApiClient {
       // Multipart requests still need country/state headers, and (when
       // `auth: true`) the Authorization header — the latter is normally
       // attached by AuthInterceptor's onRequest hook.
-      final headers = await _headers(auth: auth);
-      headers.remove('Content-Type'); // let Dio set the multipart boundary
+      final requestHeaders = await _headers(auth: auth, extraHeaders: headers);
+      requestHeaders.remove(
+        'Content-Type',
+      ); // let Dio set the multipart boundary
 
       final res = await _dio.post<dynamic>(
         url,
@@ -407,7 +424,7 @@ class ApiClient {
         onSendProgress: onSendProgress,
         cancelToken: cancelToken,
         options: Options(
-          headers: headers,
+          headers: requestHeaders,
           extra: {
             'auth': auth,
             'multipartRetryFactory': () => _buildFormData(

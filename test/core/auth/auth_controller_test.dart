@@ -286,6 +286,47 @@ void main() {
     );
 
     test(
+      'parses the Furtail API enveloped shape { success, data: { user } } (RUNTIME03 regression)',
+      () async {
+        final apiClient = _stubbedApiClient((options, handler) async {
+          handler.resolve(
+            Response(
+              requestOptions: options,
+              statusCode: 200,
+              data: {
+                'success': true,
+                'data': {
+                  'user': {
+                    'id': 7,
+                    'displayName': 'Envelope User',
+                    'email': 'envelope@example.com',
+                  },
+                },
+                'meta': {'requestId': 'req-1'},
+              },
+            ),
+          );
+        });
+
+        final controller = AuthController(
+          secureStorage,
+          _FakeCentralAuthApi(),
+          apiClient,
+        );
+        await controller.login(
+          identifier: 'envelope@example.com',
+          password: 'password123',
+          identifierType: AuthIdentifierType.email,
+        );
+
+        expect(controller.state.status, AuthStatus.authenticated);
+        expect(controller.state.profile?.id, 7);
+        expect(controller.state.profile?.name, 'Envelope User');
+        expect(controller.state.lastError, isNull);
+      },
+    );
+
+    test(
       'successful Central Auth login followed by an unreachable Furtail API keeps the session authenticated while surfacing a recoverable profile error',
       () async {
         final apiClient = _stubbedApiClient((options, handler) async {

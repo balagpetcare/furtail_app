@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
 import 'package:furtail_app/features/fundraising/data/repositories/fundraising_repository.dart';
-import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_feed_screen.dart';
 import 'package:furtail_app/l10n/app_localizations.dart';
 
@@ -66,7 +65,7 @@ void main() {
   ) async {
     final completer = Completer<FundraisingPage<FundraisingCampaign>>();
 
-    await _pumpFeed(tester, loader: (_, __) => completer.future);
+    await _pumpFeed(tester, loader: (_, _) => completer.future);
     await tester.pump();
 
     expect(find.text('Loading fundraisers...'), findsOneWidget);
@@ -85,7 +84,7 @@ void main() {
   testWidgets('renders a populated feed', (tester) async {
     await _pumpFeed(
       tester,
-      loader: (_, __) async => FundraisingPage<FundraisingCampaign>(
+      loader: (_, _) async => FundraisingPage<FundraisingCampaign>(
         items: <FundraisingCampaign>[
           _campaign(1, title: 'Published'),
           _campaign(2, title: 'Rescue'),
@@ -102,7 +101,7 @@ void main() {
   testWidgets('renders a genuine empty state', (tester) async {
     await _pumpFeed(
       tester,
-      loader: (_, __) async => const FundraisingPage<FundraisingCampaign>(
+      loader: (_, _) async => const FundraisingPage<FundraisingCampaign>(
         items: [],
         nextCursor: null,
       ),
@@ -118,7 +117,7 @@ void main() {
 
     await _pumpFeed(
       tester,
-      loader: (_, __) async {
+      loader: (_, _) async {
         calls += 1;
         if (calls == 1) {
           throw Exception('network');
@@ -150,7 +149,7 @@ void main() {
 
     await _pumpFeed(
       tester,
-      loader: (_, __) async {
+      loader: (_, _) async {
         calls += 1;
         return FundraisingPage<FundraisingCampaign>(
           items: <FundraisingCampaign>[calls == 1 ? first : refreshed],
@@ -206,7 +205,7 @@ void main() {
 
     await _pumpFeed(
       tester,
-      loader: (_, __) {
+      loader: (_, _) {
         if (firstCall) {
           firstCall = false;
           return Future<FundraisingPage<FundraisingCampaign>>.value(
@@ -245,7 +244,7 @@ void main() {
 
     await _pumpFeed(
       tester,
-      loader: (_, __) async => const FundraisingPage<FundraisingCampaign>(
+      loader: (_, _) async => const FundraisingPage<FundraisingCampaign>(
         items: [],
         nextCursor: null,
       ),

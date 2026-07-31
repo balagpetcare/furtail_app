@@ -15,7 +15,7 @@ enum FundraisingWizardStep {
   preview,
 }
 
-const int kFundraisingWizardStepCount = 3;
+const int kFundraisingWizardStepCount = 6;
 
 enum FundraisingWizardErrorType {
   validation,
@@ -95,6 +95,7 @@ class FundraisingDraftRecord {
     this.currencyCode = 'BDT',
     this.targetAmountMinor,
     this.monthlyGoalMinor,
+    this.campaignDurationDays,
     this.startsAt,
     this.endsAt,
     this.deadline,
@@ -111,9 +112,14 @@ class FundraisingDraftRecord {
     this.stateId,
     this.cityId,
     this.subDistrictId,
+    this.bdAddressMode,
     this.bdDivisionId,
     this.bdDistrictId,
+    this.bdCityCorporationId,
+    this.bdZoneId,
+    this.bdWardId,
     this.bdUpazilaId,
+    this.bdUnionId,
     this.bdAreaId,
     this.submittedAt,
     this.mediaIds = const <int>[],
@@ -131,6 +137,7 @@ class FundraisingDraftRecord {
   final String currencyCode;
   final int? targetAmountMinor;
   final int? monthlyGoalMinor;
+  final int? campaignDurationDays;
   final DateTime? startsAt;
   final DateTime? endsAt;
   final DateTime? deadline;
@@ -147,9 +154,14 @@ class FundraisingDraftRecord {
   final int? stateId;
   final int? cityId;
   final int? subDistrictId;
+  final String? bdAddressMode;
   final int? bdDivisionId;
   final int? bdDistrictId;
+  final int? bdCityCorporationId;
+  final int? bdZoneId;
+  final int? bdWardId;
   final int? bdUpazilaId;
+  final int? bdUnionId;
   final int? bdAreaId;
   final DateTime? submittedAt;
   final List<int> mediaIds;
@@ -210,9 +222,14 @@ class FundraisingDraftRecord {
       stateId: fundraisingInt(json['stateId']),
       cityId: fundraisingInt(json['cityId']),
       subDistrictId: fundraisingInt(json['subDistrictId']),
+      bdAddressMode: json['bdAddressMode']?.toString(),
       bdDivisionId: fundraisingInt(json['bdDivisionId']),
       bdDistrictId: fundraisingInt(json['bdDistrictId']),
+      bdCityCorporationId: fundraisingInt(json['bdCityCorporationId']),
+      bdZoneId: fundraisingInt(json['bdZoneId']),
+      bdWardId: fundraisingInt(json['bdWardId']),
       bdUpazilaId: fundraisingInt(json['bdUpazilaId']),
+      bdUnionId: fundraisingInt(json['bdUnionId']),
       bdAreaId: fundraisingInt(json['bdAreaId']),
       submittedAt: _parseDate(json['submittedAt']),
       mediaIds: mediaIds,
@@ -243,12 +260,17 @@ class FundraisingDraftRecovery {
     this.submitIdempotencyKey,
     this.stepIndex = 0,
     this.title = '',
+    this.shortDescription = '',
     this.story = '',
+    this.whatHappened = '',
+    this.whyUrgent = '',
+    this.fundUsage = '',
     this.category = '',
     this.fundingMode = 'ONE_TIME',
     this.currencyCode = 'BDT',
     this.targetAmountMinor,
     this.monthlyGoalMinor,
+    this.campaignDurationDays,
     this.startsAt,
     this.endsAt,
     this.deadline,
@@ -265,13 +287,22 @@ class FundraisingDraftRecovery {
     this.stateId,
     this.cityId,
     this.subDistrictId,
+    this.bdAddressMode,
     this.bdDivisionId,
     this.bdDistrictId,
+    this.bdCityCorporationId,
+    this.bdZoneId,
+    this.bdWardId,
     this.bdUpazilaId,
+    this.bdUnionId,
     this.bdAreaId,
     this.divisionName,
     this.districtName,
+    this.cityCorporationName,
+    this.zoneName,
+    this.wardName,
     this.upazilaName,
+    this.unionName,
     this.areaName,
     this.customLocationNote = '',
     this.securityLatitude,
@@ -289,12 +320,17 @@ class FundraisingDraftRecovery {
   final String? submitIdempotencyKey;
   final int stepIndex;
   final String title;
+  final String shortDescription;
   final String story;
+  final String whatHappened;
+  final String whyUrgent;
+  final String fundUsage;
   final String category;
   final String fundingMode;
   final String currencyCode;
   final int? targetAmountMinor;
   final int? monthlyGoalMinor;
+  final int? campaignDurationDays;
   final DateTime? startsAt;
   final DateTime? endsAt;
   final DateTime? deadline;
@@ -311,13 +347,22 @@ class FundraisingDraftRecovery {
   final int? stateId;
   final int? cityId;
   final int? subDistrictId;
+  final String? bdAddressMode;
   final int? bdDivisionId;
   final int? bdDistrictId;
+  final int? bdCityCorporationId;
+  final int? bdZoneId;
+  final int? bdWardId;
   final int? bdUpazilaId;
+  final int? bdUnionId;
   final int? bdAreaId;
+  final String? cityCorporationName;
+  final String? zoneName;
+  final String? wardName;
   final String? divisionName;
   final String? districtName;
   final String? upazilaName;
+  final String? unionName;
   final String? areaName;
   final String customLocationNote;
   final double? securityLatitude;
@@ -344,7 +389,11 @@ class FundraisingDraftRecovery {
 
   bool get hasMeaningfulContent {
     return title.trim().isNotEmpty ||
+        shortDescription.trim().isNotEmpty ||
         story.trim().isNotEmpty ||
+        whatHappened.trim().isNotEmpty ||
+        whyUrgent.trim().isNotEmpty ||
+        fundUsage.trim().isNotEmpty ||
         category.trim().isNotEmpty ||
         beneficiaryName.trim().isNotEmpty ||
         (targetAmountMinor ?? 0) > 0 ||
@@ -369,12 +418,17 @@ class FundraisingDraftRecovery {
       'submitIdempotencyKey': submitIdempotencyKey,
       'stepIndex': stepIndex,
       'title': title,
+      'shortDescription': shortDescription,
       'story': story,
+      'whatHappened': whatHappened,
+      'whyUrgent': whyUrgent,
+      'fundUsage': fundUsage,
       'category': category,
       'fundingMode': fundingMode,
       'currencyCode': currencyCode,
       'targetAmountMinor': targetAmountMinor,
       'monthlyGoalMinor': monthlyGoalMinor,
+      'campaignDurationDays': campaignDurationDays,
       'startsAt': FundraisingDateSerializer.serializeToUtcIso8601(startsAt),
       'endsAt': FundraisingDateSerializer.serializeToUtcIso8601(endsAt),
       'deadline': FundraisingDateSerializer.serializeToUtcIso8601(deadline),
@@ -393,13 +447,21 @@ class FundraisingDraftRecovery {
       'stateId': stateId,
       'cityId': cityId,
       'subDistrictId': subDistrictId,
+      'bdAddressMode': bdAddressMode,
       'bdDivisionId': bdDivisionId,
       'bdDistrictId': bdDistrictId,
+      'bdCityCorporationId': bdCityCorporationId,
+      'bdZoneId': bdZoneId,
+      'bdWardId': bdWardId,
       'bdUpazilaId': bdUpazilaId,
-      'bdAreaId': bdAreaId,
+      'bdUnionId': bdUnionId,
+      'cityCorporationName': cityCorporationName,
+      'zoneName': zoneName,
+      'wardName': wardName,
       'divisionName': divisionName,
       'districtName': districtName,
       'upazilaName': upazilaName,
+      'unionName': unionName,
       'areaName': areaName,
       'customLocationNote': customLocationNote,
       'securityLatitude': securityLatitude,
@@ -440,7 +502,9 @@ class FundraisingDraftRecovery {
         )
         .toList();
     final rawStepIndex = fundraisingInt(json['stepIndex']) ?? 0;
-    final stepIndex = rawStepIndex > 0 ? rawStepIndex - 1 : 0;
+    final stepIndex = rawStepIndex
+        .clamp(0, kFundraisingWizardStepCount - 1)
+        .toInt();
     return FundraisingDraftRecovery(
       remoteDraftId: fundraisingInt(json['remoteDraftId']),
       remoteDraftPublicId: json['remoteDraftPublicId']?.toString(),
@@ -452,12 +516,17 @@ class FundraisingDraftRecovery {
           empty.submitIdempotencyKey,
       stepIndex: stepIndex,
       title: json['title']?.toString() ?? '',
+      shortDescription: json['shortDescription']?.toString() ?? '',
       story: json['story']?.toString() ?? '',
+      whatHappened: json['whatHappened']?.toString() ?? '',
+      whyUrgent: json['whyUrgent']?.toString() ?? '',
+      fundUsage: json['fundUsage']?.toString() ?? '',
       category: json['category']?.toString() ?? '',
       fundingMode: json['fundingMode']?.toString() ?? 'ONE_TIME',
       currencyCode: json['currencyCode']?.toString() ?? 'BDT',
       targetAmountMinor: fundraisingInt(json['targetAmountMinor']),
       monthlyGoalMinor: fundraisingInt(json['monthlyGoalMinor']),
+      campaignDurationDays: fundraisingInt(json['campaignDurationDays']),
       startsAt: FundraisingDateSerializer.parseLegacyDateField(
         json['startsAt'],
       ),
@@ -482,18 +551,29 @@ class FundraisingDraftRecovery {
       stateId: fundraisingInt(json['stateId']),
       cityId: fundraisingInt(json['cityId']),
       subDistrictId: fundraisingInt(json['subDistrictId']),
+      bdAddressMode: json['bdAddressMode']?.toString(),
       bdDivisionId: fundraisingInt(json['bdDivisionId']),
       bdDistrictId: fundraisingInt(json['bdDistrictId']),
+      bdCityCorporationId: fundraisingInt(json['bdCityCorporationId']),
+      bdZoneId: fundraisingInt(json['bdZoneId']),
+      bdWardId: fundraisingInt(json['bdWardId']),
       bdUpazilaId: fundraisingInt(json['bdUpazilaId']),
+      bdUnionId: fundraisingInt(json['bdUnionId']),
       bdAreaId: fundraisingInt(json['bdAreaId']),
+      cityCorporationName: json['cityCorporationName']?.toString(),
+      zoneName: json['zoneName']?.toString(),
+      wardName: json['wardName']?.toString(),
       divisionName: json['divisionName']?.toString(),
       districtName: json['districtName']?.toString(),
       upazilaName: json['upazilaName']?.toString(),
+      unionName: json['unionName']?.toString(),
       areaName: json['areaName']?.toString(),
       customLocationNote: json['customLocationNote']?.toString() ?? '',
       securityLatitude: fundraisingDouble(json['securityLatitude']),
       securityLongitude: fundraisingDouble(json['securityLongitude']),
-      securityLocationAccuracy: fundraisingDouble(json['securityLocationAccuracy']),
+      securityLocationAccuracy: fundraisingDouble(
+        json['securityLocationAccuracy'],
+      ),
       securityLocationCapturedAt:
           FundraisingDateSerializer.parseLegacyDateField(
             json['securityLocationCapturedAt'],
@@ -519,12 +599,19 @@ class FundraisingDraftRecovery {
       remoteDraftId: draft.id,
       remoteDraftPublicId: draft.publicId,
       title: draft.title ?? current.title,
-      story: draft.caption ?? current.story,
+      shortDescription: current.shortDescription,
+      story: current.story.trim().isNotEmpty
+          ? current.story
+          : (draft.caption ?? current.story),
+      whatHappened: current.whatHappened,
+      whyUrgent: current.whyUrgent,
+      fundUsage: current.fundUsage,
       category: draft.category ?? current.category,
       fundingMode: draft.fundingMode,
       currencyCode: draft.currencyCode,
       targetAmountMinor: draft.targetAmountMinor ?? current.targetAmountMinor,
       monthlyGoalMinor: draft.monthlyGoalMinor ?? current.monthlyGoalMinor,
+      campaignDurationDays: current.campaignDurationDays,
       startsAt: draft.startsAt ?? current.startsAt,
       endsAt: draft.endsAt ?? current.endsAt,
       deadline: draft.deadline ?? current.deadline,
@@ -542,10 +629,20 @@ class FundraisingDraftRecovery {
       stateId: draft.stateId ?? current.stateId,
       cityId: draft.cityId ?? current.cityId,
       subDistrictId: draft.subDistrictId ?? current.subDistrictId,
+      bdAddressMode: draft.bdAddressMode ?? current.bdAddressMode,
       bdDivisionId: draft.bdDivisionId ?? current.bdDivisionId,
       bdDistrictId: draft.bdDistrictId ?? current.bdDistrictId,
+      bdCityCorporationId:
+          draft.bdCityCorporationId ?? current.bdCityCorporationId,
+      bdZoneId: draft.bdZoneId ?? current.bdZoneId,
+      bdWardId: draft.bdWardId ?? current.bdWardId,
       bdUpazilaId: draft.bdUpazilaId ?? current.bdUpazilaId,
+      bdUnionId: draft.bdUnionId ?? current.bdUnionId,
       bdAreaId: draft.bdAreaId ?? current.bdAreaId,
+      cityCorporationName: current.cityCorporationName,
+      zoneName: current.zoneName,
+      wardName: current.wardName,
+      unionName: current.unionName,
       mediaIds: draft.mediaIds.isNotEmpty ? draft.mediaIds : current.mediaIds,
       expenses: serverExpenses.isNotEmpty ? serverExpenses : current.expenses,
       updatedAt: DateTime.now(),
@@ -560,7 +657,11 @@ class FundraisingDraftRecovery {
     String? submitIdempotencyKey,
     int? stepIndex,
     String? title,
+    String? shortDescription,
     String? story,
+    String? whatHappened,
+    String? whyUrgent,
+    String? fundUsage,
     String? category,
     String? fundingMode,
     String? currencyCode,
@@ -568,6 +669,8 @@ class FundraisingDraftRecovery {
     bool clearTargetAmountMinor = false,
     int? monthlyGoalMinor,
     bool clearMonthlyGoalMinor = false,
+    int? campaignDurationDays,
+    bool clearCampaignDurationDays = false,
     DateTime? startsAt,
     bool clearStartsAt = false,
     DateTime? endsAt,
@@ -595,20 +698,38 @@ class FundraisingDraftRecovery {
     bool clearCityId = false,
     int? subDistrictId,
     bool clearSubDistrictId = false,
+    String? bdAddressMode,
+    bool clearBdAddressMode = false,
     int? bdDivisionId,
     bool clearBdDivisionId = false,
     int? bdDistrictId,
     bool clearBdDistrictId = false,
+    int? bdCityCorporationId,
+    bool clearBdCityCorporationId = false,
+    int? bdZoneId,
+    bool clearBdZoneId = false,
+    int? bdWardId,
+    bool clearBdWardId = false,
     int? bdUpazilaId,
     bool clearBdUpazilaId = false,
+    int? bdUnionId,
+    bool clearBdUnionId = false,
     int? bdAreaId,
     bool clearBdAreaId = false,
+    String? cityCorporationName,
+    bool clearCityCorporationName = false,
+    String? zoneName,
+    bool clearZoneName = false,
+    String? wardName,
+    bool clearWardName = false,
     String? divisionName,
     bool clearDivisionName = false,
     String? districtName,
     bool clearDistrictName = false,
     String? upazilaName,
     bool clearUpazilaName = false,
+    String? unionName,
+    bool clearUnionName = false,
     String? areaName,
     bool clearAreaName = false,
     String? customLocationNote,
@@ -633,7 +754,11 @@ class FundraisingDraftRecovery {
       submitIdempotencyKey: submitIdempotencyKey ?? this.submitIdempotencyKey,
       stepIndex: stepIndex ?? this.stepIndex,
       title: title ?? this.title,
+      shortDescription: shortDescription ?? this.shortDescription,
       story: story ?? this.story,
+      whatHappened: whatHappened ?? this.whatHappened,
+      whyUrgent: whyUrgent ?? this.whyUrgent,
+      fundUsage: fundUsage ?? this.fundUsage,
       category: category ?? this.category,
       fundingMode: fundingMode ?? this.fundingMode,
       currencyCode: currencyCode ?? this.currencyCode,
@@ -643,6 +768,9 @@ class FundraisingDraftRecovery {
       monthlyGoalMinor: clearMonthlyGoalMinor
           ? null
           : (monthlyGoalMinor ?? this.monthlyGoalMinor),
+      campaignDurationDays: clearCampaignDurationDays
+          ? null
+          : (campaignDurationDays ?? this.campaignDurationDays),
       startsAt: clearStartsAt ? null : (startsAt ?? this.startsAt),
       endsAt: clearEndsAt ? null : (endsAt ?? this.endsAt),
       deadline: clearDeadline ? null : (deadline ?? this.deadline),
@@ -665,14 +793,28 @@ class FundraisingDraftRecovery {
       subDistrictId: clearSubDistrictId
           ? null
           : (subDistrictId ?? this.subDistrictId),
+      bdAddressMode: clearBdAddressMode
+          ? null
+          : (bdAddressMode ?? this.bdAddressMode),
       bdDivisionId: clearBdDivisionId
           ? null
           : (bdDivisionId ?? this.bdDivisionId),
       bdDistrictId: clearBdDistrictId
           ? null
           : (bdDistrictId ?? this.bdDistrictId),
+      bdCityCorporationId: clearBdCityCorporationId
+          ? null
+          : (bdCityCorporationId ?? this.bdCityCorporationId),
+      bdZoneId: clearBdZoneId ? null : (bdZoneId ?? this.bdZoneId),
+      bdWardId: clearBdWardId ? null : (bdWardId ?? this.bdWardId),
       bdUpazilaId: clearBdUpazilaId ? null : (bdUpazilaId ?? this.bdUpazilaId),
+      bdUnionId: clearBdUnionId ? null : (bdUnionId ?? this.bdUnionId),
       bdAreaId: clearBdAreaId ? null : (bdAreaId ?? this.bdAreaId),
+      cityCorporationName: clearCityCorporationName
+          ? null
+          : (cityCorporationName ?? this.cityCorporationName),
+      zoneName: clearZoneName ? null : (zoneName ?? this.zoneName),
+      wardName: clearWardName ? null : (wardName ?? this.wardName),
       divisionName: clearDivisionName
           ? null
           : (divisionName ?? this.divisionName),
@@ -680,6 +822,7 @@ class FundraisingDraftRecovery {
           ? null
           : (districtName ?? this.districtName),
       upazilaName: clearUpazilaName ? null : (upazilaName ?? this.upazilaName),
+      unionName: clearUnionName ? null : (unionName ?? this.unionName),
       areaName: clearAreaName ? null : (areaName ?? this.areaName),
       customLocationNote: customLocationNote ?? this.customLocationNote,
       securityLatitude: clearSecurityLatitude
@@ -725,4 +868,35 @@ class FundraisingDraftRecovery {
     final micros = DateTime.now().microsecondsSinceEpoch;
     return '$prefix-$micros';
   }
+}
+
+/// Mirrors the API's `validateSelection` branch rule (see
+/// `location-store.ts`): a Bangladesh location is canonically complete only
+/// when its full branch of IDs is present — rural needs division, district,
+/// upazila, AND union; urban needs division, district, city corporation,
+/// zone, AND ward. Display labels (e.g. a restored `locationText`) are not
+/// sufficient on their own — a stale/partial saved draft can have labels
+/// without the IDs the API actually validates, and must not be treated as
+/// complete.
+bool isLocationCanonicallyComplete(FundraisingDraftRecovery draft) {
+  final hasRural = draft.bdUpazilaId != null || draft.bdUnionId != null;
+  final hasUrban =
+      draft.bdCityCorporationId != null ||
+      draft.bdZoneId != null ||
+      draft.bdWardId != null;
+  if (hasRural && hasUrban) return false;
+  if (hasRural) {
+    return draft.bdDivisionId != null &&
+        draft.bdDistrictId != null &&
+        draft.bdUpazilaId != null &&
+        draft.bdUnionId != null;
+  }
+  if (hasUrban) {
+    return draft.bdDivisionId != null &&
+        draft.bdDistrictId != null &&
+        draft.bdCityCorporationId != null &&
+        draft.bdZoneId != null &&
+        draft.bdWardId != null;
+  }
+  return false;
 }

@@ -9,10 +9,12 @@ class UserModel extends UserEntity {
     super.avatarUrl,
   });
 
-  /// Parses the Furtail API's `GET /api/v1/auth/me` response (`res.json({
-  /// success, user, ... })`), where `user` is the local Prisma `User`
-  /// record — the local Furtail identity that a Central Auth user gets
-  /// resolved/JIT-provisioned to. Defensive about field names since the
+  /// Parses the local Prisma `User` record — the local Furtail identity that
+  /// a Central Auth user gets resolved/JIT-provisioned to. Callers extract
+  /// this object from either response envelope before calling `fromJson`:
+  /// Central Auth's own `/auth/me` (`{ success, user }`) or the Furtail
+  /// API's `/auth/me` (`{ success, data: { user }, meta }`) — see
+  /// `AuthController._fetchProfile`. Defensive about field names since the
   /// backend nests display fields under `profile` and contact fields can
   /// live on `user` or `user.auth`.
   factory UserModel.fromJson(Map<String, dynamic> json) {

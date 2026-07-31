@@ -1,10 +1,11 @@
+// ignore_for_file: use_null_aware_elements
+
 import 'dart:math';
 
 import 'package:furtail_app/core/network/api_endpoints.dart';
 import 'package:furtail_app/services/api_client.dart';
 
 import '../fundraising_debug_logger.dart';
-import '../fundraising_error_mapper.dart';
 import '../models/fundraising_draft_models.dart';
 import '../models/fundraising_donation_models.dart';
 import '../models/fundraising_models.dart';
@@ -272,6 +273,7 @@ class FundraisingRepository {
       ApiEndpoints.fundraisingSubmitDraft(draftId),
       <String, dynamic>{'idempotencyKey': idempotencyKey},
       auth: true,
+      headers: <String, String>{'Idempotency-Key': idempotencyKey},
     );
     return FundraisingDraftRecord.fromJson(_asMap(res));
   }
@@ -555,10 +557,12 @@ class FundraisingRepository {
   Future<void> addDocument({
     required String title,
     required int mediaId,
+    String documentType = 'SUPPORTING',
   }) async {
     await _api.post(ApiEndpoints.fundraisingAccountDocuments(), {
       'title': title,
       'mediaId': mediaId,
+      'documentType': documentType,
     }, auth: true);
   }
 
@@ -717,20 +721,16 @@ class FundraisingRepository {
     String? note,
   }) async {
     final payload = {'amount': amount, 'methodId': methodId, 'note': note};
-    try {
-      final res = await _api.post(
-        ApiEndpoints.fundraisingCreateWithdrawRequest(campaignId),
-        payload,
-        auth: true,
-        headers: {
-          'Idempotency-Key':
-              'fundraising-withdraw-$campaignId-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(1 << 31)}',
-        },
-      );
-      final data = _asMap(res);
-      return FundraisingWithdrawRequest.fromJson(data);
-    } catch (error) {
-      throw FundraisingUserSafeException(mapFundraisingError(error));
-    }
+    final res = await _api.post(
+      ApiEndpoints.fundraisingCreateWithdrawRequest(campaignId),
+      payload,
+      auth: true,
+      headers: {
+        'Idempotency-Key':
+            'fundraising-withdraw-$campaignId-${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(1 << 31)}',
+      },
+    );
+    final data = _asMap(res);
+    return FundraisingWithdrawRequest.fromJson(data);
   }
 }

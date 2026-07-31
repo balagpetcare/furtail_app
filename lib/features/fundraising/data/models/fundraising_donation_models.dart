@@ -116,7 +116,13 @@ class FundraisingDonationPaymentSnapshot {
   ) {
     return FundraisingDonationPaymentSnapshot(
       provider: json['provider']?.toString() ?? 'wpa',
-      redirectUrl: json['redirectUrl']?.toString(),
+      redirectUrl: _firstNonEmptyString(<Object?>[
+        json['redirectUrl'],
+        json['providerRedirectUrl'],
+        json['paymentUrl'],
+        json['checkoutUrl'],
+        json['url'],
+      ]),
       providerPaymentId: json['providerPaymentId']?.toString(),
       logId: json['logId']?.toString(),
       paymentAttemptId: fundraisingInt(json['paymentAttemptId']),
@@ -138,17 +144,39 @@ class FundraisingDonationCheckoutResponse {
   factory FundraisingDonationCheckoutResponse.fromJson(
     Map<String, dynamic> json,
   ) {
+    final rawPayment = json['payment'];
+    final topLevelRedirectUrl = _firstNonEmptyString(<Object?>[
+      json['redirectUrl'],
+      json['providerRedirectUrl'],
+      json['paymentUrl'],
+      json['checkoutUrl'],
+    ]);
+    FundraisingDonationPaymentSnapshot? payment;
+    if (rawPayment is Map) {
+      final nested = FundraisingDonationPaymentSnapshot.fromJson(
+        Map<String, dynamic>.from(rawPayment),
+      );
+      payment = FundraisingDonationPaymentSnapshot(
+        provider: nested.provider,
+        redirectUrl: nested.redirectUrl ?? topLevelRedirectUrl,
+        providerPaymentId: nested.providerPaymentId,
+        logId: nested.logId,
+        paymentAttemptId: nested.paymentAttemptId,
+      );
+    } else if (topLevelRedirectUrl != null) {
+      payment = FundraisingDonationPaymentSnapshot(
+        provider: json['provider']?.toString() ?? 'wpa',
+        redirectUrl: topLevelRedirectUrl,
+      );
+    }
+
     return FundraisingDonationCheckoutResponse(
       donationIntent: FundraisingDonationIntentSnapshot.fromJson(
         Map<String, dynamic>.from(
           (json['donationIntent'] as Map?) ?? const <String, dynamic>{},
         ),
       ),
-      payment: json['payment'] is Map
-          ? FundraisingDonationPaymentSnapshot.fromJson(
-              Map<String, dynamic>.from(json['payment'] as Map),
-            )
-          : null,
+      payment: payment,
       reused: json['reused'] == true,
     );
   }
@@ -334,6 +362,14 @@ class FundraisingDonationCheckoutRecord {
       Map<String, dynamic>.from(jsonDecode(raw) as Map),
     );
   }
+}
+
+String? _firstNonEmptyString(Iterable<Object?> values) {
+  for (final value in values) {
+    final text = value?.toString().trim();
+    if (text != null && text.isNotEmpty) return text;
+  }
+  return null;
 }
 
 int _parseInt(dynamic value) {

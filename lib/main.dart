@@ -17,6 +17,7 @@ import 'core/accessibility/a11y_widgets.dart';
 import 'core/analytics/analytics_service.dart';
 import 'core/crash_reporting/furtail_crashlytics_provider_observer.dart';
 import 'core/crash_reporting/crash_reporting_service.dart';
+import 'core/config/app_config.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import 'features/notifications/presentation/providers/notification_controller.dart';
 import 'core/services/post_upload_manager.dart';
@@ -42,7 +43,8 @@ void main() {
     ApiConfig.assertValid();
     CentralAuthConfig.assertValid();
 
-    dev.log('[AppConfig] API_BASE_URL=${ApiConfig.apiV1}', name: 'AppConfig');
+    dev.log('[AppConfig] API=${ApiConfig.apiV1}', name: 'AppConfig');
+    dev.log('[AppConfig] SOCKET=${AppConfig.socketUrl}', name: 'AppConfig');
     dev.log(
       '[AppConfig] CENTRAL_AUTH_API_BASE_URL=${CentralAuthConfig.apiV1}',
       name: 'AppConfig',

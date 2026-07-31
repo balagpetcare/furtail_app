@@ -70,6 +70,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
   String? _activeFilePath;
   bool _isScrubbing = false;
   double _lastVisibilityFraction = 0.0;
+  bool _initFailed = false;
 
   Future<bool> _shouldAutoplay() async {
     if (!widget.enableAutoplay) return false;
@@ -162,6 +163,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
     final c = _c;
     _c = null;
     _init = null;
+    _initFailed = false;
     if (_activeFilePath != null) {
       VideoCacheService.instance.unregisterActivePath(_activeFilePath!);
       _activeFilePath = null;
@@ -181,6 +183,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
     bool resumePlaying = false,
   }) {
     final int token = ++_setupToken;
+    _initFailed = false;
     _init = Future(() async {
       VideoPlayerController? controller;
       try {
@@ -212,7 +215,15 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
 
         controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
         _c = controller;
-        await controller.initialize();
+        try {
+          await controller.initialize();
+        } catch (e) {
+          debugPrint('[FeedPlayer] Network video init failed: $e');
+          _disposeController();
+          _initFailed = true;
+          if (mounted) setState(() {});
+          return;
+        }
       }
 
       if (!mounted || token != _setupToken) {
@@ -429,7 +440,15 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
             fit: StackFit.expand,
             children: [
               Container(color: Colors.black12),
-              if (_c == null || _init == null)
+              if (_initFailed)
+                const Center(
+                  child: Icon(
+                    Icons.play_circle_outline,
+                    color: Colors.white70,
+                    size: 56,
+                  ),
+                )
+              else if (_c == null || _init == null)
                 const Center(
                   child: SizedBox(
                     width: 72,
@@ -538,7 +557,9 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
                     diameter: 40,
                     onTap: _toggleMute,
                     child: Icon(
-                      _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      _muted
+                          ? Icons.volume_off_rounded
+                          : Icons.volume_up_rounded,
                       color: Colors.white,
                       size: 22,
                     ),

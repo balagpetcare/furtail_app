@@ -238,7 +238,8 @@ class _PdfPreview extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               errorBuilder: (_, _) => _PreviewError(
-                message: 'This PDF could not be displayed. Please try opening it externally.',
+                message:
+                    'This PDF could not be displayed. Please try opening it externally.',
                 onRetry: () async {},
               ),
             ),

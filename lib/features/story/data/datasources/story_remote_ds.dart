@@ -25,10 +25,21 @@ class StoryRemoteDs {
     // the Bearer header on every request, including the first one after a
     // successful login.
     final hasToken = await _secureStorage.hasSession;
-    final data = await _client.get(
-      ApiEndpoints.storiesFeed(limit: limit),
-      auth: hasToken, // send token when logged in for isOwnStory resolution
-    );
+    late final Map<String, dynamic> data;
+    try {
+      data =
+          await _client.get(
+                ApiEndpoints.storiesFeed(limit: limit),
+                auth:
+                    hasToken, // send token when logged in for isOwnStory resolution
+              )
+              as Map<String, dynamic>;
+    } on ApiClientException catch (error) {
+      if (error.statusCode == 404) {
+        return const <StoryModel>[];
+      }
+      rethrow;
+    }
     final list = (data['stories'] ?? data['data'] ?? []) as List;
     return list
         .map((e) => StoryModel.fromJson(e as Map<String, dynamic>))

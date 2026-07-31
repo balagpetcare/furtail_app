@@ -144,6 +144,26 @@ class _FundraisingWithdrawHubScreenState
                                   ),
                                 ),
                                 const SizedBox(height: 8),
+                                if (!selected.isAccountVerified) ...[
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF7E6),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: const Color(0xFFFFD18A),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Your fundraising account is not verified yet. Withdrawals are enabled after verification.',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                                 const Text(
                                   'Available is ready to withdraw. Pending is still settling. Reserved is already committed to another withdrawal.',
                                 ),
@@ -212,7 +232,10 @@ class _FundraisingWithdrawHubScreenState
                                 SizedBox(
                                   width: double.infinity,
                                   child: FilledButton(
-                                    onPressed: _submitting || hasOpenRequest
+                                    onPressed:
+                                        _submitting ||
+                                            hasOpenRequest ||
+                                            !selected.isAccountVerified
                                         ? null
                                         : () async {
                                             if (!_formKey.currentState!

@@ -4,73 +4,129 @@ import 'package:furtail_app/features/fundraising/data/models/fundraising_models.
 import 'package:furtail_app/features/fundraising/presentation/utils/fundraising_formatters.dart';
 
 class FundraisingDonationsPreview extends StatelessWidget {
-  final FundraisingCampaign campaign;
-  final VoidCallback onViewAll;
-
   const FundraisingDonationsPreview({
     super.key,
     required this.campaign,
     required this.onViewAll,
   });
 
+  final FundraisingCampaign campaign;
+  final VoidCallback onViewAll;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    final theme = Theme.of(context);
+    if (campaign.last3Donors.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.48,
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
           children: [
-            Expanded(
-              child: Text(
-                'Recent Donations',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            Icon(
+              Icons.volunteer_activism_outlined,
+              color: theme.colorScheme.primary,
+              size: 30,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Be the first supporter',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w900,
               ),
             ),
-            TextButton(
-              onPressed: onViewAll,
-              child: const Text('View all donations'),
+            const SizedBox(height: 4),
+            Text(
+              'No donations have been recorded yet.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
-        if (campaign.last3Donors.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 6, bottom: 6),
-            child: Text('No donations yet'),
-          )
-        else
-          ...campaign.last3Donors.map(
-            (d) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundImage:
-                        (d.avatarUrl != null && d.avatarUrl!.isNotEmpty)
-                        ? NetworkImage(d.avatarUrl!)
-                        : null,
-                    child: (d.avatarUrl == null || d.avatarUrl!.isEmpty)
-                        ? const Icon(Icons.person, size: 16)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      d.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (d.amount != null)
-                    Text(
-                      'donated ${formatFundraisingMoney(context, d.amount!)}',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                ],
+      );
+    }
+
+    return Column(
+      children: [
+        for (var index = 0; index < campaign.last3Donors.length; index++) ...[
+          _DonationRow(donor: campaign.last3Donors[index]),
+          if (index != campaign.last3Donors.length - 1)
+            Divider(
+              height: 24,
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+        ],
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: onViewAll,
+            icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+            label: const Text('View all donations'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DonationRow extends StatelessWidget {
+  const _DonationRow({required this.donor});
+
+  final FundraisingDonor donor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: theme.colorScheme.primaryContainer,
+          backgroundImage:
+              (donor.avatarUrl != null && donor.avatarUrl!.trim().isNotEmpty)
+              ? NetworkImage(donor.avatarUrl!)
+              : null,
+          child: (donor.avatarUrl == null || donor.avatarUrl!.trim().isEmpty)
+              ? Icon(Icons.person_outline, color: theme.colorScheme.primary)
+              : null,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                donor.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
+              const SizedBox(height: 2),
+              Text(
+                'Supported this fundraiser',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (donor.amount != null)
+          Text(
+            formatFundraisingMoney(context, donor.amount!),
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w900,
             ),
           ),
       ],

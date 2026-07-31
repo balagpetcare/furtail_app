@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, unused_element
+// ignore_for_file: deprecated_member_use, unused_element, unused_field
 
 import 'dart:io';
 
@@ -23,6 +23,7 @@ import 'package:furtail_app/features/fundraising/presentation/widgets/fundraisin
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_create_wizard_widgets.dart';
 import 'package:furtail_app/services/api_client.dart';
 import 'package:furtail_app/l10n/app_localizations.dart';
+import 'package:intl/intl.dart';
 
 import '../providers/fundraising_providers.dart';
 import '../../data/models/fundraising_models.dart';
@@ -123,22 +124,32 @@ class _FundraisingAccountSetupScreenState
   final _permanentAddressCtrl = TextEditingController();
   final _occupationCtrl = TextEditingController();
 
+  final _fullNameCtrl = TextEditingController();
+
   // IDs
   final _nidCtrl = TextEditingController();
   final _birthRegCtrl = TextEditingController();
   final _studentIdCtrl = TextEditingController();
   final _passportCtrl = TextEditingController();
+  final _drivingLicenceCtrl = TextEditingController();
 
   DateTime? _dob;
 
   // Location dropdown selections
   int? _divisionId;
   int? _districtId;
+  LocationAddressMode? _addressMode;
+  int? _cityCorporationId;
+  int? _zoneId;
+  int? _wardId;
   int? _upazilaId;
   int? _unionId;
   int? _areaId;
   String? _divisionName;
   String? _districtName;
+  String? _cityCorporationName;
+  String? _zoneName;
+  String? _wardName;
   String? _upazilaName;
   String? _unionName;
   String? _areaName;
@@ -149,7 +160,16 @@ class _FundraisingAccountSetupScreenState
   final _orgWorkTypeCtrl = TextEditingController();
 
   bool _saving = false;
-  bool _busyDoc = false;
+  // Independent per-document-slot loading state, keyed by document title —
+  // uploading/replacing one document (e.g. selfie) must not disable the
+  // Upload/Replace/Remove actions on other document slots.
+  final Set<String> _busyDocSlots = {};
+  bool get _busyDoc => _busyDocSlots.isNotEmpty;
+  // Per-slot action ('upload'/'replace'/'remove') while busy, and the last
+  // failure message per slot so a failed upload shows an inline Retry
+  // instead of only a transient snackbar.
+  final Map<String, String> _docSlotAction = {};
+  final Map<String, String> _docSlotErrors = {};
   bool _prefilled = false;
   bool _hasUnsavedChanges = false;
   bool _sameAsPresentAddress = false;
@@ -186,6 +206,7 @@ class _FundraisingAccountSetupScreenState
 
   @override
   void dispose() {
+    _fullNameCtrl.dispose();
     _presentAddressCtrl.dispose();
     _permanentAddressCtrl.dispose();
     _occupationCtrl.dispose();
@@ -193,6 +214,7 @@ class _FundraisingAccountSetupScreenState
     _birthRegCtrl.dispose();
     _studentIdCtrl.dispose();
     _passportCtrl.dispose();
+    _drivingLicenceCtrl.dispose();
     _orgNameCtrl.dispose();
     _orgDescCtrl.dispose();
     _orgWorkTypeCtrl.dispose();
@@ -206,6 +228,7 @@ class _FundraisingAccountSetupScreenState
   void _resetFormState() {
     _prefilled = false;
     _accountType = 'INDIVIDUAL';
+    _fullNameCtrl.clear();
     _presentAddressCtrl.clear();
     _permanentAddressCtrl.clear();
     _occupationCtrl.clear();
@@ -213,14 +236,22 @@ class _FundraisingAccountSetupScreenState
     _birthRegCtrl.clear();
     _studentIdCtrl.clear();
     _passportCtrl.clear();
+    _drivingLicenceCtrl.clear();
     _dob = null;
     _divisionId = null;
     _districtId = null;
+    _addressMode = null;
+    _cityCorporationId = null;
+    _zoneId = null;
+    _wardId = null;
     _upazilaId = null;
     _unionId = null;
     _areaId = null;
     _divisionName = null;
     _districtName = null;
+    _cityCorporationName = null;
+    _zoneName = null;
+    _wardName = null;
     _upazilaName = null;
     _unionName = null;
     _areaName = null;
@@ -348,8 +379,23 @@ class _FundraisingAccountSetupScreenState
 
   void _prefill(FundraisingAccount? a) {
     if (_prefilled) return;
-    if (a == null) return;
     _prefilled = true;
+
+    // Full name is never silently substituted with the account's email —
+    // prefill from any previously-saved value, else the authenticated
+    // user's real display name (never their email), else leave it blank
+    // and require the user to type it in.
+    final savedFullName = a?.fullName?.trim() ?? '';
+    if (savedFullName.isNotEmpty) {
+      _fullNameCtrl.text = savedFullName;
+    } else {
+      final currentName = ref.read(currentUserProvider).name.trim();
+      if (currentName.isNotEmpty && currentName != 'Guest') {
+        _fullNameCtrl.text = currentName;
+      }
+    }
+
+    if (a == null) return;
 
     _accountType = (a.accountType == null || a.accountType!.isEmpty)
         ? 'INDIVIDUAL'
@@ -357,10 +403,12 @@ class _FundraisingAccountSetupScreenState
     _presentAddressCtrl.text = a.presentAddress ?? '';
     _permanentAddressCtrl.text = a.permanentAddress ?? '';
     _occupationCtrl.text = a.occupation ?? '';
+    _primaryDocumentType = a.primaryDocumentType ?? _primaryDocumentType;
 
     _nidCtrl.text = a.nationalIdNumber ?? '';
     _birthRegCtrl.text = a.birthRegNumber ?? '';
     _studentIdCtrl.text = a.studentIdNumber ?? '';
+    _drivingLicenceCtrl.text = a.drivingLicenceNumber ?? '';
     _dob = a.dateOfBirth;
 
     // Detect if global
@@ -377,9 +425,23 @@ class _FundraisingAccountSetupScreenState
       _isGlobalMode = false;
       _divisionId = a.divisionId;
       _districtId = a.districtId;
+      _addressMode = _recoverAddressMode(a.verificationDraftJson);
+      _cityCorporationId = _asInt(
+        a.verificationDraftJson?['bdCityCorporationId'],
+      );
+      _zoneId = _asInt(a.verificationDraftJson?['bdZoneId']);
+      _wardId = _asInt(a.verificationDraftJson?['bdWardId']);
       _upazilaId = a.upazilaId;
       _unionId = a.unionId;
       _areaId = a.areaId;
+      _cityCorporationName = a.verificationDraftJson?['cityCorporationName']
+          ?.toString();
+      _zoneName = a.verificationDraftJson?['zoneName']?.toString();
+      _wardName = a.verificationDraftJson?['wardName']?.toString();
+      final storedAreaDetails = a.area?.trim();
+      _areaName = (storedAreaDetails?.isNotEmpty ?? false)
+          ? storedAreaDetails
+          : a.verificationDraftJson?['areaName']?.toString();
     }
 
     // Names might not be present; UI will still work without them.
@@ -387,15 +449,55 @@ class _FundraisingAccountSetupScreenState
 
   Future<void> _pickDob() async {
     final now = DateTime.now();
-    final initial = _dob ?? DateTime(now.year - 20, 1, 1);
+    final today = DateTime(now.year, now.month, now.day);
+    // Historical bound only — wide enough to cover any living person, no
+    // invented "must be at least N years old" business rule.
+    final earliest = DateTime(now.year - 120, 1, 1);
+    final initial = _dob ?? DateTime(now.year - 30, 1, 1);
     final picked = await showDatePicker(
       context: context,
-      firstDate: DateTime(now.year - 80, 1, 1),
-      lastDate: DateTime(now.year - 10, 12, 31),
-      initialDate: initial,
+      firstDate: earliest,
+      lastDate: today,
+      initialDate: initial.isAfter(today) ? today : initial,
+      // Year picker first so an older birth year is a couple of taps away
+      // instead of scrolling months on the calendar grid.
+      initialDatePickerMode: DatePickerMode.year,
+      initialEntryMode: DatePickerEntryMode.calendar,
+      helpText: 'Select date of birth',
+      cancelText: 'Cancel',
+      confirmText: 'Confirm',
+      fieldLabelText: 'Date of birth',
+      fieldHintText: 'DD/MM/YYYY',
+      errorFormatText: 'Enter a valid date',
+      errorInvalidText: 'Enter a date within range',
+      builder: (context, child) {
+        return Localizations.override(
+          context: context,
+          locale: const Locale('en', 'GB'), // Renders DD/MM/YYYY input.
+          child: child,
+        );
+      },
     );
     if (picked == null) return;
     setState(() => _dob = DateTime(picked.year, picked.month, picked.day));
+  }
+
+  /// Human-facing DD/MM/YYYY display — kept distinct from the YYYY-MM-DD
+  /// wire format sent to the API ([_dobDateOnly]).
+  String _dobDisplay(DateTime dob) {
+    final d = dob.day.toString().padLeft(2, '0');
+    final m = dob.month.toString().padLeft(2, '0');
+    return '$d/$m/${dob.year}';
+  }
+
+  /// Canonical date-only wire value (YYYY-MM-DD). Deliberately does not use
+  /// `toIso8601String()`/UTC conversion, which can shift the calendar day.
+  String? _dobDateOnly(DateTime? dob) {
+    if (dob == null) return null;
+    final y = dob.year.toString().padLeft(4, '0');
+    final m = dob.month.toString().padLeft(2, '0');
+    final d = dob.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   Future<void> _pickLocationFromMap() async {
@@ -432,11 +534,19 @@ class _FundraisingAccountSetupScreenState
       'dob': _dob?.toIso8601String(),
       'divisionId': _divisionId,
       'districtId': _districtId,
+      'bdAddressMode': _addressMode == null
+          ? null
+          : (_addressMode == LocationAddressMode.urban ? 'URBAN' : 'RURAL'),
+      'bdCityCorporationId': _cityCorporationId,
+      'bdZoneId': _zoneId,
+      'bdWardId': _wardId,
       'upazilaId': _upazilaId,
       'unionId': _unionId,
-      'areaId': _areaId,
       'divisionName': _divisionName,
       'districtName': _districtName,
+      'cityCorporationName': _cityCorporationName,
+      'zoneName': _zoneName,
+      'wardName': _wardName,
       'upazilaName': _upazilaName,
       'unionName': _unionName,
       'areaName': _areaName,
@@ -473,11 +583,27 @@ class _FundraisingAccountSetupScreenState
     _dob = DateTime.tryParse((data['dob'] ?? '').toString()) ?? _dob;
     _divisionId = fundraisingInt(data['divisionId']) ?? _divisionId;
     _districtId = fundraisingInt(data['districtId']) ?? _districtId;
+    _addressMode = _recoverAddressMode(data) ?? _addressMode;
+    _cityCorporationId =
+        fundraisingInt(data['bdCityCorporationId']) ??
+        fundraisingInt(data['cityCorporationId']) ??
+        _cityCorporationId;
+    _zoneId =
+        fundraisingInt(data['bdZoneId']) ??
+        fundraisingInt(data['zoneId']) ??
+        _zoneId;
+    _wardId =
+        fundraisingInt(data['bdWardId']) ??
+        fundraisingInt(data['wardId']) ??
+        _wardId;
     _upazilaId = fundraisingInt(data['upazilaId']) ?? _upazilaId;
     _unionId = fundraisingInt(data['unionId']) ?? _unionId;
-    _areaId = fundraisingInt(data['areaId']) ?? _areaId;
     _divisionName = (data['divisionName'] ?? _divisionName)?.toString();
     _districtName = (data['districtName'] ?? _districtName)?.toString();
+    _cityCorporationName = (data['cityCorporationName'] ?? _cityCorporationName)
+        ?.toString();
+    _zoneName = (data['zoneName'] ?? _zoneName)?.toString();
+    _wardName = (data['wardName'] ?? _wardName)?.toString();
     _upazilaName = (data['upazilaName'] ?? _upazilaName)?.toString();
     _unionName = (data['unionName'] ?? _unionName)?.toString();
     _areaName = (data['areaName'] ?? _areaName)?.toString();
@@ -504,15 +630,22 @@ class _FundraisingAccountSetupScreenState
 
   Future<void> _sanitizeRestoredBangladeshSelection() async {
     if (_isGlobalMode || _divisionId == null) return;
+    final isUrban =
+        _addressMode == LocationAddressMode.urban ||
+        _cityCorporationId != null ||
+        _zoneId != null ||
+        _wardId != null;
     try {
       await ref
           .read(bdLocationsRepositoryProvider)
           .validateSelection(
             divisionId: _divisionId,
             districtId: _districtId,
-            upazilaId: _upazilaId,
-            unionId: _unionId,
-            areaId: _areaId,
+            cityCorporationId: isUrban ? _cityCorporationId : null,
+            zoneId: isUrban ? _zoneId : null,
+            wardId: isUrban ? _wardId : null,
+            upazilaId: isUrban ? null : _upazilaId,
+            unionId: isUrban ? null : _unionId,
           );
     } on ApiClientException catch (error) {
       final code = (error.code ?? '').toUpperCase();
@@ -520,7 +653,6 @@ class _FundraisingAccountSetupScreenState
         'DISTRICT_DIVISION_MISMATCH',
         'UPAZILA_DISTRICT_MISMATCH',
         'UNION_UPAZILA_MISMATCH',
-        'AREA_UNION_MISMATCH',
         'LOCATION_ID_NOT_FOUND',
       };
       if (!knownMismatchCodes.contains(code)) {
@@ -532,6 +664,28 @@ class _FundraisingAccountSetupScreenState
       }
       if (!mounted) return;
       setState(() {
+        if (isUrban) {
+          if (code == 'DISTRICT_DIVISION_MISMATCH') {
+            _districtId = null;
+            _districtName = null;
+          }
+          if (code == 'LOCATION_ID_NOT_FOUND' ||
+              code == 'DISTRICT_DIVISION_MISMATCH') {
+            _addressMode = null;
+            _cityCorporationId = null;
+            _cityCorporationName = null;
+            _zoneId = null;
+            _zoneName = null;
+            _wardId = null;
+            _wardName = null;
+            _areaName = null;
+          } else if (code == 'UNION_UPAZILA_MISMATCH') {
+            _unionId = null;
+            _unionName = null;
+            _areaName = null;
+          }
+          return;
+        }
         if (code == 'DISTRICT_DIVISION_MISMATCH') {
           _districtId = null;
           _districtName = null;
@@ -539,21 +693,17 @@ class _FundraisingAccountSetupScreenState
           _upazilaName = null;
           _unionId = null;
           _unionName = null;
-          _areaId = null;
           _areaName = null;
         } else if (code == 'UPAZILA_DISTRICT_MISMATCH') {
           _upazilaId = null;
           _upazilaName = null;
           _unionId = null;
           _unionName = null;
-          _areaId = null;
           _areaName = null;
         } else if (code == 'UNION_UPAZILA_MISMATCH' ||
-            code == 'AREA_UNION_MISMATCH' ||
             code == 'LOCATION_ID_NOT_FOUND') {
           _unionId = null;
           _unionName = null;
-          _areaId = null;
           _areaName = null;
         }
       });
@@ -582,28 +732,22 @@ class _FundraisingAccountSetupScreenState
       case 'STUDENT ID':
       case 'STUDENT_ID':
         return _studentIdCtrl.text.trim().isNotEmpty;
+      case 'DRIVING LICENCE':
+      case 'DRIVING_LICENCE':
+      case 'DRIVING':
+        return _drivingLicenceCtrl.text.trim().isNotEmpty;
       default:
         return _nidCtrl.text.trim().isNotEmpty ||
             _birthRegCtrl.text.trim().isNotEmpty ||
             _passportCtrl.text.trim().isNotEmpty ||
-            _studentIdCtrl.text.trim().isNotEmpty;
+            _studentIdCtrl.text.trim().isNotEmpty ||
+            _drivingLicenceCtrl.text.trim().isNotEmpty;
     }
   }
 
   bool _hasPrimaryVerificationDocument() {
     final docs = _account?.documents ?? const <FundraisingAccountDocument>[];
-    return docs.any((doc) => _isPrimaryDocumentTitle(doc.title));
-  }
-
-  bool _isPrimaryDocumentTitle(String title) {
-    final text = title.trim().toLowerCase();
-    return text.contains('verification') ||
-        text.contains('primary') ||
-        text.contains('nid') ||
-        text.contains('national id') ||
-        text.contains('birth') ||
-        text.contains('passport') ||
-        text.contains('driving');
+    return docs.any((doc) => doc.isPrimary);
   }
 
   bool _validateCurrentStep(FundraisingAccountReadiness readiness) {
@@ -615,14 +759,29 @@ class _FundraisingAccountSetupScreenState
               _presentAddressCtrl.text.trim().isNotEmpty &&
               _permanentAddressCtrl.text.trim().isNotEmpty;
         }
+        final isUrban =
+            _addressMode == LocationAddressMode.urban ||
+            _cityCorporationId != null ||
+            _zoneId != null ||
+            _wardId != null;
+        if (isUrban) {
+          return _divisionId != null &&
+              _districtId != null &&
+              _cityCorporationId != null &&
+              _zoneId != null &&
+              _wardId != null &&
+              _presentAddressCtrl.text.trim().isNotEmpty &&
+              _permanentAddressCtrl.text.trim().isNotEmpty;
+        }
         return _divisionId != null &&
             _districtId != null &&
             _upazilaId != null &&
-            (_unionId != null || _areaId != null) &&
+            _unionId != null &&
             _presentAddressCtrl.text.trim().isNotEmpty &&
             _permanentAddressCtrl.text.trim().isNotEmpty;
       case 1:
-        return _dob != null &&
+        return _fullNameCtrl.text.trim().isNotEmpty &&
+            _dob != null &&
             _occupationCtrl.text.trim().isNotEmpty &&
             _hasPrimaryIdentityMethod();
       case 2:
@@ -639,14 +798,21 @@ class _FundraisingAccountSetupScreenState
   Future<String?> _validateBangladeshSelectionOnSave() async {
     if (_isGlobalMode) return null;
     try {
+      final isUrban =
+          _addressMode == LocationAddressMode.urban ||
+          _cityCorporationId != null ||
+          _zoneId != null ||
+          _wardId != null;
       await ref
           .read(bdLocationsRepositoryProvider)
           .validateSelection(
             divisionId: _divisionId,
             districtId: _districtId,
-            upazilaId: _upazilaId,
-            unionId: _unionId,
-            areaId: _areaId,
+            cityCorporationId: isUrban ? _cityCorporationId : null,
+            zoneId: isUrban ? _zoneId : null,
+            wardId: isUrban ? _wardId : null,
+            upazilaId: isUrban ? null : _upazilaId,
+            unionId: isUrban ? null : _unionId,
           );
       return null;
     } on Object catch (error) {
@@ -658,17 +824,32 @@ class _FundraisingAccountSetupScreenState
     final permanent = _sameAsPresentAddress
         ? _presentAddressCtrl.text.trim()
         : _permanentAddressCtrl.text.trim();
+    final isUrban =
+        _addressMode == LocationAddressMode.urban ||
+        _cityCorporationId != null ||
+        _zoneId != null ||
+        _wardId != null;
+    final areaSnapshot = _areaName?.trim();
     return <String, dynamic>{
       'accountType': _accountType,
+      'fullName': _fullNameCtrl.text.trim(),
       'presentAddress': _presentAddressCtrl.text.trim(),
       'permanentAddress': permanent,
       'occupation': _occupationCtrl.text.trim(),
+      'isInternational': _isGlobalMode,
       'divisionId': _isGlobalMode ? null : _divisionId,
       'districtId': _isGlobalMode ? null : _districtId,
-      'upazilaId': _isGlobalMode ? null : _upazilaId,
-      'unionId': _isGlobalMode ? null : _unionId,
-      'areaId': _isGlobalMode ? null : _areaId,
-      'area': _isGlobalMode ? null : (_unionName ?? _areaName),
+      'upazilaId': _isGlobalMode || isUrban ? null : _upazilaId,
+      'unionId': _isGlobalMode || isUrban ? null : _unionId,
+      'bdAddressMode': _isGlobalMode ? null : (isUrban ? 'URBAN' : 'RURAL'),
+      'bdCityCorporationId': _isGlobalMode || !isUrban
+          ? null
+          : _cityCorporationId,
+      'bdZoneId': _isGlobalMode || !isUrban ? null : _zoneId,
+      'bdWardId': _isGlobalMode || !isUrban ? null : _wardId,
+      'bdUpazilaId': _isGlobalMode || isUrban ? null : _upazilaId,
+      'bdUnionId': _isGlobalMode || isUrban ? null : _unionId,
+      'area': _isGlobalMode ? null : areaSnapshot,
       'countryCode': _isGlobalMode ? 'GL' : 'BD',
       'countryName': _isGlobalMode ? _countryNameCtrl.text.trim() : null,
       'stateName': _isGlobalMode ? _stateNameCtrl.text.trim() : null,
@@ -677,7 +858,8 @@ class _FundraisingAccountSetupScreenState
       'latitude': _isGlobalMode ? _latitude : null,
       'longitude': _isGlobalMode ? _longitude : null,
       'formattedAddress': _isGlobalMode ? _formattedAddress : null,
-      'dateOfBirth': _dob?.toIso8601String(),
+      'dateOfBirth': _dobDateOnly(_dob),
+      'primaryDocumentType': _primaryDocumentType,
       'nationalIdNumber': _nidCtrl.text.trim().isEmpty
           ? null
           : _nidCtrl.text.trim(),
@@ -690,6 +872,9 @@ class _FundraisingAccountSetupScreenState
       'passportNumber': _passportCtrl.text.trim().isEmpty
           ? null
           : _passportCtrl.text.trim(),
+      'drivingLicenceNumber': _drivingLicenceCtrl.text.trim().isEmpty
+          ? null
+          : _drivingLicenceCtrl.text.trim(),
       if (_accountType == 'ORGANIZATION') 'orgName': _orgNameCtrl.text.trim(),
       if (_accountType == 'ORGANIZATION')
         'orgDescription': _orgDescCtrl.text.trim(),
@@ -697,6 +882,23 @@ class _FundraisingAccountSetupScreenState
         'orgWorkType': _orgWorkTypeCtrl.text.trim(),
       'verificationDraftJson': _snapshotRecovery(),
     };
+  }
+
+  LocationAddressMode? _recoverAddressMode(Map<String, dynamic>? data) {
+    final raw = data?['bdAddressMode']?.toString().trim().toUpperCase();
+    switch (raw) {
+      case 'URBAN':
+        return LocationAddressMode.urban;
+      case 'RURAL':
+        return LocationAddressMode.rural;
+      default:
+        return null;
+    }
+  }
+
+  int? _asInt(Object? value) {
+    if (value == null) return null;
+    return int.tryParse(value.toString());
   }
 
   Future<void> _saveCurrentStep({
@@ -755,6 +957,18 @@ class _FundraisingAccountSetupScreenState
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<void> _save() async {
+    final readiness =
+        _account?.readiness ?? FundraisingAccountReadiness.fromAccount(null);
+    final submit =
+        _verificationStep == 4 &&
+        readiness.canStartFundraiser &&
+        (readiness.status == 'DRAFT' ||
+            readiness.status == 'REJECTED' ||
+            readiness.status == 'UNKNOWN');
+    await _saveCurrentStep(advance: _verificationStep < 4, submit: submit);
   }
 
   Future<bool> _confirmLeaveWizard() async {
@@ -832,7 +1046,11 @@ class _FundraisingAccountSetupScreenState
                 ),
               ),
               FundraisingWizardBottomBar(
-                busy: _saving || _busyDoc,
+                // Spinner reserved for the actual "Submit for review" action
+                // on the final step — ordinary Continue/Save draft saves on
+                // earlier steps stay disabled-but-static.
+                busy: _saving && _verificationStep == 4,
+                disabled: _saving || _busyDoc,
                 canGoBack: _verificationStep > 0,
                 onBack: () async {
                   if (_verificationStep == 0) {
@@ -927,11 +1145,11 @@ class _FundraisingAccountSetupScreenState
       case 0:
         return _buildStepOne(context, readiness);
       case 1:
-        return _buildStepTwo(context, currentUser);
+        return _buildStepTwo(context);
       case 2:
         return _buildStepThree(context, readiness);
       case 3:
-        return _buildStepFour(context, readiness, currentUser);
+        return _buildStepFour(context, readiness);
       case 4:
       default:
         return _buildStepFive(context, readiness);
@@ -1031,11 +1249,17 @@ class _FundraisingAccountSetupScreenState
             LocationSelectorWidget(
               divisionId: _divisionId,
               districtId: _districtId,
+              addressMode: _addressMode,
+              cityCorporationId: _cityCorporationId,
+              zoneId: _zoneId,
+              wardId: _wardId,
               upazilaId: _upazilaId,
               unionId: _unionId,
-              areaId: _areaId,
               divisionName: _divisionName,
               districtName: _districtName,
+              cityCorporationName: _cityCorporationName,
+              zoneName: _zoneName,
+              wardName: _wardName,
               upazilaName: _upazilaName,
               unionName: _unionName,
               areaName: _areaName,
@@ -1051,6 +1275,13 @@ class _FundraisingAccountSetupScreenState
                         _divisionName = name;
                         _districtId = null;
                         _districtName = null;
+                        _addressMode = null;
+                        _cityCorporationId = null;
+                        _cityCorporationName = null;
+                        _zoneId = null;
+                        _zoneName = null;
+                        _wardId = null;
+                        _wardName = null;
                         _upazilaId = null;
                         _upazilaName = null;
                         _unionId = null;
@@ -1077,6 +1308,13 @@ class _FundraisingAccountSetupScreenState
                       setState(() {
                         _districtId = id;
                         _districtName = name;
+                        _addressMode = null;
+                        _cityCorporationId = null;
+                        _cityCorporationName = null;
+                        _zoneId = null;
+                        _zoneName = null;
+                        _wardId = null;
+                        _wardName = null;
                         _upazilaId = null;
                         _upazilaName = null;
                         _unionId = null;
@@ -1093,12 +1331,91 @@ class _FundraisingAccountSetupScreenState
                         ref.invalidate(bdAreasProvider(previousUpazilaId));
                       }
                     },
+              onAddressModeChanged: _saving
+                  ? null
+                  : (mode) {
+                      setState(() {
+                        _addressMode = mode;
+                        _cityCorporationId = null;
+                        _cityCorporationName = null;
+                        _zoneId = null;
+                        _zoneName = null;
+                        _wardId = null;
+                        _wardName = null;
+                        _upazilaId = null;
+                        _upazilaName = null;
+                        _unionId = null;
+                        _unionName = null;
+                        _areaId = null;
+                        _areaName = null;
+                        _hasUnsavedChanges = true;
+                      });
+                    },
+              onCityCorporationChanged: _saving
+                  ? null
+                  : (id, name) {
+                      setState(() {
+                        _addressMode = LocationAddressMode.urban;
+                        _cityCorporationId = id;
+                        _cityCorporationName = name;
+                        _zoneId = null;
+                        _zoneName = null;
+                        _wardId = null;
+                        _wardName = null;
+                        _upazilaId = null;
+                        _upazilaName = null;
+                        _unionId = null;
+                        _unionName = null;
+                        _areaId = null;
+                        _areaName = null;
+                        _hasUnsavedChanges = true;
+                      });
+                      if (id != null) {
+                        ref.invalidate(bdZonesProvider(id));
+                      }
+                    },
+              onZoneChanged: _saving
+                  ? null
+                  : (id, name) {
+                      setState(() {
+                        _addressMode = LocationAddressMode.urban;
+                        _zoneId = id;
+                        _zoneName = name;
+                        _wardId = null;
+                        _wardName = null;
+                        _areaId = null;
+                        _areaName = null;
+                        _hasUnsavedChanges = true;
+                      });
+                      if (id != null) {
+                        ref.invalidate(bdWardsProvider(id));
+                      }
+                    },
+              onWardChanged: _saving
+                  ? null
+                  : (id, name) {
+                      setState(() {
+                        _addressMode = LocationAddressMode.urban;
+                        _wardId = id;
+                        _wardName = name;
+                        _areaId = null;
+                        _areaName = null;
+                        _hasUnsavedChanges = true;
+                      });
+                    },
               onUpazilaChanged: _saving
                   ? null
                   : (id, name) {
                       setState(() {
+                        _addressMode = LocationAddressMode.rural;
                         _upazilaId = id;
                         _upazilaName = name;
+                        _cityCorporationId = null;
+                        _cityCorporationName = null;
+                        _zoneId = null;
+                        _zoneName = null;
+                        _wardId = null;
+                        _wardName = null;
                         _unionId = null;
                         _unionName = null;
                         _areaId = null;
@@ -1114,8 +1431,15 @@ class _FundraisingAccountSetupScreenState
                   ? null
                   : (id, name) {
                       setState(() {
+                        _addressMode = LocationAddressMode.rural;
                         _unionId = id;
                         _unionName = name;
+                        _cityCorporationId = null;
+                        _cityCorporationName = null;
+                        _zoneId = null;
+                        _zoneName = null;
+                        _wardId = null;
+                        _wardName = null;
                         _areaId = null;
                         _areaName = null;
                         _hasUnsavedChanges = true;
@@ -1123,12 +1447,10 @@ class _FundraisingAccountSetupScreenState
                     },
               onAreaChanged: _saving
                   ? null
-                  : (id, name) {
+                  : (_, name) {
+                      final details = (name ?? '').trim();
                       setState(() {
-                        _areaId = id;
-                        _areaName = name;
-                        _unionId = null;
-                        _unionName = null;
+                        _areaName = details.isEmpty ? null : details;
                         _hasUnsavedChanges = true;
                       });
                     },
@@ -1241,42 +1563,45 @@ class _FundraisingAccountSetupScreenState
     );
   }
 
-  Widget _buildStepTwo(BuildContext context, CurrentUser currentUser) {
+  Widget _buildStepTwo(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _sectionTitle('Identity details'),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey.shade100,
+        TextFormField(
+          controller: _fullNameCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Full name',
+            border: OutlineInputBorder(),
           ),
-          child: Text(
-            currentUser.name.trim().isEmpty
-                ? 'Full name will be taken from your profile.'
-                : 'Full name: ${currentUser.name}',
-          ),
+          onChanged: (_) => setState(() => _hasUnsavedChanges = true),
+          validator: (value) =>
+              (value ?? '').trim().isEmpty ? 'Full name is required' : null,
         ),
         const SizedBox(height: 12),
-        InkWell(
-          onTap: _saving ? null : _pickDob,
-          child: InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Date of birth',
-              border: OutlineInputBorder(),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _dob == null
-                      ? 'Select date'
-                      : '${_dob!.day.toString().padLeft(2, '0')}/${_dob!.month.toString().padLeft(2, '0')}/${_dob!.year}',
-                ),
-                const Icon(Icons.calendar_month),
-              ],
+        Semantics(
+          button: true,
+          label: 'Date of birth',
+          value: _dob == null ? 'Not set' : _dobDisplay(_dob!),
+          hint: 'Opens the date picker',
+          child: InkWell(
+            key: const ValueKey('fundraising-dob-field'),
+            onTap: _saving ? null : _pickDob,
+            borderRadius: BorderRadius.circular(4),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'Date of birth',
+                hintText: 'DD/MM/YYYY',
+                border: OutlineInputBorder(),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_dob == null ? 'Select date' : _dobDisplay(_dob!)),
+                  const Icon(Icons.calendar_month),
+                ],
+              ),
             ),
           ),
         ),
@@ -1358,6 +1683,15 @@ class _FundraisingAccountSetupScreenState
           ),
           onChanged: (_) => setState(() => _hasUnsavedChanges = true),
         ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _drivingLicenceCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Driving licence number',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (_) => setState(() => _hasUnsavedChanges = true),
+        ),
       ],
     );
   }
@@ -1373,13 +1707,21 @@ class _FundraisingAccountSetupScreenState
 
   Future<void> _replaceDocument(
     FundraisingAccountDocument document,
-    String title,
-  ) async {
-    await _uploadRequiredDoc(title, replaceDocument: document);
+    String title, {
+    required bool isPrimary,
+  }) async {
+    await _uploadRequiredDoc(
+      title,
+      replaceDocument: document,
+      isPrimary: isPrimary,
+    );
   }
 
-  Future<void> _removeDocument(FundraisingAccountDocument document) async {
-    if (_busyDoc) return;
+  Future<void> _removeDocument(
+    FundraisingAccountDocument document,
+    String slotTitle,
+  ) async {
+    if (_busyDocSlots.contains(slotTitle)) return;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1400,7 +1742,11 @@ class _FundraisingAccountSetupScreenState
       ),
     );
     if (confirm != true) return;
-    setState(() => _busyDoc = true);
+    setState(() {
+      _busyDocSlots.add(slotTitle);
+      _docSlotAction[slotTitle] = 'remove';
+      _docSlotErrors.remove(slotTitle);
+    });
     try {
       await ref.read(fundraisingRepositoryProvider).deleteDocument(document.id);
       ref.invalidate(fundraisingMyAccountProvider);
@@ -1408,11 +1754,18 @@ class _FundraisingAccountSetupScreenState
       await _persistRecovery();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapFundraisingSafeError(error).message)),
-      );
+      final message = mapFundraisingSafeError(error).message;
+      setState(() => _docSlotErrors[slotTitle] = message);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
-      if (mounted) setState(() => _busyDoc = false);
+      if (mounted) {
+        setState(() {
+          _busyDocSlots.remove(slotTitle);
+          _docSlotAction.remove(slotTitle);
+        });
+      }
     }
   }
 
@@ -1426,6 +1779,11 @@ class _FundraisingAccountSetupScreenState
     );
   }
 
+  /// Human-facing upload timestamp (e.g. "Jul 29, 2026"), never a raw
+  /// database timestamp with milliseconds.
+  String _formatUploadedAt(DateTime dt) =>
+      DateFormat.yMMMd().format(dt.toLocal());
+
   Widget _buildDocumentCard(
     String title,
     String subtitle,
@@ -1434,14 +1792,30 @@ class _FundraisingAccountSetupScreenState
   }) {
     final t = AppLocalizations.of(context)!;
     final document = docs.isNotEmpty ? docs.first : null;
-    final statusLabel = document == null
+    // Independent per-slot state — only this document card's buttons
+    // disable while its own upload/replace/remove is in flight, and each
+    // slot tracks its own Uploading/Replacing/Removing/Failed state.
+    final slotBusy = _busyDocSlots.contains(title);
+    final slotAction = _docSlotAction[title];
+    final slotError = _docSlotErrors[title];
+    final statusLabel = slotError != null
+        ? 'Failed'
+        : document == null
         ? (requiredDocument ? t.fundraisingRequired : t.fundraisingOptional)
         : t.fundraisingUploaded;
-    final statusVariant = document == null
+    final statusVariant = slotError != null
+        ? FundraisingChipVariant.warning
+        : document == null
         ? (requiredDocument
               ? FundraisingChipVariant.warning
               : FundraisingChipVariant.neutral)
         : FundraisingChipVariant.success;
+    final busyLabel = switch (slotAction) {
+      'replace' => 'Replacing...',
+      'remove' => 'Removing...',
+      _ => 'Uploading...',
+    };
+
     final actions = <Widget>[
       if (document != null)
         TextButton(
@@ -1449,17 +1823,41 @@ class _FundraisingAccountSetupScreenState
           child: const Text('View'),
         ),
       TextButton(
-        onPressed: _busyDoc
+        key: ValueKey(
+          'doc-action-${document == null ? 'upload' : 'replace'}-$title',
+        ),
+        onPressed: slotBusy
             ? null
             : () => document == null
-                  ? _uploadRequiredDoc(title)
-                  : _replaceDocument(document, title),
-        child: Text(document == null ? 'Upload' : 'Replace'),
+                  ? _uploadRequiredDoc(title, isPrimary: requiredDocument)
+                  : _replaceDocument(
+                      document,
+                      title,
+                      isPrimary: requiredDocument,
+                    ),
+        child: (slotBusy && slotAction != 'remove')
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(
+                slotError != null
+                    ? 'Retry'
+                    : (document == null ? 'Upload' : 'Replace'),
+              ),
       ),
       if (document != null)
         TextButton(
-          onPressed: _busyDoc ? null : () => _removeDocument(document),
-          child: const Text('Remove'),
+          key: ValueKey('doc-action-remove-$title'),
+          onPressed: slotBusy ? null : () => _removeDocument(document, title),
+          child: (slotBusy && slotAction == 'remove')
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Remove'),
         ),
     ];
 
@@ -1467,7 +1865,7 @@ class _FundraisingAccountSetupScreenState
       title: title,
       subtitle: subtitle,
       trailing: FundraisingStatusChip(
-        label: statusLabel,
+        label: slotBusy ? busyLabel : statusLabel,
         variant: statusVariant,
       ),
       child: Column(
@@ -1483,11 +1881,27 @@ class _FundraisingAccountSetupScreenState
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
-                  'Uploaded ${document.createdAt!.toLocal()}',
+                  'Uploaded ${_formatUploadedAt(document.createdAt!)}',
                   style: TextStyle(color: Colors.grey.shade700),
                 ),
               ),
           ],
+          if (slotError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: FundraisingInlineMessage(
+                variant: FundraisingInlineMessageVariant.danger,
+                message: slotError,
+                icon: Icons.error_outline,
+              ),
+            ),
+          const SizedBox(height: 6),
+          Text(
+            'Private and only visible to reviewers during verification.',
+            style: context.appText.bodySmall!.copyWith(
+              color: Colors.grey.shade600,
+            ),
+          ),
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: actions),
         ],
@@ -1557,7 +1971,6 @@ class _FundraisingAccountSetupScreenState
   Widget _buildStepFour(
     BuildContext context,
     FundraisingAccountReadiness readiness,
-    CurrentUser currentUser,
   ) {
     final docs = _account?.documents ?? const <FundraisingAccountDocument>[];
     return Column(
@@ -1568,7 +1981,9 @@ class _FundraisingAccountSetupScreenState
         _SummaryCard(
           title: 'Profile',
           body:
-              'Full name: ${currentUser.name}\nOccupation: ${_occupationCtrl.text.trim()}\nDate of birth: ${_dob == null ? 'Not set' : '${_dob!.year}-${_dob!.month.toString().padLeft(2, '0')}-${_dob!.day.toString().padLeft(2, '0')}'}',
+              'Full name: ${_fullNameCtrl.text.trim().isEmpty ? 'Not set' : _fullNameCtrl.text.trim()}\n'
+              'Occupation: ${_occupationCtrl.text.trim()}\n'
+              'Date of birth: ${_dob == null ? 'Not set' : _dobDisplay(_dob!)}',
         ),
         const SizedBox(height: 10),
         _SummaryCard(
@@ -1616,7 +2031,10 @@ class _FundraisingAccountSetupScreenState
         const SizedBox(height: 8),
         _StatusBanner(readiness: readiness),
         const SizedBox(height: 12),
-        _VerificationSummary(readiness: readiness),
+        _VerificationSummary(
+          readiness: readiness,
+          onNavigateToStep: (step) => setState(() => _verificationStep = step),
+        ),
         const SizedBox(height: 12),
         if (readiness.isRejected && readiness.safeRejectionReason != null)
           Container(
@@ -1647,8 +2065,11 @@ class _FundraisingAccountSetupScreenState
   Future<void> _uploadRequiredDoc(
     String title, {
     FundraisingAccountDocument? replaceDocument,
+    bool isPrimary = false,
   }) async {
-    if (_busyDoc) return;
+    // Dedupe duplicate taps for this slot, but never blocks other slots and
+    // always clears in `finally` so the UI can't get stuck disabled.
+    if (_busyDocSlots.contains(title)) return;
 
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
@@ -1658,11 +2079,19 @@ class _FundraisingAccountSetupScreenState
     final path = result?.files.single.path;
     if (path == null) return;
 
-    setState(() => _busyDoc = true);
+    setState(() {
+      _busyDocSlots.add(title);
+      _docSlotAction[title] = replaceDocument == null ? 'upload' : 'replace';
+      _docSlotErrors.remove(title);
+    });
     try {
       final mediaId = await _postsDs.uploadMedia(File(path));
       final repo = ref.read(fundraisingRepositoryProvider);
-      await repo.addDocument(title: title, mediaId: mediaId);
+      await repo.addDocument(
+        title: title,
+        mediaId: mediaId,
+        documentType: isPrimary ? 'PRIMARY' : 'SUPPORTING',
+      );
       if (replaceDocument != null) {
         await repo.deleteDocument(replaceDocument.id);
       }
@@ -1675,125 +2104,18 @@ class _FundraisingAccountSetupScreenState
       ).showSnackBar(SnackBar(content: Text('$title uploaded')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapFundraisingSafeError(e).message)),
-      );
-    } finally {
-      if (mounted) setState(() => _busyDoc = false);
-    }
-  }
-
-  bool _hasAnyIdNumber() {
-    return _nidCtrl.text.trim().isNotEmpty ||
-        _birthRegCtrl.text.trim().isNotEmpty ||
-        _studentIdCtrl.text.trim().isNotEmpty;
-  }
-
-  Future<void> _save() async {
-    if (_saving) return;
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    if (_dob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Date of birth is required')),
-      );
-      return;
-    }
-
-    if (_isGlobalMode) {
-      if (_countryNameCtrl.text.isEmpty || _addressLineCtrl.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Country and Address are required')),
-        );
-        return;
-      }
-    } else {
-      if (_divisionId == null ||
-          _districtId == null ||
-          _upazilaId == null ||
-          (_unionId == null && _areaId == null)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Please select Division, District, Upazila, and Union / Ward',
-            ),
-          ),
-        );
-        return;
-      }
-    }
-
-    if (!_hasAnyIdNumber()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please provide at least one ID number (NID / Birth Reg / Student ID)',
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      final repo = ref.read(fundraisingRepositoryProvider);
-      final payload = <String, dynamic>{
-        'accountType': _accountType,
-        'presentAddress': _presentAddressCtrl.text.trim(),
-        'permanentAddress': _permanentAddressCtrl.text.trim(),
-        'occupation': _occupationCtrl.text.trim(),
-        'divisionId': _isGlobalMode ? null : _divisionId,
-        'districtId': _isGlobalMode ? null : _districtId,
-        'upazilaId': _isGlobalMode ? null : _upazilaId,
-        'unionId': _isGlobalMode ? null : _unionId,
-        'areaId': _isGlobalMode ? null : _areaId,
-        'area': _isGlobalMode ? null : (_areaName ?? _unionName),
-        'countryCode': _isGlobalMode ? 'GL' : 'BD',
-        'countryName': _isGlobalMode ? _countryNameCtrl.text.trim() : null,
-        'stateName': _isGlobalMode ? _stateNameCtrl.text.trim() : null,
-        'cityName': _isGlobalMode ? _cityNameCtrl.text.trim() : null,
-        'addressLine': _isGlobalMode ? _addressLineCtrl.text.trim() : null,
-        'latitude': _isGlobalMode ? _latitude : null,
-        'longitude': _isGlobalMode ? _longitude : null,
-        'formattedAddress': _isGlobalMode ? _formattedAddress : null,
-        'dateOfBirth': _dob?.toIso8601String(),
-        'nationalIdNumber': _nidCtrl.text.trim().isEmpty
-            ? null
-            : _nidCtrl.text.trim(),
-        'birthRegNumber': _birthRegCtrl.text.trim().isEmpty
-            ? null
-            : _birthRegCtrl.text.trim(),
-        'studentIdNumber': _studentIdCtrl.text.trim().isEmpty
-            ? null
-            : _studentIdCtrl.text.trim(),
-      };
-
-      if (_accountType == 'ORGANIZATION') {
-        payload['orgName'] = _orgNameCtrl.text.trim();
-        payload['orgDescription'] = _orgDescCtrl.text.trim();
-        payload['orgWorkType'] = _orgWorkTypeCtrl.text.trim();
-      }
-
-      final updated = await repo.updateMyAccount(payload);
-      ref.invalidate(fundraisingMyAccountProvider);
-      await _loadAccount();
-
-      if (!mounted) return;
-      final refreshed = _account ?? updated;
-      if (refreshed.readiness.canStartFundraiser) {
-        Navigator.of(context).pop(true);
-        return;
-      }
+      final message = mapFundraisingSafeError(e).message;
+      setState(() => _docSlotErrors[title] = message);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Verification info saved')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mapFundraisingSafeError(e).message)),
-      );
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() {
+          _busyDocSlots.remove(title);
+          _docSlotAction.remove(title);
+        });
+      }
     }
   }
 
@@ -1904,7 +2226,10 @@ class _FundraisingAccountSetupScreenState
                         readiness.isRejected ||
                         readiness.isPendingReview) ...[
                       const SizedBox(height: 12),
-                      _VerificationSummary(readiness: readiness),
+                      _VerificationSummary(
+                        readiness: readiness,
+                        onNavigateToStep: (_) {},
+                      ),
                     ],
                     const SizedBox(height: 14),
 
@@ -1968,7 +2293,6 @@ class _FundraisingAccountSetupScreenState
                         districtId: _districtId,
                         upazilaId: _upazilaId,
                         unionId: _unionId,
-                        areaId: _areaId,
                         divisionName: _divisionName,
                         districtName: _districtName,
                         upazilaName: _upazilaName,
@@ -2064,10 +2388,10 @@ class _FundraisingAccountSetupScreenState
                               },
                         onAreaChanged: _saving
                             ? null
-                            : (id, name) {
+                            : (_, name) {
+                                final details = (name ?? '').trim();
                                 setState(() {
-                                  _areaId = id;
-                                  _areaName = name;
+                                  _areaName = details.isEmpty ? null : details;
                                   _unionId = null;
                                   _unionName = null;
                                 });
@@ -2404,7 +2728,10 @@ class _FundraisingAccountSetupScreenState
                     readiness.isRejected ||
                     readiness.isPendingReview) ...[
                   const SizedBox(height: 12),
-                  _VerificationSummary(readiness: readiness),
+                  _VerificationSummary(
+                    readiness: readiness,
+                    onNavigateToStep: (_) {},
+                  ),
                 ],
                 const SizedBox(height: 14),
                 Text(
@@ -2460,7 +2787,6 @@ class _FundraisingAccountSetupScreenState
                     districtId: _districtId,
                     upazilaId: _upazilaId,
                     unionId: _unionId,
-                    areaId: _areaId,
                     divisionName: _divisionName,
                     districtName: _districtName,
                     upazilaName: _upazilaName,
@@ -2556,10 +2882,10 @@ class _FundraisingAccountSetupScreenState
                           },
                     onAreaChanged: _saving
                         ? null
-                        : (id, name) {
+                        : (_, name) {
+                            final details = (name ?? '').trim();
                             setState(() {
-                              _areaId = id;
-                              _areaName = name;
+                              _areaName = details.isEmpty ? null : details;
                               _unionId = null;
                               _unionName = null;
                             });
@@ -2841,94 +3167,142 @@ class _StatusBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context)!;
     final status = readiness.status.toUpperCase();
+    final canStart = readiness.canStartFundraiser;
     String text;
     String hint;
-    IconData icon = Icons.hourglass_bottom;
+    IconData icon;
+    Color accent;
 
+    // Six visually distinct states: Incomplete, Ready for review, Submitted
+    // (under review), Approved, Rejected, and Restricted.
     switch (status) {
       case 'VERIFIED':
         text = t.fundraisingEligibilityVerified;
         hint = t.fundraisingEligibilitySummaryVerified;
         icon = Icons.verified;
+        accent = Colors.green.shade700;
         break;
       case 'REJECTED':
         text = t.fundraisingEligibilityRejected;
         hint = t.fundraisingEligibilitySummaryRejected;
         icon = Icons.error_outline;
+        accent = Colors.red.shade700;
         break;
       case 'SUSPENDED':
       case 'BLOCKED':
         text = t.fundraisingEligibilityRestricted;
         hint = t.fundraisingEligibilitySummaryRestricted;
         icon = Icons.block;
+        accent = Colors.red.shade700;
         break;
       case 'PENDING':
       case 'PENDING_REVIEW':
-        if (readiness.canStartFundraiser) {
-          text = t.fundraisingEligibilityPending;
+        if (canStart) {
+          text = 'Under review';
           hint = t.fundraisingEligibilitySummaryPending;
+          icon = Icons.hourglass_top;
+          accent = Colors.blue.shade700;
         } else {
           text = t.fundraisingEligibilityDraft;
           hint = t.fundraisingEligibilitySummaryActionRequired;
-        }
-        break;
-      case 'DRAFT':
-        if (readiness.canStartFundraiser) {
-          text = t.fundraisingEligibilityPending;
-          hint = t.fundraisingEligibilitySummaryPending;
-        } else {
-          text = t.fundraisingEligibilityDraft;
-          hint = t.fundraisingEligibilitySummaryActionRequired;
+          icon = Icons.warning_amber_rounded;
+          accent = Colors.orange.shade800;
         }
         break;
       default:
-        text = t.fundraisingEligibilityDraft;
-        hint = t.fundraisingEligibilitySummaryActionRequired;
+        if (canStart) {
+          text = 'Ready for review';
+          hint =
+              'All required items are complete. Submit for review to get verified.';
+          icon = Icons.task_alt;
+          accent = Colors.blue.shade700;
+        } else {
+          text = t.fundraisingEligibilityDraft;
+          hint = t.fundraisingEligibilitySummaryActionRequired;
+          icon = Icons.warning_amber_rounded;
+          accent = Colors.orange.shade800;
+        }
         break;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(icon),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(hint, style: TextStyle(color: Colors.grey.shade700)),
-              ],
+    return Semantics(
+      label: '$text. $hint',
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.06),
+          border: Border.all(color: accent.withValues(alpha: 0.35)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(hint, style: TextStyle(color: Colors.grey.shade700)),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _VerificationSummary extends StatelessWidget {
-  const _VerificationSummary({required this.readiness});
+  const _VerificationSummary({
+    required this.readiness,
+    required this.onNavigateToStep,
+  });
 
   final FundraisingAccountReadiness readiness;
+  final ValueChanged<int> onNavigateToStep;
 
   @override
   Widget build(BuildContext context) {
-    final missingProfile = readiness.missingProfileFields
-        .map(_labelForField)
-        .toList();
-    final missingDocuments = readiness.missingDocumentTypes
-        .map(_labelForDocument)
-        .toList();
+    final missingRows = <_MissingItem>[
+      ...readiness.missingProfileFields.map(_missingItemForField),
+      ...readiness.missingDocumentTypes.map(_missingItemForDocument),
+    ];
+
+    if (missingRows.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.green.shade50,
+          border: Border.all(color: Colors.green.shade100),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green.shade700),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'All required verification items are complete.',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: Colors.blueGrey.shade50,
         border: Border.all(color: Colors.blueGrey.shade100),
@@ -2937,59 +3311,92 @@ class _VerificationSummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'What still needs attention',
-            style: TextStyle(fontWeight: FontWeight.w700),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(12, 4, 12, 4),
+            child: Text(
+              'What still needs attention',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
-          if (missingProfile.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text('Missing profile fields: ${missingProfile.join(', ')}'),
-          ],
-          if (missingDocuments.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text('Missing documents: ${missingDocuments.join(', ')}'),
-          ],
+          for (final item in missingRows)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              child: ListTile(
+                dense: true,
+                leading: Icon(
+                  Icons.error_outline,
+                  color: Colors.orange.shade800,
+                ),
+                title: Text(item.label),
+                trailing: TextButton(
+                  key: ValueKey('fix-missing-${item.stepIndex}-${item.label}'),
+                  onPressed: () => onNavigateToStep(item.stepIndex),
+                  child: const Text('Fix'),
+                ),
+              ),
+            ),
           if (readiness.isRejected &&
               readiness.safeRejectionReason != null) ...[
             const SizedBox(height: 6),
-            Text(readiness.safeRejectionReason!),
-          ],
-          if (readiness.isPendingReview) ...[
-            const SizedBox(height: 6),
-            Text(
-              readiness.canStartFundraiser
-                  ? 'Verification pending does not block fundraiser creation.'
-                  : 'Complete the required items to continue.',
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(readiness.safeRejectionReason!),
             ),
+            const SizedBox(height: 6),
           ],
         ],
       ),
     );
   }
 
-  static String _labelForField(String field) {
+  static _MissingItem _missingItemForField(String field) {
     switch (field) {
-      case 'presentAddress':
-        return 'present address';
-      case 'permanentAddress':
-        return 'permanent address';
-      case 'location':
-        return 'location';
+      case 'fullName':
+        return const _MissingItem('Full name', 1);
       case 'dateOfBirth':
-        return 'date of birth';
+        return const _MissingItem('Date of birth', 1);
+      case 'primaryDocumentType':
+        return const _MissingItem('Primary identity document type', 1);
+      case 'primaryDocumentNumber':
+        return const _MissingItem(
+          'Identity document number for the selected type',
+          1,
+        );
+      case 'presentAddress':
+        return const _MissingItem('Present address', 0);
+      case 'permanentAddress':
+        return const _MissingItem('Permanent address', 0);
+      case 'location':
+      case 'division':
+      case 'district':
+      case 'upazila':
+      case 'union':
+        return const _MissingItem('Location', 0);
+      case 'country':
+      case 'stateName':
+      case 'cityName':
+      case 'addressLine':
+        return const _MissingItem('International address details', 0);
       default:
-        return field;
+        return _MissingItem(field, 0);
     }
   }
 
-  static String _labelForDocument(String documentType) {
+  static _MissingItem _missingItemForDocument(String documentType) {
     switch (documentType) {
       case 'required_verification_document':
-        return 'verification document';
+        return const _MissingItem('Primary verification document', 2);
       default:
-        return documentType;
+        return _MissingItem(documentType, 2);
     }
   }
+}
+
+class _MissingItem {
+  const _MissingItem(this.label, this.stepIndex);
+
+  final String label;
+  final int stepIndex;
 }
 
 class _DocTile extends StatelessWidget {

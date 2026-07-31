@@ -23,31 +23,55 @@ class MediaComposerList extends StatelessWidget {
         if (items.isEmpty) {
           return const SizedBox.shrink();
         }
-        return SizedBox(
-          height: 190,
-          child: ReorderableListView.builder(
-            scrollDirection: Axis.horizontal,
-            buildDefaultDragHandles: false,
-            itemCount: items.length,
-            onReorder: controller.reorder,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _ComposerCard(
-                key: ValueKey(item.id),
-                item: item,
-                onEdit: onEditItem == null ? null : () => onEditItem!(item),
-                onRetry: () => controller.retryItem(item.id),
-                onRemove: () => controller.removeItem(item.id),
-                onCancel: () => controller.cancelItem(item.id),
-                onSetCover: () => controller.setCover(item.id),
-              );
-            },
-          ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width =
+                constraints.maxWidth.isFinite && constraints.maxWidth > 0
+                ? constraints.maxWidth
+                : MediaQuery.sizeOf(context).width;
+            final columns = width >= 1100
+                ? 4
+                : width >= 760
+                ? 3
+                : width >= 520
+                ? 2
+                : 1;
+            final spacing = 12.0;
+            final cardWidth = columns == 1
+                ? width
+                : ((width - spacing * (columns - 1)) / columns)
+                      .clamp(170.0, 240.0)
+                      .toDouble();
+
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: [
+                for (final item in items)
+                  SizedBox(
+                    width: cardWidth,
+                    child: _ComposerCard(
+                      key: ValueKey(item.id),
+                      item: item,
+                      onEdit: onEditItem == null
+                          ? null
+                          : () => onEditItem!(item),
+                      onRetry: () => controller.retryItem(item.id),
+                      onRemove: () => controller.removeItem(item.id),
+                      onCancel: () => controller.cancelItem(item.id),
+                      onSetCover: () => controller.setCover(item.id),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
   }
 }
+
+enum _ComposerCardAction { edit, retry, remove, cancel, setCover }
 
 class _ComposerCard extends StatelessWidget {
   const _ComposerCard({
@@ -72,23 +96,23 @@ class _ComposerCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Container(
       key: key,
-      width: 170,
-      margin: const EdgeInsets.only(right: 10),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.7)),
         color: cs.surfaceContainerHighest,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
+          AspectRatio(
+            aspectRatio: 1.08,
             child: Stack(
               children: [
                 Positioned.fill(child: _preview()),
                 Positioned(
-                  top: 6,
-                  left: 6,
+                  top: 8,
+                  left: 8,
                   child: Row(
                     children: [
                       _Badge(
@@ -97,44 +121,24 @@ class _ComposerCard extends StatelessWidget {
                             ? cs.primary
                             : Colors.black.withValues(alpha: 0.65),
                       ),
-                      if (!item.isCover) ...[
-                        const SizedBox(width: 6),
-                        _GhostAction(
-                          icon: Icons.photo_filter_outlined,
-                          tooltip: 'Set as cover',
-                          onTap: onSetCover,
-                        ),
-                      ],
                     ],
                   ),
                 ),
                 Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (onEdit != null && !item.isUploading)
-                        _GhostAction(
-                          icon: Icons.edit_outlined,
-                          tooltip: 'Edit',
-                          onTap: onEdit!,
-                        ),
-                      if (onEdit != null && !item.isUploading)
-                        const SizedBox(width: 4),
-                      if (item.isUploading || item.isPreparing)
-                        _GhostAction(
-                          icon: Icons.close,
-                          tooltip: 'Cancel',
-                          onTap: onCancel,
-                        )
-                      else
-                        _GhostAction(
-                          icon: Icons.delete_outline,
-                          tooltip: 'Remove',
-                          onTap: onRemove,
-                        ),
-                    ],
+                  top: 4,
+                  right: 4,
+                  child: _ActionMenu(
+                    onEdit: onEdit != null && !item.isUploading ? onEdit : null,
+                    onRetry: item.hasFailed || item.isCancelled
+                        ? onRetry
+                        : null,
+                    onRemove: item.isUploading || item.isPreparing
+                        ? null
+                        : onRemove,
+                    onCancel: item.isUploading || item.isPreparing
+                        ? onCancel
+                        : null,
+                    onSetCover: item.isCover ? null : onSetCover,
                   ),
                 ),
                 Positioned(
@@ -174,13 +178,21 @@ class _ComposerCard extends StatelessWidget {
                 ],
                 if (item.hasFailed || item.isCancelled) ...[
                   const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onRetry,
-                      icon: const Icon(Icons.refresh, size: 14),
-                      label: const Text('Retry'),
-                    ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: onRetry,
+                        icon: const Icon(Icons.refresh, size: 14),
+                        label: const Text('Retry'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: onRemove,
+                        icon: const Icon(Icons.delete_outline, size: 14),
+                        label: const Text('Remove'),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -280,6 +292,98 @@ class _ComposerCard extends StatelessWidget {
   }
 }
 
+class _ActionMenu extends StatelessWidget {
+  const _ActionMenu({
+    required this.onEdit,
+    required this.onRetry,
+    required this.onRemove,
+    required this.onCancel,
+    required this.onSetCover,
+  });
+
+  final Future<void> Function()? onEdit;
+  final Future<void> Function()? onRetry;
+  final Future<void> Function()? onRemove;
+  final Future<void> Function()? onCancel;
+  final Future<void> Function()? onSetCover;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <PopupMenuEntry<_ComposerCardAction>>[];
+    if (onEdit != null) {
+      actions.add(
+        const PopupMenuItem<_ComposerCardAction>(
+          value: _ComposerCardAction.edit,
+          child: Text('Edit'),
+        ),
+      );
+    }
+    if (onRetry != null) {
+      actions.add(
+        const PopupMenuItem<_ComposerCardAction>(
+          value: _ComposerCardAction.retry,
+          child: Text('Retry'),
+        ),
+      );
+    }
+    if (onSetCover != null) {
+      actions.add(
+        const PopupMenuItem<_ComposerCardAction>(
+          value: _ComposerCardAction.setCover,
+          child: Text('Set as cover'),
+        ),
+      );
+    }
+    if (onCancel != null) {
+      actions.add(
+        const PopupMenuItem<_ComposerCardAction>(
+          value: _ComposerCardAction.cancel,
+          child: Text('Cancel upload'),
+        ),
+      );
+    }
+    if (onRemove != null) {
+      actions.add(
+        const PopupMenuItem<_ComposerCardAction>(
+          value: _ComposerCardAction.remove,
+          child: Text('Remove'),
+        ),
+      );
+    }
+    if (actions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return PopupMenuButton<_ComposerCardAction>(
+      tooltip: 'Media actions',
+      iconSize: 18,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+      icon: const Icon(Icons.more_vert_rounded),
+      onSelected: (action) {
+        switch (action) {
+          case _ComposerCardAction.edit:
+            onEdit?.call();
+            break;
+          case _ComposerCardAction.retry:
+            onRetry?.call();
+            break;
+          case _ComposerCardAction.remove:
+            onRemove?.call();
+            break;
+          case _ComposerCardAction.cancel:
+            onCancel?.call();
+            break;
+          case _ComposerCardAction.setCover:
+            onSetCover?.call();
+            break;
+        }
+      },
+      itemBuilder: (context) => actions,
+    );
+  }
+}
+
 class _StatusPill extends StatelessWidget {
   const _StatusPill({required this.item});
 
@@ -325,37 +429,6 @@ class _StatusPill extends StatelessWidget {
           color: foreground,
           fontSize: 10,
           fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _GhostAction extends StatelessWidget {
-  const _GhostAction({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final Future<void> Function() onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black54,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => onTap(),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Tooltip(
-            message: tooltip,
-            child: Icon(icon, size: 14, color: Colors.white),
-          ),
         ),
       ),
     );

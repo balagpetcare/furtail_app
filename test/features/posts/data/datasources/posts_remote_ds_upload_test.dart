@@ -11,6 +11,7 @@ class _FakeAuthenticatedMediaUploader extends AuthenticatedMediaUploader {
 
   Object? lastFile;
   Map<String, String>? lastFields;
+  Map<String, String>? lastHeaders;
   void Function(int sentBytes, int totalBytes)? lastProgress;
   CancelToken? lastCancelToken;
 
@@ -18,11 +19,13 @@ class _FakeAuthenticatedMediaUploader extends AuthenticatedMediaUploader {
   Future<UploadedMediaResult> upload({
     required Object file,
     Map<String, String> fields = const <String, String>{},
+    Map<String, String>? headers,
     void Function(int sentBytes, int totalBytes)? onProgress,
     CancelToken? cancelToken,
   }) async {
     lastFile = file;
     lastFields = Map<String, String>.from(fields);
+    lastHeaders = headers == null ? null : Map<String, String>.from(headers);
     lastProgress = onProgress;
     lastCancelToken = cancelToken;
     onProgress?.call(64, 128);
@@ -52,6 +55,9 @@ void main() {
           onProgress: (sent, total) => progressEvents.add('$sent/$total'),
           listingId: 12,
           draftId: 'draft-55',
+          contentType: 'ADOPTION',
+          contentId: 'draft-session-1',
+          idempotencyKey: 'adoption:create:session-1:item-1',
           uploadContext: 'adoption',
           trimStartMs: 100,
           trimEndMs: 900,
@@ -69,6 +75,8 @@ void main() {
           equals(<String, String>{
             'listingId': '12',
             'draftId': 'draft-55',
+            'contentType': 'ADOPTION',
+            'contentId': 'draft-session-1',
             'uploadContext': 'adoption',
             'trimStartMs': '100',
             'trimEndMs': '900',
@@ -77,6 +85,12 @@ void main() {
             'coverTimestampMs': '250',
             'aspectRatio': '4:5',
             'quality': 'high',
+          }),
+        );
+        expect(
+          fakeUploader.lastHeaders,
+          equals(<String, String>{
+            'Idempotency-Key': 'adoption:create:session-1:item-1',
           }),
         );
         expect(progressEvents, equals(<String>['64/128']));

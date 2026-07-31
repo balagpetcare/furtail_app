@@ -62,15 +62,21 @@ class ApiEndpoints {
     final qp = <String, String>{'limit': '$limit'};
     if (page != null) qp['page'] = '$page';
     if (cursor != null) qp['cursor'] = '$cursor';
-    if (search != null && search.trim().isNotEmpty)
+    if (search != null && search.trim().isNotEmpty) {
       qp['search'] = search.trim();
-    if (category != null && category.trim().isNotEmpty)
+    }
+    if (category != null && category.trim().isNotEmpty) {
       qp['category'] = category.trim();
-    if (sort != null && sort.trim().isNotEmpty) qp['sort'] = sort.trim();
-    if (duration != null && duration.trim().isNotEmpty)
+    }
+    if (sort != null && sort.trim().isNotEmpty) {
+      qp['sort'] = sort.trim();
+    }
+    if (duration != null && duration.trim().isNotEmpty) {
       qp['duration'] = duration.trim();
-    if (followingOnly != null)
+    }
+    if (followingOnly != null) {
       qp['followingOnly'] = followingOnly ? 'true' : 'false';
+    }
     final query = qp.entries
         .map(
           (e) =>
@@ -123,9 +129,24 @@ class ApiEndpoints {
   }) => "${ApiConfig.apiV1}/posts/$postId/comments/$commentId/replies";
 
   // ---------- COMMON ----------
-  static String animalTypes() => "${ApiConfig.apiV1}/common/animal-types";
-  static String breedsByType(int typeId) =>
-      "${ApiConfig.apiV1}/common/breeds/$typeId";
+  static String animalTypes({String? q}) {
+    final qp = (q != null && q.trim().isNotEmpty)
+        ? '?q=${Uri.encodeQueryComponent(q.trim())}'
+        : '';
+    return "${ApiConfig.apiV1}/common/animal-types$qp";
+  }
+
+  static String animalTypeById(int id) =>
+      "${ApiConfig.apiV1}/common/animal-types/$id";
+
+  static String breedsByType(int typeId, {String? q}) {
+    final qp = (q != null && q.trim().isNotEmpty)
+        ? '?q=${Uri.encodeQueryComponent(q.trim())}'
+        : '';
+    return "${ApiConfig.apiV1}/common/breeds/$typeId$qp";
+  }
+
+  static String breedById(int id) => "${ApiConfig.apiV1}/common/breed/$id";
 
   // ---------- BD LOCATIONS ----------
   static String bdDivisions() => "${ApiConfig.apiV1}/common/bd/divisions";
@@ -133,8 +154,24 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/common/bd/districts?divisionId=$divisionId";
   static String bdUpazilas({required int districtId}) =>
       "${ApiConfig.apiV1}/common/bd/upazilas?districtId=$districtId";
-  static String bdAreas({required int upazilaId}) =>
-      "${ApiConfig.apiV1}/common/bd/areas?upazilaId=$upazilaId";
+  static String bdAreas({
+    int? upazilaId,
+    int? unionId,
+    int? districtId,
+    int? parentId,
+  }) {
+    final qp = <String, String>{
+      if (upazilaId != null) 'upazilaId': '$upazilaId',
+      if (unionId != null) 'unionId': '$unionId',
+      if (districtId != null) 'districtId': '$districtId',
+      if (parentId != null) 'parentId': '$parentId',
+    };
+    final query = qp.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return "${ApiConfig.apiV1}/common/bd/areas${query.isEmpty ? '' : '?$query'}";
+  }
+
+  static String bdAreaById(int id) => "${ApiConfig.apiV1}/common/bd/areas/$id";
+
   static String locationMasterValidateSelection() =>
       "${ApiConfig.apiV1}/location-master/validate-selection";
 
@@ -225,11 +262,8 @@ class ApiEndpoints {
       "${ApiConfig.apiV1}/common/bd/zones?cityCorporationId=$cityCorporationId";
   static String bdCcAreas({required int zoneId}) =>
       "${ApiConfig.apiV1}/common/bd/cc-areas?zoneId=$zoneId";
-
-  // ---------- SHARE ----------
-  /// Backend-generated share link + deep link + message
-  static String shareLink({required String type, required int id}) =>
-      "${ApiConfig.apiV1}/common/share-link?type=${Uri.encodeQueryComponent(type)}&id=$id";
+  static String locationMasterAreaById(int id) =>
+      "${ApiConfig.apiV1}/location-master/areas/$id";
 
   // ---------- SOCIAL ----------
   static String visitorProfile(int userId) =>
@@ -263,8 +297,9 @@ class ApiEndpoints {
     String? sort,
   }) {
     final qp = <String, String>{'limit': '$limit'};
-    if (cursor != null && cursor.trim().isNotEmpty)
+    if (cursor != null && cursor.trim().isNotEmpty) {
       qp['cursor'] = cursor.trim();
+    }
     if (verified != null) qp['verified'] = verified.toString();
     if (category != null && category.trim().isNotEmpty) {
       qp['category'] = category.trim();
@@ -272,7 +307,9 @@ class ApiEndpoints {
     if (location != null && location.trim().isNotEmpty) {
       qp['location'] = location.trim();
     }
-    if (sort != null && sort.trim().isNotEmpty) qp['sort'] = sort.trim();
+    if (sort != null && sort.trim().isNotEmpty) {
+      qp['sort'] = sort.trim();
+    }
     final query = qp.entries
         .map(
           (e) =>
@@ -322,7 +359,9 @@ class ApiEndpoints {
     String? cursor,
   }) {
     final q = <String, String>{'limit': '$limit'};
-    if (cursor != null) q['cursor'] = '$cursor';
+    if (cursor != null) {
+      q['cursor'] = cursor.toString();
+    }
     final qs = q.entries
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
@@ -335,7 +374,9 @@ class ApiEndpoints {
     String? cursor,
   }) {
     final q = <String, String>{'limit': '$limit'};
-    if (cursor != null) q['cursor'] = '$cursor';
+    if (cursor != null) {
+      q['cursor'] = cursor.toString();
+    }
     final qs = q.entries
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
@@ -389,10 +430,15 @@ class ApiEndpoints {
   }) {
     final q = <String, String>{'limit': '$limit'};
     if (cursor != null) q['cursor'] = '$cursor';
-    if (type != null && type.trim().isNotEmpty) q['type'] = type.trim();
-    if (status != null && status.trim().isNotEmpty) q['status'] = status.trim();
-    if (sourceType != null && sourceType.trim().isNotEmpty)
+    if (type != null && type.trim().isNotEmpty) {
+      q['type'] = type.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      q['status'] = status.trim();
+    }
+    if (sourceType != null && sourceType.trim().isNotEmpty) {
       q['sourceType'] = sourceType.trim();
+    }
     final qs = q.entries
         .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
         .join('&');
@@ -455,31 +501,72 @@ class ApiEndpoints {
     int limit = 20,
   }) {
     final qp = <String, String>{'page': '$page', 'limit': '$limit'};
-    if (species != null && species.trim().isNotEmpty)
+    if (species != null && species.trim().isNotEmpty) {
       qp['species'] = species.trim();
-    if (search != null && search.trim().isNotEmpty)
+    }
+    if (search != null && search.trim().isNotEmpty) {
       qp['search'] = search.trim();
-    if (breed != null && breed.trim().isNotEmpty) qp['breed'] = breed.trim();
-    if (gender != null && gender.trim().isNotEmpty)
+    }
+    if (breed != null && breed.trim().isNotEmpty) {
+      qp['breed'] = breed.trim();
+    }
+    if (gender != null && gender.trim().isNotEmpty) {
       qp['gender'] = gender.trim();
-    if (size != null && size.trim().isNotEmpty) qp['size'] = size.trim();
-    if (minAgeDays != null) qp['minAgeDays'] = '$minAgeDays';
-    if (maxAgeDays != null) qp['maxAgeDays'] = '$maxAgeDays';
-    if (vaccinated == true) qp['vaccinated'] = 'true';
-    if (dewormed == true) qp['dewormed'] = 'true';
-    if (neutered == true) qp['neutered'] = 'true';
-    if (goodWithKids == true) qp['goodWithKids'] = 'true';
-    if (goodWithDogs == true) qp['goodWithDogs'] = 'true';
-    if (goodWithCats == true) qp['goodWithCats'] = 'true';
-    if (countryId != null) qp['countryId'] = '$countryId';
-    if (divisionId != null) qp['divisionId'] = '$divisionId';
-    if (stateId != null) qp['stateId'] = '$stateId';
-    if (districtId != null) qp['districtId'] = '$districtId';
-    if (cityId != null) qp['cityId'] = '$cityId';
-    if (areaId != null) qp['areaId'] = '$areaId';
-    if (nearLat != null) qp['nearLat'] = '$nearLat';
-    if (nearLng != null) qp['nearLng'] = '$nearLng';
-    if (radiusKm != null) qp['radiusKm'] = '$radiusKm';
+    }
+    if (size != null && size.trim().isNotEmpty) {
+      qp['size'] = size.trim();
+    }
+    if (minAgeDays != null) {
+      qp['minAgeDays'] = '$minAgeDays';
+    }
+    if (maxAgeDays != null) {
+      qp['maxAgeDays'] = '$maxAgeDays';
+    }
+    if (vaccinated == true) {
+      qp['vaccinated'] = 'true';
+    }
+    if (dewormed == true) {
+      qp['dewormed'] = 'true';
+    }
+    if (neutered == true) {
+      qp['neutered'] = 'true';
+    }
+    if (goodWithKids == true) {
+      qp['goodWithKids'] = 'true';
+    }
+    if (goodWithDogs == true) {
+      qp['goodWithDogs'] = 'true';
+    }
+    if (goodWithCats == true) {
+      qp['goodWithCats'] = 'true';
+    }
+    if (countryId != null) {
+      qp['countryId'] = '$countryId';
+    }
+    if (divisionId != null) {
+      qp['divisionId'] = '$divisionId';
+    }
+    if (stateId != null) {
+      qp['stateId'] = '$stateId';
+    }
+    if (districtId != null) {
+      qp['districtId'] = '$districtId';
+    }
+    if (cityId != null) {
+      qp['cityId'] = '$cityId';
+    }
+    if (areaId != null) {
+      qp['areaId'] = '$areaId';
+    }
+    if (nearLat != null) {
+      qp['nearLat'] = '$nearLat';
+    }
+    if (nearLng != null) {
+      qp['nearLng'] = '$nearLng';
+    }
+    if (radiusKm != null) {
+      qp['radiusKm'] = '$radiusKm';
+    }
     final query = qp.entries
         .map(
           (e) =>
@@ -489,23 +576,131 @@ class ApiEndpoints {
     return "${ApiConfig.apiV1}/adoptions?$query";
   }
 
+  static String adoptionFeed({
+    String? species,
+    String? search,
+    String? breed,
+    String? gender,
+    String? size,
+    int? minAgeDays,
+    int? maxAgeDays,
+    bool? vaccinated,
+    bool? dewormed,
+    bool? neutered,
+    bool? goodWithKids,
+    bool? goodWithDogs,
+    bool? goodWithCats,
+    int? countryId,
+    int? divisionId,
+    int? stateId,
+    int? districtId,
+    int? cityId,
+    int? areaId,
+    double? nearLat,
+    double? nearLng,
+    int? radiusKm,
+    int page = 1,
+    int limit = 20,
+  }) {
+    final qp = <String, String>{'page': '$page', 'limit': '$limit'};
+    if (species != null && species.trim().isNotEmpty) {
+      qp['species'] = species.trim();
+    }
+    if (search != null && search.trim().isNotEmpty) {
+      qp['search'] = search.trim();
+    }
+    if (breed != null && breed.trim().isNotEmpty) {
+      qp['breed'] = breed.trim();
+    }
+    if (gender != null && gender.trim().isNotEmpty) {
+      qp['gender'] = gender.trim();
+    }
+    if (size != null && size.trim().isNotEmpty) {
+      qp['size'] = size.trim();
+    }
+    if (minAgeDays != null) {
+      qp['minAgeDays'] = '$minAgeDays';
+    }
+    if (maxAgeDays != null) {
+      qp['maxAgeDays'] = '$maxAgeDays';
+    }
+    if (vaccinated == true) {
+      qp['vaccinated'] = 'true';
+    }
+    if (dewormed == true) {
+      qp['dewormed'] = 'true';
+    }
+    if (neutered == true) {
+      qp['neutered'] = 'true';
+    }
+    if (goodWithKids == true) {
+      qp['goodWithKids'] = 'true';
+    }
+    if (goodWithDogs == true) {
+      qp['goodWithDogs'] = 'true';
+    }
+    if (goodWithCats == true) {
+      qp['goodWithCats'] = 'true';
+    }
+    if (countryId != null) {
+      qp['countryId'] = '$countryId';
+    }
+    if (divisionId != null) {
+      qp['divisionId'] = '$divisionId';
+    }
+    if (stateId != null) {
+      qp['stateId'] = '$stateId';
+    }
+    if (districtId != null) {
+      qp['districtId'] = '$districtId';
+    }
+    if (cityId != null) {
+      qp['cityId'] = '$cityId';
+    }
+    if (areaId != null) {
+      qp['areaId'] = '$areaId';
+    }
+    if (nearLat != null) {
+      qp['nearLat'] = '$nearLat';
+    }
+    if (nearLng != null) {
+      qp['nearLng'] = '$nearLng';
+    }
+    if (radiusKm != null) {
+      qp['radiusKm'] = '$radiusKm';
+    }
+    final query = qp.entries
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
+        .join('&');
+    return "${ApiConfig.apiV1}/adoptions/feed?$query";
+  }
+
   static String adoptionDetail(int id) => "${ApiConfig.apiV1}/adoptions/$id";
   static String favoriteAdoption(int id) =>
       "${ApiConfig.apiV1}/adoptions/$id/favorite";
   static String unfavoriteAdoption(int id) =>
       "${ApiConfig.apiV1}/adoptions/$id/favorite";
+  static String adoptionApplications(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/applications";
   static String adoptionComments(int id, {int limit = 50}) =>
       "${ApiConfig.apiV1}/adoptions/$id/comments?limit=$limit";
   static String addAdoptionComment(int id) =>
       "${ApiConfig.apiV1}/adoptions/$id/comments";
   static String deleteAdoptionComment(int id, int commentId) =>
       "${ApiConfig.apiV1}/adoptions/$id/comments/$commentId";
-  static String createAdoption() => "${ApiConfig.apiV1}/adoptions";
-  static String updateAdoption(int id) => "${ApiConfig.apiV1}/adoptions/$id";
+  static String createAdoption() => "${ApiConfig.apiV1}/adoptions/drafts";
+  static String updateAdoption(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/draft";
   static String submitAdoptionReview(int id) =>
-      "${ApiConfig.apiV1}/adoptions/$id/submit-review";
+      "${ApiConfig.apiV1}/adoptions/$id/publish";
+  static String updateAdoptionStatus(int id) =>
+      "${ApiConfig.apiV1}/adoptions/$id/status";
+  static String deleteAdoption(int id) => "${ApiConfig.apiV1}/adoptions/$id";
   static String myAdoptions({int page = 1, int limit = 20}) =>
-      "${ApiConfig.apiV1}/me/adoptions?page=$page&limit=$limit";
+      "${ApiConfig.apiV1}/adoptions/my?page=$page&limit=$limit";
   static String myAdoptionApplications({int page = 1, int limit = 20}) =>
       "${ApiConfig.apiV1}/me/adoption-applications?page=$page&limit=$limit";
   static String myAdoptionListingApplications(int id) =>

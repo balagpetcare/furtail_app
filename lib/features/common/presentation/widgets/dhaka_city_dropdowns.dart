@@ -35,18 +35,36 @@ class DhakaCityDropdowns extends ConsumerWidget {
       data: (data) {
         final corps = data.corporations;
 
-        final selectedCorp = corps.firstWhere(
-          (c) => c.id == corpId,
-          orElse: () => corps.isNotEmpty ? corps.first : DhakaCorporation(id: -1, code: '', name: '', zones: const []),
-        );
+        DhakaCorporation? selectedCorp;
+        if (corpId != null) {
+          for (final corp in corps) {
+            if (corp.id == corpId) {
+              selectedCorp = corp;
+              break;
+            }
+          }
+        }
 
-        final zones = selectedCorp.zones;
-        final selectedZone = zones.firstWhere(
-          (z) => z.id == zoneId,
-          orElse: () => zones.isNotEmpty ? zones.first : DhakaZone(id: -1, code: '', name: '', wards: const []),
-        );
+        final zones = selectedCorp?.zones ?? const <DhakaZone>[];
 
-        final wards = selectedZone.wards;
+        DhakaZone? selectedZone;
+        if (zoneId != null) {
+          for (final zone in zones) {
+            if (zone.id == zoneId) {
+              selectedZone = zone;
+              break;
+            }
+          }
+        }
+
+        final wards = selectedZone?.wards ?? const <DhakaWard>[];
+
+        if (corps.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(12),
+            child: Text('No Dhaka city corporation data is available.'),
+          );
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -54,7 +72,11 @@ class DhakaCityDropdowns extends ConsumerWidget {
             DropdownButtonFormField<int>(
               initialValue: corps.any((c) => c.id == corpId) ? corpId : null,
               decoration: const InputDecoration(labelText: 'City Corporation'),
-              items: corps.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name))).toList(),
+              items: corps
+                  .map(
+                    (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                  )
+                  .toList(),
               onChanged: (v) {
                 onCorpChanged(v);
                 onZoneChanged(null);
@@ -65,18 +87,28 @@ class DhakaCityDropdowns extends ConsumerWidget {
             DropdownButtonFormField<int>(
               initialValue: zones.any((z) => z.id == zoneId) ? zoneId : null,
               decoration: const InputDecoration(labelText: 'Zone'),
-              items: zones.map((z) => DropdownMenuItem(value: z.id, child: Text(z.name))).toList(),
-              onChanged: (v) {
-                onZoneChanged(v);
-                onWardChanged(null);
-              },
+              items: zones
+                  .map(
+                    (z) => DropdownMenuItem(value: z.id, child: Text(z.name)),
+                  )
+                  .toList(),
+              onChanged: zones.isEmpty
+                  ? null
+                  : (v) {
+                      onZoneChanged(v);
+                      onWardChanged(null);
+                    },
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
               initialValue: wards.any((w) => w.id == wardId) ? wardId : null,
               decoration: const InputDecoration(labelText: 'Ward'),
-              items: wards.map((w) => DropdownMenuItem(value: w.id, child: Text(w.name))).toList(),
-              onChanged: onWardChanged,
+              items: wards
+                  .map(
+                    (w) => DropdownMenuItem(value: w.id, child: Text(w.name)),
+                  )
+                  .toList(),
+              onChanged: wards.isEmpty ? null : onWardChanged,
             ),
           ],
         );

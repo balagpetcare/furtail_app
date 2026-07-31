@@ -34,7 +34,7 @@ Future<void> _pump(
 
 void main() {
   group('FundraisingWizardProgressHeader', () {
-    testWidgets('shows the first step in the corrected 3-step flow', (
+    testWidgets('shows the first step in the corrected 6-step flow', (
       tester,
     ) async {
       await _pump(
@@ -46,8 +46,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Step 1 of 3'), findsOneWidget);
-      expect(find.text('Fundraiser details'), findsOneWidget);
+      expect(find.text('Step 1 of 6'), findsOneWidget);
+      expect(find.text('Campaign Basics'), findsOneWidget);
       expect(find.text('Payout'), findsNothing);
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
     });
@@ -66,7 +66,7 @@ void main() {
         textScale: 1.3,
       );
 
-      final textWidget = tester.widget<Text>(find.text('Fundraiser details'));
+      final textWidget = tester.widget<Text>(find.text('Campaign Basics'));
       expect(textWidget.overflow, isNot(TextOverflow.ellipsis));
     });
 
@@ -85,7 +85,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Step 3 of 3'), findsOneWidget);
+      expect(find.text('Step 6 of 6'), findsOneWidget);
       expect(find.text('Payout'), findsNothing);
     });
   });

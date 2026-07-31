@@ -33,6 +33,7 @@ FundraisingMediaValidationResult evaluateFundraisingMedia(
   final hasFailedItems = failedItems.isNotEmpty;
   final hasPendingItems = items.any(
     (item) =>
+        item.state == MediaDraftState.local ||
         item.isUploading ||
         item.isPreparing ||
         item.state == MediaDraftState.processing,

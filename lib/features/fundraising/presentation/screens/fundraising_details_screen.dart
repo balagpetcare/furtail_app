@@ -14,6 +14,7 @@ import '../../data/models/fundraising_models.dart';
 import '../../widgets/donate_now_bar.dart';
 import '../providers/fundraising_providers.dart';
 import '../widgets/details/fundraising_details_dialogs.dart';
+import '../widgets/details/fundraising_countdown_card.dart';
 import '../widgets/details/fundraising_details_header.dart';
 import '../widgets/details/fundraising_donations_preview.dart';
 import '../widgets/details/fundraising_media_carousel.dart';
@@ -231,7 +232,10 @@ class _DetailsBody extends ConsumerWidget {
         isLoading: donationBusy,
         label: campaign.isDonationEligible
             ? 'Donate Now'
-            : (campaign.donationUnavailableMessage ?? 'Donations unavailable'),
+            : 'Donations unavailable',
+        disabledMessage: campaign.isDonationEligible
+            ? null
+            : campaign.donationUnavailableMessage,
       ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
@@ -326,9 +330,15 @@ class _DetailsBody extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: theme.colorScheme.shadow.withValues(
+                              alpha: 0.07,
+                            ),
+                            blurRadius: 24,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(18),
@@ -352,7 +362,7 @@ class _DetailsBody extends ConsumerWidget {
                                   ),
                                 _MetaPill(
                                   icon: Icons.schedule_outlined,
-                                  label: campaign.status.replaceAll('_', ' '),
+                                  label: _statusLabel(campaign.status),
                                 ),
                               ],
                             ),
@@ -387,6 +397,18 @@ class _DetailsBody extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (campaign.status.trim().toUpperCase() == 'PENDING_REVIEW')
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                      child: _ReviewStatusNotice(
+                        donationsEnabled: campaign.isDonationEligible,
+                      ),
+                    ),
+                  if ((campaign.endsAt ?? campaign.deadline) != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                      child: FundraisingCountdownCard(campaign: campaign),
+                    ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                     child: FundraisingProgressSection(campaign: campaign),
@@ -397,9 +419,15 @@ class _DetailsBody extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(22),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: theme.colorScheme.shadow.withValues(
+                              alpha: 0.05,
+                            ),
+                            blurRadius: 18,
+                            offset: const Offset(0, 7),
+                          ),
+                        ],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(8),
@@ -414,7 +442,7 @@ class _DetailsBody extends ConsumerWidget {
                     ),
                   ),
                   _SectionCard(
-                    title: 'Recent Donations',
+                    title: 'Recent donations',
                     actionLabel: 'View all',
                     onAction: () {
                       Navigator.of(context).push(
@@ -480,11 +508,9 @@ class _DetailsBody extends ConsumerWidget {
                               vertical: 13,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.55),
                               borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: theme.colorScheme.outlineVariant,
-                              ),
                             ),
                             child: Row(
                               children: [
@@ -520,6 +546,65 @@ class _DetailsBody extends ConsumerWidget {
   }
 }
 
+String _statusLabel(String raw) {
+  final words = raw
+      .trim()
+      .toLowerCase()
+      .split('_')
+      .where((word) => word.isNotEmpty)
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}');
+  return words.isEmpty ? 'Fundraiser' : words.join(' ');
+}
+
+class _ReviewStatusNotice extends StatelessWidget {
+  const _ReviewStatusNotice({required this.donationsEnabled});
+
+  final bool donationsEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.52),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.fact_check_outlined,
+            color: theme.colorScheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Review in progress',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  donationsEnabled
+                      ? 'This fundraiser is awaiting moderation and is currently accepting donations.'
+                      : 'This fundraiser is awaiting moderation. Donation availability is controlled by the server policy.',
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
@@ -542,7 +627,13 @@ class _SectionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: theme.colorScheme.shadow.withValues(alpha: 0.055),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(18),

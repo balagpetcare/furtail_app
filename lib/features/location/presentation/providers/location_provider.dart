@@ -55,10 +55,7 @@ class LocationSelectionNotifier extends StateNotifier<LocationSelectionState> {
   }
 
   void setUpazila(int? id) {
-    state = state.copyWith(
-      upazilaId: id,
-      resetUnion: true,
-    );
+    state = state.copyWith(upazilaId: id, resetUnion: true);
   }
 
   void setUnion(int? id) {
@@ -77,34 +74,42 @@ final locationRepositoryProvider = Provider<LocationRepository>((ref) {
 
 final locationSelectionProvider =
     StateNotifierProvider<LocationSelectionNotifier, LocationSelectionState>(
-  (ref) => LocationSelectionNotifier(),
-);
+      (ref) => LocationSelectionNotifier(),
+    );
 
 final locationDivisionsProvider = FutureProvider<List<BdDivision>>((ref) async {
   final repo = ref.read(locationRepositoryProvider);
   return repo.getDivisions();
 });
 
-final locationDistrictsProvider =
-    FutureProvider.family<List<BdDistrict>, int>((ref, divisionId) async {
+final locationDistrictsProvider = FutureProvider.family<List<BdDistrict>, int>((
+  ref,
+  divisionId,
+) async {
   final repo = ref.read(locationRepositoryProvider);
   return repo.getDistricts(divisionId: divisionId);
 });
 
-final locationUpazilasProvider =
-    FutureProvider.family<List<BdUpazila>, int>((ref, districtId) async {
+final locationUpazilasProvider = FutureProvider.family<List<BdUpazila>, int>((
+  ref,
+  districtId,
+) async {
   final repo = ref.read(locationRepositoryProvider);
   return repo.getUpazilas(districtId: districtId);
 });
 
-final locationUnionsProvider =
-    FutureProvider.family<List<BdUnion>, int>((ref, upazilaId) async {
+final locationUnionsProvider = FutureProvider.family<List<BdUnion>, int>((
+  ref,
+  upazilaId,
+) async {
   final repo = ref.read(locationRepositoryProvider);
   return repo.getUnions(upazilaId: upazilaId);
 });
 
-final locationPrefetchProvider = FutureProvider.family<void, int>((ref, divisionId) async {
+final locationPrefetchProvider = FutureProvider.family<void, int>((
+  ref,
+  divisionId,
+) async {
   final repo = ref.read(locationRepositoryProvider);
   await repo.prefetchForDivision(divisionId);
 });
-

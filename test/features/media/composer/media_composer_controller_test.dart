@@ -273,6 +273,25 @@ void main() {
       expect(controller.mediaValidation.canContinue, isFalse);
     });
 
+    test(
+      'one successful image enables Continue once the upload settles',
+      () async {
+        final photo = _imageItem(await _file(tempDir, 'ready.jpg'));
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.fundraising,
+          draftStorageKey: 'continue-ready',
+          uploadMedia: _successfulUpload,
+        );
+
+        await controller.addItems(<MediaDraftItem>[photo]);
+        await controller.ensureUploaded();
+
+        expect(controller.mediaValidation.canContinue, isTrue);
+        expect(controller.allItemsReady, isTrue);
+        expect(controller.remoteMediaIds, hasLength(1));
+      },
+    );
+
     test('retry transitions failed to uploading to ready', () async {
       final observedStates = <MediaDraftState>[];
       var attempts = 0;
@@ -461,6 +480,96 @@ void main() {
         expect(reopened.items, hasLength(2));
         expect(reopened.items.any((item) => item.remoteMediaId == 404), isTrue);
         expect(reopened.items.first.isCover, isTrue);
+      },
+    );
+
+    test(
+      'separate create sessions do not restore each other\'s media',
+      () async {
+        const sessionOneKey = 'adoption:create:session-one';
+        const sessionTwoKey = 'adoption:create:session-two';
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          'media_composer.$sessionOneKey':
+              MediaDraftItem.encodeList(<MediaDraftItem>[
+                MediaDraftItem(
+                  id: 'restored-1',
+                  type: MediaDraftType.image,
+                  fileName: 'restored-1.jpg',
+                  originalSizeBytes: 4,
+                  state: MediaDraftState.ready,
+                  remoteMediaId: 101,
+                ),
+              ]),
+        });
+
+        final first = MediaComposerController(
+          policy: MediaComposerPolicy.adoption,
+          draftStorageKey: sessionOneKey,
+          uploadMedia: _successfulUpload,
+        );
+        await first.restore();
+        expect(first.items, hasLength(1));
+
+        final second = MediaComposerController(
+          policy: MediaComposerPolicy.adoption,
+          draftStorageKey: sessionTwoKey,
+          uploadMedia: _successfulUpload,
+        );
+        await second.restore();
+        expect(second.items, isEmpty);
+      },
+    );
+
+    test(
+      'reset clears only the current session draft and persisted media',
+      () async {
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.adoption,
+          draftStorageKey: 'adoption:create:reset-session',
+          uploadMedia: _successfulUpload,
+        );
+
+        await controller.addItems(<MediaDraftItem>[
+          _imageItem(await _file(tempDir, 'reset.jpg')),
+        ]);
+        expect(controller.items, hasLength(1));
+
+        await controller.reset();
+        expect(controller.items, isEmpty);
+
+        final reopened = MediaComposerController(
+          policy: MediaComposerPolicy.adoption,
+          draftStorageKey: 'adoption:create:reset-session',
+          uploadMedia: _successfulUpload,
+        );
+        await reopened.restore();
+        expect(reopened.items, isEmpty);
+      },
+    );
+
+    test(
+      'removing a local item does not invoke the uploader or any delete path',
+      () async {
+        var uploadCalls = 0;
+        final controller = MediaComposerController(
+          policy: MediaComposerPolicy.adoption,
+          draftStorageKey: 'adoption:create:remove-local',
+          uploadMedia: (item, {onProgress, cancelToken}) async {
+            uploadCalls += 1;
+            return _successfulUpload(
+              item,
+              onProgress: onProgress,
+              cancelToken: cancelToken,
+            );
+          },
+        );
+
+        final item = _imageItem(await _file(tempDir, 'remove-local.jpg'));
+        await controller.addItems(<MediaDraftItem>[item]);
+        await controller.removeItem(item.id);
+
+        expect(controller.items, isEmpty);
+        expect(uploadCalls, 0);
       },
     );
   });

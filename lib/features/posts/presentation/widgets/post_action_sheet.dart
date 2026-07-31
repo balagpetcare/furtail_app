@@ -47,9 +47,9 @@ class PostActionSheet extends StatefulWidget {
     required Future<void> Function()? onCopyLink,
     required VoidCallback? onOpenReport,
     this.onPostChanged,
-  })  : _onShareExternal = onShareExternal,
-        _onCopyLink = onCopyLink,
-        _onOpenReport = onOpenReport;
+  }) : _onShareExternal = onShareExternal,
+       _onCopyLink = onCopyLink,
+       _onOpenReport = onOpenReport;
 
   /// Primary entry point. Wires context-dependent callbacks using [context]
   /// from the calling widget, which remains valid after the sheet is dismissed.
@@ -88,10 +88,15 @@ class PostActionSheet extends StatefulWidget {
             ShareService.share(context, type: 'post', id: post.id);
           }
           // Record share on backend (fire-and-forget).
-          PostsRemoteDs().sharePost(post.id).catchError((_) => <String, dynamic>{});
+          PostsRemoteDs()
+              .sharePost(post.id)
+              .catchError((_) => <String, dynamic>{});
         },
         onCopyLink: () async {
-          final link = 'https://furtail.app/post/${post.id}';
+          final link = ShareService.canonicalShareUrl(
+            type: post.fundraisingCampaignId != null ? 'fundraising' : 'post',
+            id: post.fundraisingCampaignId ?? post.id,
+          );
           await Clipboard.setData(ClipboardData(text: link));
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -177,9 +182,9 @@ class _PostActionSheetState extends State<PostActionSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isBookmarked = !next);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Save failed: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Save failed: ${e.toString()}')));
     } finally {
       if (mounted) setState(() => _bookmarkLoading = false);
     }
@@ -204,16 +209,14 @@ class _PostActionSheetState extends State<PostActionSheet> {
       if (!mounted) return;
       final name = widget.post.author.name;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(next ? 'Following $name' : 'Unfollowed $name'),
-        ),
+        SnackBar(content: Text(next ? 'Following $name' : 'Unfollowed $name')),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isFollowing = !next);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Follow failed: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Follow failed: ${e.toString()}')));
     } finally {
       if (mounted) setState(() => _followLoading = false);
     }

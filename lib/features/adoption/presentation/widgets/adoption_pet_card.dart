@@ -15,6 +15,10 @@ enum AdoptionCardMenuAction {
   reportListing,
   shareListing,
   saveListing,
+  pauseListing,
+  resumeListing,
+  adoptListing,
+  deleteListing,
 }
 
 class AdoptionPetCard extends StatelessWidget {
@@ -216,7 +220,6 @@ class AdoptionPetCard extends StatelessWidget {
     }
     return '${pet.species} · $breed';
   }
-
 }
 
 class AdoptionPetCardSkeleton extends StatelessWidget {
@@ -374,20 +377,96 @@ class _OwnerHeader extends StatelessWidget {
             onSelected: onMenuSelected,
             itemBuilder: (context) {
               if (isOwnedByMe) {
-                return const [
-                  PopupMenuItem(
-                    value: AdoptionCardMenuAction.editListing,
-                    child: Text('Edit listing'),
-                  ),
-                  PopupMenuItem(
-                    value: AdoptionCardMenuAction.updateStatus,
-                    child: Text('View applications'),
-                  ),
-                  PopupMenuItem(
-                    value: AdoptionCardMenuAction.shareListing,
-                    child: Text('Share'),
-                  ),
-                ];
+                final status = pet.status.toLowerCase();
+                if (status == 'draft' ||
+                    status == 'needs changes' ||
+                    status == 'rejected' ||
+                    status == 'needs_changes') {
+                  return const [
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.editListing,
+                      child: Text('Edit listing'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.resumeListing,
+                      child: Text('Publish now'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.deleteListing,
+                      child: Text('Delete draft'),
+                    ),
+                  ];
+                } else if (status == 'published' ||
+                    status == 'available' ||
+                    status == 'approved') {
+                  return const [
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.editListing,
+                      child: Text('Edit listing'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.updateStatus,
+                      child: Text('View applications'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.pauseListing,
+                      child: Text('Pause listing'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.adoptListing,
+                      child: Text('Mark as adopted'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.archiveListing,
+                      child: Text('Archive'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.shareListing,
+                      child: Text('Share'),
+                    ),
+                  ];
+                } else if (status == 'paused') {
+                  return const [
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.editListing,
+                      child: Text('Edit listing'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.updateStatus,
+                      child: Text('View applications'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.resumeListing,
+                      child: Text('Resume publishing'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.adoptListing,
+                      child: Text('Mark as adopted'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.archiveListing,
+                      child: Text('Archive'),
+                    ),
+                  ];
+                } else if (status == 'adopted') {
+                  return const [
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.archiveListing,
+                      child: Text('Archive'),
+                    ),
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.shareListing,
+                      child: Text('Share'),
+                    ),
+                  ];
+                } else if (status == 'archived') {
+                  return const [
+                    PopupMenuItem(
+                      value: AdoptionCardMenuAction.deleteListing,
+                      child: Text('Delete listing'),
+                    ),
+                  ];
+                }
               }
               return const [
                 PopupMenuItem(

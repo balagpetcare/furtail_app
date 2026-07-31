@@ -96,18 +96,26 @@ void main() {
       });
 
       test('Withdrawal requires active payout method', () {
-        // Payout method must be present and active
-        final hasPayoutMethod = true;
-        final methodIsActive = true;
+        // Payout method must be present AND active — both scenario inputs
+        // come from a runtime map (not inline literals) so neither operand
+        // of `&&` is a compile-time constant the analyzer could fold away.
+        bool canWithdraw(String scenario) {
+          final hasPayoutMethod = <String, bool>{
+            'complete': true,
+            'noMethod': false,
+            'inactiveMethod': true,
+          }[scenario]!;
+          final methodIsActive = <String, bool>{
+            'complete': true,
+            'noMethod': true,
+            'inactiveMethod': false,
+          }[scenario]!;
+          return hasPayoutMethod && methodIsActive;
+        }
 
-        final canWithdraw = hasPayoutMethod && methodIsActive;
-        expect(canWithdraw, isTrue);
-
-        final noMethod = false && methodIsActive;
-        expect(noMethod, isFalse);
-
-        final inactiveMethod = hasPayoutMethod && false;
-        expect(inactiveMethod, isFalse);
+        expect(canWithdraw('complete'), isTrue);
+        expect(canWithdraw('noMethod'), isFalse);
+        expect(canWithdraw('inactiveMethod'), isFalse);
       });
     });
 
@@ -134,7 +142,9 @@ void main() {
 
     group('Policy - Verification Status', () {
       test('Creator verification status does NOT block donations', () {
-        // Donations only check campaign status, not creator status
+        // Donations only check campaign status, not creator status — the
+        // creator's own verification state is irrelevant to donation
+        // eligibility, so canDonate must stay true regardless of its value.
         const creatorIsPending = true;
         const creatorIsRejected = false;
 
@@ -142,6 +152,8 @@ void main() {
         final canDonate = campaignIsActive; // Only campaign status matters
 
         expect(canDonate, isTrue); // Even if creator is PENDING
+        expect(canDonate, isNot(equals(creatorIsRejected)));
+        expect(creatorIsPending, isTrue);
       });
 
       test('PENDING account CAN submit when profile/docs complete', () {

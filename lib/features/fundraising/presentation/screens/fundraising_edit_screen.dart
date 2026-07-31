@@ -13,6 +13,7 @@ import '../../../media/composer/media_composer_widgets.dart';
 import '../../../media/composer/media_draft_item.dart';
 import '../../../media/composer/media_preparation_service.dart';
 import '../../../media/data/authenticated_media_uploader.dart';
+import '../utils/fundraising_media_session.dart';
 import '../../../posts/data/datasources/posts_remote_ds.dart';
 import '../../data/fundraising_error_mapper.dart';
 import '../../data/models/fundraising_models.dart';
@@ -47,15 +48,24 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
   final _picker = ImagePicker();
   final _postsDs = PostsRemoteDs();
   final _mediaPreparation = const MediaPreparationService();
+  late final FundraisingMediaSession _mediaSession;
 
   late final MediaComposerController _mediaController;
 
   int? _divisionId;
   int? _districtId;
+  LocationAddressMode? _addressMode;
+  int? _cityCorporationId;
+  int? _zoneId;
+  int? _wardId;
   int? _upazilaId;
   int? _unionId;
+  int? _areaId;
   String? _divisionName;
   String? _districtName;
+  String? _cityCorporationName;
+  String? _zoneName;
+  String? _wardName;
   String? _upazilaName;
   String? _unionName;
   String? _areaName;
@@ -69,6 +79,9 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
   void initState() {
     super.initState();
     _tab = TabController(length: 2, vsync: this);
+    _mediaSession = FundraisingMediaSession.forCampaign(
+      campaignId: widget.campaign.id,
+    );
     _mediaController = MediaComposerController(
       policy: MediaComposerPolicy.fundraising,
       draftStorageKey: 'fundraising:campaign:${widget.campaign.id}',
@@ -79,11 +92,12 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
             CancelToken? cancelToken,
           }) {
             return _postsDs.uploadMediaDetailedWithProgress(
-              File(item.localPath!),
+              fundraisingMultipartSourceFor(item),
               onProgress: onProgress,
               cancelToken: cancelToken,
-              draftId: item.id,
-              uploadContext: MediaComposerPolicy.fundraising.uploadContext,
+              contentType: _mediaSession.contentType,
+              contentId: _mediaSession.contentId,
+              idempotencyKey: _mediaSession.idempotencyKeyFor(item.id),
               folder: MediaComposerPolicy.fundraising.folder,
               trimStartMs: item.isVideo ? item.trimStartMs : null,
               trimEndMs: item.isVideo ? item.trimEndMs : null,
@@ -155,9 +169,17 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
 
   void _syncLocationText() {
     final parts = <String>[
-      if ((_areaName ?? '').trim().isNotEmpty) _areaName!.trim(),
-      if ((_unionName ?? '').trim().isNotEmpty) _unionName!.trim(),
-      if ((_upazilaName ?? '').trim().isNotEmpty) _upazilaName!.trim(),
+      if (_addressMode == LocationAddressMode.urban) ...[
+        if ((_areaName ?? '').trim().isNotEmpty) _areaName!.trim(),
+        if ((_wardName ?? '').trim().isNotEmpty) _wardName!.trim(),
+        if ((_zoneName ?? '').trim().isNotEmpty) _zoneName!.trim(),
+        if ((_cityCorporationName ?? '').trim().isNotEmpty)
+          _cityCorporationName!.trim(),
+      ] else ...[
+        if ((_areaName ?? '').trim().isNotEmpty) _areaName!.trim(),
+        if ((_unionName ?? '').trim().isNotEmpty) _unionName!.trim(),
+        if ((_upazilaName ?? '').trim().isNotEmpty) _upazilaName!.trim(),
+      ],
       if ((_districtName ?? '').trim().isNotEmpty) _districtName!.trim(),
       if ((_divisionName ?? '').trim().isNotEmpty) _divisionName!.trim(),
     ];
@@ -230,7 +252,7 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
           result?.paths.whereType<String>().toList() ?? const <String>[];
       if (paths.isEmpty) return;
       await _mediaController.addItems(
-        _mediaPreparation.prepareDocuments(
+        await _mediaPreparation.prepareDocuments(
           paths.map((path) => File(path)).toList(),
         ),
       );
@@ -254,7 +276,7 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
         if (path == null) return;
         await _mediaController.replaceItem(
           item.id,
-          _mediaPreparation.prepareReplacementDocument(
+          await _mediaPreparation.prepareReplacementDocument(
             File(path),
             existingId: item.id,
             isCover: item.isCover,
@@ -526,22 +548,97 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
                 LocationSelectorWidget(
                   divisionId: _divisionId,
                   districtId: _districtId,
+                  addressMode: _addressMode,
+                  cityCorporationId: _cityCorporationId,
+                  zoneId: _zoneId,
+                  wardId: _wardId,
                   upazilaId: _upazilaId,
                   unionId: _unionId,
+                  areaId: _areaId,
                   divisionName: _divisionName,
                   districtName: _districtName,
+                  cityCorporationName: _cityCorporationName,
+                  zoneName: _zoneName,
+                  wardName: _wardName,
                   upazilaName: _upazilaName,
                   unionName: _unionName,
+                  areaName: _areaName,
+                  onAddressModeChanged: (mode) {
+                    setState(() {
+                      _addressMode = mode;
+                      _cityCorporationId = null;
+                      _cityCorporationName = null;
+                      _zoneId = null;
+                      _zoneName = null;
+                      _wardId = null;
+                      _wardName = null;
+                      _upazilaId = null;
+                      _upazilaName = null;
+                      _unionId = null;
+                      _unionName = null;
+                      _areaId = null;
+                      _areaName = null;
+                      _syncLocationText();
+                    });
+                  },
+                  onCityCorporationChanged: (id, name) {
+                    setState(() {
+                      _addressMode = LocationAddressMode.urban;
+                      _cityCorporationId = id;
+                      _cityCorporationName = name;
+                      _zoneId = null;
+                      _zoneName = null;
+                      _wardId = null;
+                      _wardName = null;
+                      _upazilaId = null;
+                      _upazilaName = null;
+                      _unionId = null;
+                      _unionName = null;
+                      _areaId = null;
+                      _areaName = null;
+                      _syncLocationText();
+                    });
+                  },
+                  onZoneChanged: (id, name) {
+                    setState(() {
+                      _addressMode = LocationAddressMode.urban;
+                      _zoneId = id;
+                      _zoneName = name;
+                      _wardId = null;
+                      _wardName = null;
+                      _areaId = null;
+                      _areaName = null;
+                      _syncLocationText();
+                    });
+                  },
+                  onWardChanged: (id, name) {
+                    setState(() {
+                      _addressMode = LocationAddressMode.urban;
+                      _wardId = id;
+                      _wardName = name;
+                      _areaId = null;
+                      _areaName = null;
+                      _syncLocationText();
+                    });
+                  },
                   onDivisionChanged: (id, name) {
                     setState(() {
                       _divisionId = id;
                       _divisionName = name;
                       _districtId = null;
                       _districtName = null;
+                      _addressMode = null;
+                      _cityCorporationId = null;
+                      _cityCorporationName = null;
+                      _zoneId = null;
+                      _zoneName = null;
+                      _wardId = null;
+                      _wardName = null;
                       _upazilaId = null;
                       _upazilaName = null;
                       _unionId = null;
                       _unionName = null;
+                      _areaId = null;
                       _areaName = null;
                       _syncLocationText();
                     });
@@ -550,29 +647,61 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
                     setState(() {
                       _districtId = id;
                       _districtName = name;
+                      _addressMode = null;
+                      _cityCorporationId = null;
+                      _cityCorporationName = null;
+                      _zoneId = null;
+                      _zoneName = null;
+                      _wardId = null;
+                      _wardName = null;
                       _upazilaId = null;
                       _upazilaName = null;
                       _unionId = null;
                       _unionName = null;
+                      _areaId = null;
                       _areaName = null;
                       _syncLocationText();
                     });
                   },
                   onUpazilaChanged: (id, name) {
                     setState(() {
+                      _addressMode = LocationAddressMode.rural;
                       _upazilaId = id;
                       _upazilaName = name;
+                      _cityCorporationId = null;
+                      _cityCorporationName = null;
+                      _zoneId = null;
+                      _zoneName = null;
+                      _wardId = null;
+                      _wardName = null;
                       _unionId = null;
                       _unionName = null;
+                      _areaId = null;
                       _areaName = null;
                       _syncLocationText();
                     });
                   },
                   onUnionChanged: (id, name) {
                     setState(() {
+                      _addressMode = LocationAddressMode.rural;
                       _unionId = id;
                       _unionName = name;
+                      _cityCorporationId = null;
+                      _cityCorporationName = null;
+                      _zoneId = null;
+                      _zoneName = null;
+                      _wardId = null;
+                      _wardName = null;
+                      _areaId = null;
                       _areaName = name;
+                      _syncLocationText();
+                    });
+                  },
+                  onAreaChanged: (_, name) {
+                    final details = (name ?? '').trim();
+                    setState(() {
+                      _areaId = null;
+                      _areaName = details.isEmpty ? null : details;
                       _syncLocationText();
                     });
                   },

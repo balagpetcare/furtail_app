@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -129,7 +128,9 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
       _errorMessage = null;
     });
 
-    final preset = _agePresetIndex != null ? _agePresets[_agePresetIndex!] : null;
+    final preset = _agePresetIndex != null
+        ? _agePresets[_agePresetIndex!]
+        : null;
 
     try {
       final pets = await _repository.fetchAdoptions(
@@ -375,9 +376,8 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
     setState(() {
       _sourcePets = _sourcePets
           .map(
-            (pet) => pet.id == adoptionId
-                ? pet.copyWith(commentCount: count)
-                : pet,
+            (pet) =>
+                pet.id == adoptionId ? pet.copyWith(commentCount: count) : pet,
           )
           .toList();
     });
@@ -470,6 +470,32 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
   bool _isOwnedByMe(AdoptionPetUiModel pet) =>
       _currentUserId != null && pet.ownerUserId == _currentUserId;
 
+  Future<void> _updateStatus(int id, String status) async {
+    try {
+      await _repository.updateAdoptionListingStatus(id, status);
+      _refreshAdoptions();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
+      }
+    }
+  }
+
+  Future<void> _deleteListing(int id) async {
+    try {
+      await _repository.hardDeleteListing(id);
+      _refreshAdoptions();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete listing: $e')));
+      }
+    }
+  }
+
   void _handleCardMenuAction(
     AdoptionPetUiModel pet,
     AdoptionCardMenuAction action,
@@ -485,34 +511,45 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
         _openDetail(pet);
         break;
       case AdoptionCardMenuAction.editListing:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => CreateAdoptionListingScreen(existingListing: pet),
-          ),
-        ).then((updated) {
-          if (updated == true) {
-            _refreshAdoptions();
-          }
-        });
+        Navigator.of(context)
+            .push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    CreateAdoptionListingScreen(existingListing: pet),
+              ),
+            )
+            .then((updated) {
+              if (updated == true) {
+                _refreshAdoptions();
+              }
+            });
         break;
       case AdoptionCardMenuAction.updateStatus:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ListingApplicationsScreen(
-              adoptionId: pet.id,
-              petName: pet.name,
-            ),
-          ),
-        ).then((_) => _refreshAdoptions());
+        Navigator.of(context)
+            .push(
+              MaterialPageRoute(
+                builder: (_) => ListingApplicationsScreen(
+                  adoptionId: pet.id,
+                  petName: pet.name,
+                ),
+              ),
+            )
+            .then((_) => _refreshAdoptions());
         break;
       case AdoptionCardMenuAction.archiveListing:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Owner archive action is not available in this flow yet.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _updateStatus(pet.id, 'ARCHIVED');
+        break;
+      case AdoptionCardMenuAction.pauseListing:
+        _updateStatus(pet.id, 'PAUSED');
+        break;
+      case AdoptionCardMenuAction.resumeListing:
+        _updateStatus(pet.id, 'PUBLISHED');
+        break;
+      case AdoptionCardMenuAction.adoptListing:
+        _updateStatus(pet.id, 'ADOPTED');
+        break;
+      case AdoptionCardMenuAction.deleteListing:
+        _deleteListing(pet.id);
         break;
     }
   }
@@ -645,96 +682,167 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
 
   Widget _buildTopToolbar(BuildContext context) {
     final cs = context.colorScheme;
+
+    const createGreen = Color.fromARGB(255, 28, 107, 50);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.xs,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) => setState(() => _query = value.trim()),
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: 'Search pets, breeds, locations',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                      ),
-                isDense: true,
-                filled: true,
-                fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.45),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: cs.outlineVariant),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: cs.outlineVariant),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: cs.primary, width: 1.25),
+            child: SizedBox(
+              height: 42,
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() => _query = value.trim());
+                },
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: 'Search pets, breeds, locations',
+                  hintStyle: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 19,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 38,
+                    minHeight: 38,
+                  ),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: Icon(
+                            Icons.close_rounded,
+                            size: 17,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                  isDense: true,
+                  filled: true,
+                  fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.75),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(11),
+                    borderSide: BorderSide(
+                      color: cs.outlineVariant.withValues(alpha: 0.75),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(11),
+                    borderSide: BorderSide(
+                      color: cs.outlineVariant.withValues(alpha: 0.75),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(11),
+                    borderSide: const BorderSide(
+                      color: Color.fromARGB(255, 50, 114, 68),
+                      width: 1.4,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          TextButton.icon(
-            onPressed: _openCreateListing,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              backgroundColor: cs.primaryContainer.withValues(alpha: 0.55),
-              foregroundColor: cs.onPrimaryContainer,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+
+          const SizedBox(width: 6),
+
+          SizedBox(
+            height: 42,
+            child: ElevatedButton.icon(
+              onPressed: _openCreateListing,
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                backgroundColor: createGreen,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 8,
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text(
+                'Create',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
             ),
-            icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-            label: const Text('Create'),
           ),
-          const SizedBox(width: AppSpacing.xs),
+
+          const SizedBox(width: 5),
+
           Stack(
             clipBehavior: Clip.none,
             children: [
-              IconButton.filledTonal(
-                onPressed: _openFilterSheet,
-                tooltip: 'Filters',
-                icon: const Icon(Icons.tune_rounded, size: 18),
+              SizedBox(
+                width: 42,
+                height: 42,
+                child: IconButton(
+                  onPressed: _openFilterSheet,
+                  tooltip: 'Filters',
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 51, 93, 128),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                  ),
+                  icon: const Icon(Icons.tune_rounded, size: 19),
+                ),
               ),
+
               if (_activeFilterCount > 0)
                 Positioned(
-                  top: -2,
-                  right: -2,
+                  top: -4,
+                  right: -4,
                   child: Container(
-                    width: 18,
-                    height: 18,
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
-                      color: cs.primary,
+                      color: cs.error,
                       shape: BoxShape.circle,
+                      border: Border.all(color: cs.surface, width: 1.5),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       '$_activeFilterCount',
                       style: TextStyle(
-                        color: cs.onPrimary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                        color: cs.onError,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
                       ),
                     ),
                   ),
@@ -752,9 +860,7 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
     final chips = <Widget>[];
 
     void addChip(String label, VoidCallback onRemove) {
-      chips.add(
-        _ActiveFilterChip(label: label, onRemove: onRemove),
-      );
+      chips.add(_ActiveFilterChip(label: label, onRemove: onRemove));
     }
 
     if (_speciesFilter != null) {
@@ -1060,7 +1166,6 @@ class _AdoptionHomeScreenState extends State<AdoptionHomeScreen> {
 
 // ─── Enums / helpers ──────────────────────────────────────────────────────────
 
-
 /// Filter result bag — passed from the sheet to the home screen.
 class _FilterResult {
   final String? species;
@@ -1365,8 +1470,7 @@ class _AdoptionFilterSheetState extends State<_AdoptionFilterSheet> {
                           ChoiceChip(
                             label: const Text('Male'),
                             selected: _gender == 'MALE',
-                            onSelected: (_) =>
-                                setState(() => _gender = 'MALE'),
+                            onSelected: (_) => setState(() => _gender = 'MALE'),
                           ),
                           ChoiceChip(
                             label: const Text('Female'),
@@ -1429,14 +1533,16 @@ class _AdoptionFilterSheetState extends State<_AdoptionFilterSheet> {
                       title: 'Breed',
                       child: TextField(
                         controller: _breedController,
-                        onChanged: (v) =>
-                            setState(() => _breed = v.trim().isEmpty ? null : v.trim()),
+                        onChanged: (v) => setState(
+                          () => _breed = v.trim().isEmpty ? null : v.trim(),
+                        ),
                         decoration: InputDecoration(
                           hintText: 'e.g. Local/Indigenous, Labrador…',
                           isDense: true,
                           filled: true,
-                          fillColor: cs.surfaceContainerHighest
-                              .withValues(alpha: 0.35),
+                          fillColor: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.35,
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 10,
@@ -1451,8 +1557,10 @@ class _AdoptionFilterSheetState extends State<_AdoptionFilterSheet> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide:
-                                BorderSide(color: cs.primary, width: 1.25),
+                            borderSide: BorderSide(
+                              color: cs.primary,
+                              width: 1.25,
+                            ),
                           ),
                           suffixIcon: _breedController.text.isNotEmpty
                               ? IconButton(
@@ -1545,8 +1653,9 @@ class _AdoptionFilterSheetState extends State<_AdoptionFilterSheet> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: cs.surfaceContainerHighest
-                                    .withValues(alpha: 0.45),
+                                color: cs.surfaceContainerHighest.withValues(
+                                  alpha: 0.45,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: cs.outlineVariant),
                               ),

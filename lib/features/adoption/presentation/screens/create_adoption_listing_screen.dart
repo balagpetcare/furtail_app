@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -5,12 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
-import 'package:furtail_app/dtos/pets/animal_type_dto.dart';
-import 'package:furtail_app/dtos/pets/breed_dto.dart';
 import 'package:furtail_app/features/adoption/data/datasources/adoption_remote_ds.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_listing_form_payload.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
+import 'package:furtail_app/features/adoption/presentation/utils/adoption_media_session.dart';
 import 'package:furtail_app/features/media/composer/media_composer_controller.dart';
 import 'package:furtail_app/features/media/composer/media_composer_policy.dart';
 import 'package:furtail_app/features/media/composer/media_composer_widgets.dart';
@@ -18,26 +18,25 @@ import 'package:furtail_app/features/media/composer/media_draft_item.dart';
 import 'package:furtail_app/features/media/composer/media_preparation_service.dart';
 import 'package:furtail_app/features/media/data/authenticated_media_uploader.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_listing_preview_screen.dart';
+import 'package:furtail_app/features/common/data/models/animal_taxonomy_models.dart';
+import 'package:furtail_app/features/common/data/models/country_reference_model.dart';
 import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
+import 'package:furtail_app/features/common/data/repositories/animal_taxonomy_repository.dart';
 import 'package:furtail_app/features/common/data/repositories/bd_locations_repository.dart';
-import 'package:furtail_app/features/legacy/data/models/country_model.dart';
+import 'package:furtail_app/features/common/data/services/gps_location_service.dart';
+import 'package:furtail_app/features/common/data/services/reference_data_cache.dart';
+import 'package:furtail_app/features/common/presentation/widgets/searchable_selector_sheet.dart';
+import 'package:furtail_app/features/common/presentation/widgets/selector_form_field.dart';
+import 'package:furtail_app/features/location/domain/location_selection_request_guard.dart';
+import 'package:furtail_app/features/location/presentation/widgets/location_selector_widget.dart';
 import 'package:furtail_app/features/profile/data/profile_service.dart';
 import 'package:furtail_app/features/posts/data/datasources/posts_remote_ds.dart';
 import 'package:furtail_app/services/api_client.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-
-const _speciesLabels = <String, String>{
-  'CAT': 'Cat',
-  'DOG': 'Dog',
-  'BIRD': 'Bird',
-  'RABBIT': 'Rabbit',
-  'OTHER': 'Other',
-};
 
 const _genderLabels = <String, String>{
   'UNKNOWN': 'Not specified',
@@ -56,25 +55,18 @@ const _serviceAreaLabels = <String, String>{
   'INTERNATIONAL': 'International',
 };
 
+/// Normalizes a legacy/free-text species value into the uppercase code
+/// shape the canonical animal-taxonomy API uses (e.g. "Cats" -> "CATS").
+/// Matching against the real, current species list happens in
+/// `_syncTypeToSpecies` — this only strips whitespace/casing, it does not
+/// hardcode which species exist.
 String _normalizeSpeciesKey(String value) {
-  switch (value.trim().toUpperCase()) {
-    case 'CAT':
-    case 'CATS':
-      return 'CAT';
-    case 'DOG':
-    case 'DOGS':
-      return 'DOG';
-    case 'BIRD':
-    case 'BIRDS':
-      return 'BIRD';
-    case 'RABBIT':
-    case 'RABBITS':
-      return 'RABBIT';
-    case 'OTHER':
-      return 'OTHER';
-    default:
-      return value.trim().toUpperCase();
-  }
+  final clean = value.trim().toUpperCase();
+  if (clean == 'CATS') return 'CAT';
+  if (clean == 'DOGS') return 'DOG';
+  if (clean == 'BIRDS') return 'BIRD';
+  if (clean == 'RABBITS') return 'RABBIT';
+  return clean;
 }
 
 T? _safeObjectSelection<T>(
@@ -127,11 +119,18 @@ class _CreateAdoptionListingScreenState
   final _pageController = PageController();
   late final AdoptionRepository _repository;
   late final BdLocationsRepository _locationRepo;
+  late final AnimalTaxonomyRepository _taxonomyRepo;
+  final ReferenceDataCache _referenceCache = ReferenceDataCache();
+  final GpsLocationService _gpsService = const GpsLocationService();
   final _postsDs = PostsRemoteDs();
   final _picker = ImagePicker();
   final _mediaPreparation = const MediaPreparationService();
   final _profileService = ProfileService();
+  late final AdoptionMediaSession _mediaSession;
   late final MediaComposerController _mediaController;
+  late final Set<int> _existingServerMediaIds;
+  final LocationSelectionRequestGuard _locationGuard =
+      LocationSelectionRequestGuard();
 
   // controllers
   final _nameCtrl = TextEditingController();
@@ -204,6 +203,19 @@ class _CreateAdoptionListingScreenState
     return _selectedBreedName ?? 'Unknown';
   }
 
+  int? get _selectedBreedId {
+    final breedName = _selectedBreedName;
+    if (breedName == null || breedName.isEmpty || breedName == 'Other') {
+      return null;
+    }
+    for (final breed in _breeds) {
+      if (breed.name == breedName) {
+        return breed.id;
+      }
+    }
+    return null;
+  }
+
   String getColorValue() {
     final list = List<String>.from(_selectedColors);
     if (list.contains('Other')) {
@@ -216,23 +228,25 @@ class _CreateAdoptionListingScreenState
     return list.join(', ');
   }
 
-  List<String> getBreedOptions() {
-    final list = <String>[];
-    list.addAll(_breeds.map((b) => b.name));
-    final std = ['Local/Indigenous', 'Mixed breed', 'Unknown', 'Other'];
-    for (final opt in std) {
-      if (!list.contains(opt)) {
-        list.add(opt);
-      }
-    }
-    return list;
+  // Breed display names for the selected species — every species already
+  // includes Local/Indigenous, Mixed breed, Unknown, and Other as real API
+  // entries (see AnimalTaxonomyRepository), so no hardcoded fallback list
+  // is needed here.
+  List<String> getBreedOptions() => _breeds.map((b) => b.name).toList();
+
+  String speciesLabel() {
+    final match = _animalTypes.cast<AnimalTypeModel?>().firstWhere(
+      (t) => (t!.code ?? t.name) == _species,
+      orElse: () => null,
+    );
+    return match?.display() ?? _species;
   }
 
   // species / breed
   String _species = 'CAT';
-  List<AnimalTypeDto> _animalTypes = const [];
+  List<AnimalTypeModel> _animalTypes = const [];
   int? _selectedTypeId;
-  List<BreedDto> _breeds = const [];
+  List<BreedModel> _breeds = const [];
   bool _loadingBreeds = false;
 
   // gender / service area
@@ -254,19 +268,37 @@ class _CreateAdoptionListingScreenState
   bool _followUp = false;
 
   // location
-  Country? _bangladeshCountry;
+  CountryReferenceModel? _bangladeshCountry;
   String? _countryError;
   List<BdDivision> _divisions = const [];
   List<BdDistrict> _districts = const [];
   List<BdUpazila> _upazilas = const [];
+  List<BdUnion> _unions = const [];
   List<BdArea> _areas = const [];
   BdDivision? _selDivision;
   BdDistrict? _selDistrict;
   BdUpazila? _selUpazila;
+  BdUnion? _selUnion;
   BdArea? _selArea;
   bool _loadingDistricts = false;
   bool _loadingUpazilas = false;
+  bool _loadingUnions = false;
   bool _loadingAreas = false;
+
+  // Urban vs rural path — a district's address is either a rural
+  // upazila/area (default) or an urban City Corporation/Zone/Ward. Never
+  // require a union/upazila selection for the urban path.
+  LocationAddressMode? _addressMode;
+  bool _isUrbanPath = false;
+  List<BdArea> _cityCorporations = const [];
+  List<BdArea> _zones = const [];
+  List<BdArea> _wards = const [];
+  BdArea? _selCityCorporation;
+  BdArea? _selZone;
+  BdArea? _selWard;
+  bool _loadingCityCorporations = false;
+  bool _loadingZones = false;
+  bool _loadingWards = false;
 
   // GPS
   double? _latitude;
@@ -325,9 +357,19 @@ class _CreateAdoptionListingScreenState
     final client = ApiClient();
     _repository = AdoptionRepository(AdoptionRemoteDs(client));
     _locationRepo = BdLocationsRepository(client);
+    _taxonomyRepo = AnimalTaxonomyRepository(client);
+    _mediaSession = AdoptionMediaSession.forListing(
+      existingListingId: widget.existingListing?.id,
+    );
+    _existingServerMediaIds =
+        widget.existingListing?.media
+            .map((m) => m.id)
+            .whereType<int>()
+            .toSet() ??
+        <int>{};
     _mediaController = MediaComposerController(
       policy: MediaComposerPolicy.adoption,
-      draftStorageKey: 'adoption:${widget.existingListing?.id ?? 'new'}',
+      draftStorageKey: _mediaSession.storageKey,
       uploadMedia:
           (
             item, {
@@ -339,7 +381,10 @@ class _CreateAdoptionListingScreenState
               onProgress: onProgress,
               cancelToken: cancelToken,
               listingId: widget.existingListing?.id,
-              draftId: item.id,
+              draftId: _mediaSession.contentId,
+              contentType: 'ADOPTION',
+              contentId: _mediaSession.contentId,
+              idempotencyKey: _mediaSession.idempotencyKeyFor(item.id),
               uploadContext: MediaComposerPolicy.adoption.uploadContext,
               folder: MediaComposerPolicy.adoption.folder,
               trimStartMs: item.isVideo ? item.trimStartMs : null,
@@ -365,12 +410,36 @@ class _CreateAdoptionListingScreenState
     setState(() {});
   }
 
+  int _beginLocationGeneration() => _locationGuard.begin();
+
+  bool _isCurrentLocationGeneration(int generation) {
+    return mounted && _locationGuard.isCurrent(generation);
+  }
+
   void _prefillNonLocationFields() {
     final pet = widget.existingListing;
     if (pet == null) return;
 
     _nameCtrl.text = pet.name;
     _species = _normalizeSpeciesKey(pet.species);
+
+    final modeStr = pet.bdAddressMode;
+    if (modeStr != null) {
+      _addressMode = modeStr.toUpperCase() == 'URBAN'
+          ? LocationAddressMode.urban
+          : LocationAddressMode.rural;
+      _isUrbanPath = _addressMode == LocationAddressMode.urban;
+    } else {
+      if (pet.bdCityCorporationId != null ||
+          pet.bdZoneId != null ||
+          pet.bdWardId != null) {
+        _addressMode = LocationAddressMode.urban;
+        _isUrbanPath = true;
+      } else if (pet.bdUpazilaId != null || pet.bdUnionId != null) {
+        _addressMode = LocationAddressMode.rural;
+        _isUrbanPath = false;
+      }
+    }
 
     // Prefill structured age
     _ageYears = pet.ageYears ?? 0;
@@ -521,28 +590,12 @@ class _CreateAdoptionListingScreenState
           '${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}';
     }
 
-    _mediaController.seedItemsIfEmpty(
-      pet.media.map((m) {
-        return MediaDraftItem(
-          id: m.id?.toString() ?? UniqueKey().toString(),
-          type: m.isVideo ? MediaDraftType.video : MediaDraftType.image,
-          fileName: m.displayUrl.split('/').last,
-          originalSizeBytes: 0,
-          remoteMediaId: m.id,
-          remoteUrl: m.url,
-          remoteHlsUrl: m.hlsUrl,
-          remoteThumbnailUrl: m.thumbnailUrl,
-          remoteStatus: m.status,
-          mimeType: m.mimeType,
-          state: MediaDraftState.ready,
-          progress: 1,
-        );
-      }).toList(),
-    );
+    _mediaController.seedItemsIfEmpty(adoptionMediaItemsFromServer(pet.media));
   }
 
   @override
   void dispose() {
+    unawaited(_mediaController.clearPersistedDraft());
     _mediaController
       ..removeListener(_handleMediaControllerChanged)
       ..dispose();
@@ -572,7 +625,7 @@ class _CreateAdoptionListingScreenState
 
   Future<void> _loadAnimalTypes() async {
     try {
-      final types = await _repository.fetchAnimalTypes();
+      final types = await _loadAnimalTypesForSelector();
       if (!mounted) return;
       setState(() {
         _animalTypes = types;
@@ -581,16 +634,80 @@ class _CreateAdoptionListingScreenState
     } catch (_) {}
   }
 
+  /// Cached (with refresh-on-failure fallback) species list — shared by the
+  /// initial load and the species selector sheet's own `load` callback, so
+  /// the sheet's built-in retry also benefits from the cache.
+  Future<List<AnimalTypeModel>> _loadAnimalTypesForSelector({
+    bool forceRefresh = false,
+  }) {
+    return _referenceCache.getOrFetch<List<AnimalTypeModel>>(
+      key: 'animal_types',
+      forceRefresh: forceRefresh,
+      fetch: () => _taxonomyRepo.getAnimalTypes(),
+      toJson: (list) => {
+        'items': list
+            .map(
+              (t) => {
+                'id': t.id,
+                'code': t.code,
+                'name': t.name,
+                'nameBn': t.nameBn,
+                'icon': t.icon,
+                'displayOrder': t.displayOrder,
+              },
+            )
+            .toList(),
+      },
+      fromJson: (json) => (json['items'] as List<dynamic>)
+          .map(
+            (e) =>
+                AnimalTypeModel.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList(),
+    );
+  }
+
   void _syncTypeToSpecies(String species) {
-    final label = _speciesLabels[species] ?? species;
-    final match = _animalTypes.cast<AnimalTypeDto?>().firstWhere(
-      (t) => t!.name.toLowerCase() == label.toLowerCase(),
+    final match = _animalTypes.cast<AnimalTypeModel?>().firstWhere(
+      (t) => (t!.code ?? t.name).toUpperCase() == species.toUpperCase(),
       orElse: () => null,
     );
     if (match != null && match.id != _selectedTypeId) {
       _selectedTypeId = match.id;
       _loadBreeds(match.id);
     }
+  }
+
+  Future<List<BreedModel>> _loadBreedsForSelector({bool forceRefresh = false}) {
+    final typeId = _selectedTypeId;
+    if (typeId == null) return Future.value(const []);
+    return _referenceCache.getOrFetch<List<BreedModel>>(
+      key: 'breeds_type_$typeId',
+      forceRefresh: forceRefresh,
+      fetch: () => _taxonomyRepo.getBreeds(animalTypeId: typeId),
+      toJson: (list) => {
+        'items': list
+            .map(
+              (b) => {
+                'id': b.id,
+                'code': b.code,
+                'name': b.name,
+                'nameBn': b.nameBn,
+                'animalTypeId': b.animalTypeId,
+                'aliasNames': b.aliasNames,
+                'isMixed': b.isMixed,
+                'isOther': b.isOther,
+                'isLocal': b.isLocal,
+                'isUnknown': b.isUnknown,
+                'displayOrder': b.displayOrder,
+              },
+            )
+            .toList(),
+      },
+      fromJson: (json) => (json['items'] as List<dynamic>)
+          .map((e) => BreedModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
   }
 
   Future<void> _loadBreeds(int typeId) async {
@@ -600,43 +717,33 @@ class _CreateAdoptionListingScreenState
       _selectedBreedName = null;
     });
     try {
-      final breeds = await _repository.fetchBreedsByType(typeId);
+      final breeds = await _loadBreedsForSelector();
       if (!mounted) return;
       setState(() {
         _breeds = breeds;
         if (widget.existingListing?.breed != null) {
           final breedVal = widget.existingListing!.breed;
-          if (breedVal.toLowerCase().startsWith('other')) {
+          // Validate the restored draft breed against the current API
+          // data — only accept it if it still resolves to a real option.
+          final match = _breeds.cast<BreedModel?>().firstWhere(
+            (b) => b!.name.toLowerCase() == breedVal.toLowerCase(),
+            orElse: () => null,
+          );
+          if (match != null) {
+            _selectedBreedName = match.name;
+          } else if (breedVal.toLowerCase().startsWith('other')) {
             _selectedBreedName = 'Other';
             final regex = RegExp(r'Other \((.*)\)');
-            final match = regex.firstMatch(breedVal);
-            if (match != null) {
-              _breedFallbackCtrl.text = match.group(1) ?? '';
+            final regexMatch = regex.firstMatch(breedVal);
+            if (regexMatch != null) {
+              _breedFallbackCtrl.text = regexMatch.group(1) ?? '';
             }
           } else {
-            final defaultOptions = [
-              'Local/Indigenous',
-              'Mixed breed',
-              'Unknown',
-            ];
-            final matchDefault = defaultOptions.cast<String?>().firstWhere(
-              (opt) => opt!.toLowerCase() == breedVal.toLowerCase(),
-              orElse: () => null,
-            );
-            if (matchDefault != null) {
-              _selectedBreedName = matchDefault;
-            } else {
-              final match = _breeds.cast<BreedDto?>().firstWhere(
-                (b) => b!.name.toLowerCase() == breedVal.toLowerCase(),
-                orElse: () => null,
-              );
-              if (match != null) {
-                _selectedBreedName = match.name;
-              } else {
-                _selectedBreedName = 'Other';
-                _breedFallbackCtrl.text = breedVal;
-              }
-            }
+            // Legacy/free-text value with no matching breed today — keep it
+            // visible as a custom "Other" entry rather than silently
+            // discarding the draft's data.
+            _selectedBreedName = 'Other';
+            _breedFallbackCtrl.text = breedVal;
           }
         }
       });
@@ -647,9 +754,11 @@ class _CreateAdoptionListingScreenState
   }
 
   Future<void> _loadDivisions() async {
+    final generation = _beginLocationGeneration();
     try {
       final list = await _locationRepo.getDivisions();
       if (!mounted) return;
+      if (!_isCurrentLocationGeneration(generation)) return;
       setState(() {
         _divisions = list;
         if (widget.existingListing?.bdDivisionId != null) {
@@ -658,7 +767,11 @@ class _CreateAdoptionListingScreenState
             orElse: () => null,
           );
           if (_selDivision != null) {
-            _onDivisionChanged(_selDivision, prefilling: true);
+            _onDivisionChanged(
+              _selDivision,
+              prefilling: true,
+              generation: generation,
+            );
           }
         }
       });
@@ -668,16 +781,25 @@ class _CreateAdoptionListingScreenState
   Future<void> _onDivisionChanged(
     BdDivision? d, {
     bool prefilling = false,
+    int? generation,
   }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
     setState(() {
       _selDivision = d;
       if (!prefilling) {
         _selDistrict = null;
         _selUpazila = null;
+        _selUnion = null;
         _selArea = null;
         _districts = const [];
         _upazilas = const [];
+        _unions = const [];
         _areas = const [];
+        _selCityCorporation = null;
+        _selZone = null;
+        _selWard = null;
+        _addressMode = null;
+        _isUrbanPath = false;
       }
       _loadingDistricts = d != null;
     });
@@ -685,6 +807,7 @@ class _CreateAdoptionListingScreenState
     try {
       final list = await _locationRepo.getDistricts(divisionId: d.id);
       if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
       setState(() {
         _districts = list;
         _loadingDistricts = false;
@@ -694,7 +817,11 @@ class _CreateAdoptionListingScreenState
             orElse: () => null,
           );
           if (_selDistrict != null) {
-            _onDistrictChanged(_selDistrict, prefilling: true);
+            _onDistrictChanged(
+              _selDistrict,
+              prefilling: true,
+              generation: activeGeneration,
+            );
           }
         }
       });
@@ -706,14 +833,26 @@ class _CreateAdoptionListingScreenState
   Future<void> _onDistrictChanged(
     BdDistrict? d, {
     bool prefilling = false,
+    int? generation,
   }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
     setState(() {
       _selDistrict = d;
       if (!prefilling) {
         _selUpazila = null;
+        _selUnion = null;
         _selArea = null;
         _upazilas = const [];
+        _unions = const [];
         _areas = const [];
+        _selCityCorporation = null;
+        _selZone = null;
+        _selWard = null;
+        _cityCorporations = const [];
+        _zones = const [];
+        _wards = const [];
+        _addressMode = null;
+        _isUrbanPath = false;
       }
       _loadingUpazilas = d != null;
     });
@@ -721,6 +860,7 @@ class _CreateAdoptionListingScreenState
     try {
       final list = await _locationRepo.getUpazilas(districtId: d.id);
       if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
       setState(() {
         _upazilas = list;
         _loadingUpazilas = false;
@@ -730,31 +870,263 @@ class _CreateAdoptionListingScreenState
             orElse: () => null,
           );
           if (_selUpazila != null) {
-            _onUpazilaChanged(_selUpazila, prefilling: true);
+            _onUpazilaChanged(
+              _selUpazila,
+              prefilling: true,
+              generation: activeGeneration,
+            );
           }
         }
       });
     } catch (_) {
       if (mounted) setState(() => _loadingUpazilas = false);
     }
+    unawaited(_loadCityCorporations(d, generation: activeGeneration));
+  }
+
+  void _setUrbanPath(bool urban, {bool prefilling = false}) {
+    setState(() {
+      _isUrbanPath = urban;
+      _addressMode = urban
+          ? LocationAddressMode.urban
+          : LocationAddressMode.rural;
+      // Switching path immediately clears the other path's selections —
+      // they are not valid for the newly chosen path.
+      if (!prefilling) {
+        _selUpazila = null;
+        _selUnion = null;
+        _selArea = null;
+        _selCityCorporation = null;
+        _selZone = null;
+        _selWard = null;
+      }
+    });
+  }
+
+  Future<void> _loadCityCorporations(
+    BdDistrict d, {
+    required int generation,
+  }) async {
+    setState(() => _loadingCityCorporations = true);
+    try {
+      final list = await _locationRepo.getCityCorporations(districtId: d.id);
+      if (!mounted) return;
+      if (!_isCurrentLocationGeneration(generation)) return;
+      setState(() {
+        _cityCorporations = list;
+        _loadingCityCorporations = false;
+      });
+      final savedCityCorporationId =
+          widget.existingListing?.bdCityCorporationId;
+      if (savedCityCorporationId != null) {
+        final match = _cityCorporations.cast<BdArea?>().firstWhere(
+          (cc) => cc!.id == savedCityCorporationId,
+          orElse: () => null,
+        );
+        if (match != null) {
+          _setUrbanPath(true, prefilling: true);
+          await _onCityCorporationChanged(
+            match,
+            prefilling: true,
+            generation: generation,
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingCityCorporations = false);
+    }
+  }
+
+  Future<void> _onCityCorporationChanged(
+    BdArea? cc, {
+    bool prefilling = false,
+    int? generation,
+  }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
+    setState(() {
+      _selCityCorporation = cc;
+      if (!prefilling) {
+        _selZone = null;
+        _selWard = null;
+        _selUnion = null;
+        _zones = const [];
+        _wards = const [];
+      }
+      _loadingZones = cc != null;
+    });
+    if (cc == null) return;
+    try {
+      final list = await _locationRepo.getZones(cityCorporationId: cc.id);
+      if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
+      setState(() {
+        _zones = list;
+        _loadingZones = false;
+      });
+      if (prefilling && widget.existingListing?.bdZoneId != null) {
+        final match = _zones.cast<BdArea?>().firstWhere(
+          (zone) => zone!.id == widget.existingListing!.bdZoneId,
+          orElse: () => null,
+        );
+        if (match != null) {
+          await _onZoneChanged(
+            match,
+            prefilling: true,
+            generation: activeGeneration,
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingZones = false);
+    }
+  }
+
+  Future<void> _onZoneChanged(
+    BdArea? zone, {
+    bool prefilling = false,
+    int? generation,
+  }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
+    setState(() {
+      _selZone = zone;
+      if (!prefilling) {
+        _selWard = null;
+        _selUnion = null;
+        _wards = const [];
+      }
+      _loadingWards = zone != null;
+    });
+    if (zone == null) return;
+    try {
+      final list = await _locationRepo.getCcAreas(zoneId: zone.id);
+      if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
+      setState(() {
+        _wards = list;
+        _loadingWards = false;
+      });
+      if (prefilling && widget.existingListing?.bdWardId != null) {
+        final match = _wards.cast<BdArea?>().firstWhere(
+          (ward) => ward!.id == widget.existingListing!.bdWardId,
+          orElse: () => null,
+        );
+        if (match != null) {
+          await _onWardChanged(
+            match,
+            prefilling: true,
+            generation: activeGeneration,
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingWards = false);
+    }
+  }
+
+  Future<void> _onWardChanged(
+    BdArea? ward, {
+    bool prefilling = false,
+    int? generation,
+  }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
+    setState(() {
+      _selWard = ward;
+      if (!prefilling) {
+        _selArea = null;
+        _areas = const [];
+      }
+      _loadingAreas = ward != null;
+    });
+    if (ward == null) return;
+    try {
+      final list = await _locationRepo.getAreasByWard(wardId: ward.id);
+      if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
+      setState(() {
+        _areas = list;
+        _loadingAreas = false;
+        if (prefilling && widget.existingListing?.bdAreaId != null) {
+          _selArea = _areas.cast<BdArea?>().firstWhere(
+            (area) => area!.id == widget.existingListing!.bdAreaId,
+            orElse: () => null,
+          );
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingAreas = false);
+    }
   }
 
   Future<void> _onUpazilaChanged(
     BdUpazila? u, {
     bool prefilling = false,
+    int? generation,
   }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
     setState(() {
       _selUpazila = u;
       if (!prefilling) {
         _selArea = null;
         _areas = const [];
+        _selUnion = null;
+        _unions = const [];
       }
-      _loadingAreas = u != null;
+      _loadingUnions = u != null;
+      _loadingAreas = false;
     });
     if (u == null) return;
     try {
-      final list = await _locationRepo.getAreas(upazilaId: u.id);
+      final unions = await _locationRepo.getUnions(upazilaId: u.id);
       if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
+      setState(() {
+        _unions = unions;
+        _loadingUnions = false;
+      });
+      if (prefilling && widget.existingListing?.bdUnionId != null) {
+        final match = _unions.cast<BdUnion?>().firstWhere(
+          (union) => union!.id == widget.existingListing!.bdUnionId,
+          orElse: () => null,
+        );
+        if (match != null) {
+          await _onUnionChanged(
+            match,
+            prefilling: true,
+            generation: activeGeneration,
+          );
+        }
+      } else if (prefilling && widget.existingListing?.bdAreaId != null) {
+        setState(() {
+          _selArea = _areas.cast<BdArea?>().firstWhere(
+            (a) => a!.id == widget.existingListing!.bdAreaId,
+            orElse: () => null,
+          );
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingUnions = false);
+    }
+  }
+
+  Future<void> _onUnionChanged(
+    BdUnion? union, {
+    bool prefilling = false,
+    int? generation,
+  }) async {
+    final activeGeneration = generation ?? _beginLocationGeneration();
+    setState(() {
+      _selUnion = union;
+      if (!prefilling) {
+        _selArea = null;
+        _areas = const [];
+      }
+      _loadingAreas = union != null;
+    });
+    if (union == null) return;
+    try {
+      final list = await _locationRepo.getAreas(unionId: union.id);
+      if (!mounted) return;
+      if (!_isCurrentLocationGeneration(activeGeneration)) return;
       setState(() {
         _areas = list;
         _loadingAreas = false;
@@ -768,6 +1140,29 @@ class _CreateAdoptionListingScreenState
     } catch (_) {
       if (mounted) setState(() => _loadingAreas = false);
     }
+  }
+
+  Future<String?> _validateLocationSelection() async {
+    if (_selDivision == null || _selDistrict == null) return null;
+    final result = await _locationRepo.validateSelection(
+      divisionId: _selDivision?.id,
+      districtId: _selDistrict?.id,
+      cityCorporationId: _addressMode == LocationAddressMode.urban
+          ? _selCityCorporation?.id
+          : null,
+      zoneId: _addressMode == LocationAddressMode.urban ? _selZone?.id : null,
+      wardId: _addressMode == LocationAddressMode.urban ? _selWard?.id : null,
+      upazilaId: _addressMode == LocationAddressMode.rural
+          ? _selUpazila?.id
+          : null,
+      unionId: _addressMode == LocationAddressMode.rural ? _selUnion?.id : null,
+      areaId: _selArea?.id,
+    );
+    if (result['valid'] == true) return null;
+    final reason = result['reason']?.toString().trim();
+    return reason == null || reason.isEmpty
+        ? 'The selected location is inconsistent. Please review the location fields.'
+        : reason;
   }
 
   // ─── auth ────────────────────────────────────────────────────────────────
@@ -810,88 +1205,59 @@ class _CreateAdoptionListingScreenState
 
   // ─── GPS ─────────────────────────────────────────────────────────────────
 
+  // GPS is always optional: whatever happens here, the rest of the form
+  // (including manual division/district/... selection and final submit)
+  // must remain usable. Failures are mapped to a closed set of states — no
+  // raw exception text is ever shown.
   Future<void> _useCurrentLocation() async {
     setState(() {
       _gpsLoading = true;
       _gpsText = null;
     });
-    try {
-      final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!isServiceEnabled) {
-        if (!mounted) return;
-        setState(() {
-          _gpsLoading = false;
-          _gpsText = 'Location services are disabled. Please enable GPS.';
-        });
-        return;
-      }
 
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (!mounted) return;
-          setState(() {
-            _gpsLoading = false;
-            _gpsText = 'Location permission denied.';
-          });
-          return;
-        }
-      }
+    final result = await _gpsService.captureCurrentPosition();
+    if (!mounted) return;
 
-      if (permission == LocationPermission.deniedForever) {
-        if (!mounted) return;
-        setState(() {
-          _gpsLoading = false;
-          _gpsText =
-              'Permissions permanently denied. Please enable in Settings.';
-        });
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Location Permission Required'),
-            content: const Text(
-              'Location permission has been permanently denied. '
-              'Please open App Settings to grant permission manually.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  Geolocator.openAppSettings();
-                },
-                child: const Text('Open Settings'),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
-
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      ).timeout(const Duration(seconds: 6));
-
-      if (!mounted) return;
+    if (result.isSuccess) {
       setState(() {
-        _latitude = pos.latitude;
-        _longitude = pos.longitude;
+        _latitude = result.latitude;
+        _longitude = result.longitude;
         _gpsLoading = false;
         _gpsText =
-            '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+            '${result.latitude!.toStringAsFixed(5)}, ${result.longitude!.toStringAsFixed(5)}';
       });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _gpsLoading = false;
-        _gpsText = 'Failed to capture GPS coordinates ($e).';
-      });
+      return;
+    }
+
+    setState(() {
+      _gpsLoading = false;
+      _gpsText = result.message;
+    });
+
+    if (result.status == GpsResultStatus.deniedForever) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Location Permission Required'),
+          content: const Text(
+            'Location permission has been permanently denied. '
+            'Please open App Settings to grant permission manually.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _gpsService.openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -1075,6 +1441,17 @@ class _CreateAdoptionListingScreenState
         return null;
       case 3: // Location
         if (_bangladeshCountry == null) return 'Country lookup failed. Retry.';
+        if (_selDivision == null) return 'Division is required.';
+        if (_selDistrict == null) return 'District is required.';
+        if (_addressMode == null)
+          return 'Address mode (Urban/Rural) is required.';
+        if (_addressMode == LocationAddressMode.urban &&
+            _selCityCorporation == null) {
+          return 'City Corporation is required.';
+        }
+        if (_addressMode == LocationAddressMode.rural && _selUpazila == null) {
+          return 'Upazila/Thana is required.';
+        }
         if (_ownerPhoneCtrl.text.trim().replaceAll(RegExp(r'\D'), '').length <
             7) {
           return 'Owner mobile number is required.';
@@ -1156,13 +1533,8 @@ class _CreateAdoptionListingScreenState
 
   // ─── build payload ───────────────────────────────────────────────────────
 
-  AdoptionListingFormPayload _buildPayload({List<int> mediaIds = const []}) {
-    final resolvedMediaIds = mediaIds.isNotEmpty
-        ? mediaIds
-        : _mediaItems
-              .map((item) => item.remoteMediaId)
-              .whereType<int>()
-              .toList(growable: false);
+  AdoptionListingFormPayload _buildPayload() {
+    final resolvedMediaIds = _sanitizeMediaIdsForSubmit().mediaIds;
     final ageText = getFormattedAge();
     final dob = DateTime.now().subtract(
       Duration(
@@ -1178,6 +1550,8 @@ class _CreateAdoptionListingScreenState
       name: _nameCtrl.text.trim(),
       species: _species,
       breed: getBreedValue(),
+      animalTypeId: _selectedTypeId,
+      breedId: _selectedBreedId,
       ageText: ageText,
       ageYears: _ageYears,
       ageMonths: _ageMonths,
@@ -1185,7 +1559,10 @@ class _CreateAdoptionListingScreenState
       totalAgeDays:
           ((_ageYears ?? 0) * 365 + (_ageMonths ?? 0) * 30.4 + (_ageDays ?? 0))
               .round(),
-      approximateDateOfBirth: dob.toIso8601String(),
+      approximateDateOfBirth:
+          (_ageYears == null && _ageMonths == null && _ageDays == null)
+          ? null
+          : DateTime.utc(dob.year, dob.month, dob.day).toIso8601String(),
       gender: _gender,
       sizeText: _selectedSize ?? 'Unknown',
       colorText: getColorValue(),
@@ -1203,7 +1580,20 @@ class _CreateAdoptionListingScreenState
       countryId: _bangladeshCountry!.id,
       bdDivisionId: _selDivision?.id,
       bdDistrictId: _selDistrict?.id,
-      bdUpazilaId: _selUpazila?.id,
+      bdAddressMode: _addressMode == null
+          ? null
+          : (_addressMode == LocationAddressMode.urban ? 'URBAN' : 'RURAL'),
+      bdCityCorporationId: _addressMode == LocationAddressMode.urban
+          ? _selCityCorporation?.id
+          : null,
+      bdZoneId: _addressMode == LocationAddressMode.urban ? _selZone?.id : null,
+      bdWardId: _addressMode == LocationAddressMode.urban ? _selWard?.id : null,
+      bdUpazilaId: _addressMode == LocationAddressMode.rural
+          ? _selUpazila?.id
+          : null,
+      bdUnionId: _addressMode == LocationAddressMode.rural
+          ? _selUnion?.id
+          : null,
       bdAreaId: _selArea?.id,
       serviceAreaType: _serviceAreaType,
       allowInternationalAdoption: _allowIntl,
@@ -1223,19 +1613,52 @@ class _CreateAdoptionListingScreenState
     );
   }
 
+  ({List<int> mediaIds, bool sanitized}) _sanitizeMediaIdsForSubmit() {
+    final sanitized = sanitizeAdoptionMediaIds(
+      _mediaItems,
+      allowedExistingMediaIds: _existingServerMediaIds,
+    );
+    final seen = <int>{};
+    final rawCount = _mediaItems.fold<int>(0, (count, item) {
+      final mediaId = item.remoteMediaId;
+      if (mediaId == null) return count;
+      if (!seen.add(mediaId)) return count + 1;
+      if (item.localPath == null &&
+          !_existingServerMediaIds.contains(mediaId)) {
+        return count + 1;
+      }
+      return count;
+    });
+    return (mediaIds: sanitized, sanitized: rawCount > 0);
+  }
+
   // ─── save draft ──────────────────────────────────────────────────────────
 
   Future<void> _saveDraft() async {
     if (_isSavingDraft || _bangladeshCountry == null) return;
     setState(() => _isSavingDraft = true);
     try {
-      List<int> mediaIds = const [];
+      final messenger = ScaffoldMessenger.of(context);
+      final locationError = await _validateLocationSelection();
+      if (locationError != null) {
+        if (!mounted) return;
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(locationError)));
+        return;
+      }
       if (_mediaItems.isNotEmpty) {
+        final sanitized = _sanitizeMediaIdsForSubmit();
+        if (sanitized.sanitized && mounted) {
+          _showSnack(
+            'Some stale media was removed from this session. Please re-add any missing photos.',
+          );
+        }
         setState(() => _mediaUploading = true);
-        mediaIds = await _ensureMediaUploaded();
+        await _ensureMediaUploaded();
         if (mounted) setState(() => _mediaUploading = false);
       }
-      final payload = _buildPayload(mediaIds: mediaIds);
+      final payload = _buildPayload();
       if (widget.existingListing != null) {
         await _repository.updateAdoptionListing(
           widget.existingListing!.id,
@@ -1245,6 +1668,7 @@ class _CreateAdoptionListingScreenState
       } else {
         await _repository.createAdoptionListing(payload, submitNow: false);
       }
+      await _mediaController.clearPersistedDraft();
       if (!mounted) return;
       _showSnack('Draft saved successfully.');
       Navigator.of(context).pop(true);
@@ -1264,19 +1688,33 @@ class _CreateAdoptionListingScreenState
   // ─── open preview ─────────────────────────────────────────────────────────
 
   Future<void> _openPreview() async {
+    final messenger = ScaffoldMessenger.of(context);
     if (!_validateAll()) {
       final firstBad = (_sectionErrors.keys.toList()..sort()).first;
       _goToStep(firstBad);
       _showSnack(_sectionErrors[firstBad] ?? 'Please fix form errors.');
       return;
     }
+    final locationError = await _validateLocationSelection();
+    if (locationError != null) {
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(locationError)));
+      return;
+    }
 
     // Upload media before navigating to preview
-    List<int> mediaIds = const [];
     if (_mediaItems.isNotEmpty) {
+      final sanitized = _sanitizeMediaIdsForSubmit();
+      if (sanitized.sanitized && mounted) {
+        _showSnack(
+          'Some stale media was removed from this session. Please re-add any missing photos.',
+        );
+      }
       setState(() => _mediaUploading = true);
       try {
-        mediaIds = await _ensureMediaUploaded();
+        await _ensureMediaUploaded();
       } catch (e) {
         if (!mounted) return;
         setState(() {
@@ -1288,7 +1726,7 @@ class _CreateAdoptionListingScreenState
       if (mounted) setState(() => _mediaUploading = false);
     }
 
-    final payload = _buildPayload(mediaIds: mediaIds);
+    final payload = _buildPayload();
     if (!mounted) return;
 
     final result = await Navigator.of(context).push<bool>(
@@ -1324,13 +1762,27 @@ class _CreateAdoptionListingScreenState
 
     update(() => _isSavingDraft = true);
     try {
-      List<int> mediaIds = const [];
+      final messenger = ScaffoldMessenger.of(context);
+      final locationError = await _validateLocationSelection();
+      if (locationError != null) {
+        if (!mounted) return;
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(locationError)));
+        return;
+      }
       if (_mediaItems.isNotEmpty) {
+        final sanitized = _sanitizeMediaIdsForSubmit();
+        if (sanitized.sanitized && mounted) {
+          _showSnack(
+            'Some stale media was removed from this session. Please re-add any missing photos.',
+          );
+        }
         update(() => _mediaUploading = true);
-        mediaIds = await _ensureMediaUploaded();
+        await _ensureMediaUploaded();
         if (mounted) update(() => _mediaUploading = false);
       }
-      final payload = _buildPayload(mediaIds: mediaIds);
+      final payload = _buildPayload();
       if (widget.existingListing != null) {
         await _repository.updateAdoptionListing(
           widget.existingListing!.id,
@@ -1340,6 +1792,7 @@ class _CreateAdoptionListingScreenState
       } else {
         await _repository.createAdoptionListing(payload, submitNow: true);
       }
+      await _mediaController.clearPersistedDraft();
       if (!mounted) return;
       _showSnack(
         widget.existingListing != null
@@ -1361,8 +1814,17 @@ class _CreateAdoptionListingScreenState
   }
 
   String _friendlyError(Object e) {
+    if (e is ApiClientException) {
+      final code = e.code?.trim().toUpperCase();
+      if (code == 'ADOPTION_MEDIA_ALREADY_BOUND') {
+        return 'One or more photos already belong to another adoption listing. Remove the stale photo and try again.';
+      }
+    }
     if (e is MediaUploadException) return e.userMessage;
     final raw = e.toString().replaceFirst('Exception: ', '').trim();
+    if (raw.contains('already attached to another adoption listing')) {
+      return 'One or more photos already belong to another adoption listing. Remove the stale photo and try again.';
+    }
     if (raw.contains('Token not found')) return 'Please sign in again.';
     if (raw.contains('Validation error'))
       return 'Some fields are invalid. Please review.';
@@ -1810,32 +2272,28 @@ class _PageBasicInfo extends StatelessWidget {
           ),
           _divider(),
 
-          // Species
-          DropdownButtonFormField<String>(
+          // Species — sourced from the canonical animal-taxonomy API, never
+          // a hardcoded list. Changing species clears the breed selection.
+          SelectorFormField<String>(
+            label: 'Species *',
             value: s._species,
-            isExpanded: true,
-            style: TextStyle(fontSize: 14, color: cs.onSurface),
-            decoration: const InputDecoration(
-              labelText: 'Species *',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              isDense: true,
-            ),
-            items: _speciesLabels.entries.map((e) {
-              return DropdownMenuItem(
-                value: e.key,
-                child: Text(
-                  e.value,
-                  style: const TextStyle(fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }).toList(),
-            onChanged: (v) {
-              if (v == null) return;
+            selectedLabel: s.speciesLabel(),
+            searchHint: 'Search species',
+            emptyMessage: 'No species available. Pull to retry.',
+            load: () async {
+              final types = await s._loadAnimalTypesForSelector();
+              return types
+                  .map(
+                    (t) => SelectorItem<String>(
+                      value: t.code ?? t.name,
+                      label: t.display(),
+                      subtitle: t.nameBn,
+                      searchTerms: [t.name, if (t.nameBn != null) t.nameBn!],
+                    ),
+                  )
+                  .toList();
+            },
+            onSelected: (v) {
               s.update(() {
                 s._species = v;
                 s._selectedBreedName = null;
@@ -1845,39 +2303,38 @@ class _PageBasicInfo extends StatelessWidget {
           ),
           _divider(),
 
-          // Breed Dropdown
+          // Breed — sourced from the canonical breed catalog for the
+          // selected species (includes Local/Indigenous, Mixed breed,
+          // Unknown, and Other as real entries, not a hardcoded fallback).
           if (s._loadingBreeds)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: LinearProgressIndicator(),
             )
           else
-            DropdownButtonFormField<String>(
+            SelectorFormField<String>(
+              label: 'Breed *',
               value: s._selectedBreedName,
-              isExpanded: true,
-              style: TextStyle(fontSize: 14, color: cs.onSurface),
-              decoration: const InputDecoration(
-                labelText: 'Breed *',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                isDense: true,
-              ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Breed is required.' : null,
-              items: s.getBreedOptions().map((bName) {
-                return DropdownMenuItem(
-                  value: bName,
-                  child: Text(
-                    bName,
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              }).toList(),
-              onChanged: (v) => s.update(() {
+              selectedLabel: s._selectedBreedName,
+              enabled: s._selectedTypeId != null,
+              disabledHint: 'Select a species first',
+              errorText: s._selectedBreedName == null ? null : null,
+              searchHint: 'Search breed',
+              emptyMessage: 'No breeds available. Pull to retry.',
+              load: () async {
+                final breeds = await s._loadBreedsForSelector();
+                return breeds
+                    .map(
+                      (b) => SelectorItem<String>(
+                        value: b.name,
+                        label: b.display(),
+                        subtitle: b.nameBn,
+                        searchTerms: [b.name, ...b.aliasNames],
+                      ),
+                    )
+                    .toList();
+              },
+              onSelected: (v) => s.update(() {
                 s._selectedBreedName = v;
               }),
             ),
@@ -2291,59 +2748,177 @@ class _PageLocation extends StatelessWidget {
           _divider(),
 
           _sectionLabel(context, 'BD LOCATION'),
-          _LocationDropdown<BdDivision>(
-            label: 'Division',
-            value: s._selDivision,
-            items: s._divisions,
-            loading: false,
-            display: (d) => d.display(),
-            onChanged: s._onDivisionChanged,
-            valueId: (d) => d.id,
+          _divider(),
+
+          // Urban addresses (covered by a City Corporation) never need a
+          // union/upazila — this toggle switches the whole lower chain.
+          LocationSelectorWidget(
+            divisionId: s._selDivision?.id,
+            districtId: s._selDistrict?.id,
+            addressMode: s._addressMode,
+            cityCorporationId: s._selCityCorporation?.id,
+            zoneId: s._selZone?.id,
+            wardId: s._selWard?.id,
+            upazilaId: s._selUpazila?.id,
+            unionId: s._selUnion?.id,
+            areaId: s._selArea?.id,
+            divisionName: s._selDivision?.display(),
+            districtName: s._selDistrict?.display(),
+            cityCorporationName: s._selCityCorporation?.display(),
+            zoneName: s._selZone?.display(),
+            wardName: s._selWard?.display(),
+            upazilaName: s._selUpazila?.display(),
+            unionName: s._selUnion?.display(),
+            areaName: s._selArea?.display(),
+            disabled: false,
+            required: true,
+            onDivisionChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._selDivision = id == null
+                    ? null
+                    : BdDivision(id: id, code: '', nameEn: name ?? '');
+                s._selDistrict = null;
+                s._addressMode = null;
+                s._isUrbanPath = false;
+                s._selCityCorporation = null;
+                s._selZone = null;
+                s._selWard = null;
+                s._selUpazila = null;
+                s._selUnion = null;
+                s._selArea = null;
+              });
+            },
+            onDistrictChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._selDistrict = id == null
+                    ? null
+                    : BdDistrict(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        divisionId: s._selDivision?.id ?? 0,
+                      );
+                s._addressMode = null;
+                s._isUrbanPath = false;
+                s._selCityCorporation = null;
+                s._selZone = null;
+                s._selWard = null;
+                s._selUpazila = null;
+                s._selUnion = null;
+                s._selArea = null;
+              });
+            },
+            onAddressModeChanged: (mode) {
+              s._beginLocationGeneration();
+              s._setUrbanPath(mode == LocationAddressMode.urban);
+            },
+            onCityCorporationChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._addressMode = LocationAddressMode.urban;
+                s._isUrbanPath = true;
+                s._selCityCorporation = id == null
+                    ? null
+                    : BdArea(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        type: 'CITY_CORPORATION',
+                      );
+                s._selZone = null;
+                s._selWard = null;
+                s._selUpazila = null;
+                s._selUnion = null;
+                s._selArea = null;
+              });
+            },
+            onZoneChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._addressMode = LocationAddressMode.urban;
+                s._isUrbanPath = true;
+                s._selZone = id == null
+                    ? null
+                    : BdArea(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        type: 'ZONE',
+                        parentId: s._selCityCorporation?.id,
+                      );
+                s._selWard = null;
+                s._selArea = null;
+              });
+            },
+            onWardChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._addressMode = LocationAddressMode.urban;
+                s._isUrbanPath = true;
+                s._selWard = id == null
+                    ? null
+                    : BdArea(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        type: 'WARD',
+                        parentId: s._selZone?.id,
+                      );
+                s._selArea = null;
+              });
+            },
+            onUpazilaChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._addressMode = LocationAddressMode.rural;
+                s._isUrbanPath = false;
+                s._selUpazila = id == null
+                    ? null
+                    : BdUpazila(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        districtId: s._selDistrict?.id ?? 0,
+                      );
+                s._selCityCorporation = null;
+                s._selZone = null;
+                s._selWard = null;
+                s._selUnion = null;
+                s._selArea = null;
+              });
+            },
+            onUnionChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._addressMode = LocationAddressMode.rural;
+                s._isUrbanPath = false;
+                s._selUnion = id == null
+                    ? null
+                    : BdUnion(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        upazilaId: s._selUpazila?.id ?? 0,
+                      );
+                s._selArea = null;
+              });
+            },
+            onAreaChanged: (id, name) {
+              s._beginLocationGeneration();
+              s.update(() {
+                s._selArea = id == null
+                    ? null
+                    : BdArea(
+                        id: id,
+                        code: '',
+                        nameEn: name ?? '',
+                        type: 'AREA',
+                      );
+              });
+            },
           ),
-          _divider(),
-
-          if (s._loadingDistricts)
-            const LinearProgressIndicator()
-          else
-            _LocationDropdown<BdDistrict>(
-              label: 'District',
-              value: s._selDistrict,
-              items: s._districts,
-              loading: false,
-              display: (d) => d.display(),
-              hint: s._selDivision == null ? 'Select division first' : null,
-              onChanged: s._districts.isEmpty ? null : s._onDistrictChanged,
-              valueId: (d) => d.id,
-            ),
-          _divider(),
-
-          if (s._loadingUpazilas)
-            const LinearProgressIndicator()
-          else
-            _LocationDropdown<BdUpazila>(
-              label: 'Upazila / Thana (optional)',
-              value: s._selUpazila,
-              items: s._upazilas,
-              loading: false,
-              display: (u) => u.display(),
-              hint: s._selDistrict == null ? 'Select district first' : null,
-              onChanged: s._upazilas.isEmpty ? null : s._onUpazilaChanged,
-              valueId: (u) => u.id,
-            ),
-          _divider(),
-
-          if (s._loadingAreas)
-            const LinearProgressIndicator()
-          else if (s._areas.isNotEmpty)
-            _LocationDropdown<BdArea>(
-              label: 'Area (optional)',
-              value: s._selArea,
-              items: s._areas,
-              loading: false,
-              display: (a) => a.display(),
-              onChanged: (a) => s.update(() => s._selArea = a),
-              valueId: (a) => a.id,
-            ),
 
           _divider(),
           _sectionLabel(context, 'GPS COORDINATES'),
@@ -2498,7 +3073,7 @@ class _PageReview extends StatelessWidget {
     final name = s._nameCtrl.text.trim().isEmpty
         ? 'Unnamed pet'
         : s._nameCtrl.text.trim();
-    final species = _speciesLabels[s._species] ?? s._species;
+    final species = s.speciesLabel();
     final breed = s.getBreedValue().isEmpty ? '—' : s.getBreedValue();
     final age = s.getFormattedAge().isEmpty ? '—' : s.getFormattedAge();
     final gender = _genderLabels[s._gender] ?? s._gender;

@@ -104,7 +104,11 @@ class AdoptionApplicationUiModel {
     );
   }
 
-  AdoptionApplicationUiModel copyWith({String? ownerNotes, String? rawStatus, String? status}) {
+  AdoptionApplicationUiModel copyWith({
+    String? ownerNotes,
+    String? rawStatus,
+    String? status,
+  }) {
     return AdoptionApplicationUiModel(
       id: id,
       status: status ?? this.status,

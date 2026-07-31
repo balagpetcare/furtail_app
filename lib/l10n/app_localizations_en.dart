@@ -1244,7 +1244,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a target amount greater than 0.';
 
   @override
-  String get fundraisingValidationDeadline => 'Select a campaign deadline.';
+  String get fundraisingValidationDeadline => 'Please add a campaign deadline.';
 
   @override
   String get fundraisingValidationEstimatedExpense =>
@@ -1262,7 +1262,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fundraisingValidationMediaBlocking =>
-      'Resolve failed or pending media items before continuing.';
+      'One or more uploaded files are unavailable. Please upload them again.';
+
+  @override
+  String get fundraisingValidationMediaUploading =>
+      'Please wait until all media uploads are complete.';
 
   @override
   String get fundraisingValidationPayout =>

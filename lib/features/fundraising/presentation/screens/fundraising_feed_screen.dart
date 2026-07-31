@@ -209,7 +209,7 @@ class _FundraisingFeedScreenState extends ConsumerState<FundraisingFeedScreen> {
             : 'No fundraisers yet',
         message: hasCustomFilters
             ? 'Try clearing one or more filters to see available fundraisers.'
-            : 'Published fundraisers will appear here as soon as they are available.',
+            : 'Fundraisers open for community support will appear here, including eligible campaigns under review.',
         actionLabel: hasCustomFilters ? 'Clear filters' : 'Create fundraiser',
         actionIcon: hasCustomFilters
             ? Icons.filter_alt_off_rounded
@@ -484,8 +484,7 @@ class _ActiveFiltersSummary extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colorScheme.primaryContainer.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),

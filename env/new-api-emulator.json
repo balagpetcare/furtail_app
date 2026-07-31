@@ -1,0 +1,5 @@
+{
+  "FURTAIL_API_BASE_URL": "http://10.0.2.2:7300/api/v1",
+  "CENTRAL_AUTH_API_BASE_URL": "http://10.0.2.2:5010/api/v1",
+  "CENTRAL_AUTH_CLIENT_ID": "furtail-mobile"
+}

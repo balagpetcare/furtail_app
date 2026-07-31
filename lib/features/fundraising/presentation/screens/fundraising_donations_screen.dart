@@ -8,10 +8,7 @@ import '../widgets/fundraising_status_views.dart';
 import 'fundraising_common_scaffold.dart';
 
 class FundraisingDonationsScreen extends ConsumerWidget {
-  const FundraisingDonationsScreen({
-    super.key,
-    required this.campaignId,
-  });
+  const FundraisingDonationsScreen({super.key, required this.campaignId});
 
   final int campaignId;
 
@@ -30,9 +27,8 @@ class FundraisingDonationsScreen extends ConsumerWidget {
       showBack: true,
       showVerification: true,
       body: asyncValue.when(
-        loading: () => const FundraisingLoadingView(
-          message: 'Loading donations…',
-        ),
+        loading: () =>
+            const FundraisingLoadingView(message: 'Loading donations…'),
         error: (error, _) {
           final safeError = mapFundraisingSafeError(error);
           return FundraisingErrorView(
@@ -95,9 +91,7 @@ class FundraisingDonationsScreen extends ConsumerWidget {
                               donation.donor.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
+                              style: Theme.of(context).textTheme.titleSmall
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             const SizedBox(height: 3),
@@ -114,10 +108,11 @@ class FundraisingDonationsScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Text(
                         formatFundraisingMoney(context, donation.amount),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w900,
+                            ),
                       ),
                     ],
                   ),

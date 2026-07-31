@@ -201,10 +201,14 @@ Future<void> _driveError(
   required int statusCode,
   required String path,
   required String code,
+  String? failedAccessToken = 'expired-token',
 }) async {
   final requestOptions = RequestOptions(
     path: path,
     baseUrl: 'http://127.0.0.1:1',
+    headers: failedAccessToken == null
+        ? const {}
+        : {'Authorization': 'Bearer $failedAccessToken'},
   );
   final err = DioException(
     requestOptions: requestOptions,

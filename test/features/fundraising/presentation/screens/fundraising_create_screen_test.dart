@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:furtail_app/features/common/data/models/bd_location_models.dart';
 import 'package:furtail_app/features/fundraising/data/models/fundraising_draft_models.dart';
 import 'package:furtail_app/features/fundraising/data/models/fundraising_models.dart';
@@ -11,8 +12,10 @@ import 'package:furtail_app/features/fundraising/data/models/fundraising_payout_
 import 'package:furtail_app/features/fundraising/data/repositories/fundraising_repository.dart';
 import 'package:furtail_app/features/fundraising/data/services/fundraising_draft_recovery_service.dart';
 import 'package:furtail_app/features/fundraising/presentation/controllers/fundraising_create_wizard_controller.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_account_setup_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
+import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_campaign_preview_card.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_media_needs_attention_panel.dart';
 import 'package:furtail_app/features/location/presentation/providers/location_provider.dart';
 import 'package:furtail_app/features/media/composer/fundraising_media_validation.dart';
@@ -59,9 +62,108 @@ void main() {
         );
 
         expect(repo.createDraftCalls, 0);
-        expect(find.text('Step 1 of 3'), findsOneWidget);
-        expect(find.text('Fundraiser details'), findsWidgets);
+        expect(find.text('Step 1 of 6'), findsOneWidget);
+        expect(find.text('Campaign Basics'), findsWidgets);
         expect(find.text('Eligibility'), findsNothing);
+        expect(find.byType(FundraisingCreateScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'a pending account opens the wizard without a verification detour',
+      (tester) async {
+        final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
+          _completedAccount(status: 'PENDING'),
+          _completedAccount(status: 'PENDING'),
+        ]);
+        final controller = FundraisingCreateWizardController(
+          repository: repo,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        );
+
+        await _pumpScreen(tester, repo: repo, controller: controller);
+
+        expect(repo.fetchMyAccountCalls, 2);
+        expect(find.text('Step 1 of 6'), findsOneWidget);
+        expect(find.text('Campaign Basics'), findsWidgets);
+        expect(find.byType(FundraisingCreateScreen), findsWidgets);
+        expect(find.byType(FundraisingAccountSetupScreen), findsNothing);
+      },
+    );
+
+    // Fundraising/payout verification gates withdrawal only — never
+    // creating or submitting a campaign. None of the account states below
+    // may bounce the user into the verification/account-update screen.
+    testWidgets(
+      'an account still missing KYC documents opens the wizard with no verification detour',
+      (tester) async {
+        final unverified = _accountMissingDocuments(status: 'PENDING');
+        expect(unverified.readiness.canStartFundraiser, isFalse);
+
+        final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
+          unverified,
+          unverified,
+        ]);
+        final controller = FundraisingCreateWizardController(
+          repository: repo,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        );
+
+        await _pumpScreen(tester, repo: repo, controller: controller);
+
+        expect(find.byType(FundraisingAccountSetupScreen), findsNothing);
+        expect(find.text('Step 1 of 6'), findsOneWidget);
+        expect(find.byType(FundraisingCreateScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'a payout-REJECTED account opens the wizard with no verification detour',
+      (tester) async {
+        final rejected = _completedAccount(status: 'REJECTED');
+        expect(rejected.readiness.canStartFundraiser, isFalse);
+
+        final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
+          rejected,
+          rejected,
+        ]);
+        final controller = FundraisingCreateWizardController(
+          repository: repo,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        );
+
+        await _pumpScreen(tester, repo: repo, controller: controller);
+
+        expect(find.byType(FundraisingAccountSetupScreen), findsNothing);
+        expect(find.text('Step 1 of 6'), findsOneWidget);
+        expect(find.byType(FundraisingCreateScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'a user with no fundraising verification account at all opens the wizard',
+      (tester) async {
+        final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
+          null,
+          null,
+        ]);
+        final controller = FundraisingCreateWizardController(
+          repository: repo,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        );
+
+        await _pumpScreen(tester, repo: repo, controller: controller);
+
+        expect(find.byType(FundraisingAccountSetupScreen), findsNothing);
+        expect(find.text('Step 1 of 6'), findsOneWidget);
         expect(find.byType(FundraisingCreateScreen), findsOneWidget);
       },
     );
@@ -77,24 +179,36 @@ void main() {
           FundraisingDraftRecovery.empty().copyWith(
             stepIndex: 1,
             title: 'Help Tuni recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            whatHappened:
+                'A recent issue has made this fundraiser necessary and urgent.',
+            whyUrgent:
+                'Immediate help is needed to address the situation safely.',
+            fundUsage:
+                'The funds will cover treatment, transport, and recovery support.',
             story:
                 'This is a sufficiently long fundraiser story that satisfies validation.',
             category: 'TREATMENT',
             beneficiaryName: 'Tuni',
             beneficiaryType: 'PET',
-            locationText: 'Dhaka, Bangladesh',
+            urgency: 'HIGH',
+            treatmentProvider: 'Dhaka Animal Hospital',
+            fundingMode: 'ONE_TIME',
+            targetAmountMinor: 120000,
+            endsAt: DateTime(2026, 9, 1),
           ),
         ),
       );
 
       await _pumpScreen(tester, repo: repo, controller: controller);
 
-      expect(find.text('Step 2 of 3'), findsOneWidget);
-      expect(find.text('Media & location'), findsWidgets);
-      expect(find.text('Fundraiser details'), findsNothing);
+      expect(find.text('Step 4 of 6'), findsOneWidget);
+      expect(find.text('Location'), findsWidgets);
+      expect(find.text('Campaign Basics'), findsNothing);
     });
 
-    testWidgets('no payout method is required to reach Preview', (
+    testWidgets('no payout method is required for the funding-details step', (
       tester,
     ) async {
       final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
@@ -107,26 +221,65 @@ void main() {
           FundraisingDraftRecovery.empty().copyWith(
             stepIndex: 2,
             title: 'Help Tuni recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            whatHappened:
+                'A recent issue has made this fundraiser necessary and urgent.',
+            whyUrgent:
+                'Immediate help is needed to address the situation safely.',
+            fundUsage:
+                'The funds will cover treatment, transport, and recovery support.',
             story:
                 'This is a sufficiently long fundraiser story that satisfies validation.',
             category: 'TREATMENT',
             beneficiaryName: 'Tuni',
             beneficiaryType: 'PET',
-            locationText: 'Dhaka, Bangladesh',
+            urgency: 'HIGH',
+            treatmentProvider: 'Dhaka Animal Hospital',
+            fundingMode: 'ONE_TIME',
             targetAmountMinor: 120000,
             endsAt: DateTime(2026, 9, 1),
+            locationText: 'Dhaka, Bangladesh',
+            bdDivisionId: 30,
+            bdDistrictId: 3026,
+            bdUpazilaId: 302601,
+            bdUnionId: 5001,
+            expenses: const <FundraisingExpenseItem>[
+              FundraisingExpenseItem(
+                code: 'vet',
+                label: 'Veterinary care',
+                amountMinor: 120000,
+              ),
+            ],
           ),
         ),
       );
+      final mediaController = _buildMediaController();
+      await mediaController.addItems(<MediaDraftItem>[
+        _fakeMediaItem(
+          id: 'ready-media',
+          fileName: 'ready-photo.jpg',
+          state: MediaDraftState.ready,
+          remoteMediaId: 1,
+        ),
+      ]);
 
-      await _pumpScreen(tester, repo: repo, controller: controller);
+      await _pumpScreen(
+        tester,
+        repo: repo,
+        controller: controller,
+        mediaController: mediaController,
+      );
 
-      expect(find.text('Step 3 of 3'), findsOneWidget);
-      expect(find.text('Final review'), findsOneWidget);
+      expect(find.text('Step 6 of 6'), findsOneWidget);
+      expect(find.text('Review & Submit'), findsOneWidget);
+      expect(find.text('Funding Details'), findsWidgets);
       expect(find.text('Payout'), findsNothing);
     });
 
-    testWidgets('optional expense breakdown expands correctly', (tester) async {
+    testWidgets('preview step renders the campaign preview card', (
+      tester,
+    ) async {
       final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
         _completedAccount(status: 'VERIFIED'),
         _completedAccount(status: 'VERIFIED'),
@@ -135,30 +288,117 @@ void main() {
         repository: repo,
         recoveryService: _InMemoryRecoveryService(
           FundraisingDraftRecovery.empty().copyWith(
+            stepIndex: 2,
             title: 'Help Tuni recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            whatHappened:
+                'A recent issue has made this fundraiser necessary and urgent.',
+            whyUrgent:
+                'Immediate help is needed to address the situation safely.',
+            fundUsage:
+                'The funds will cover treatment, transport, and recovery support.',
             story:
                 'This is a sufficiently long fundraiser story that satisfies validation.',
             category: 'TREATMENT',
             beneficiaryName: 'Tuni',
             beneficiaryType: 'PET',
+            urgency: 'HIGH',
+            treatmentProvider: 'Dhaka Animal Hospital',
+            fundingMode: 'ONE_TIME',
+            locationText: 'Dhaka, Bangladesh',
+            bdDivisionId: 30,
+            bdDistrictId: 3026,
+            bdUpazilaId: 302601,
+            bdUnionId: 5001,
+            targetAmountMinor: 120000,
+            endsAt: DateTime(2026, 9, 1),
+          ),
+        ),
+      );
+      final mediaController = _buildMediaController();
+      await mediaController.addItems(<MediaDraftItem>[
+        _fakeMediaItem(
+          id: 'ready-preview',
+          fileName: 'ready-photo.jpg',
+          state: MediaDraftState.ready,
+          remoteMediaId: 2,
+        ),
+      ]);
+
+      await _pumpScreen(
+        tester,
+        repo: repo,
+        controller: controller,
+        mediaController: mediaController,
+      );
+      expect(find.text('Step 6 of 6'), findsOneWidget);
+      expect(find.text('Review & Submit'), findsOneWidget);
+      expect(find.byType(FundraisingCampaignPreviewCard), findsOneWidget);
+    });
+
+    testWidgets('deadline selector offers only fixed fundraiser durations', (
+      tester,
+    ) async {
+      final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
+        _completedAccount(status: 'VERIFIED'),
+        _completedAccount(status: 'VERIFIED'),
+      ]);
+      final controller = FundraisingCreateWizardController(
+        repository: repo,
+        recoveryService: _InMemoryRecoveryService(
+          FundraisingDraftRecovery.empty().copyWith(
+            stepIndex: 2,
+            title: 'Help Tuni recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            whatHappened:
+                'A recent issue has made this fundraiser necessary and urgent.',
+            whyUrgent:
+                'Immediate help is needed to address the situation safely.',
+            fundUsage:
+                'The funds will cover treatment, transport, and recovery support.',
+            story:
+                'This is a sufficiently long fundraiser story that satisfies validation.',
+            category: 'TREATMENT',
+            beneficiaryName: 'Tuni',
+            beneficiaryType: 'PET',
+            urgency: 'HIGH',
+            treatmentProvider: 'Dhaka Animal Hospital',
+            fundingMode: 'ONE_TIME',
+            targetAmountMinor: 120000,
           ),
         ),
       );
 
       await _pumpScreen(tester, repo: repo, controller: controller);
-      final scrollable = find.byType(Scrollable).first;
-      await tester.scrollUntilVisible(
-        find.widgetWithText(TextButton, 'Add expense breakdown'),
-        300,
-        scrollable: scrollable,
-      );
-      await tester.tap(
-        find.widgetWithText(TextButton, 'Add expense breakdown'),
-      );
-      await _settleUi(tester);
 
-      expect(find.text('Hide expense breakdown'), findsOneWidget);
-      expect(find.text('Veterinary care'), findsOneWidget);
+      await tester.tap(find.text('Select deadline'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('7 days'), findsOneWidget);
+      expect(find.text('15 days'), findsOneWidget);
+      expect(find.text('30 days'), findsOneWidget);
+      expect(find.text('90 days'), findsOneWidget);
+      expect(find.text('14 days'), findsNothing);
+
+      final before = DateTime.now();
+      await tester.tap(find.text('7 days'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      final expectedDeadline = DateTime(
+        before.year,
+        before.month,
+        before.day + 7,
+        23,
+        59,
+      );
+      expect(
+        find.text(DateFormat.yMMMd().format(expectedDeadline)),
+        findsOneWidget,
+      );
+      expect(controller.draft.campaignDurationDays, 7);
     });
 
     testWidgets('keyboard does not cover the focused field', (tester) async {
@@ -230,6 +470,26 @@ void main() {
         );
       },
     );
+
+    testWidgets('local media items block Continue until the upload settles', (
+      tester,
+    ) async {
+      final pending = _fakeMediaItem(
+        id: 'pending',
+        fileName: 'pending.jpg',
+        state: MediaDraftState.local,
+      );
+
+      final validation = evaluateFundraisingMedia(<MediaDraftItem>[pending]);
+
+      expect(validation.hasAnyItem, isTrue);
+      expect(validation.hasPendingItems, isTrue);
+      expect(validation.canContinue, isFalse);
+      expect(
+        validation.validationReason,
+        'Wait for uploads to finish before continuing.',
+      );
+    });
 
     testWidgets(
       'Needs attention panel renders the failed item with retry/remove actions',
@@ -430,6 +690,7 @@ Future<void> _pumpScreen(
         ),
       ],
       child: MaterialApp(
+        locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
@@ -444,7 +705,17 @@ Future<void> _pumpScreen(
       ),
     ),
   );
-  await _settleUi(tester);
+  await tester.pump();
+  for (var i = 0; i < 100; i += 1) {
+    final hasWizardStep =
+        find.text('Step 1 of 6').evaluate().isNotEmpty ||
+        find.text('Step 4 of 6').evaluate().isNotEmpty ||
+        find.text('Step 6 of 6').evaluate().isNotEmpty ||
+        find.text('Complete your fundraising profile').evaluate().isNotEmpty;
+    if (hasWizardStep && !tester.binding.hasScheduledFrame) break;
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  await tester.pump();
 }
 
 MediaComposerController _buildMediaController() {
@@ -453,14 +724,6 @@ MediaComposerController _buildMediaController() {
     draftStorageKey: 'fundraising-create-screen-test',
     uploadMedia: _successfulUpload,
   );
-}
-
-Future<void> _settleUi(
-  WidgetTester tester, {
-  Duration extra = const Duration(milliseconds: 250),
-}) async {
-  await tester.pump();
-  await tester.pump(extra);
 }
 
 class _SequenceFundraisingRepository extends FundraisingRepository {
@@ -592,20 +855,49 @@ Future<UploadedMediaResult> _successfulUpload(
   );
 }
 
+/// A profile-complete account that has NOT uploaded a primary KYC document,
+/// so `readiness.canStartFundraiser` is false — the real-world "verification
+/// still pending / requires update" state that used to block Submit.
+FundraisingAccount _accountMissingDocuments({required String status}) {
+  return _buildAccount(
+    status: status,
+    documents: const <FundraisingAccountDocument>[],
+  );
+}
+
 FundraisingAccount _completedAccount({required String status}) {
+  return _buildAccount(
+    status: status,
+    documents: const <FundraisingAccountDocument>[
+      FundraisingAccountDocument(
+        id: 9,
+        title: 'NID',
+        documentType: 'PRIMARY',
+        mediaUrl: 'nid.pdf',
+      ),
+    ],
+  );
+}
+
+FundraisingAccount _buildAccount({
+  required String status,
+  required List<FundraisingAccountDocument> documents,
+}) {
   return FundraisingAccount(
     id: 1,
     status: status,
     accountType: 'INDIVIDUAL',
+    fullName: 'Tuni Rahman',
     presentAddress: 'Dhaka',
     permanentAddress: 'Dhaka',
     occupation: 'Volunteer',
     divisionId: 30,
     districtId: 3026,
     upazilaId: 302601,
-    unionId: null,
-    areaId: 5001,
+    unionId: 5001,
+    areaId: null,
     dateOfBirth: DateTime(1995, 1, 1),
+    primaryDocumentType: 'NID',
     nationalIdNumber: '1234567890',
     birthRegNumber: null,
     studentIdNumber: null,
@@ -615,9 +907,7 @@ FundraisingAccount _completedAccount({required String status}) {
     orgDescription: null,
     orgWorkType: null,
     submittedAt: null,
-    documents: const <FundraisingAccountDocument>[
-      FundraisingAccountDocument(id: 9, title: 'NID', mediaUrl: 'nid.pdf'),
-    ],
+    documents: documents,
     countryCode: 'BD',
     countryName: 'Bangladesh',
     stateName: 'Dhaka',

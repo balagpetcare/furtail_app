@@ -62,15 +62,27 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => FullscreenGalleryViewer(
-                                urls: imageUrls, // ✅ ঠিক parameter
+                                urls: imageUrls,
                                 initialIndex: imageIndex < 0 ? 0 : imageIndex,
                               ),
                             ),
                           );
                         }
                       },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withValues(alpha: 0.1),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -161,13 +173,22 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                   child: Container(
                     width: 64,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isActive
-                            ? Colors.black
-                            : const Color(0xFFE7E7E7),
-                        width: isActive ? 2 : 1,
-                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: isActive
+                          ? Border.all(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2.5,
+                            )
+                          : null,
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.shadow.withValues(alpha: 0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),

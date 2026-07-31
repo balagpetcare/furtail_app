@@ -175,15 +175,18 @@ class FundraisingCreateWizardController extends ChangeNotifier {
 
   /// Validation codes blocking [step]. [mediaValidation] — the fundraiser's
   /// pure media-readiness result (see `evaluateFundraisingMedia`) — is only
-  /// consulted for the [FundraisingWizardStep.location] step (which also
-  /// hosts media/evidence pickers in this wizard) and the aggregated
-  /// [FundraisingWizardStep.preview] step. It never gates on account
+  /// consulted for the [FundraisingWizardStep.evidence] step and the
+  /// aggregated [FundraisingWizardStep.preview] step. It never gates on
+  /// account
   /// verification status or payout methods — neither is required to create
   /// or submit a fundraiser.
   List<String> validationCodesForStep(
     FundraisingWizardStep step, {
     FundraisingMediaValidationResult? mediaValidation,
   }) {
+    final mode = _draft.fundingMode.trim().toUpperCase();
+    final oneTime = mode.isEmpty || mode == 'ONE_TIME';
+
     switch (step) {
       case FundraisingWizardStep.fundraiserType:
         return <String>[
@@ -193,17 +196,37 @@ class FundraisingCreateWizardController extends ChangeNotifier {
           if (_draft.beneficiaryName.trim().isEmpty)
             'beneficiary_name_required',
           if (_draft.title.trim().length < 6) 'title_too_short',
+          if (_draft.shortDescription.trim().length < 20)
+            'short_description_too_short',
+        ];
+      case FundraisingWizardStep.storyAndGoal:
+        return <String>[
           if (_draft.story.trim().length < 40) 'story_too_short',
-          if (_draft.fundingMode.trim().toUpperCase() != 'ONGOING' &&
-              (_draft.targetAmountMinor ?? 0) <= 0)
+          if (_draft.whatHappened.trim().length < 15) 'what_happened_too_short',
+          if (_draft.whyUrgent.trim().length < 15) 'why_urgent_too_short',
+          if (_draft.fundUsage.trim().length < 15) 'fund_usage_too_short',
+          if ((_draft.urgency ?? '').trim().isEmpty) 'urgency_required',
+          if (_draft.category.trim().toUpperCase() == 'TREATMENT' &&
+              _draft.treatmentProvider.trim().isEmpty)
+            'treatment_provider_required',
+        ];
+      case FundraisingWizardStep.caseDetails:
+        return <String>[
+          if (oneTime && (_draft.targetAmountMinor ?? 0) <= 0)
             'target_amount_required',
-          if (_draft.fundingMode.trim().toUpperCase() != 'ONGOING' &&
-              (_draft.endsAt ?? _draft.deadline) == null)
+          if (oneTime && (_draft.endsAt ?? _draft.deadline) == null)
             'deadline_required',
+          if (!oneTime && (_draft.monthlyGoalMinor ?? 0) <= 0)
+            'monthly_goal_required',
         ];
       case FundraisingWizardStep.location:
         return <String>[
-          if (_draft.locationText.trim().isEmpty) 'location_required',
+          if (_draft.locationText.trim().isEmpty ||
+              !isLocationCanonicallyComplete(_draft))
+            'location_required',
+        ];
+      case FundraisingWizardStep.evidence:
+        return <String>[
           if (mediaValidation != null && !mediaValidation.hasAnyItem)
             'media_required',
           if (mediaValidation != null &&
@@ -216,7 +239,10 @@ class FundraisingCreateWizardController extends ChangeNotifier {
         final all = <String>[];
         for (final entry in const <FundraisingWizardStep>[
           FundraisingWizardStep.fundraiserType,
+          FundraisingWizardStep.storyAndGoal,
+          FundraisingWizardStep.caseDetails,
           FundraisingWizardStep.location,
+          FundraisingWizardStep.evidence,
         ]) {
           all.addAll(
             validationCodesForStep(entry, mediaValidation: mediaValidation),
@@ -417,6 +443,7 @@ class FundraisingCreateWizardController extends ChangeNotifier {
       await _recoveryService.clear();
       return submitted;
     } catch (error) {
+      _logSubmissionFailureForDebug(error);
       _submissionFailure = _mapError(
         error,
         fallback: FundraisingWizardErrorType.submitFailed,
@@ -451,38 +478,32 @@ class FundraisingCreateWizardController extends ChangeNotifier {
     final locationText = _normalizedLocationText(draft);
     final mode = draft.fundingMode.trim().toUpperCase();
     final oneTime = mode.isEmpty || mode == 'ONE_TIME';
+    final fundingMode = oneTime ? 'ONE_TIME' : 'ONGOING';
     final targetAmountMinor = oneTime
         ? (draft.targetAmountMinor ?? draft.suggestedTargetMinor)
-        : draft.targetAmountMinor;
+        : null;
     final spendingLines = draft.expenses
         .where((entry) => (entry.amountMinor ?? 0) > 0)
         .map((entry) => entry.toJson())
         .toList();
 
-    final endDateTime = draft.endsAt ?? draft.deadline;
+    final endDateTime = oneTime ? draft.endsAt ?? draft.deadline : null;
     final payload = <String, dynamic>{
       if (draft.createIdempotencyKey != null && draft.remoteDraftId == null)
         'idempotencyKey': draft.createIdempotencyKey,
       'title': draft.title.trim(),
-      'caption': draft.story.trim(),
+      'caption': _composedCaption(draft),
       'category': draft.category.trim(),
-      'fundingMode': draft.fundingMode.trim().isEmpty
-          ? 'ONE_TIME'
-          : draft.fundingMode.trim().toUpperCase(),
+      'fundingMode': fundingMode,
       if (draft.startsAt != null)
         'startsAt': FundraisingDateSerializer.serializeToUtcIso8601(
           draft.startsAt,
         ),
-      if (endDateTime != null)
-        'endsAt': FundraisingDateSerializer.serializeToUtcIso8601(endDateTime),
-      if (endDateTime != null)
-        'deadline': FundraisingDateSerializer.serializeToUtcIso8601(
-          endDateTime,
-        ),
+      'endsAt': FundraisingDateSerializer.serializeToUtcIso8601(endDateTime),
+      'deadline': FundraisingDateSerializer.serializeToUtcIso8601(endDateTime),
       'currencyCode': draft.currencyCode,
-      if (targetAmountMinor != null) 'targetAmountMinor': targetAmountMinor,
-      if (draft.monthlyGoalMinor != null)
-        'monthlyGoalMinor': draft.monthlyGoalMinor,
+      'targetAmountMinor': targetAmountMinor,
+      'monthlyGoalMinor': oneTime ? null : draft.monthlyGoalMinor,
       if (draft.nextReviewAt != null)
         'nextReviewAt': FundraisingDateSerializer.serializeToUtcIso8601(
           draft.nextReviewAt,
@@ -504,10 +525,31 @@ class FundraisingCreateWizardController extends ChangeNotifier {
       'stateId': draft.stateId,
       'cityId': draft.cityId,
       'subDistrictId': draft.subDistrictId,
+      'bdAddressMode': draft.bdAddressMode,
       'bdDivisionId': draft.bdDivisionId,
       'bdDistrictId': draft.bdDistrictId,
-      'bdUpazilaId': draft.bdUpazilaId,
-      'bdAreaId': draft.bdAreaId,
+      // Rural and urban Bangladesh identifiers are mutually exclusive
+      // branches server-side (see `validateSelection` in the API) — send
+      // only the active branch's fields so a leftover value from switching
+      // address type never gets submitted alongside the other branch's IDs.
+      if (draft.bdUpazilaId != null || draft.bdUnionId != null) ...{
+        'bdUpazilaId': draft.bdUpazilaId,
+        'bdUnionId': draft.bdUnionId,
+        'bdAreaId': draft.bdAreaId,
+      } else if (draft.bdCityCorporationId != null ||
+          draft.bdZoneId != null ||
+          draft.bdWardId != null) ...{
+        'bdCityCorporationId': draft.bdCityCorporationId,
+        'bdZoneId': draft.bdZoneId,
+        'bdWardId': draft.bdWardId,
+      } else ...{
+        'bdCityCorporationId': draft.bdCityCorporationId,
+        'bdZoneId': draft.bdZoneId,
+        'bdWardId': draft.bdWardId,
+        'bdUpazilaId': draft.bdUpazilaId,
+        'bdUnionId': draft.bdUnionId,
+        'bdAreaId': draft.bdAreaId,
+      },
       'securityLatitude': draft.securityLatitude,
       'securityLongitude': draft.securityLongitude,
       'securityLocationAccuracy': draft.securityLocationAccuracy,
@@ -531,12 +573,25 @@ class FundraisingCreateWizardController extends ChangeNotifier {
         ((draft.endsAt ?? draft.deadline) != null &&
             (draft.targetAmountMinor ?? draft.suggestedTargetMinor) > 0);
     return draft.title.trim().isNotEmpty &&
-        draft.story.trim().isNotEmpty &&
+        _composedCaption(draft).trim().isNotEmpty &&
         draft.category.trim().isNotEmpty &&
         draft.beneficiaryType.trim().isNotEmpty &&
         draft.beneficiaryName.trim().isNotEmpty &&
         durationReady &&
         _normalizedLocationText(draft).trim().isNotEmpty;
+  }
+
+  String _composedCaption(FundraisingDraftRecovery draft) {
+    final sections = <String>[
+      if (draft.story.trim().isNotEmpty) draft.story.trim(),
+      if (draft.whatHappened.trim().isNotEmpty)
+        'What happened?\n${draft.whatHappened.trim()}',
+      if (draft.whyUrgent.trim().isNotEmpty)
+        'Why is it urgent?\n${draft.whyUrgent.trim()}',
+      if (draft.fundUsage.trim().isNotEmpty)
+        'How will the funds be used?\n${draft.fundUsage.trim()}',
+    ];
+    return sections.join('\n\n');
   }
 
   String _normalizedLocationText(FundraisingDraftRecovery draft) {
@@ -570,6 +625,27 @@ class FundraisingCreateWizardController extends ChangeNotifier {
       endpointPath: 'GET /fundraising/account/me',
       error: error,
     );
+  }
+
+  void _logSubmissionFailureForDebug(Object error) {
+    logFundraisingRequestDebug(
+      operation: 'fundraising.submit',
+      method: 'POST',
+      endpointPath: 'POST /fundraising/campaigns/:id/submit',
+      error: error,
+    );
+  }
+
+  /// Test-only seam over [_mapError] so the wizard's error classification
+  /// (notably: which failures may be reported as a verification problem)
+  /// can be asserted directly, without standing up a full submit flow.
+  @visibleForTesting
+  FundraisingWizardFailure debugMapErrorForTest(
+    Object error, {
+    FundraisingWizardErrorType fallback =
+        FundraisingWizardErrorType.submitFailed,
+  }) {
+    return _mapError(error, fallback: fallback);
   }
 
   FundraisingWizardFailure _mapError(
@@ -616,6 +692,18 @@ class FundraisingCreateWizardController extends ChangeNotifier {
         );
       }
 
+      // Payout-sensitive only (withdrawal / cash-out / payout activation).
+      // The API never raises this for campaign create/save/submit, so it can
+      // no longer appear during the campaign wizard.
+      if (code == 'FUNDRAISING_ACCOUNT_NOT_VERIFIED') {
+        return FundraisingWizardFailure(
+          type: FundraisingWizardErrorType.verificationRejected,
+          apiCode: error.code,
+          message:
+              'Complete fundraising verification before withdrawing funds.',
+        );
+      }
+
       if (code == 'FUNDRAISING_SCHEMA_UNAVAILABLE') {
         return FundraisingWizardFailure(
           type: FundraisingWizardErrorType.unknown,
@@ -642,13 +730,44 @@ class FundraisingCreateWizardController extends ChangeNotifier {
         );
       }
 
-      if (code == 'FUNDRAISING_VALIDATION_ERROR') {
+      if (code == 'FUNDRAISING_VALIDATION_ERROR' ||
+          code == 'VALIDATION_ERROR') {
         return FundraisingWizardFailure(
           type: FundraisingWizardErrorType.validation,
           apiCode: error.code,
           message:
               fundraisingValidationDetailMessage(error) ??
-              'Please check the highlighted details and try again.',
+              fundraisingApiMessage(error) ??
+              'Please review the highlighted fields before submitting.',
+        );
+      }
+
+      if (code == 'MEDIA_NOT_OWNED' || code == 'MEDIA_NOT_FOUND') {
+        return FundraisingWizardFailure(
+          type: FundraisingWizardErrorType.validation,
+          apiCode: error.code,
+          message:
+              'One or more uploaded files are unavailable. Please upload them again.',
+        );
+      }
+
+      // Campaign submission is no longer gated on a fundraising
+      // verification account existing, so this code now only ever means the
+      // draft/campaign itself could not be found — never a KYC problem.
+      if (code == 'FUNDRAISER_NOT_FOUND') {
+        return FundraisingWizardFailure(
+          type: FundraisingWizardErrorType.validation,
+          apiCode: error.code,
+          message: 'This fundraiser is no longer available. Please try again.',
+        );
+      }
+
+      if (code == 'LOCATION_PARENT_INVALID') {
+        return FundraisingWizardFailure(
+          type: FundraisingWizardErrorType.validation,
+          apiCode: error.code,
+          message:
+              'Your selected location is no longer valid. Please choose it again.',
         );
       }
 
@@ -675,16 +794,32 @@ class FundraisingCreateWizardController extends ChangeNotifier {
         return FundraisingWizardFailure(
           type: fallback,
           apiCode: error.code,
-          message: 'Please check the highlighted details and try again.',
+          message:
+              fundraisingValidationDetailMessage(error) ??
+              fundraisingApiMessage(error) ??
+              'Please review the highlighted fields before submitting.',
         );
       }
 
+      // A bare 403 during the campaign wizard is an ownership/permission
+      // problem, never a verification problem — fundraising verification
+      // does not gate campaign submission at all (it gates withdrawal).
+      // Reporting it as `verificationRejected` here is what surfaced the
+      // misleading "verification needs to be updated" message on Submit.
       if ((error.statusCode ?? 0) == 403) {
         return FundraisingWizardFailure(
-          type: FundraisingWizardErrorType.verificationRejected,
+          type: fallback,
           apiCode: error.code,
           message:
-              'Your fundraising account is restricted. Please contact support.',
+              'You do not have permission to complete this action. Please try again.',
+        );
+      }
+
+      if ((error.statusCode ?? 0) == 404) {
+        return FundraisingWizardFailure(
+          type: fallback,
+          apiCode: error.code,
+          message: 'We could not complete this request. Please try again.',
         );
       }
 

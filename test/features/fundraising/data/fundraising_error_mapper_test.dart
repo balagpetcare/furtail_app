@@ -110,6 +110,86 @@ void main() {
       expect(result.message, contains('policy violations'));
     });
 
+    // Fundraiser visibility/authorization typed errors
+    test(
+      'maps FUNDRAISER_NOT_FOUND (404) to notFound category, without distinguishing deleted vs private',
+      () {
+        final result = mapFundraisingSafeError(
+          ApiClientException(
+            message: 'Campaign not found',
+            statusCode: 404,
+            code: 'FUNDRAISER_NOT_FOUND',
+          ),
+        );
+        expect(result.isNotFound, isTrue);
+        expect(result.message, 'This fundraiser is unavailable.');
+        expect(result.backendCode, 'FUNDRAISER_NOT_FOUND');
+      },
+    );
+
+    test(
+      'maps FUNDRAISER_NOT_PUBLIC (403) to notFound category, never revealing the private status',
+      () {
+        final result = mapFundraisingSafeError(
+          ApiClientException(
+            message: 'This fundraiser is not publicly available',
+            statusCode: 403,
+            code: 'FUNDRAISER_NOT_PUBLIC',
+          ),
+        );
+        expect(result.isNotFound, isTrue);
+        expect(result.message, 'This fundraiser is unavailable.');
+      },
+    );
+
+    test(
+      'maps FUNDRAISER_ACCESS_DENIED (403) to permissionDenied category',
+      () {
+        final result = mapFundraisingSafeError(
+          ApiClientException(
+            message: 'Campaign not found',
+            statusCode: 403,
+            code: 'FUNDRAISER_ACCESS_DENIED',
+          ),
+        );
+        expect(result.isPermissionDenied, isTrue);
+        expect(result.backendCode, 'FUNDRAISER_ACCESS_DENIED');
+      },
+    );
+
+    test(
+      'maps FUNDRAISER_EDIT_FORBIDDEN (403) to a distinct permission-denied message about editing',
+      () {
+        final result = mapFundraisingSafeError(
+          ApiClientException(
+            message: 'Campaign not found',
+            statusCode: 403,
+            code: 'FUNDRAISER_EDIT_FORBIDDEN',
+          ),
+        );
+        expect(result.isPermissionDenied, isTrue);
+        expect(result.message, contains('edit'));
+      },
+    );
+
+    test(
+      'maps FUNDRAISER_NOT_DONATABLE (422) to a distinct notDonatable category, not permissionDenied or notFound',
+      () {
+        final result = mapFundraisingSafeError(
+          ApiClientException(
+            message: 'This fundraiser has expired',
+            statusCode: 422,
+            code: 'FUNDRAISER_NOT_DONATABLE',
+            responseData: {'message': 'This fundraiser has expired'},
+          ),
+        );
+        expect(result.isNotDonatable, isTrue);
+        expect(result.isNotFound, isFalse);
+        expect(result.isPermissionDenied, isFalse);
+        expect(result.message, 'This fundraiser has expired');
+      },
+    );
+
     // Schema Unavailable errors (NEW - Step 2)
     test('maps 503 FUNDRAISING_SCHEMA_UNAVAILABLE to schemaUnavailable', () {
       final result = mapFundraisingSafeError(
@@ -170,6 +250,25 @@ void main() {
         ApiClientException(message: 'Unprocessable entity', statusCode: 422),
       );
       expect(result.category, FundraisingErrorCategory.validation);
+    });
+
+    test('preserves the safe API message for plain validation errors', () {
+      final message = mapFundraisingError(
+        ApiClientException(
+          message: 'Draft is incomplete: monthlyGoalMinor',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+          responseData: {
+            'success': false,
+            'error': {
+              'code': 'VALIDATION_ERROR',
+              'message': 'Draft is incomplete: monthlyGoalMinor',
+            },
+          },
+        ),
+      );
+
+      expect(message, 'Draft is incomplete: monthlyGoalMinor');
     });
 
     // Network errors

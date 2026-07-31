@@ -121,12 +121,13 @@ void main() {
       test('handles numeric input by converting to string', () {
         // Timestamp in milliseconds
         final timestamp = 1723138740000; // August 8, 2024
-        final result = FundraisingDateSerializer.parseLegacyDateField(
-          timestamp,
+        // May or may not parse depending on how Date() handles it — this
+        // demonstrates the function accepts various input types without
+        // throwing, regardless of whether it resolves to a DateTime.
+        expect(
+          () => FundraisingDateSerializer.parseLegacyDateField(timestamp),
+          returnsNormally,
         );
-        // May or may not parse depending on how Date() handles it
-        // This demonstrates the function accepts various types
-        expect(result is DateTime?, isTrue);
       });
     });
 

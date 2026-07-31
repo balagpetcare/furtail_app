@@ -44,7 +44,10 @@ class AdoptionActionRow extends StatelessWidget {
                 onTap: onLike,
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 6,
+                  ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.center,
@@ -80,7 +83,10 @@ class AdoptionActionRow extends StatelessWidget {
                 onTap: onComment,
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 6,
+                  ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.center,
@@ -116,7 +122,10 @@ class AdoptionActionRow extends StatelessWidget {
                 onTap: onSave,
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 6,
+                  ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.center,
@@ -125,7 +134,9 @@ class AdoptionActionRow extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                          isSaved
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_border_rounded,
                           size: 18,
                           color: isSaved ? activeColor : baseColor,
                         ),

@@ -12,6 +12,7 @@ import '../../../media/composer/media_composer_widgets.dart';
 import '../../../media/composer/media_draft_item.dart';
 import '../../../media/composer/media_preparation_service.dart';
 import '../../../media/data/authenticated_media_uploader.dart';
+import '../utils/fundraising_media_session.dart';
 import '../../../posts/data/datasources/posts_remote_ds.dart';
 import '../../data/fundraising_error_mapper.dart';
 import '../../data/models/fundraising_models.dart';
@@ -49,6 +50,7 @@ class _FundraisingUpdateEditorScreenState
   final _mediaPreparation = const MediaPreparationService();
 
   late final MediaComposerController _mediaController;
+  late final FundraisingMediaSession _mediaSession;
 
   bool _saving = false;
   bool _pickingMedia = false;
@@ -60,6 +62,13 @@ class _FundraisingUpdateEditorScreenState
   void initState() {
     super.initState();
     _captionCtrl.text = widget.existing?.caption ?? '';
+    final composerSessionId =
+        widget.existing?.id.toString() ??
+        'new-${widget.campaignId}-${DateTime.now().microsecondsSinceEpoch}';
+    _mediaSession = FundraisingMediaSession.forUpdate(
+      campaignId: widget.campaignId,
+      composerSessionId: composerSessionId,
+    );
     _mediaController = MediaComposerController(
       policy: MediaComposerPolicy.fundraising,
       draftStorageKey:
@@ -71,11 +80,12 @@ class _FundraisingUpdateEditorScreenState
             CancelToken? cancelToken,
           }) {
             return _postsDs.uploadMediaDetailedWithProgress(
-              File(item.localPath!),
+              fundraisingMultipartSourceFor(item),
               onProgress: onProgress,
               cancelToken: cancelToken,
-              draftId: item.id,
-              uploadContext: MediaComposerPolicy.fundraising.uploadContext,
+              contentType: _mediaSession.contentType,
+              contentId: _mediaSession.contentId,
+              idempotencyKey: _mediaSession.idempotencyKeyFor(item.id),
               folder: MediaComposerPolicy.fundraising.folder,
               trimStartMs: item.isVideo ? item.trimStartMs : null,
               trimEndMs: item.isVideo ? item.trimEndMs : null,
@@ -182,7 +192,7 @@ class _FundraisingUpdateEditorScreenState
           result?.paths.whereType<String>().toList() ?? const <String>[];
       if (paths.isEmpty) return;
       await _mediaController.addItems(
-        _mediaPreparation.prepareDocuments(
+        await _mediaPreparation.prepareDocuments(
           paths.map((path) => File(path)).toList(),
         ),
       );
@@ -206,7 +216,7 @@ class _FundraisingUpdateEditorScreenState
         if (path == null) return;
         await _mediaController.replaceItem(
           item.id,
-          _mediaPreparation.prepareReplacementDocument(
+          await _mediaPreparation.prepareReplacementDocument(
             File(path),
             existingId: item.id,
             isCover: item.isCover,

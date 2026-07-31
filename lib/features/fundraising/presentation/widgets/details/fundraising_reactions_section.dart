@@ -65,9 +65,11 @@ class _FundraisingReactionsSectionState
         _likes += wasLiked ? 1 : -1;
         if (_likes < 0) _likes = 0;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('We could not update your reaction. Please try again.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('We could not update your reaction. Please try again.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _likeBusy = false);
     }

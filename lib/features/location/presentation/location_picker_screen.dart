@@ -39,10 +39,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       appBar: AppBar(
         title: const Text('Select location'),
         actions: [
-          TextButton(
-            onPressed: _onConfirm,
-            child: const Text('Confirm'),
-          ),
+          TextButton(onPressed: _onConfirm, child: const Text('Confirm')),
         ],
       ),
       body: Column(
@@ -68,7 +65,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                       point: _position,
                       width: 40,
                       height: 40,
-                      child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 40,
+                      ),
                     ),
                   ],
                 ),

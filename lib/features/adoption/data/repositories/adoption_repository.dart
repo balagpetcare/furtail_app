@@ -1,12 +1,10 @@
-import 'package:furtail_app/dtos/pets/animal_type_dto.dart';
-import 'package:furtail_app/dtos/pets/breed_dto.dart';
 import 'package:furtail_app/features/adoption/data/datasources/adoption_remote_ds.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_comment_model.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_application_form_payload.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_application_ui_model.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_listing_form_payload.dart';
 import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.dart';
-import 'package:furtail_app/features/legacy/data/models/country_model.dart';
+import 'package:furtail_app/features/common/data/models/country_reference_model.dart';
 
 class AdoptionRepository {
   final AdoptionRemoteDs _remote;
@@ -68,7 +66,6 @@ class AdoptionRepository {
     return items.map(AdoptionPetUiModel.fromApiJson).toList();
   }
 
-
   Future<AdoptionPetUiModel> fetchAdoptionDetail(int id) async {
     final item = await _remote.fetchAdoptionDetail(id);
     return AdoptionPetUiModel.fromApiJson(item);
@@ -91,20 +88,14 @@ class AdoptionRepository {
     return _remote.listAdoptionComments(id, limit: limit);
   }
 
-  Future<AdoptionCommentModel> addAdoptionComment(
-    int id,
-    String text,
-  ) async {
+  Future<AdoptionCommentModel> addAdoptionComment(int id, String text) async {
     final response = await _remote.addAdoptionComment(id, text);
     return AdoptionCommentModel.fromJson(
       (response['comment'] as Map<String, dynamic>?) ?? const {},
     );
   }
 
-  Future<Map<String, dynamic>> deleteAdoptionComment(
-    int id,
-    int commentId,
-  ) {
+  Future<Map<String, dynamic>> deleteAdoptionComment(int id, int commentId) {
     return _remote.deleteAdoptionComment(id, commentId);
   }
 
@@ -115,7 +106,12 @@ class AdoptionRepository {
     final item = await _remote.createAdoptionListing(
       payload.toApiPayload(submitNow: submitNow),
     );
-    return AdoptionPetUiModel.fromApiJson(item);
+    var pet = AdoptionPetUiModel.fromApiJson(item);
+    if (submitNow) {
+      final published = await _remote.submitAdoptionForReview(pet.id);
+      pet = AdoptionPetUiModel.fromApiJson(published);
+    }
+    return pet;
   }
 
   Future<AdoptionPetUiModel> updateAdoptionListing(
@@ -127,7 +123,12 @@ class AdoptionRepository {
       id,
       payload.toApiPayload(submitNow: submitNow),
     );
-    return AdoptionPetUiModel.fromApiJson(item);
+    var pet = AdoptionPetUiModel.fromApiJson(item);
+    if (submitNow) {
+      final published = await _remote.submitAdoptionForReview(id);
+      pet = AdoptionPetUiModel.fromApiJson(published);
+    }
+    return pet;
   }
 
   Future<AdoptionPetUiModel> submitAdoptionForReview(int id) async {
@@ -135,7 +136,7 @@ class AdoptionRepository {
     return AdoptionPetUiModel.fromApiJson(item);
   }
 
-  Future<Country> fetchBangladeshCountry() {
+  Future<CountryReferenceModel> fetchBangladeshCountry() {
     return _remote.fetchBangladeshCountry();
   }
 
@@ -202,8 +203,15 @@ class AdoptionRepository {
     String? details,
   }) => _remote.reportAdoption(adoptionId, reasonCode, details: details);
 
-  Future<List<AnimalTypeDto>> fetchAnimalTypes() => _remote.fetchAnimalTypes();
+  Future<AdoptionPetUiModel> updateAdoptionListingStatus(
+    int id,
+    String status,
+  ) async {
+    final item = await _remote.updateAdoptionListingStatus(id, status);
+    return AdoptionPetUiModel.fromApiJson(item);
+  }
 
-  Future<List<BreedDto>> fetchBreedsByType(int typeId) =>
-      _remote.fetchBreedsByType(typeId);
+  Future<Map<String, dynamic>> hardDeleteListing(int id) async {
+    return _remote.deleteAdoptionListing(id);
+  }
 }

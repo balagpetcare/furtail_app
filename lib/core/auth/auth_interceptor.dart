@@ -83,6 +83,23 @@ class AuthInterceptor extends Interceptor {
       return;
     }
 
+    final failedAccessToken = _bearerToken(
+      err.requestOptions.headers['Authorization'],
+    );
+    final currentAccessToken = await secureStorage.accessToken;
+    if (currentAccessToken != null &&
+        currentAccessToken.isNotEmpty &&
+        currentAccessToken != failedAccessToken) {
+      final retried = await _retryWithAccessToken(
+        err.requestOptions,
+        currentAccessToken,
+      );
+      if (retried != null) {
+        handler.resolve(retried);
+        return;
+      }
+    }
+
     final refreshOutcome = await _refreshAccessToken();
     if (refreshOutcome.accessToken == null) {
       if (refreshOutcome.shouldLogout) {
@@ -127,6 +144,40 @@ class AuthInterceptor extends Interceptor {
     }
   }
 
+  Future<Response<dynamic>?> _retryWithAccessToken(
+    RequestOptions failedOptions,
+    String accessToken,
+  ) async {
+    final retryOptions = failedOptions;
+    final previousAuthorization = retryOptions.headers['Authorization'];
+    retryOptions.headers['Authorization'] = 'Bearer $accessToken';
+    try {
+      final retryFactory = retryOptions.extra['multipartRetryFactory'];
+      if (retryFactory is Future<FormData> Function()) {
+        retryOptions.data = await retryFactory();
+      }
+      final freshDio =
+          retryDio ??
+          Dio(
+            BaseOptions(
+              baseUrl: retryOptions.baseUrl,
+              connectTimeout: retryOptions.connectTimeout,
+              receiveTimeout: retryOptions.receiveTimeout,
+              headers: retryOptions.headers,
+            ),
+          );
+      return await freshDio.fetch(retryOptions);
+    } catch (retryError) {
+      return null;
+    } finally {
+      if (previousAuthorization == null) {
+        retryOptions.headers.remove('Authorization');
+      } else {
+        retryOptions.headers['Authorization'] = previousAuthorization;
+      }
+    }
+  }
+
   bool _shouldAttemptRefresh(DioException err) {
     if (err.response?.statusCode != 401) return false;
     final path = err.requestOptions.uri.path;
@@ -138,10 +189,25 @@ class AuthInterceptor extends Interceptor {
 
   String? _responseCode(DioException err) {
     final data = err.response?.data;
-    if (data is Map && data['code'] != null) {
-      return data['code'].toString().trim().toUpperCase();
+    if (data is Map) {
+      final nestedError = data['error'];
+      if (nestedError is Map && nestedError['code'] != null) {
+        return nestedError['code'].toString().trim().toUpperCase();
+      }
+      if (data['code'] != null) {
+        return data['code'].toString().trim().toUpperCase();
+      }
     }
     return null;
+  }
+
+  String? _bearerToken(Object? authorization) {
+    if (authorization is! String) return null;
+    final value = authorization.trim();
+    if (!value.toLowerCase().startsWith('bearer '))
+      return value.isEmpty ? null : value;
+    final token = value.substring(7).trim();
+    return token.isEmpty ? null : token;
   }
 
   Future<_RefreshOutcome> _refreshAccessToken() async {

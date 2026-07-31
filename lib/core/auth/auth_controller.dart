@@ -294,7 +294,27 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  /// Coalesces concurrent callers (bootstrap/login/retry can all trigger a
+  /// profile fetch around the same time) onto a single in-flight request, so
+  /// a stale/slower request can never overwrite the state published by one
+  /// that started later and already finished.
+  Future<UserModel>? _inFlightProfileFetch;
+
   Future<UserModel> _fetchProfile() async {
+    final existing = _inFlightProfileFetch;
+    if (existing != null) return existing;
+    final future = _fetchProfileUncached();
+    _inFlightProfileFetch = future;
+    try {
+      return await future;
+    } finally {
+      if (identical(_inFlightProfileFetch, future)) {
+        _inFlightProfileFetch = null;
+      }
+    }
+  }
+
+  Future<UserModel> _fetchProfileUncached() async {
     final response = await _apiClient
         .get(_meUrl)
         .timeout(const Duration(seconds: 10));
@@ -305,10 +325,16 @@ class AuthController extends StateNotifier<AuthState> {
               : <String, dynamic>{});
 
     final Map<String, dynamic> userJson;
+    final data = body['data'];
     if (body['user'] is Map) {
+      // Central Auth's own /auth/me shape: { success, user }.
       userJson = Map<String, dynamic>.from(body['user'] as Map);
-    } else if (body['data'] is Map) {
-      userJson = Map<String, dynamic>.from(body['data'] as Map);
+    } else if (data is Map && data['user'] is Map) {
+      // Furtail API's enveloped shape: { success, data: { user }, meta }.
+      userJson = Map<String, dynamic>.from(data['user'] as Map);
+    } else if (data is Map) {
+      // Envelope with the user object directly under data.
+      userJson = Map<String, dynamic>.from(data);
     } else {
       userJson = body;
     }

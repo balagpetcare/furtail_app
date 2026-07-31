@@ -50,7 +50,10 @@ class LocationRepository {
     }
   }
 
-  Future<void> _writeStorage(String key, List<Map<String, dynamic>> rows) async {
+  Future<void> _writeStorage(
+    String key,
+    List<Map<String, dynamic>> rows,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final payload = {
       'expiresAt': DateTime.now().add(_ttl).toIso8601String(),
@@ -64,9 +67,12 @@ class LocationRepository {
     final list = (res is Map && res['data'] is List)
         ? (res['data'] as List)
         : (res is Map && res['items'] is List)
-            ? (res['items'] as List)
-            : const [];
-    return list.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        ? (res['items'] as List)
+        : const [];
+    return list
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   Future<List<T>> _cachedList<T>({
@@ -82,7 +88,10 @@ class LocationRepository {
     try {
       final rows = await network();
       final parsed = rows.map(parser).toList();
-      _memory[key] = _CacheBox<dynamic>(expiresAt: DateTime.now().add(_ttl), items: parsed);
+      _memory[key] = _CacheBox<dynamic>(
+        expiresAt: DateTime.now().add(_ttl),
+        items: parsed,
+      );
       await _writeStorage(key, rows);
       return parsed;
     } catch (_) {
@@ -101,7 +110,9 @@ class LocationRepository {
     final key = _key('divisions', {'locale': locale, 'q': q ?? ''});
     return _cachedList<BdDivision>(
       key: key,
-      network: () => _fetchRows(ApiEndpoints.locationMasterDivisions(locale: locale, q: q)),
+      network: () => _fetchRows(
+        ApiEndpoints.locationMasterDivisions(locale: locale, q: q),
+      ),
       parser: BdDivision.fromJson,
     );
   }
@@ -186,4 +197,3 @@ class LocationRepository {
     }
   }
 }
-

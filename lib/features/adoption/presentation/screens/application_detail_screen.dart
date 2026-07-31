@@ -97,13 +97,16 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
         _app = _app?.copyWith(ownerNotes: saved);
         _hasChanges = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Notes saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Notes saved')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save notes: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to save notes: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -226,7 +229,8 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
               onApprove: _confirmApprove,
               onReject: _promptReject,
               onNotesUpdate: _saveNotes,
-              onScheduleInterview: () => _promptNoteAndStatus('INTERVIEW_SCHEDULED'),
+              onScheduleInterview: () =>
+                  _promptNoteAndStatus('INTERVIEW_SCHEDULED'),
               onRequestMoreInfo: () => _updateStatus('OWNER_REVIEW'),
               onShortlist: () => _updateStatus('SHORTLISTED'),
               onMarkViewed: () => _updateStatus('VIEWED'),
@@ -355,17 +359,13 @@ class _ApplicantHeader extends StatelessWidget {
                       if (app.applicantUsername.isNotEmpty)
                         Text(
                           '@${app.applicantUsername}',
-                          style:
-                              TextStyle(color: cs.outline, fontSize: 13),
+                          style: TextStyle(color: cs.outline, fontSize: 13),
                         ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           if (app.applicantPhone.isNotEmpty)
-                            _VerifiedChip(
-                              icon: Icons.phone,
-                              label: 'Phone',
-                            ),
+                            _VerifiedChip(icon: Icons.phone, label: 'Phone'),
                           if (app.applicantWhatsappPhone.isNotEmpty) ...[
                             const SizedBox(width: 4),
                             _VerifiedChip(
@@ -384,8 +384,10 @@ class _ApplicantHeader extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Status:',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text(
+                  'Status:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 _StatusBadge(rawStatus: app.rawStatus, label: app.status),
               ],
             ),
@@ -423,13 +425,14 @@ class _FitScoreCard extends StatelessWidget {
               children: [
                 const Text(
                   'Fit Score',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 ),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: fit.labelBg(context),
                     borderRadius: BorderRadius.circular(10),
@@ -446,9 +449,7 @@ class _FitScoreCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            ...fit.breakdown.map(
-              (item) => _BreakdownRow(item: item),
-            ),
+            ...fit.breakdown.map((item) => _BreakdownRow(item: item)),
           ],
         ),
       ),
@@ -484,12 +485,13 @@ class _BreakdownRow extends StatelessWidget {
                 Text(
                   item.label,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 12),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
                 Text(
                   item.description,
-                  style: TextStyle(
-                      fontSize: 11, color: cs.onSurfaceVariant),
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                 ),
               ],
             ),
@@ -497,9 +499,10 @@ class _BreakdownRow extends StatelessWidget {
           Text(
             '+${item.points}',
             style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: color),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -520,8 +523,10 @@ class _ApplicantSummaryCard extends StatelessWidget {
     final positives = <String>[];
     final risks = <String>[];
 
-    if (app.applicantPhone.isNotEmpty) positives.add('Contact number available');
-    if (app.applicantWhatsappPhone.isNotEmpty) positives.add('WhatsApp available');
+    if (app.applicantPhone.isNotEmpty)
+      positives.add('Contact number available');
+    if (app.applicantWhatsappPhone.isNotEmpty)
+      positives.add('WhatsApp available');
     if (app.consentToHomeCheck) positives.add('Consented to home check');
     if (app.consentToFollowUp) positives.add('Accepts follow-up visits');
     if (app.applicantExperienceSummary.isNotEmpty) {
@@ -557,9 +562,10 @@ class _ApplicantSummaryCard extends StatelessWidget {
               Text(
                 'Strengths',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.green.shade700,
-                    fontWeight: FontWeight.w600),
+                  fontSize: 12,
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               ...positives.map(
@@ -571,9 +577,10 @@ class _ApplicantSummaryCard extends StatelessWidget {
               Text(
                 'Review Points',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange.shade700,
-                    fontWeight: FontWeight.w600),
+                  fontSize: 12,
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               ...risks.map(
@@ -612,10 +619,7 @@ class _BulletPoint extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Flexible(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 12, color: color),
-            ),
+            child: Text(text, style: TextStyle(fontSize: 12, color: color)),
           ),
         ],
       ),
@@ -633,10 +637,10 @@ class _QuickContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.colorScheme;
-    final hasContact = app.applicantPhone.isNotEmpty ||
-        app.applicantWhatsappPhone.isNotEmpty;
-    final hasLocation = app.applicantCityAreaText.isNotEmpty ||
-        app.applicantAddress.isNotEmpty;
+    final hasContact =
+        app.applicantPhone.isNotEmpty || app.applicantWhatsappPhone.isNotEmpty;
+    final hasLocation =
+        app.applicantCityAreaText.isNotEmpty || app.applicantAddress.isNotEmpty;
 
     if (!hasContact && !hasLocation) return const SizedBox.shrink();
 
@@ -654,8 +658,7 @@ class _QuickContactCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
-                  Icon(Icons.location_on_outlined,
-                      size: 14, color: cs.outline),
+                  Icon(Icons.location_on_outlined, size: 14, color: cs.outline),
                   const SizedBox(width: 4),
                   Flexible(
                     child: Text(
@@ -664,7 +667,9 @@ class _QuickContactCard extends StatelessWidget {
                         app.applicantAddress,
                       ].where((s) => s.isNotEmpty).join(', '),
                       style: TextStyle(
-                          fontSize: 13, color: cs.onSurfaceVariant),
+                        fontSize: 13,
+                        color: cs.onSurfaceVariant,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -681,14 +686,16 @@ class _QuickContactCard extends StatelessWidget {
                     _ContactButton(
                       icon: Icons.phone_outlined,
                       label: 'Call',
-                      onTap: () =>
-                          _launch('tel:${app.applicantPhone.replaceAll(RegExp(r'\s+'), '')}'),
+                      onTap: () => _launch(
+                        'tel:${app.applicantPhone.replaceAll(RegExp(r'\s+'), '')}',
+                      ),
                     ),
                     _ContactButton(
                       icon: Icons.sms_outlined,
                       label: 'SMS',
-                      onTap: () =>
-                          _launch('sms:${app.applicantPhone.replaceAll(RegExp(r'\s+'), '')}'),
+                      onTap: () => _launch(
+                        'sms:${app.applicantPhone.replaceAll(RegExp(r'\s+'), '')}',
+                      ),
                     ),
                     _ContactButton(
                       icon: Icons.copy_outlined,
@@ -708,12 +715,11 @@ class _QuickContactCard extends StatelessWidget {
                       icon: Icons.chat_bubble_outline_rounded,
                       label: 'WhatsApp',
                       onTap: () {
-                        final clean = app.applicantWhatsappPhone
-                            .replaceAll(RegExp(r'[^\d+]'), '');
-                        _launch(
-                          'https://wa.me/$clean',
-                          external: true,
+                        final clean = app.applicantWhatsappPhone.replaceAll(
+                          RegExp(r'[^\d+]'),
+                          '',
                         );
+                        _launch('https://wa.me/$clean', external: true);
                       },
                     ),
                 ],
@@ -757,7 +763,9 @@ class _ContactButton extends StatelessWidget {
       label: Text(label),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm, vertical: 6),
+          horizontal: AppSpacing.sm,
+          vertical: 6,
+        ),
         textStyle: const TextStyle(fontSize: 12),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -819,7 +827,10 @@ class _MessageCard extends StatelessWidget {
             Text(
               app.message,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, height: 1.45, fontSize: 13),
+                color: cs.onSurfaceVariant,
+                height: 1.45,
+                fontSize: 13,
+              ),
             ),
           ],
         ),
@@ -879,14 +890,18 @@ class _AnswerRow extends StatelessWidget {
                 child: Text(
                   q.toString(),
                   style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 12),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
                 ),
               ),
               if (isEmpty)
                 Container(
                   margin: const EdgeInsets.only(left: 8),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(4),
@@ -894,9 +909,10 @@ class _AnswerRow extends StatelessWidget {
                   child: Text(
                     'Missing',
                     style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.orange.shade700,
-                        fontWeight: FontWeight.w600),
+                      fontSize: 10,
+                      color: Colors.orange.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],
@@ -958,7 +974,11 @@ class _OwnerNotesCardState extends State<_OwnerNotesCard> {
   Future<void> _save() async {
     setState(() => _saving = true);
     await widget.onSave(_ctrl.text.trim());
-    if (mounted) setState(() { _saving = false; _editing = false; });
+    if (mounted)
+      setState(() {
+        _saving = false;
+        _editing = false;
+      });
   }
 
   @override
@@ -977,8 +997,7 @@ class _OwnerNotesCardState extends State<_OwnerNotesCard> {
                 const Expanded(
                   child: Text(
                     'Private Owner Notes',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                 ),
                 if (!_editing)
@@ -1187,7 +1206,9 @@ class _ActionButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: c.withValues(alpha: 0.5)),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm, vertical: 6),
+          horizontal: AppSpacing.sm,
+          vertical: 6,
+        ),
         textStyle: const TextStyle(fontSize: 12),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1318,7 +1339,9 @@ class _BarButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: c,
           padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           textStyle: const TextStyle(fontSize: 13),
         ),
       );
@@ -1330,7 +1353,9 @@ class _BarButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: c.withValues(alpha: 0.5)),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         textStyle: const TextStyle(fontSize: 13),
       ),
     );
@@ -1419,7 +1444,9 @@ class _StatusBadge extends StatelessWidget {
     final c = _color();
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: 4),
+        horizontal: AppSpacing.md,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: c.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -1427,8 +1454,7 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-            fontWeight: FontWeight.bold, color: c, fontSize: 12),
+        style: TextStyle(fontWeight: FontWeight.bold, color: c, fontSize: 12),
       ),
     );
   }
@@ -1461,10 +1487,7 @@ class _ErrorView extends StatelessWidget {
               style: TextStyle(color: context.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),

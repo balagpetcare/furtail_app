@@ -104,6 +104,38 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
     }
   }
 
+  Future<void> _updateStatus(int id, String status) async {
+    setState(() => _isLoading = true);
+    try {
+      await _repository.updateAdoptionListingStatus(id, status);
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteListing(int id) async {
+    setState(() => _isLoading = true);
+    try {
+      await _repository.hardDeleteListing(id);
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete listing: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -202,6 +234,28 @@ class _MyAdoptionListingsScreenState extends State<MyAdoptionListingsScreen> {
                                   ),
                                 )
                                 .then((_) => _load());
+                          } else if (action ==
+                              AdoptionCardMenuAction.pauseListing) {
+                            _updateStatus(pet.id, 'PAUSED');
+                          } else if (action ==
+                              AdoptionCardMenuAction.resumeListing) {
+                            _updateStatus(pet.id, 'PUBLISHED');
+                          } else if (action ==
+                              AdoptionCardMenuAction.adoptListing) {
+                            _updateStatus(pet.id, 'ADOPTED');
+                          } else if (action ==
+                              AdoptionCardMenuAction.archiveListing) {
+                            _updateStatus(pet.id, 'ARCHIVED');
+                          } else if (action ==
+                              AdoptionCardMenuAction.deleteListing) {
+                            _deleteListing(pet.id);
+                          } else if (action ==
+                              AdoptionCardMenuAction.shareListing) {
+                            ShareService.share(
+                              context,
+                              type: 'pet',
+                              id: pet.id,
+                            );
                           }
                         },
                       ),

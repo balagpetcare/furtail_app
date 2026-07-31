@@ -15,11 +15,21 @@ import 'package:furtail_app/features/adoption/data/models/adoption_pet_ui_model.
 import 'package:furtail_app/features/adoption/data/repositories/adoption_repository.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_apply_screen.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/listing_applications_screen.dart';
-import 'package:furtail_app/features/adoption/presentation/screens/my_adoption_listings_screen.dart';
+import 'package:furtail_app/features/adoption/presentation/screens/create_adoption_listing_screen.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_comments_sheet.dart';
 import 'package:furtail_app/features/adoption/presentation/widgets/adoption_report_sheet.dart';
 
-enum _DetailMenuAction { edit, applications, save, report }
+enum _DetailMenuAction {
+  edit,
+  applications,
+  save,
+  report,
+  pause,
+  resume,
+  adopt,
+  archive,
+  delete,
+}
 
 class AdoptionPetDetailScreen extends StatefulWidget {
   final AdoptionPetUiModel pet;
@@ -193,6 +203,48 @@ class _AdoptionPetDetailScreenState extends State<AdoptionPetDetailScreen> {
     return ProfileNavigation.openUserProfile(context, _pet.ownerUserId);
   }
 
+  Future<void> _updateStatus(String status) async {
+    try {
+      final updated = await widget.repository.updateAdoptionListingStatus(
+        _pet.id,
+        status,
+      );
+      if (!mounted) return;
+      setState(() {
+        _pet = updated;
+      });
+      if (widget.onPetChanged != null) {
+        widget.onPetChanged!(updated);
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Status updated to $status')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
+      }
+    }
+  }
+
+  Future<void> _deleteListing() async {
+    try {
+      await widget.repository.hardDeleteListing(_pet.id);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Listing deleted')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to delete listing: $e')));
+      }
+    }
+  }
+
   bool get _isOwnedByMe =>
       _pet.viewerIsOwner ||
       (_currentUserId != null && _pet.ownerUserId == _currentUserId);
@@ -272,12 +324,20 @@ class _AdoptionPetDetailScreenState extends State<AdoptionPetDetailScreen> {
                           onSelected: (value) {
                             switch (value) {
                               case _DetailMenuAction.edit:
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const MyAdoptionListingsScreen(),
-                                  ),
-                                );
+                                Navigator.of(context)
+                                    .push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            CreateAdoptionListingScreen(
+                                              existingListing: _pet,
+                                            ),
+                                      ),
+                                    )
+                                    .then((updated) {
+                                      if (updated == true) {
+                                        _loadDetail();
+                                      }
+                                    });
                                 break;
                               case _DetailMenuAction.applications:
                                 Navigator.of(context).push(
@@ -295,29 +355,120 @@ class _AdoptionPetDetailScreenState extends State<AdoptionPetDetailScreen> {
                               case _DetailMenuAction.report:
                                 _openReport();
                                 break;
+                              case _DetailMenuAction.pause:
+                                _updateStatus('PAUSED');
+                                break;
+                              case _DetailMenuAction.resume:
+                                _updateStatus('PUBLISHED');
+                                break;
+                              case _DetailMenuAction.adopt:
+                                _updateStatus('ADOPTED');
+                                break;
+                              case _DetailMenuAction.archive:
+                                _updateStatus('ARCHIVED');
+                                break;
+                              case _DetailMenuAction.delete:
+                                _deleteListing();
+                                break;
                             }
                           },
-                          itemBuilder: (context) => [
-                            if (_isOwnedByMe) ...[
-                              const PopupMenuItem(
-                                value: _DetailMenuAction.edit,
-                                child: Text('Edit listing'),
+                          itemBuilder: (context) {
+                            if (_isOwnedByMe) {
+                              final status = _pet.status.toLowerCase();
+                              if (status == 'draft' ||
+                                  status == 'needs changes' ||
+                                  status == 'rejected' ||
+                                  status == 'needs_changes') {
+                                return const [
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.edit,
+                                    child: Text('Edit listing'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.resume,
+                                    child: Text('Publish now'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.delete,
+                                    child: Text('Delete draft'),
+                                  ),
+                                ];
+                              } else if (status == 'published' ||
+                                  status == 'available' ||
+                                  status == 'approved') {
+                                return const [
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.edit,
+                                    child: Text('Edit listing'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.applications,
+                                    child: Text('View applications'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.pause,
+                                    child: Text('Pause listing'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.adopt,
+                                    child: Text('Mark as adopted'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.archive,
+                                    child: Text('Archive'),
+                                  ),
+                                ];
+                              } else if (status == 'paused') {
+                                return const [
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.edit,
+                                    child: Text('Edit listing'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.applications,
+                                    child: Text('View applications'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.resume,
+                                    child: Text('Resume publishing'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.adopt,
+                                    child: Text('Mark as adopted'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.archive,
+                                    child: Text('Archive'),
+                                  ),
+                                ];
+                              } else if (status == 'adopted') {
+                                return const [
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.archive,
+                                    child: Text('Archive'),
+                                  ),
+                                ];
+                              } else if (status == 'archived') {
+                                return const [
+                                  PopupMenuItem(
+                                    value: _DetailMenuAction.delete,
+                                    child: Text('Delete listing'),
+                                  ),
+                                ];
+                              }
+                            }
+                            return [
+                              PopupMenuItem(
+                                value: _DetailMenuAction.save,
+                                child: Text(_isFavorited ? 'Unsave' : 'Save'),
                               ),
-                              const PopupMenuItem(
-                                value: _DetailMenuAction.applications,
-                                child: Text('View applications'),
-                              ),
-                            ],
-                            PopupMenuItem(
-                              value: _DetailMenuAction.save,
-                              child: Text(_isFavorited ? 'Unsave' : 'Save'),
-                            ),
-                            if (!_isOwnedByMe)
-                              const PopupMenuItem(
-                                value: _DetailMenuAction.report,
-                                child: Text('Report listing'),
-                              ),
-                          ],
+                              if (!_isOwnedByMe)
+                                const PopupMenuItem(
+                                  value: _DetailMenuAction.report,
+                                  child: Text('Report listing'),
+                                ),
+                            ];
+                          },
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 4),
                             child: _OverlayIconDecoration(
@@ -600,6 +751,20 @@ class _AdoptionPetDetailScreenState extends State<AdoptionPetDetailScreen> {
         repository: widget.repository,
         onReport: _openReport,
         isOwnedByMe: _isOwnedByMe,
+        onEdit: () {
+          Navigator.of(context)
+              .push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      CreateAdoptionListingScreen(existingListing: pet),
+                ),
+              )
+              .then((updated) {
+                if (updated == true) {
+                  _loadDetail();
+                }
+              });
+        },
       ),
     );
   }
@@ -648,12 +813,14 @@ class _BottomActionBar extends StatelessWidget {
   final AdoptionRepository repository;
   final VoidCallback onReport;
   final bool isOwnedByMe;
+  final VoidCallback? onEdit;
 
   const _BottomActionBar({
     required this.pet,
     required this.repository,
     required this.onReport,
     required this.isOwnedByMe,
+    this.onEdit,
   });
 
   @override
@@ -688,16 +855,20 @@ class _BottomActionBar extends StatelessWidget {
           Expanded(
             child: FilledButton.icon(
               onPressed: isOwnedByMe
-                  ? () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => canEdit
-                            ? const MyAdoptionListingsScreen()
-                            : ListingApplicationsScreen(
-                                adoptionId: pet.id,
-                                petName: pet.name,
-                              ),
-                      ),
-                    )
+                  ? () {
+                      if (canEdit) {
+                        onEdit?.call();
+                      } else {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ListingApplicationsScreen(
+                              adoptionId: pet.id,
+                              petName: pet.name,
+                            ),
+                          ),
+                        );
+                      }
+                    }
                   : canApply
                   ? () => Navigator.of(context).push(
                       MaterialPageRoute(

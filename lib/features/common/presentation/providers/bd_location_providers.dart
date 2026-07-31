@@ -44,6 +44,15 @@ final bdAreasProvider = FutureProvider.family<List<BdArea>, int>((
   return repo.getAreas(upazilaId: upazilaId);
 });
 
+/// Areas (by union)
+final bdAreasByUnionProvider = FutureProvider.family<List<BdArea>, int>((
+  ref,
+  unionId,
+) async {
+  final repo = ref.read(bdLocationsRepositoryProvider);
+  return repo.getAreas(unionId: unionId);
+});
+
 /// Unions (by upazila)
 final bdUnionsProvider = FutureProvider.family<List<BdUnion>, int>((
   ref,
@@ -71,11 +80,34 @@ final bdZonesProvider = FutureProvider.family<List<BdArea>, int>((
   return repo.getZones(cityCorporationId: cityCorporationId);
 });
 
-/// CC Areas (by zone) ✅ BdArea list
+/// Wards (by zone) / legacy alias
+final bdWardsProvider = FutureProvider.family<List<BdArea>, int>((
+  ref,
+  zoneId,
+) async {
+  final repo = ref.read(bdLocationsRepositoryProvider);
+  return repo.getWards(zoneId: zoneId);
+});
+
+/// CC Areas (legacy alias for wards by zone)
 final bdCcAreasProvider = FutureProvider.family<List<BdArea>, int>((
   ref,
   zoneId,
 ) async {
   final repo = ref.read(bdLocationsRepositoryProvider);
   return repo.getCcAreas(zoneId: zoneId);
+});
+
+/// Areas (by ward)
+final bdAreasByWardProvider = FutureProvider.family<List<BdArea>, int>((
+  ref,
+  wardId,
+) async {
+  final repo = ref.read(bdLocationsRepositoryProvider);
+  return repo.getAreasByWard(wardId: wardId);
+});
+
+final bdAreaByIdProvider = FutureProvider.family<BdArea?, int>((ref, id) async {
+  final repo = ref.read(bdLocationsRepositoryProvider);
+  return repo.getAreaById(id);
 });

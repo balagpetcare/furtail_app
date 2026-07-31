@@ -65,7 +65,9 @@ class _AdoptionReportSheetState extends State<AdoptionReportSheet> {
   Widget build(BuildContext context) {
     final cs = context.colorScheme;
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.75,
@@ -75,11 +77,18 @@ class _AdoptionReportSheetState extends State<AdoptionReportSheet> {
           return Container(
             decoration: BoxDecoration(
               color: cs.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
             child: ListView(
               controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxxl),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.xxxl,
+              ),
               children: [
                 const SizedBox(height: AppSpacing.sm),
                 Center(
@@ -95,12 +104,16 @@ class _AdoptionReportSheetState extends State<AdoptionReportSheet> {
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Report this listing',
-                  style: AppTypography.sectionTitle(context).copyWith(fontWeight: FontWeight.w700),
+                  style: AppTypography.sectionTitle(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Our team reviews all reports and takes appropriate action.',
-                  style: AppTypography.caption(context).copyWith(color: cs.onSurfaceVariant),
+                  style: AppTypography.caption(
+                    context,
+                  ).copyWith(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 ..._reasons.map(((String code, String label) r) {
@@ -111,7 +124,10 @@ class _AdoptionReportSheetState extends State<AdoptionReportSheet> {
                       _selectedReason = v;
                       _error = null;
                     }),
-                    title: Text(r.$2, style: AppTypography.bodyRegular(context)),
+                    title: Text(
+                      r.$2,
+                      style: AppTypography.bodyRegular(context),
+                    ),
                     contentPadding: EdgeInsets.zero,
                     dense: true,
                   );
@@ -125,12 +141,18 @@ class _AdoptionReportSheetState extends State<AdoptionReportSheet> {
                     hintText: 'Describe the issue...',
                     border: OutlineInputBorder(),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Text(_error!, style: TextStyle(color: cs.error, fontSize: 12)),
+                  Text(
+                    _error!,
+                    style: TextStyle(color: cs.error, fontSize: 12),
+                  ),
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 FilledButton(
@@ -139,7 +161,10 @@ class _AdoptionReportSheetState extends State<AdoptionReportSheet> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Text('Submit Report'),
                 ),

@@ -40,9 +40,14 @@ class AdoptionPetUiModel {
   final int favoriteCount;
   final int commentCount;
   final bool isFavoritedByMe;
+  final String? bdAddressMode;
+  final int? bdCityCorporationId;
+  final int? bdZoneId;
+  final int? bdWardId;
   final int? bdDivisionId;
   final int? bdDistrictId;
   final int? bdUpazilaId;
+  final int? bdUnionId;
   final int? bdAreaId;
   final double? latitude;
   final double? longitude;
@@ -94,9 +99,14 @@ class AdoptionPetUiModel {
     this.favoriteCount = 0,
     this.commentCount = 0,
     this.isFavoritedByMe = false,
+    this.bdAddressMode,
+    this.bdCityCorporationId,
+    this.bdZoneId,
+    this.bdWardId,
     this.bdDivisionId,
     this.bdDistrictId,
     this.bdUpazilaId,
+    this.bdUnionId,
     this.bdAreaId,
     this.latitude,
     this.longitude,
@@ -112,10 +122,20 @@ class AdoptionPetUiModel {
   });
 
   AdoptionMediaUiModel? get coverMedia {
-    if (media.isNotEmpty) return media.first;
+    final firstUsable = media
+        .where((item) => item.displayUrl.isNotEmpty)
+        .toList();
+    if (firstUsable.isNotEmpty) return firstUsable.first;
     final cover = coverImageUrl?.trim() ?? '';
     if (cover.isNotEmpty) {
       return AdoptionMediaUiModel(id: null, url: cover, type: 'IMAGE');
+    }
+    if (galleryImageUrls.isNotEmpty) {
+      return AdoptionMediaUiModel(
+        id: null,
+        url: galleryImageUrls.first,
+        type: 'IMAGE',
+      );
     }
     return null;
   }
@@ -160,9 +180,14 @@ class AdoptionPetUiModel {
     int? favoriteCount,
     int? commentCount,
     bool? isFavoritedByMe,
+    String? bdAddressMode,
+    int? bdCityCorporationId,
+    int? bdZoneId,
+    int? bdWardId,
     int? bdDivisionId,
     int? bdDistrictId,
     int? bdUpazilaId,
+    int? bdUnionId,
     int? bdAreaId,
     double? latitude,
     double? longitude,
@@ -214,9 +239,14 @@ class AdoptionPetUiModel {
       favoriteCount: favoriteCount ?? this.favoriteCount,
       commentCount: commentCount ?? this.commentCount,
       isFavoritedByMe: isFavoritedByMe ?? this.isFavoritedByMe,
+      bdAddressMode: bdAddressMode ?? this.bdAddressMode,
+      bdCityCorporationId: bdCityCorporationId ?? this.bdCityCorporationId,
+      bdZoneId: bdZoneId ?? this.bdZoneId,
+      bdWardId: bdWardId ?? this.bdWardId,
       bdDivisionId: bdDivisionId ?? this.bdDivisionId,
       bdDistrictId: bdDistrictId ?? this.bdDistrictId,
       bdUpazilaId: bdUpazilaId ?? this.bdUpazilaId,
+      bdUnionId: bdUnionId ?? this.bdUnionId,
       bdAreaId: bdAreaId ?? this.bdAreaId,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
@@ -228,7 +258,8 @@ class AdoptionPetUiModel {
       ageMonths: ageMonths ?? this.ageMonths,
       ageDays: ageDays ?? this.ageDays,
       totalAgeDays: totalAgeDays ?? this.totalAgeDays,
-      approximateDateOfBirth: approximateDateOfBirth ?? this.approximateDateOfBirth,
+      approximateDateOfBirth:
+          approximateDateOfBirth ?? this.approximateDateOfBirth,
     );
   }
 
@@ -238,22 +269,26 @@ class AdoptionPetUiModel {
         .map((item) => AdoptionMediaUiModel.fromApiJson(item))
         .where((item) => item.displayUrl.isNotEmpty || item.hasThumbnail)
         .toList();
-    final galleryImageUrls = mediaList
-        .map((item) {
-          final mediaJson = item['media'];
-          final candidate = mediaJson is Map
-              ? Map<String, dynamic>.from(mediaJson)
-              : item;
-          final type = AdoptionMediaUiModel.fromApiJson(candidate).type;
-          if (type.toUpperCase() != 'IMAGE') return '';
-          final url = _asString(candidate['url']);
-          if (url.isNotEmpty) return url;
-          final thumb = _asString(candidate['thumbnailUrl']);
-          if (thumb.isNotEmpty) return thumb;
-          return '';
-        })
-        .where((item) => item.isNotEmpty)
-        .toList();
+    final List<String> galleryImageUrls = [
+      ...mediaList
+          .map((item) {
+            final mediaJson = item['media'];
+            final candidate = mediaJson is Map
+                ? Map<String, dynamic>.from(mediaJson)
+                : item;
+            final type = AdoptionMediaUiModel.fromApiJson(candidate).type;
+            if (type.toUpperCase() != 'IMAGE') return '';
+            final url = _asString(candidate['url']);
+            if (url.isNotEmpty) return url;
+            final thumb = _asString(candidate['thumbnailUrl']);
+            if (thumb.isNotEmpty) return thumb;
+            return '';
+          })
+          .where((item) => item.isNotEmpty),
+      ..._asStringList(
+        json['galleryImageUrls'],
+      ).map(MediaUrl.normalize).where((item) => item.isNotEmpty),
+    ];
 
     final galleryLabels = galleryImageUrls.isNotEmpty
         ? List<String>.generate(
@@ -300,8 +335,8 @@ class AdoptionPetUiModel {
     final ageMonths = _asIntOrNull(json['ageMonths']);
     final ageDays = _asIntOrNull(json['ageDays']);
     final totalAgeDays = _asIntOrNull(json['totalAgeDays']);
-    final approximateDateOfBirth = json['approximateDateOfBirth'] != null 
-        ? DateTime.tryParse(json['approximateDateOfBirth'].toString()) 
+    final approximateDateOfBirth = json['approximateDateOfBirth'] != null
+        ? DateTime.tryParse(json['approximateDateOfBirth'].toString())
         : null;
 
     final parts = <String>[];
@@ -321,7 +356,6 @@ class AdoptionPetUiModel {
         ? formattedAge
         : (ageText.isNotEmpty ? ageText : 'Age unavailable');
 
-
     final breed = _asString(json['breed']);
     final species = _speciesLabel(_asString(json['species']));
     final gender = _genderLabel(_asString(json['gender']));
@@ -330,6 +364,13 @@ class AdoptionPetUiModel {
           ? _asString(json['applicationStatus'])
           : _asString(json['status']),
     );
+
+    final apiCover = MediaUrl.normalize(_asString(json['coverImageUrl']));
+    final primaryCover = media.isNotEmpty
+        ? (media.first.isVideo ? media.first.thumbnailUrl : media.first.url)
+        : (apiCover.isNotEmpty
+              ? apiCover
+              : (galleryImageUrls.isNotEmpty ? galleryImageUrls.first : null));
 
     return AdoptionPetUiModel(
       id: _asInt(json['id']),
@@ -383,20 +424,27 @@ class AdoptionPetUiModel {
         _asString(json['healthInfo']),
         'No health notes available yet.',
       ]),
-      coverImageUrl: media.isNotEmpty
-          ? (media.first.isVideo ? media.first.thumbnailUrl : media.first.url)
-          : (galleryImageUrls.isNotEmpty ? galleryImageUrls.first : null),
+      coverImageUrl: primaryCover,
       galleryImageUrls: galleryImageUrls,
       media: media,
       favoriteCount: _asInt(count['favorites']),
       commentCount: _asInt(count['comments']),
       isFavoritedByMe: favorites.isNotEmpty,
+      bdAddressMode: _nullableString(json['bdAddressMode']),
+      bdCityCorporationId: _asIntOrNull(json['bdCityCorporationId']),
+      bdZoneId: _asIntOrNull(json['bdZoneId']),
+      bdWardId: _asIntOrNull(json['bdWardId']),
       bdDivisionId: _asIntOrNull(json['bdDivisionId']),
       bdDistrictId: _asIntOrNull(json['bdDistrictId']),
       bdUpazilaId: _asIntOrNull(json['bdUpazilaId']),
+      bdUnionId: _asIntOrNull(json['bdUnionId']),
       bdAreaId: _asIntOrNull(json['bdAreaId']),
-      latitude: json['latitude'] != null ? double.tryParse(json['latitude'].toString()) : null,
-      longitude: json['longitude'] != null ? double.tryParse(json['longitude'].toString()) : null,
+      latitude: json['latitude'] != null
+          ? double.tryParse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.tryParse(json['longitude'].toString())
+          : null,
       serviceAreaType: _nullableString(json['serviceAreaType']),
       applicationCount: _asInt(count['applications']),
       sizeText: _nullableString(json['sizeText']),

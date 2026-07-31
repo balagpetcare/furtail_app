@@ -201,35 +201,46 @@ class FundraisingDonationCheckoutController extends ChangeNotifier {
 
   Future<bool> openProvider(String attemptId) async {
     final existing = await _storage.loadByAttemptId(attemptId);
-    final url = existing?.redirectUrl;
-    if (existing == null || url == null || url.trim().isEmpty) {
+    final rawUrl = existing?.redirectUrl?.trim();
+    final uri = rawUrl == null || rawUrl.isEmpty ? null : Uri.tryParse(rawUrl);
+    if (existing == null ||
+        uri == null ||
+        !(uri.scheme == 'https' || uri.scheme == 'http')) {
       _lastFailure = const FundraisingDonationFailure(
-        type: FundraisingDonationErrorType.unknown,
-        message: 'Missing payment provider redirect URL.',
+        type: FundraisingDonationErrorType.validation,
+        code: 'PAYMENT_REDIRECT_UNAVAILABLE',
+        message:
+            'The payment page is not available right now. Please try again shortly.',
       );
       notifyListeners();
       return false;
     }
-    final launched = await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.externalApplication,
-    );
-    if (launched) {
-      final updated = existing.copyWith(
-        status: FundraisingDonationCheckoutStatus.paymentPending,
-        updatedAt: DateTime.now(),
-        clearFailure: true,
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched) {
+      _lastFailure = const FundraisingDonationFailure(
+        type: FundraisingDonationErrorType.unknown,
+        code: 'PAYMENT_PROVIDER_OPEN_FAILED',
+        message: 'We could not open the payment page. Please try again.',
       );
-      await _persist(updated, makeActive: !updated.isTerminal);
-      await _analyticsService.logEvent(
-        AnalyticsEvents.fundraisingProviderOpened,
-        parameters: <String, Object?>{
-          AnalyticsEvents.campaignId: existing.campaignId,
-          'provider': existing.provider ?? 'wpa',
-        },
-      );
+      notifyListeners();
+      return false;
     }
-    return launched;
+
+    _lastFailure = null;
+    final updated = existing.copyWith(
+      status: FundraisingDonationCheckoutStatus.paymentPending,
+      updatedAt: DateTime.now(),
+      clearFailure: true,
+    );
+    await _persist(updated, makeActive: !updated.isTerminal);
+    await _analyticsService.logEvent(
+      AnalyticsEvents.fundraisingProviderOpened,
+      parameters: <String, Object?>{
+        AnalyticsEvents.campaignId: existing.campaignId,
+        'provider': existing.provider ?? 'wpa',
+      },
+    );
+    return true;
   }
 
   Future<void> markCancelled(String attemptId) async {
@@ -354,7 +365,8 @@ class FundraisingDonationCheckoutController extends ChangeNotifier {
       final errorMessages = <String, String>{
         'CAMPAIGN_NOT_FOUND': 'This fundraiser does not exist.',
         'CAMPAIGN_DELETED': 'This fundraiser has been removed.',
-        'CAMPAIGN_STATUS_DRAFT': 'This fundraiser has not been published yet.',
+        'CAMPAIGN_STATUS_DRAFT':
+            'This fundraiser is still a draft and cannot receive donations.',
         'CAMPAIGN_STATUS_PENDING_REVIEW':
             'This fundraiser is available for donations while review is pending.',
         'CAMPAIGN_STATUS_PAUSED':

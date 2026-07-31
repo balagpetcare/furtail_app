@@ -47,6 +47,7 @@ void main() {
               accountId: 1,
               mediaId: 11,
               title: 'Verification document',
+              documentType: 'PRIMARY',
               mediaUrl: 'https://cdn.example.com/doc.pdf',
             ),
           ],
@@ -54,7 +55,7 @@ void main() {
       );
 
       expect(find.text('Fundraising verification'), findsOneWidget);
-      expect(find.text('Verification pending'), findsOneWidget);
+      expect(find.text('Ready for review'), findsOneWidget);
       expect(find.text("We couldn't read the server response"), findsNothing);
     });
 
@@ -143,6 +144,7 @@ void main() {
               const FundraisingAccountDocument(
                 id: 9,
                 title: 'NID',
+                documentType: 'PRIMARY',
                 mediaUrl: 'https://cdn.example.com/nid.pdf',
               ),
             ],
@@ -151,7 +153,7 @@ void main() {
         );
 
         expect(find.text('Step 5 of 5'), findsOneWidget);
-        expect(find.text('Verification pending'), findsOneWidget);
+        expect(find.text('Under review'), findsOneWidget);
         final continueButton = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, 'Continue to fundraiser'),
         );
@@ -307,7 +309,7 @@ void main() {
         await _tapSelector(tester, 4);
 
         expect(
-          find.text('No union options are available for this upazila.'),
+          find.text('No unions are available for this upazila.'),
           findsOneWidget,
         );
       },
@@ -373,30 +375,90 @@ void main() {
     );
 
     testWidgets(
-      'allows urban ward selections to save without a fake union and continue',
+      'shows Dhaka urban and rural modes and clears stale branch IDs when switching',
       (tester) async {
         final repo = _SetupScreenRepository(loadAccount: () async => null);
         await _pump(
           tester,
           accountProvider: () async => null,
           repository: repo,
-          unions: const <BdUnion>[],
-          areas: const <BdArea>[
+          cityCorporations: const <BdArea>[
             BdArea(
               id: 7001,
-              code: 'WARD-RAMPURA-1',
-              nameEn: 'Rampura',
-              type: 'AREA',
-              upazilaId: 302601,
+              code: 'DNCC',
+              nameEn: 'Dhaka North City Corporation',
+              type: 'CITY_CORPORATION',
               districtId: 3026,
             ),
             BdArea(
               id: 7002,
-              code: 'WARD-BANASREE-1',
-              nameEn: 'Banasree',
+              code: 'DSCC',
+              nameEn: 'Dhaka South City Corporation',
+              type: 'CITY_CORPORATION',
+              districtId: 3026,
+            ),
+          ],
+          zones: const <BdArea>[
+            BdArea(
+              id: 7101,
+              code: 'DNCC-Z1',
+              nameEn: 'DNCC Zone 1',
+              type: 'ZONE',
+              districtId: 3026,
+              parentId: 7001,
+            ),
+            BdArea(
+              id: 7102,
+              code: 'DSCC-Z1',
+              nameEn: 'DSCC Zone 1',
+              type: 'ZONE',
+              districtId: 3026,
+              parentId: 7002,
+            ),
+          ],
+          wards: const <BdArea>[
+            BdArea(
+              id: 7201,
+              code: 'DNCC-W1',
+              nameEn: 'DNCC Ward 1',
+              type: 'WARD',
+              districtId: 3026,
+              parentId: 7101,
+            ),
+            BdArea(
+              id: 7202,
+              code: 'DSCC-W1',
+              nameEn: 'DSCC Ward 1',
+              type: 'WARD',
+              districtId: 3026,
+              parentId: 7102,
+            ),
+          ],
+          areas: const <BdArea>[
+            BdArea(
+              id: 7301,
+              code: 'DNCC-A1',
+              nameEn: 'DNCC Area 1',
+              type: 'AREA',
+              districtId: 3026,
+              parentId: 7201,
+            ),
+            BdArea(
+              id: 7302,
+              code: 'DSCC-A1',
+              nameEn: 'DSCC Area 1',
+              type: 'AREA',
+              districtId: 3026,
+              parentId: 7202,
+            ),
+            BdArea(
+              id: 7303,
+              code: 'RURAL-A1',
+              nameEn: 'Dhanmondi Area',
               type: 'AREA',
               upazilaId: 302601,
               districtId: 3026,
+              unionId: 5001,
             ),
           ],
         );
@@ -404,19 +466,92 @@ void main() {
         await _fillStepOne(tester);
         await _selectChoice(tester, 1, 'Dhaka');
         await _selectChoice(tester, 2, 'Dhaka');
-        await _selectChoice(tester, 3, 'Dhanmondi');
 
-        expect(find.text('Union / Ward *'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('bd-location-address-type')),
+          findsOneWidget,
+        );
+        expect(find.text('Address type *'), findsOneWidget);
 
-        await _selectChoice(tester, 4, 'Rampura');
+        final addressType = find.byKey(
+          const ValueKey('bd-location-address-type'),
+        );
+        await tester.ensureVisible(addressType);
+        await tester.tap(addressType, warnIfMissed: false);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('City Corporation / Urban').last);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('bd-location-city-corporation')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Dhaka North City Corporation'), findsOneWidget);
+        expect(find.text('Dhaka South City Corporation'), findsOneWidget);
+        await tester.tap(find.text('Dhaka North City Corporation').last);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('bd-location-zone')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('DNCC Zone 1').last);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const ValueKey('bd-location-ward')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('DNCC Ward 1').last);
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Location details'),
+          'DNCC Area 1',
+        );
+        await tester.pump();
 
         await tester.tap(find.text('Save draft'));
         await tester.pumpAndSettle();
 
         expect(repo.updateCalls, 1);
-        expect(repo.lastUpdatePayload?['unionId'], isNull);
-        expect(repo.lastUpdatePayload?['areaId'], 7001);
-        expect(repo.lastUpdatePayload?['area'], 'Rampura');
+        expect(repo.lastUpdatePayload?['bdAddressMode'], 'URBAN');
+        expect(repo.lastUpdatePayload?['bdCityCorporationId'], 7001);
+        expect(repo.lastUpdatePayload?['bdZoneId'], 7101);
+        expect(repo.lastUpdatePayload?['bdWardId'], 7201);
+        expect(repo.lastUpdatePayload?['bdUpazilaId'], isNull);
+        expect(repo.lastUpdatePayload?['bdUnionId'], isNull);
+        expect(repo.lastUpdatePayload?['areaId'], isNull);
+        expect(repo.lastUpdatePayload?['bdAreaId'], isNull);
+        expect(repo.lastUpdatePayload?['area'], 'DNCC Area 1');
+
+        await tester.ensureVisible(addressType);
+        await tester.tap(addressType, warnIfMissed: false);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Upazila / Thana / Rural').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('bd-location-upazila')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Dhanmondi').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('bd-location-union')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Dhanmondi Union').last);
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextFormField, 'Location details'),
+          'Dhanmondi Area',
+        );
+        await tester.pump();
+
+        await tester.tap(find.text('Save draft'));
+        await tester.pumpAndSettle();
+
+        expect(repo.updateCalls, 2);
+        expect(repo.lastUpdatePayload?['bdAddressMode'], 'RURAL');
+        expect(repo.lastUpdatePayload?['bdCityCorporationId'], isNull);
+        expect(repo.lastUpdatePayload?['bdZoneId'], isNull);
+        expect(repo.lastUpdatePayload?['bdWardId'], isNull);
+        expect(repo.lastUpdatePayload?['bdUpazilaId'], 302601);
+        expect(repo.lastUpdatePayload?['bdUnionId'], 5001);
+        expect(repo.lastUpdatePayload?['areaId'], isNull);
+        expect(repo.lastUpdatePayload?['bdAreaId'], isNull);
+        expect(repo.lastUpdatePayload?['area'], 'Dhanmondi Area');
 
         await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
         await tester.pumpAndSettle();
@@ -437,6 +572,13 @@ void main() {
 
       expect(find.text('Union *'), findsOneWidget);
       await _selectChoice(tester, 4, 'Dhanmondi Union');
+      expect(find.text('Location details'), findsOneWidget);
+      expect(find.text('Area / Locality'), findsNothing);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Location details'),
+        'Beside the old mosque',
+      );
+      await tester.pump();
 
       await tester.tap(find.text('Save draft'));
       await tester.pumpAndSettle();
@@ -444,7 +586,8 @@ void main() {
       expect(repo.updateCalls, 1);
       expect(repo.lastUpdatePayload?['unionId'], 5001);
       expect(repo.lastUpdatePayload?['areaId'], isNull);
-      expect(repo.lastUpdatePayload?['area'], 'Dhanmondi Union');
+      expect(repo.lastUpdatePayload?['bdAreaId'], isNull);
+      expect(repo.lastUpdatePayload?['area'], 'Beside the old mosque');
 
       await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
       await tester.pumpAndSettle();
@@ -629,6 +772,154 @@ void main() {
         expect(find.text('Continu e'), findsNothing);
       },
     );
+
+    testWidgets(
+      'date of birth field shows the saved value as DD/MM/YYYY and opens a year-first Material date picker',
+      (tester) async {
+        await _pump(
+          tester,
+          accountProvider: () async => _completedAccount(status: 'DRAFT'),
+          recoveryData: <String, dynamic>{'step': 1},
+        );
+
+        expect(find.text('Step 2 of 5'), findsOneWidget);
+        // _completedAccount() saves dateOfBirth: DateTime.utc(1995, 1, 1).
+        expect(find.text('01/01/1995'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('fundraising-dob-field')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(DatePickerDialog), findsOneWidget);
+        // Year-selection mode opens first, so the year grid/list is visible
+        // instead of the day-by-day calendar.
+        expect(find.text('Confirm'), findsOneWidget);
+        expect(find.text('Cancel'), findsOneWidget);
+
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+
+        // Cancelling must not alter the previously saved value.
+        expect(find.text('01/01/1995'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'missing-item rows on the final step navigate directly to the owning step',
+      (tester) async {
+        await _pump(
+          tester,
+          accountProvider: () async => _completedAccount(
+            status: 'DRAFT',
+            documents: const <FundraisingAccountDocument>[],
+          ),
+          recoveryData: <String, dynamic>{'step': 4},
+        );
+
+        expect(find.text('Step 5 of 5'), findsOneWidget);
+        expect(find.text('What still needs attention'), findsOneWidget);
+
+        final fixButton = find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is TextButton &&
+                  widget.key is ValueKey &&
+                  (widget.key! as ValueKey).value.toString().startsWith(
+                    'fix-missing-2-',
+                  ),
+            )
+            .first;
+        await tester.ensureVisible(fixButton);
+        await tester.tap(fixButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Step 3 of 5'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'submit button is disabled while a required document is missing',
+      (tester) async {
+        await _pump(
+          tester,
+          accountProvider: () async => _completedAccount(
+            status: 'DRAFT',
+            documents: const <FundraisingAccountDocument>[],
+          ),
+          recoveryData: <String, dynamic>{'step': 4},
+        );
+
+        expect(find.text('Step 5 of 5'), findsOneWidget);
+        final submitButton = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Submit for review'),
+        );
+        expect(submitButton.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'submit button is enabled once the refreshed server state is complete',
+      (tester) async {
+        await _pump(
+          tester,
+          accountProvider: () async => _completedAccount(
+            status: 'DRAFT',
+            documents: const <FundraisingAccountDocument>[
+              FundraisingAccountDocument(
+                id: 9,
+                title: 'NID',
+                documentType: 'PRIMARY',
+                mediaUrl: 'https://cdn.example.com/nid.pdf',
+              ),
+            ],
+          ),
+          recoveryData: <String, dynamic>{'step': 4},
+        );
+
+        expect(find.text('Step 5 of 5'), findsOneWidget);
+        final submitButton = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Submit for review'),
+        );
+        expect(submitButton.onPressed, isNotNull);
+      },
+    );
+
+    testWidgets(
+      'document cards keep independent action state — one existing document does not disable another empty slot',
+      (tester) async {
+        await _pump(
+          tester,
+          accountProvider: () async => _completedAccount(
+            status: 'DRAFT',
+            documents: const <FundraisingAccountDocument>[
+              FundraisingAccountDocument(
+                id: 9,
+                title: 'Primary verification document',
+                documentType: 'PRIMARY',
+                mediaUrl: 'https://cdn.example.com/nid.pdf',
+              ),
+            ],
+          ),
+          recoveryData: <String, dynamic>{'step': 2},
+        );
+
+        expect(find.text('Step 3 of 5'), findsOneWidget);
+        // The uploaded slot offers Replace/Remove; the still-empty optional
+        // slot independently still offers Upload — neither is disabled by
+        // the other slot's state.
+        final replaceButton = tester.widget<TextButton>(
+          find.byKey(
+            const ValueKey('doc-action-replace-Primary verification document'),
+          ),
+        );
+        expect(replaceButton.onPressed, isNotNull);
+        final uploadButton = tester.widget<TextButton>(
+          find.byKey(
+            const ValueKey('doc-action-upload-Selfie / profile photo'),
+          ),
+        );
+        expect(uploadButton.onPressed, isNotNull);
+      },
+    );
   });
 }
 
@@ -641,6 +932,9 @@ Future<void> _pump(
   List<BdUpazila> upazilas = const <BdUpazila>[],
   List<BdUnion>? unions,
   List<BdArea>? areas,
+  List<BdArea> cityCorporations = const <BdArea>[],
+  List<BdArea> zones = const <BdArea>[],
+  List<BdArea> wards = const <BdArea>[],
   Map<String, dynamic>? recoveryData,
 }) async {
   final repo =
@@ -719,6 +1013,30 @@ Future<void> _pump(
                 .where((upazila) => upazila.districtId == 3027)
                 .toList(),
           ),
+        if (districts.any((district) => district.id == 3026) ||
+            districts.isEmpty)
+          bdCityCorporationsProvider(3026).overrideWith(
+            (ref) async => cityCorporations.isNotEmpty
+                ? cityCorporations.where((cc) => cc.districtId == 3026).toList()
+                : const <BdArea>[],
+          ),
+        if (cityCorporations.any((cc) => cc.id == 7001) ||
+            cityCorporations.isEmpty)
+          bdZonesProvider(7001).overrideWith(
+            (ref) async =>
+                zones.where((zone) => zone.parentId == 7001).toList(),
+          ),
+        if (zones.any((zone) => zone.id == 7101) || zones.isEmpty)
+          bdWardsProvider(7101).overrideWith(
+            (ref) async =>
+                wards.where((ward) => ward.parentId == 7101).toList(),
+          ),
+        if (wards.any((ward) => ward.id == 7201) || wards.isEmpty)
+          bdAreasByWardProvider(7201).overrideWith(
+            (ref) async => areaData != null
+                ? areaData.where((area) => area.parentId == 7201).toList()
+                : const <BdArea>[],
+          ),
         if (upazilas.any((upazila) => upazila.id == 302601) || upazilas.isEmpty)
           bdUnionsProvider(302601).overrideWith(
             (ref) async => unionData != null
@@ -736,6 +1054,12 @@ Future<void> _pump(
           bdAreasProvider(302601).overrideWith(
             (ref) async => areaData != null
                 ? areaData.where((area) => area.upazilaId == 302601).toList()
+                : const <BdArea>[],
+          ),
+        if (unions != null || upazilas.isEmpty)
+          bdAreasByUnionProvider(5001).overrideWith(
+            (ref) async => areaData != null
+                ? areaData.where((area) => area.unionId == 5001).toList()
                 : const <BdArea>[],
           ),
         if (upazilas.any((upazila) => upazila.id == 302602))
@@ -784,52 +1108,91 @@ Future<void> _selectChoice(
   int selectorIndex,
   String choice,
 ) async {
-  final labelCandidates = <int, List<String>>{
-    1: <String>['Division *'],
-    2: <String>['District *'],
-    3: <String>['Upazila / Thana *'],
-    4: <String>['Union *', 'Union / Ward *'],
-  };
-  final candidates = labelCandidates[selectorIndex];
-  if (candidates == null) {
-    throw ArgumentError.value(selectorIndex, 'selectorIndex');
-  }
-
-  final selector = candidates
-      .map(
-        (label) =>
-            find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
-      )
-      .firstWhere((finder) => finder.evaluate().isNotEmpty);
-  await tester.ensureVisible(selector);
-  await tester.tap(selector);
+  final tileKey = _selectorTileKey(tester, selectorIndex, choice);
+  await tester.ensureVisible(tileKey);
+  await tester.tap(tileKey, warnIfMissed: false);
   await tester.pumpAndSettle();
-  final choiceFinder = find.text(choice).last;
-  await tester.tap(choiceFinder);
+
+  final listView = find.byType(ListView).last;
+  final choiceTile = find
+      .descendant(of: listView, matching: find.widgetWithText(ListTile, choice))
+      .first;
+  await tester.ensureVisible(choiceTile);
+  await tester.tap(choiceTile, warnIfMissed: false);
   await tester.pumpAndSettle();
 }
 
 Future<void> _tapSelector(WidgetTester tester, int selectorIndex) async {
-  final labelCandidates = <int, List<String>>{
-    1: <String>['Division *'],
-    2: <String>['District *'],
-    3: <String>['Upazila / Thana *'],
-    4: <String>['Union *', 'Union / Ward *'],
-  };
-  final candidates = labelCandidates[selectorIndex];
-  if (candidates == null) {
-    throw ArgumentError.value(selectorIndex, 'selectorIndex');
+  final tileKey = _selectorTileKey(tester, selectorIndex, null);
+  await tester.ensureVisible(tileKey);
+  await tester.tap(tileKey, warnIfMissed: false);
+  await tester.pumpAndSettle();
+}
+
+Finder _selectorTileKey(
+  WidgetTester tester,
+  int selectorIndex,
+  String? choice,
+) {
+  final lowerChoice = choice?.toLowerCase() ?? '';
+  final keys = <String>[];
+  switch (selectorIndex) {
+    case 1:
+      keys.add('bd-location-division');
+      break;
+    case 2:
+      keys.add('bd-location-district');
+      break;
+    case 3:
+      if (lowerChoice.contains('city corporation')) {
+        keys.add('bd-location-city-corporation');
+      } else {
+        keys.addAll(<String>[
+          'bd-location-upazila',
+          'bd-location-city-corporation',
+        ]);
+      }
+      break;
+    case 4:
+      if (lowerChoice.contains('zone')) {
+        keys.add('bd-location-zone');
+      } else if (lowerChoice.contains('union')) {
+        keys.add('bd-location-union');
+      } else if (lowerChoice.contains('city corporation')) {
+        keys.add('bd-location-city-corporation');
+      } else {
+        keys.addAll(<String>[
+          'bd-location-zone',
+          'bd-location-union',
+          'bd-location-city-corporation',
+          'bd-location-upazila',
+        ]);
+      }
+      break;
+    case 5:
+      if (lowerChoice.contains('ward')) {
+        keys.add('bd-location-ward');
+      } else {
+        keys.add('bd-location-ward');
+      }
+      break;
+    case 6:
+      throw StateError('Selector index 6 is no longer used in this test.');
+    case 7:
+      throw StateError('Selector index 7 is no longer used in this test.');
+    default:
+      throw ArgumentError.value(selectorIndex, 'selectorIndex');
   }
 
-  final selector = candidates
-      .map(
-        (label) =>
-            find.ancestor(of: find.text(label), matching: find.byType(InkWell)),
-      )
-      .firstWhere((finder) => finder.evaluate().isNotEmpty);
-  await tester.ensureVisible(selector);
-  await tester.tap(selector);
-  await tester.pumpAndSettle();
+  for (final key in keys) {
+    final finder = find.byKey(ValueKey(key));
+    if (finder.evaluate().isNotEmpty) {
+      return finder;
+    }
+  }
+  throw StateError(
+    'Could not find selectable tile for $selectorIndex / $choice',
+  );
 }
 
 class _RetryingAccountSource {
@@ -894,6 +1257,7 @@ FundraisingAccount _completedAccount({
     id: 1,
     status: status,
     accountType: accountType,
+    fullName: 'Test User',
     presentAddress: 'Dhaka',
     permanentAddress: 'Dhaka',
     occupation: 'Volunteer',
@@ -903,6 +1267,7 @@ FundraisingAccount _completedAccount({
     unionId: 5001,
     areaId: 5001,
     dateOfBirth: DateTime.utc(1995, 1, 1),
+    primaryDocumentType: 'NID',
     nationalIdNumber: '1234567890',
     birthRegNumber: null,
     studentIdNumber: null,
@@ -1017,6 +1382,9 @@ class _FailingThenOkBdLocationsRepository extends BdLocationsRepository {
   Future<Map<String, dynamic>> validateSelection({
     int? divisionId,
     int? districtId,
+    int? cityCorporationId,
+    int? zoneId,
+    int? wardId,
     int? upazilaId,
     int? unionId,
     int? areaId,
@@ -1035,6 +1403,9 @@ class _FailingThenOkBdLocationsRepository extends BdLocationsRepository {
       'data': <String, dynamic>{
         'divisionId': divisionId,
         'districtId': districtId,
+        'cityCorporationId': cityCorporationId,
+        'zoneId': zoneId,
+        'wardId': wardId,
         'upazilaId': upazilaId,
         'unionId': unionId,
         'areaId': areaId,
@@ -1050,6 +1421,9 @@ class _TestBdLocationsRepository extends BdLocationsRepository {
   Future<Map<String, dynamic>> validateSelection({
     int? divisionId,
     int? districtId,
+    int? cityCorporationId,
+    int? zoneId,
+    int? wardId,
     int? upazilaId,
     int? unionId,
     int? areaId,
@@ -1074,11 +1448,27 @@ class _TestBdLocationsRepository extends BdLocationsRepository {
         url: '/api/v1/location-master/validate-selection',
       );
     }
+    if (districtId == 3026 &&
+        cityCorporationId != null &&
+        cityCorporationId != 7001 &&
+        cityCorporationId != 7002) {
+      throw ApiClientException(
+        message: 'City corporation does not belong to the selected district.',
+        dioExceptionType: 'badResponse',
+        statusCode: 400,
+        code: 'CITY_CORPORATION_DISTRICT_MISMATCH',
+        method: 'POST',
+        url: '/api/v1/location-master/validate-selection',
+      );
+    }
     return <String, dynamic>{
       'ok': true,
       'data': <String, dynamic>{
         'divisionId': divisionId,
         'districtId': districtId,
+        'cityCorporationId': cityCorporationId,
+        'zoneId': zoneId,
+        'wardId': wardId,
         'upazilaId': upazilaId,
         'unionId': unionId,
         'areaId': areaId,

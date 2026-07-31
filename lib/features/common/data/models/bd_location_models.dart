@@ -47,7 +47,7 @@ class BdDistrict {
       code: (j['code'] ?? '').toString(),
       nameEn: (j['nameEn'] ?? '').toString(),
       nameBn: j['nameBn']?.toString(),
-      divisionId: (j['divisionId'] as num).toInt(),
+      divisionId: (j['divisionId'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -78,7 +78,7 @@ class BdUpazila {
       code: (j['code'] ?? '').toString(),
       nameEn: (j['nameEn'] ?? '').toString(),
       nameBn: j['nameBn']?.toString(),
-      districtId: (j['districtId'] as num).toInt(),
+      districtId: (j['districtId'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -125,9 +125,16 @@ class BdArea {
   final String nameEn;
   final String? nameBn;
   final String type;
+  final String reviewStatus;
+  final String currentValidity;
+  final Object? provenance;
+  final int? unionId;
   final int? upazilaId;
   final int? districtId;
   final int? parentId;
+  final bool? isLegacyFlag;
+  final bool? isCurrentSelectableFlag;
+  final String? reviewMessage;
 
   const BdArea({
     required this.id,
@@ -135,9 +142,16 @@ class BdArea {
     required this.nameEn,
     this.nameBn,
     required this.type,
+    this.reviewStatus = 'CURRENT_VERIFIED',
+    this.currentValidity = 'CURRENT_VERIFIED',
+    this.provenance,
+    this.unionId,
     this.upazilaId,
     this.districtId,
     this.parentId,
+    this.isLegacyFlag,
+    this.isCurrentSelectableFlag,
+    this.reviewMessage,
   });
 
   factory BdArea.fromJson(Map<String, dynamic> j) {
@@ -147,11 +161,32 @@ class BdArea {
       nameEn: (j['nameEn'] ?? '').toString(),
       nameBn: j['nameBn']?.toString(),
       type: (j['type'] ?? '').toString(),
+      reviewStatus: (j['reviewStatus'] ?? 'CURRENT_VERIFIED').toString(),
+      currentValidity: (j['currentValidity'] ?? 'CURRENT_VERIFIED').toString(),
+      provenance: j['provenance'],
+      unionId: (j['unionId'] as num?)?.toInt(),
       upazilaId: (j['upazilaId'] as num?)?.toInt(),
       districtId: (j['districtId'] as num?)?.toInt(),
       parentId: (j['parentId'] as num?)?.toInt(),
+      isLegacyFlag: j['isLegacy'] as bool?,
+      isCurrentSelectableFlag: j['isCurrentSelectable'] as bool?,
+      reviewMessage: j['reviewMessage']?.toString(),
     );
   }
+
+  bool get isLegacy => isLegacyFlag ?? (currentValidity != 'CURRENT_VERIFIED');
+
+  bool get isSelectableForNewSelection =>
+      isCurrentSelectableFlag ??
+      (currentValidity == 'CURRENT_VERIFIED' ||
+          currentValidity == 'PARTIAL_CURRENT');
+
+  /// True for the urban City Corporation -> Zone -> Ward branch (never
+  /// linked to a rural union/upazila directly).
+  bool get isUrban =>
+      type == 'CITY_CORPORATION' ||
+      type == 'ZONE' ||
+      (type == 'WARD' && unionId == null);
 
   String display({bool bn = false}) {
     final b = (nameBn ?? '').trim();

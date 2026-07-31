@@ -6,22 +6,39 @@ import 'base_url_validator.dart';
 /// Environment-driven API configuration.
 ///
 /// Recommended usage:
-/// - Physical device: `flutter run --dart-define-from-file=env/mobile-dev.json`
-/// - Emulator:        `flutter run --dart-define-from-file=env/emulator-dev.json`
-/// - Or override:     `--dart-define=API_BASE_URL=http://192.168.10.111:7200/api/v1`
+/// - Physical device: `flutter run --dart-define=FURTAIL_API_BASE_URL=http://<lan-ip>:7300/api/v1`
+/// - Emulator:        `flutter run --dart-define-from-file=env/new-api-emulator.json`
+/// - Rollback:        `flutter run --dart-define-from-file=env/rollback-7200.json`
 ///
-/// API_BASE_URL may include or omit the /api/v1 suffix — both forms are handled.
+/// FURTAIL_API_BASE_URL is preferred. Legacy API_BASE_URL/API_HOST remain
+/// supported for rollback-safe compatibility.
 class ApiConfig {
   /// API base host (without /api/v1), e.g. `http://192.168.10.111:7200`
   static String get host {
-    const fromBase = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    const fromBase = String.fromEnvironment(
+      'FURTAIL_API_BASE_URL',
+      defaultValue: '',
+    );
     if (fromBase.isNotEmpty) {
       return _resolveLocalhost(_stripApiV1(fromBase));
     }
 
-    const fromHost = String.fromEnvironment('API_HOST', defaultValue: '');
+    const fromHost = String.fromEnvironment(
+      'FURTAIL_API_HOST',
+      defaultValue: '',
+    );
     if (fromHost.isNotEmpty) {
       return _resolveLocalhost(_stripApiV1(fromHost));
+    }
+
+    const legacyBase = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (legacyBase.isNotEmpty) {
+      return _resolveLocalhost(_stripApiV1(legacyBase));
+    }
+
+    const legacyHost = String.fromEnvironment('API_HOST', defaultValue: '');
+    if (legacyHost.isNotEmpty) {
+      return _resolveLocalhost(_stripApiV1(legacyHost));
     }
 
     // Default fallback when no dart-define is set
@@ -69,8 +86,8 @@ class ApiConfig {
       label: 'Furtail API',
       url: host,
       hint:
-          'Pass --dart-define=API_BASE_URL=http://<host>:7200 (or API_HOST) '
-          'when running the app.',
+          'Pass --dart-define=FURTAIL_API_BASE_URL=http://<host>:7300 '
+          '(or the legacy API_BASE_URL/API_HOST aliases) when running the app.',
     );
   }
 }

@@ -62,6 +62,20 @@ class MediaComposerController extends ChangeNotifier {
 
   bool get isUploading => _items.any((item) => item.isUploading);
   bool get isPreparing => _items.any((item) => item.isPreparing);
+  List<MediaDraftItem> get existingServerMedia => _items
+      .where((item) => item.remoteMediaId != null && item.localPath == null)
+      .toList();
+  List<MediaDraftItem> get newlySelectedLocalMedia => _items
+      .where((item) => item.remoteMediaId == null && item.localPath != null)
+      .toList();
+  List<MediaDraftItem> get failedMedia =>
+      _items.where((item) => item.hasFailed).toList();
+  List<MediaDraftItem> get uploadingMedia =>
+      _items.where((item) => item.isUploading || item.isPreparing).toList();
+  List<int> get remoteMediaIds => _items
+      .map((item) => item.remoteMediaId)
+      .whereType<int>()
+      .toList(growable: false);
 
   Future<void> restore() async {
     if (_restored) return;
@@ -115,6 +129,18 @@ class MediaComposerController extends ChangeNotifier {
   Future<void> clearPersistedDraft() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_storageKey);
+  }
+
+  Future<void> reset() async {
+    final tokenIds = List<String>.from(_cancelTokens.keys);
+    for (final tokenId in tokenIds) {
+      await cancelItem(tokenId, persistCancelledState: false);
+    }
+    _items.clear();
+    _restored = true;
+    _ensureUploadedInFlight = null;
+    await clearPersistedDraft();
+    notifyListeners();
   }
 
   Future<void> replaceItem(String itemId, MediaDraftItem replacement) async {

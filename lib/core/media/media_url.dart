@@ -18,6 +18,10 @@ class MediaUrl {
     final mediaBase = AppConfig.mediaBaseUrl.replaceAll(RegExp(r'/+$'), '');
     if (mediaBase.isEmpty) return u;
 
+    if (u.startsWith('memory://') || u.startsWith('memory:')) {
+      return '$mediaBase/api/v1/media/legacy/${Uri.encodeComponent(u)}';
+    }
+
     // Relative path -> media base
     if (!(u.startsWith('http://') || u.startsWith('https://'))) {
       final path = u.startsWith('/') ? u.substring(1) : u;
@@ -29,7 +33,8 @@ class MediaUrl {
       final uri = Uri.parse(u);
       final host = (uri.host).toLowerCase();
 
-      final looksLocal = host == 'localhost' ||
+      final looksLocal =
+          host == 'localhost' ||
           host == '127.0.0.1' ||
           host == '10.0.2.2' ||
           host.endsWith('.local') ||
@@ -39,11 +44,15 @@ class MediaUrl {
       if (!looksLocal) return u;
 
       final baseUri = Uri.parse(mediaBase);
-      return uri.replace(
-        scheme: baseUri.scheme,
-        host: baseUri.host,
-        port: baseUri.hasPort ? baseUri.port : (uri.hasPort ? uri.port : null),
-      ).toString();
+      return uri
+          .replace(
+            scheme: baseUri.scheme,
+            host: baseUri.host,
+            port: baseUri.hasPort
+                ? baseUri.port
+                : (uri.hasPort ? uri.port : null),
+          )
+          .toString();
     } catch (_) {
       return u;
     }

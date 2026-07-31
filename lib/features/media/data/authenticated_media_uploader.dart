@@ -34,6 +34,13 @@ class UploadedMediaResult {
 
 enum MediaUploadErrorKind {
   sessionExpired,
+  unauthenticated,
+  forbidden,
+  mediaNotOwned,
+  mediaBindingConflict,
+  uploadIncomplete,
+  invalidDraftState,
+  retryableUploadFailure,
   networkTimeout,
   fileTooLarge,
   storageFailure,
@@ -48,12 +55,14 @@ class MediaUploadException implements Exception {
     required this.userMessage,
     this.statusCode,
     this.code,
+    this.requestId,
   });
 
   final MediaUploadErrorKind kind;
   final String userMessage;
   final int? statusCode;
   final String? code;
+  final String? requestId;
 
   factory MediaUploadException.from(Object error) {
     if (error is MediaUploadException) {
@@ -62,14 +71,27 @@ class MediaUploadException implements Exception {
 
     if (error is ApiClientException) {
       final code = error.code?.trim().toUpperCase();
+      final statusCode = error.statusCode ?? 0;
+      final requestId = _requestIdFromError(error);
 
-      if (error.statusCode == 401 &&
+      if (statusCode == 401 &&
           (code == 'CENTRAL_TOKEN_EXPIRED' || code == 'TOKEN_REVOKED')) {
         return MediaUploadException(
           kind: MediaUploadErrorKind.sessionExpired,
           userMessage: 'Your session has expired. Please sign in again.',
-          statusCode: error.statusCode,
+          statusCode: statusCode,
           code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (statusCode == 401) {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.unauthenticated,
+          userMessage: 'Please sign in again to upload media.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
         );
       }
 
@@ -78,12 +100,13 @@ class MediaUploadException implements Exception {
           kind: MediaUploadErrorKind.networkTimeout,
           userMessage:
               'Upload timed out. Please check your connection and try again.',
-          statusCode: error.statusCode,
+          statusCode: statusCode,
           code: code,
+          requestId: requestId,
         );
       }
 
-      if (code == 'FILE_TOO_LARGE') {
+      if (code == 'FILE_TOO_LARGE' || code == 'MEDIA_SIZE_EXCEEDED') {
         return MediaUploadException(
           kind: MediaUploadErrorKind.fileTooLarge,
           userMessage: _sanitizeMessage(
@@ -91,8 +114,21 @@ class MediaUploadException implements Exception {
             fallback:
                 'The selected file is too large. Please choose a smaller file.',
           ),
-          statusCode: error.statusCode,
+          statusCode: statusCode,
           code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'UNSUPPORTED_MEDIA_TYPE' ||
+          code == 'MEDIA_TYPE_UNSUPPORTED') {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.invalidPayload,
+          userMessage:
+              'This file type is not supported. Please choose a different file.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
         );
       }
 
@@ -101,8 +137,9 @@ class MediaUploadException implements Exception {
           kind: MediaUploadErrorKind.storageFailure,
           userMessage:
               'We could not store that file right now. Please try again.',
-          statusCode: error.statusCode,
+          statusCode: statusCode,
           code: code,
+          requestId: requestId,
         );
       }
 
@@ -116,8 +153,76 @@ class MediaUploadException implements Exception {
             fallback:
                 'This file could not be uploaded. Please try another one.',
           ),
-          statusCode: error.statusCode,
+          statusCode: statusCode,
           code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'FORBIDDEN' || code == 'MEDIA_UPLOAD_FORBIDDEN') {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.forbidden,
+          userMessage:
+              'You do not have permission to upload or attach this media.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'MEDIA_NOT_OWNED' || code == 'MEDIA_NOT_FOUND') {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.mediaNotOwned,
+          userMessage:
+              'One or more uploaded files are unavailable. Please upload them again.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'MEDIA_BINDING_CONFLICT') {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.mediaBindingConflict,
+          userMessage: 'That file is already attached to this fundraiser.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'UPLOAD_INCOMPLETE') {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.uploadIncomplete,
+          userMessage: 'The upload did not finish. Please retry the file.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'INVALID_DRAFT_STATE') {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.invalidDraftState,
+          userMessage:
+              'This fundraiser draft can no longer accept media changes.',
+          statusCode: statusCode,
+          code: code,
+          requestId: requestId,
+        );
+      }
+
+      if (code == 'RETRYABLE_UPLOAD_FAILURE' || statusCode >= 500) {
+        return MediaUploadException(
+          kind: MediaUploadErrorKind.retryableUploadFailure,
+          userMessage: _sanitizeMessage(
+            error.message,
+            fallback:
+                'We could not upload that file right now. Please try again.',
+          ),
+          statusCode: statusCode == 0 ? null : statusCode,
+          code: code,
+          requestId: requestId,
         );
       }
 
@@ -127,8 +232,9 @@ class MediaUploadException implements Exception {
           error.message,
           fallback: 'Could not upload the file right now. Please try again.',
         ),
-        statusCode: error.statusCode,
+        statusCode: statusCode == 0 ? null : statusCode,
         code: code,
+        requestId: requestId,
       );
     }
 
@@ -180,14 +286,45 @@ class MediaUploadException implements Exception {
         normalized.contains('invalid image data') ||
         normalized.contains('stack trace') ||
         normalized.contains('sqlstate') ||
-        normalized.contains('postgres')) {
+        normalized.contains('postgres') ||
+        normalized.contains('internal server error') ||
+        normalized == 'api error' ||
+        normalized == 'upload error') {
       return fallback;
     }
     return message;
   }
 
+  static String? _requestIdFromError(ApiClientException error) {
+    final responseData = error.responseData;
+    if (responseData is Map) {
+      final meta = responseData['meta'];
+      if (meta is Map) {
+        final requestId = meta['requestId']?.toString().trim();
+        if (requestId != null && requestId.isNotEmpty) return requestId;
+      }
+    }
+    final headerValues =
+        error.responseHeaders?['x-request-id'] ??
+        error.responseHeaders?['X-Request-Id'];
+    if (headerValues != null && headerValues.isNotEmpty) {
+      final headerRequestId = headerValues.first.trim();
+      if (headerRequestId.isNotEmpty) return headerRequestId;
+    }
+    return null;
+  }
+
   @override
-  String toString() => userMessage;
+  String toString() {
+    final parts = <String>[
+      'kind=$kind',
+      if (statusCode != null) 'statusCode=$statusCode',
+      if (code != null && code!.isNotEmpty) 'code=$code',
+      if (requestId != null && requestId!.isNotEmpty) 'requestId=$requestId',
+      'message=${userMessage.replaceAll('\n', ' ').trim()}',
+    ];
+    return 'MediaUploadException(${parts.join(', ')})';
+  }
 }
 
 class AuthenticatedMediaUploader {
@@ -199,6 +336,7 @@ class AuthenticatedMediaUploader {
   Future<UploadedMediaResult> upload({
     required Object file,
     Map<String, String> fields = const <String, String>{},
+    Map<String, String>? headers,
     void Function(int sentBytes, int totalBytes)? onProgress,
     CancelToken? cancelToken,
   }) async {
@@ -207,6 +345,7 @@ class AuthenticatedMediaUploader {
         url: '${ApiConfig.apiV1}/media/upload',
         files: [ApiMultipartFilePart(fieldName: 'file', file: file)],
         fields: fields,
+        headers: headers,
         onSendProgress: onProgress,
         cancelToken: cancelToken,
         parse: _decodeUploadedMedia,

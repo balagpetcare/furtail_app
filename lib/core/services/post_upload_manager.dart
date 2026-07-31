@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../features/media/data/authenticated_media_uploader.dart';
 import '../../features/posts/data/datasources/posts_remote_ds.dart';
 import '../analytics/analytics_service.dart';
 
@@ -21,17 +22,22 @@ enum PostUploadStatus {
 
 class PostUploadState {
   final bool inProgress;
+
   /// Weighted overall progress shown in UI (0..1).
   final double overallProgress;
+
   /// Progress within the current phase (0..1), not shown directly in UI.
   final double phaseProgress;
+
   /// Phase label without a percentage, e.g. "Preparing videoâ€¦"
   final String message;
   final bool done;
   final String? error;
   final PostUploadStatus status;
+
   /// ID returned by createPost/updatePost â€” available when status == posted.
   final int? createdPostId;
+
   /// Server timestamp of the created post.
   final DateTime? createdAt;
 
@@ -86,11 +92,7 @@ class PostUploadDraft {
   final File? file;
   final String type; // IMAGE / VIDEO / FILE
 
-  PostUploadDraft({
-    this.existingId,
-    this.file,
-    required this.type,
-  });
+  PostUploadDraft({this.existingId, this.file, required this.type});
 }
 
 class PostUploadTask {
@@ -161,7 +163,7 @@ class PostUploadTask {
 
 // â”€â”€ Upload size limits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // These must match MAX_UPLOAD_BYTES on the backend (appConfig.mediaPolicy).
-const int _maxImageBytes = 15 * 1024 * 1024;  // 15 MB
+const int _maxImageBytes = 15 * 1024 * 1024; // 15 MB
 const int _maxVideoBytes = 200 * 1024 * 1024; // 200 MB
 
 /// Human-readable file size: KB below 1 MB, MB below 1 GB, GB otherwise.
@@ -277,7 +279,9 @@ class PostUploadManager {
     // The underlying temp-file cleanup is handled by clearStaleTempFiles() on
     // startup, so this call is best-effort only.
     VideoCompress.deleteAllCache().catchError((Object e) {
-      debugPrint('[PostUploadManager] VideoCompress.deleteAllCache error (plugin bug, safe to ignore): $e');
+      debugPrint(
+        '[PostUploadManager] VideoCompress.deleteAllCache error (plugin bug, safe to ignore): $e',
+      );
       return false; // required: deleteAllCache() returns Future<bool>
     }).ignore();
   }
@@ -311,7 +315,9 @@ class PostUploadManager {
         notificationDetails,
       );
     } catch (e) {
-      debugPrint('[PostUploadManager] Failed to show progress notification: $e');
+      debugPrint(
+        '[PostUploadManager] Failed to show progress notification: $e',
+      );
     }
   }
 
@@ -449,8 +455,9 @@ class PostUploadManager {
     final notifTitle = isVideoTask ? 'Uploading videoâ€¦' : 'Uploading postâ€¦';
     try {
       final mediaIds = <int>[];
-      final newLocalDrafts =
-          task.drafts.where((x) => x.existingId == null).toList();
+      final newLocalDrafts = task.drafts
+          .where((x) => x.existingId == null)
+          .toList();
 
       for (int i = 0; i < task.drafts.length; i++) {
         final d = task.drafts[i];
@@ -476,8 +483,9 @@ class PostUploadManager {
           'mediaType=${d.type}',
         );
         if (size > maxBytes) {
-          final mediaLabel =
-              (d.type == 'VIDEO' || d.type == 'REEL') ? 'video' : 'image';
+          final mediaLabel = (d.type == 'VIDEO' || d.type == 'REEL')
+              ? 'video'
+              : 'image';
           throw Exception(
             'FILE_TOO_LARGE: This $mediaLabel is ${_formatFileSize(size)}. '
             'Maximum allowed size is ${_formatFileSize(maxBytes)}.',
@@ -512,8 +520,9 @@ class PostUploadManager {
         );
         // Second guard: compressed file could in theory be larger than original.
         if (finalUploadSize > maxBytes) {
-          final mediaLabel =
-              (d.type == 'VIDEO' || d.type == 'REEL') ? 'video' : 'image';
+          final mediaLabel = (d.type == 'VIDEO' || d.type == 'REEL')
+              ? 'video'
+              : 'image';
           throw Exception(
             'FILE_TOO_LARGE: This $mediaLabel is ${_formatFileSize(finalUploadSize)}. '
             'Maximum allowed size is ${_formatFileSize(maxBytes)}.',
@@ -521,10 +530,9 @@ class PostUploadManager {
         }
 
         final localIndex = newLocalDrafts.indexOf(d);
-        final label =
-            newLocalDrafts.length > 1
-                ? 'Uploading ${localIndex + 1}/${newLocalDrafts.length}â€¦'
-                : (d.type == 'VIDEO' ? 'Uploading videoâ€¦' : 'Uploading postâ€¦');
+        final label = newLocalDrafts.length > 1
+            ? 'Uploading ${localIndex + 1}/${newLocalDrafts.length}â€¦'
+            : (d.type == 'VIDEO' ? 'Uploading videoâ€¦' : 'Uploading postâ€¦');
         const uploadOverallStart = 0.25;
         state.value = state.value.copyWith(
           status: PostUploadStatus.uploading,
@@ -577,7 +585,9 @@ class PostUploadManager {
 
       const processingOverallStart = 0.90;
       final isVideoPost = task.type == 'VIDEO' || task.type == 'REEL';
-      final processingLabel = isVideoPost ? 'Server processingâ€¦' : 'Processingâ€¦';
+      final processingLabel = isVideoPost
+          ? 'Server processingâ€¦'
+          : 'Processingâ€¦';
       state.value = state.value.copyWith(
         status: PostUploadStatus.processing,
         message: processingLabel,
@@ -684,6 +694,27 @@ class PostUploadManager {
       });
     } catch (e) {
       debugPrint('[PostUploadManager] Error: $e');
+
+      // Media upload failures already carry a typed, correctly-scoped
+      // reason (kind) and user-facing message — use them directly instead
+      // of re-parsing the message with string heuristics, which is what
+      // previously caused every 401/403 to be shown as "log in again" even
+      // when the failure had nothing to do with the session (e.g. a real
+      // ownership/permission rejection, or a non-auth server error).
+      if (e is MediaUploadException) {
+        state.value = state.value.copyWith(
+          inProgress: false,
+          done: true,
+          error: e.userMessage,
+          message: 'Failed',
+          status: PostUploadStatus.failed,
+        );
+        await _showFailedNotification(
+          isSizeError: e.kind == MediaUploadErrorKind.fileTooLarge,
+        );
+        return;
+      }
+
       String errMsg = e.toString().replaceFirst('Exception: ', '');
       bool isSizeError = false;
 
@@ -705,23 +736,40 @@ class PostUploadManager {
         } catch (_) {}
         final maxStr = backendMaxMb != null ? '${backendMaxMb}MB' : '200MB';
         errMsg = 'This file is too large. Maximum allowed size is $maxStr.';
-      } else if (errMsg.contains('401') || errMsg.contains('Unauthorized')) {
-        errMsg = 'You are not allowed to upload this media. Please log in again.';
-      } else if (errMsg.contains('network') || errMsg.contains('Connection') ||
-                 errMsg.contains('SocketException') || errMsg.contains('timeout')) {
+      } else if (errMsg.contains('401') ||
+          errMsg.contains('Unauthorized') ||
+          errMsg.contains('Upload failed (401')) {
+        // A real 401 here (post-creation call, not media upload — those are
+        // typed above) does mean the session needs re-authentication.
+        errMsg = 'Your session has expired. Please log in again.';
+      } else if (errMsg.contains('403') ||
+          errMsg.contains('Upload failed (403')) {
+        // A 403 is a permission/ownership rejection, not an expired
+        // session — never clear the session or tell the user to log in
+        // again for this.
+        errMsg = 'You do not have permission to do this.';
+      } else if (errMsg.contains('network') ||
+          errMsg.contains('Connection') ||
+          errMsg.contains('SocketException') ||
+          errMsg.contains('timeout')) {
         errMsg = 'Network problem. Please check your connection.';
-      } else if (errMsg.contains('Upload failed (400') || errMsg.contains('No file uploaded') || errMsg.contains('UPLOAD_FAILED')) {
-        errMsg = 'Upload failed: the file could not be received. Check your file format and try again.';
-      } else if (errMsg.contains('Upload failed (413') || errMsg.contains('entity too large')) {
+      } else if (errMsg.contains('Upload failed (400') ||
+          errMsg.contains('No file uploaded') ||
+          errMsg.contains('UPLOAD_FAILED')) {
+        errMsg =
+            'Upload failed: the file could not be received. Check your file format and try again.';
+      } else if (errMsg.contains('Upload failed (413') ||
+          errMsg.contains('entity too large')) {
         isSizeError = true;
-        errMsg = 'This file is too large for the server. Please choose a smaller file.';
-      } else if (errMsg.contains('Upload failed (401') || errMsg.contains('Upload failed (403')) {
-        errMsg = 'You are not authorized to upload. Please log in again.';
-      } else if (errMsg.contains('500') || errMsg.startsWith('Upload failed (5') || errMsg.contains('INTERNAL_ERROR')) {
+        errMsg =
+            'This file is too large for the server. Please choose a smaller file.';
+      } else if (errMsg.contains('500') ||
+          errMsg.startsWith('Upload failed (5') ||
+          errMsg.contains('INTERNAL_ERROR')) {
         errMsg = 'Upload failed due to a server issue. Please try again.';
       } else if (errMsg.contains('Cannot find module') ||
-                 errMsg.contains('require stack') ||
-                 errMsg.contains('.ts') && errMsg.contains('common/queue')) {
+          errMsg.contains('require stack') ||
+          errMsg.contains('.ts') && errMsg.contains('common/queue')) {
         errMsg = 'Upload failed due to a server issue. Please try again.';
       }
 
@@ -757,4 +805,3 @@ class PostUploadManager {
     return file;
   }
 }
-

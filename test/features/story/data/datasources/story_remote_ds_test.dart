@@ -94,8 +94,7 @@ void main() {
         dio.interceptors.add(
           InterceptorsWrapper(
             onRequest: (options, handler) {
-              capturedAuthHeader = options.headers['Authorization']
-                  ?.toString();
+              capturedAuthHeader = options.headers['Authorization']?.toString();
               handler.resolve(
                 Response(
                   requestOptions: options,
@@ -142,6 +141,33 @@ void main() {
         await storyRemoteDs.getStories();
 
         expect(capturedAuthHeader, isNull);
+      },
+    );
+
+    test(
+      'getStories returns an empty list when the feed route is missing',
+      () async {
+        final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1'));
+        dio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 404,
+                  data: {'message': 'Not found'},
+                ),
+              );
+            },
+          ),
+        );
+
+        final apiClient = ApiClient(dio: dio);
+        final storyRemoteDs = StoryRemoteDs(apiClient, secureStorage);
+
+        final stories = await storyRemoteDs.getStories();
+
+        expect(stories, isEmpty);
       },
     );
   });

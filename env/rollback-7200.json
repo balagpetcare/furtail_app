@@ -1,0 +1,5 @@
+{
+  "FURTAIL_API_BASE_URL": "http://10.0.2.2:7200/api/v1",
+  "FURTAIL_MEDIA_BASE_URL": "http://10.0.2.2:9000",
+  "FURTAIL_SOCKET_URL": "http://10.0.2.2:7200"
+}

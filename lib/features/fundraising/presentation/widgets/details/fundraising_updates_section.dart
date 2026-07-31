@@ -83,7 +83,7 @@ class FundraisingUpdatesList extends ConsumerWidget {
         if (list.isEmpty) {
           return const Padding(
             padding: EdgeInsets.only(top: 6, bottom: 6),
-            child: Text('No updates yet'),
+            child: Text('No campaign updates have been posted yet.'),
           );
         }
         return Column(
@@ -120,9 +120,10 @@ class FundraisingUpdateCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

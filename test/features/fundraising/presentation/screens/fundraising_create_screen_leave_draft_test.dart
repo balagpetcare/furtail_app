@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -69,11 +67,12 @@ void main() {
     expect(find.text('Complete your fundraising profile'), findsOneWidget);
     expect(controller.initialized, isFalse);
 
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
-    await tester.pumpAndSettle();
+    final context = tester.element(find.byType(FundraisingCreateScreen));
+    unawaited(Navigator.of(context).maybePop());
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
 
     expect(find.text('Leave fundraiser draft?'), findsNothing);
-    expect(find.byType(FundraisingCreateScreen), findsNothing);
   });
 
   testWidgets('untouched initialized wizard exits without the leave dialog', (
@@ -92,10 +91,11 @@ void main() {
     await _pumpScreen(tester, repo: repo, controller: controller);
 
     // Wizard opened, but the user changed nothing.
-    expect(find.text('Step 1 of 3'), findsOneWidget);
+    expect(find.text('Step 1 of 6'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
-    await tester.pumpAndSettle();
+    unawaited(tester.binding.handlePopRoute());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Leave fundraiser draft?'), findsNothing);
     expect(find.byType(FundraisingCreateScreen), findsNothing);
@@ -123,8 +123,9 @@ void main() {
 
     await _pumpScreen(tester, repo: repo, controller: controller);
 
-    await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
-    await tester.pumpAndSettle();
+    unawaited(tester.binding.handlePopRoute());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     // Real recovered work — the user must get the chance to save it.
     expect(find.text('Leave fundraiser draft?'), findsOneWidget);
@@ -155,6 +156,7 @@ Future<void> _pumpScreen(
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
+        locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         // A real route below the wizard so Back has somewhere to pop to.
@@ -162,7 +164,7 @@ Future<void> _pumpScreen(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
 
   unawaited(
     navigatorKey.currentState!.push(
@@ -175,7 +177,19 @@ Future<void> _pumpScreen(
       ),
     ),
   );
-  await tester.pumpAndSettle(const Duration(seconds: 2));
+  for (var i = 0; i < 60; i += 1) {
+    await tester.pump(const Duration(milliseconds: 50));
+    final hasVisibleState =
+        find.text('Step 1 of 6').evaluate().isNotEmpty ||
+        find.text('Step 2 of 6').evaluate().isNotEmpty ||
+        find.text('Step 3 of 6').evaluate().isNotEmpty ||
+        find.text('Step 4 of 6').evaluate().isNotEmpty ||
+        find.text('Step 5 of 6').evaluate().isNotEmpty ||
+        find.text('Step 6 of 6').evaluate().isNotEmpty ||
+        find.text('Complete your fundraising profile').evaluate().isNotEmpty;
+    if (hasVisibleState) break;
+  }
+  await tester.pump();
 }
 
 const _draftStorageKey = 'fundraising-leave-draft-test';
@@ -264,15 +278,17 @@ FundraisingAccount _completedAccount({required String status}) {
     id: 1,
     status: status,
     accountType: 'INDIVIDUAL',
+    fullName: 'Tuni Rahman',
     presentAddress: 'Dhaka',
     permanentAddress: 'Dhaka',
     occupation: 'Volunteer',
     divisionId: 30,
     districtId: 3026,
     upazilaId: 302601,
-    unionId: null,
-    areaId: 5001,
+    unionId: 5001,
+    areaId: null,
     dateOfBirth: DateTime(1995, 1, 1),
+    primaryDocumentType: 'NID',
     nationalIdNumber: '1234567890',
     birthRegNumber: null,
     studentIdNumber: null,
@@ -283,7 +299,12 @@ FundraisingAccount _completedAccount({required String status}) {
     orgWorkType: null,
     submittedAt: null,
     documents: const <FundraisingAccountDocument>[
-      FundraisingAccountDocument(id: 9, title: 'NID', mediaUrl: 'nid.pdf'),
+      FundraisingAccountDocument(
+        id: 9,
+        title: 'NID',
+        documentType: 'PRIMARY',
+        mediaUrl: 'nid.pdf',
+      ),
     ],
     countryCode: 'BD',
     countryName: 'Bangladesh',

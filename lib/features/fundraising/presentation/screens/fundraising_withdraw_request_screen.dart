@@ -139,6 +139,23 @@ class _FundraisingWithdrawRequestScreenState
                           ),
                         ),
                         const SizedBox(height: 10),
+                        if (!c.isAccountVerified)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7E6),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFFFD18A),
+                              ),
+                            ),
+                            child: const Text(
+                              'Your fundraising account is not verified yet. Withdrawals are enabled after verification.',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        if (!c.isAccountVerified) const SizedBox(height: 12),
                         if (!requestsLoaded)
                           Container(
                             width: double.infinity,
@@ -223,7 +240,10 @@ class _FundraisingWithdrawRequestScreenState
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton(
-                            onPressed: (_submitting || !canCreateRequest)
+                            onPressed:
+                                (_submitting ||
+                                    !canCreateRequest ||
+                                    !c.isAccountVerified)
                                 ? null
                                 : () async {
                                     if (!_formKey.currentState!.validate())
@@ -269,7 +289,9 @@ class _FundraisingWithdrawRequestScreenState
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        SnackBar(content: Text(mapFundraisingError(e))),
+                                        SnackBar(
+                                          content: Text(mapFundraisingError(e)),
+                                        ),
                                       );
                                     } finally {
                                       if (mounted)
@@ -349,9 +371,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         children: [

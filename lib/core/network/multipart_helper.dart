@@ -17,6 +17,8 @@ MediaType? getMimeTypeFromPath(String filepath) {
       return MediaType('image', 'gif');
     case 'webp':
       return MediaType('image', 'webp');
+    case 'pdf':
+      return MediaType('application', 'pdf');
     case 'mp4':
       return MediaType('video', 'mp4');
     case 'mov':

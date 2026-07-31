@@ -109,6 +109,33 @@ void main() {
     );
 
     test(
+      'missing account and empty payout methods stay in setup mode, not server failure',
+      () async {
+        final repository = _FakeFundraisingRepository(
+          account: null,
+          payoutMethods: const <FundraisingPayoutMethod>[],
+        );
+        final controller = FundraisingCreateWizardController(
+          repository: repository,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        );
+
+        await controller.initialize();
+
+        expect(controller.account, isNull);
+        expect(controller.payoutMethods, isEmpty);
+        expect(controller.eligibilityFailure, isNull);
+        expect(
+          controller.eligibilityLoadState,
+          FundraisingEligibilityLoadState.initial,
+        );
+        expect(controller.canStartFundraiser, isFalse);
+      },
+    );
+
+    test(
       'saves local recovery before a draft save failure and clears it on success',
       () async {
         final recoveryService = _InMemoryRecoveryService(
@@ -171,6 +198,8 @@ void main() {
           beneficiaryType: 'PET',
           beneficiaryName: 'Tuni',
           title: 'Help Tuni recover',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
           story:
               'This is a sufficiently long fundraiser story that satisfies validation.',
           fundingMode: 'ONE_TIME',
@@ -183,10 +212,80 @@ void main() {
       );
 
       expect(
-        controller.validationCodesForStep(FundraisingWizardStep.fundraiserType),
+        controller.validationCodesForStep(FundraisingWizardStep.caseDetails),
         containsAll(<String>['target_amount_required', 'deadline_required']),
       );
     });
+
+    test(
+      'fundraiser basics requires a long enough title and short summary',
+      () async {
+        final controller = FundraisingCreateWizardController(
+          repository: _FakeFundraisingRepository(
+            account: _completedAccount(status: 'VERIFIED'),
+          ),
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'VERIFIED'));
+
+        await controller.updateDraft(
+          (current) => current.copyWith(
+            category: 'TREATMENT',
+            beneficiaryType: 'PET',
+            beneficiaryName: 'Tuni',
+            title: 'Help',
+            shortDescription: 'Too short',
+          ),
+          autosave: false,
+        );
+
+        final codes = controller.validationCodesForStep(
+          FundraisingWizardStep.fundraiserType,
+        );
+
+        expect(codes, contains('title_too_short'));
+        expect(codes, contains('short_description_too_short'));
+      },
+    );
+
+    test(
+      'treatment campaigns require a treatment provider on the story step',
+      () async {
+        final controller = FundraisingCreateWizardController(
+          repository: _FakeFundraisingRepository(
+            account: _completedAccount(status: 'VERIFIED'),
+          ),
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'VERIFIED'));
+
+        await controller.updateDraft(
+          (current) => current.copyWith(
+            category: 'TREATMENT',
+            beneficiaryType: 'PET',
+            beneficiaryName: 'Tuni',
+            title: 'Help Tuni recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            whatHappened: 'An accident needs urgent treatment support.',
+            whyUrgent: 'Treatment is needed quickly.',
+            fundUsage: 'The funds will cover care.',
+            story:
+                'This is a sufficiently long fundraiser story that satisfies validation.',
+            urgency: 'HIGH',
+          ),
+          autosave: false,
+        );
+
+        final codes = controller.validationCodesForStep(
+          FundraisingWizardStep.storyAndGoal,
+        );
+
+        expect(codes, contains('treatment_provider_required'));
+      },
+    );
 
     test('ONGOING permits a null end date', () async {
       final controller = FundraisingCreateWizardController(
@@ -204,6 +303,11 @@ void main() {
           beneficiaryType: 'ORGANIZATION',
           beneficiaryName: 'Shelter',
           title: 'Help a shelter stay open',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
+          whatHappened: 'A shelter needs help to stay open.',
+          whyUrgent: 'This requires immediate support.',
+          fundUsage: 'The funds will support operations.',
           story:
               'This is a sufficiently long fundraiser story that satisfies validation.',
           fundingMode: 'ONGOING',
@@ -217,6 +321,125 @@ void main() {
         controller.validationCodesForStep(FundraisingWizardStep.fundraiserType),
         isNot(contains('deadline_required')),
       );
+    });
+
+    test('ONGOING requires a monthly goal', () async {
+      final controller = FundraisingCreateWizardController(
+        repository: _FakeFundraisingRepository(
+          account: _completedAccount(status: 'VERIFIED'),
+        ),
+        recoveryService: _InMemoryRecoveryService(
+          FundraisingDraftRecovery.empty(),
+        ),
+      )..seedAccount(_completedAccount(status: 'VERIFIED'));
+
+      await controller.updateDraft(
+        (current) => current.copyWith(
+          fundingMode: 'ONGOING',
+          clearMonthlyGoalMinor: true,
+        ),
+        autosave: false,
+      );
+
+      expect(
+        controller.validationCodesForStep(FundraisingWizardStep.caseDetails),
+        contains('monthly_goal_required'),
+      );
+    });
+
+    test('one-time draft payload includes the computed deadline', () async {
+      final repository = _FakeFundraisingRepository(
+        account: _completedAccount(status: 'VERIFIED'),
+      );
+      final controller = FundraisingCreateWizardController(
+        repository: repository,
+        recoveryService: _InMemoryRecoveryService(
+          FundraisingDraftRecovery.empty(),
+        ),
+      )..seedAccount(_completedAccount(status: 'VERIFIED'));
+      final deadline = DateTime(2026, 9, 1, 23, 59);
+
+      await controller.updateDraft(
+        (current) => current.copyWith(
+          category: 'TREATMENT',
+          beneficiaryType: 'PET',
+          beneficiaryName: 'Tuni',
+          title: 'Help Tuni recover',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
+          whatHappened: 'An accident needs urgent treatment support.',
+          whyUrgent: 'Treatment is needed quickly.',
+          fundUsage: 'The funds will cover care.',
+          story:
+              'This is a sufficiently long fundraiser story that satisfies validation.',
+          fundingMode: 'ONE_TIME',
+          targetAmountMinor: 120000,
+          deadline: deadline,
+          customLocationNote: 'Dhaka, Bangladesh',
+          locationText: 'Dhaka, Bangladesh',
+        ),
+        autosave: false,
+      );
+
+      await controller.saveDraftNow();
+
+      expect(repository.lastCreatePayload?['fundingMode'], 'ONE_TIME');
+      expect(
+        DateTime.parse(
+          repository.lastCreatePayload?['deadline'] as String,
+        ).toLocal(),
+        deadline,
+      );
+      expect(
+        DateTime.parse(
+          repository.lastCreatePayload?['endsAt'] as String,
+        ).toLocal(),
+        deadline,
+      );
+      expect(repository.lastCreatePayload?['targetAmountMinor'], 120000);
+    });
+
+    test('ongoing draft payload omits one-time deadline fields', () async {
+      final repository = _FakeFundraisingRepository(
+        account: _completedAccount(status: 'VERIFIED'),
+      );
+      final controller = FundraisingCreateWizardController(
+        repository: repository,
+        recoveryService: _InMemoryRecoveryService(
+          FundraisingDraftRecovery.empty(),
+        ),
+      )..seedAccount(_completedAccount(status: 'VERIFIED'));
+
+      await controller.updateDraft(
+        (current) => current.copyWith(
+          category: 'SHELTER',
+          beneficiaryType: 'ORGANIZATION',
+          beneficiaryName: 'Shelter',
+          title: 'Help a shelter stay open',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
+          whatHappened: 'A shelter needs help to stay open.',
+          whyUrgent: 'This requires immediate support.',
+          fundUsage: 'The funds will support operations.',
+          story:
+              'This is a sufficiently long fundraiser story that satisfies validation.',
+          fundingMode: 'ONGOING',
+          monthlyGoalMinor: 50000,
+          deadline: DateTime(2026, 9, 1, 23, 59),
+          targetAmountMinor: 120000,
+          customLocationNote: 'Dhaka, Bangladesh',
+          locationText: 'Dhaka, Bangladesh',
+        ),
+        autosave: false,
+      );
+
+      await controller.saveDraftNow();
+
+      expect(repository.lastCreatePayload?['fundingMode'], 'ONGOING');
+      expect(repository.lastCreatePayload?['deadline'], isNull);
+      expect(repository.lastCreatePayload?['endsAt'], isNull);
+      expect(repository.lastCreatePayload?['targetAmountMinor'], isNull);
+      expect(repository.lastCreatePayload?['monthlyGoalMinor'], 50000);
     });
 
     test('campaign submission does not require a payout method', () async {
@@ -238,6 +461,8 @@ void main() {
           beneficiaryType: 'PET',
           beneficiaryName: 'Tuni',
           title: 'Help Tuni recover',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
           story:
               'This is a sufficiently long fundraiser story that satisfies validation.',
           fundingMode: 'ONE_TIME',
@@ -292,7 +517,202 @@ void main() {
       },
     );
 
-    test('zero media items produce the exact missing-media blocker code', () {
+    test(
+      'rural location is only complete with division, district, upazila, and union ids',
+      () {
+        final controller = FundraisingCreateWizardController(
+          repository: _FakeFundraisingRepository(
+            account: _completedAccount(status: 'VERIFIED'),
+          ),
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'VERIFIED'));
+
+        // Labels present, canonical ids missing (e.g. a stale/partial
+        // restored draft) — must still be reported incomplete.
+        controller.updateDraft(
+          (current) => current.copyWith(
+            locationText: 'Kadambari, Rajoir, Madaripur, Dhaka',
+            bdDivisionId: 6,
+            bdDistrictId: 50,
+            bdUpazilaId: 384,
+            divisionName: 'Dhaka',
+            districtName: 'Madaripur',
+            upazilaName: 'Rajoir',
+            unionName: 'Kadambari',
+          ),
+          autosave: false,
+        );
+        expect(
+          controller.validationCodesForStep(FundraisingWizardStep.location),
+          contains('location_required'),
+        );
+
+        // Adding the missing unionId completes the rural branch.
+        controller.updateDraft(
+          (current) => current.copyWith(bdUnionId: 3992),
+          autosave: false,
+        );
+        expect(
+          controller.validationCodesForStep(FundraisingWizardStep.location),
+          isNot(contains('location_required')),
+        );
+      },
+    );
+
+    test(
+      'urban DNCC/DSCC location is only complete with city corporation, zone, and ward ids',
+      () {
+        final controller = FundraisingCreateWizardController(
+          repository: _FakeFundraisingRepository(
+            account: _completedAccount(status: 'VERIFIED'),
+          ),
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'VERIFIED'));
+
+        controller.updateDraft(
+          (current) => current.copyWith(
+            locationText: 'Ward 1, Zone 1, DNCC, Dhaka',
+            bdAddressMode: 'DNCC',
+            bdDivisionId: 6,
+            bdDistrictId: 47,
+            bdCityCorporationId: 5043,
+            bdZoneId: 5045,
+          ),
+          autosave: false,
+        );
+        expect(
+          controller.validationCodesForStep(FundraisingWizardStep.location),
+          contains('location_required'),
+        );
+
+        controller.updateDraft(
+          (current) => current.copyWith(bdWardId: 5048),
+          autosave: false,
+        );
+        expect(
+          controller.validationCodesForStep(FundraisingWizardStep.location),
+          isNot(contains('location_required')),
+        );
+      },
+    );
+
+    test(
+      'saveDraftNow sends only the rural branch of location ids, never mixed with urban ids',
+      () async {
+        final repository = _FakeFundraisingRepository(
+          account: _completedAccount(status: 'VERIFIED'),
+        );
+        final controller = FundraisingCreateWizardController(
+          repository: repository,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'VERIFIED'));
+        await controller.initialize();
+
+        await controller.updateDraft(
+          (current) => current.copyWith(
+            category: 'MEDICAL',
+            beneficiaryType: 'PET',
+            beneficiaryName: 'Rex',
+            title: 'Help Rex recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            story:
+                'This is a sufficiently long fundraiser story that satisfies validation.',
+            fundingMode: 'ONE_TIME',
+            targetAmountMinor: 120000,
+            endsAt: DateTime(2026, 9, 1),
+            locationText: 'Kadambari, Rajoir, Madaripur, Dhaka',
+            customLocationNote: 'Kadambari, Rajoir, Madaripur, Dhaka',
+            bdAddressMode: 'RURAL',
+            bdDivisionId: 6,
+            bdDistrictId: 50,
+            bdUpazilaId: 384,
+            bdUnionId: 3992,
+          ),
+          autosave: false,
+        );
+
+        await controller.saveDraftNow();
+
+        final payload = repository.lastCreatePayload;
+        expect(payload, isNotNull);
+        expect(payload!['bdDivisionId'], 6);
+        expect(payload['bdDistrictId'], 50);
+        expect(payload['bdUpazilaId'], 384);
+        expect(payload['bdUnionId'], 3992);
+        expect(payload['bdCityCorporationId'], isNull);
+        expect(payload['bdZoneId'], isNull);
+        expect(payload['bdWardId'], isNull);
+      },
+    );
+
+    test(
+      'a bare 403 during the campaign wizard is not reported as a verification problem',
+      () async {
+        final repository = _FakeFundraisingRepository(
+          account: _completedAccount(status: 'PENDING'),
+        );
+        final controller = FundraisingCreateWizardController(
+          repository: repository,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'PENDING'));
+
+        final failure = controller.debugMapErrorForTest(
+          ApiClientException(
+            message: 'Forbidden',
+            code: 'AUTHORIZATION_DENIED',
+            statusCode: 403,
+          ),
+        );
+
+        // Verification never gates campaign submission, so a 403 here is an
+        // ownership/permission problem — surfacing it as
+        // `verificationRejected` is what produced the misleading
+        // "verification needs to be updated" message on Submit.
+        expect(
+          failure.type,
+          isNot(FundraisingWizardErrorType.verificationRejected),
+        );
+        expect(failure.message, isNot(contains('verification')));
+      },
+    );
+
+    test(
+      'the payout-only not-verified code maps to withdrawal wording, not campaign wording',
+      () async {
+        final repository = _FakeFundraisingRepository(
+          account: _completedAccount(status: 'PENDING'),
+        );
+        final controller = FundraisingCreateWizardController(
+          repository: repository,
+          recoveryService: _InMemoryRecoveryService(
+            FundraisingDraftRecovery.empty(),
+          ),
+        )..seedAccount(_completedAccount(status: 'PENDING'));
+
+        final failure = controller.debugMapErrorForTest(
+          ApiClientException(
+            message:
+                'Complete fundraising verification before withdrawing funds',
+            code: 'FUNDRAISING_ACCOUNT_NOT_VERIFIED',
+            statusCode: 403,
+          ),
+        );
+
+        expect(failure.type, FundraisingWizardErrorType.verificationRejected);
+        expect(failure.message, contains('withdrawing funds'));
+      },
+    );
+
+    test('zero media items produce the exact missing-media blocker code', () async {
       final controller = FundraisingCreateWizardController(
         repository: _FakeFundraisingRepository(
           account: _completedAccount(status: 'VERIFIED'),
@@ -302,8 +722,23 @@ void main() {
         ),
       )..seedAccount(_completedAccount(status: 'VERIFIED'));
 
+      await controller.updateDraft(
+        (current) => current.copyWith(
+          category: 'TREATMENT',
+          beneficiaryType: 'PET',
+          beneficiaryName: 'Tuni',
+          title: 'Help Tuni recover',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
+          story:
+              'This is a sufficiently long fundraiser story that satisfies validation.',
+          locationText: 'Dhaka, Bangladesh',
+        ),
+        autosave: false,
+      );
+
       final codes = controller.validationCodesForStep(
-        FundraisingWizardStep.location,
+        FundraisingWizardStep.evidence,
         mediaValidation: const FundraisingMediaValidationResult(
           hasAnyItem: false,
           hasFailedItems: false,
@@ -337,6 +772,11 @@ void main() {
             beneficiaryType: 'PET',
             beneficiaryName: 'Tuni',
             title: 'Help Tuni recover',
+            shortDescription:
+                'A concise description that is long enough to satisfy validation.',
+            whatHappened: 'An accident needs urgent treatment support.',
+            whyUrgent: 'Treatment is needed quickly.',
+            fundUsage: 'The funds will cover care.',
             story:
                 'This is a sufficiently long fundraiser story that satisfies validation.',
             fundingMode: 'ONE_TIME',
@@ -357,50 +797,56 @@ void main() {
       },
     );
 
-    test(
-      'a resolved submission failure clears once the retry succeeds',
-      () async {
-        final repository = _FakeFundraisingRepository(
-          account: _completedAccount(status: 'PENDING'),
-          submitFailsFirst: true,
-        );
-        final controller = FundraisingCreateWizardController(
-          repository: repository,
-          recoveryService: _InMemoryRecoveryService(
-            FundraisingDraftRecovery.empty(),
-          ),
-        )..seedAccount(_completedAccount(status: 'PENDING'));
+    test('a resolved submission failure clears once the retry succeeds', () async {
+      final repository = _FakeFundraisingRepository(
+        account: _completedAccount(status: 'PENDING'),
+        submitFailsFirst: true,
+      );
+      final controller = FundraisingCreateWizardController(
+        repository: repository,
+        recoveryService: _InMemoryRecoveryService(
+          FundraisingDraftRecovery.empty(),
+        ),
+      )..seedAccount(_completedAccount(status: 'PENDING'));
 
-        await controller.updateDraft(
-          (current) => current.copyWith(
-            category: 'TREATMENT',
-            beneficiaryType: 'PET',
-            beneficiaryName: 'Tuni',
-            title: 'Help Tuni recover',
-            story:
-                'This is a sufficiently long fundraiser story that satisfies validation.',
-            fundingMode: 'ONE_TIME',
-            targetAmountMinor: 120000,
-            endsAt: DateTime(2026, 9, 1),
-            customLocationNote: 'Dhaka, Bangladesh',
-            locationText: 'Dhaka, Bangladesh',
-          ),
-          autosave: false,
-        );
+      await controller.updateDraft(
+        (current) => current.copyWith(
+          category: 'TREATMENT',
+          beneficiaryType: 'PET',
+          beneficiaryName: 'Tuni',
+          title: 'Help Tuni recover',
+          shortDescription:
+              'A concise description that is long enough to satisfy validation.',
+          whatHappened: 'An accident needs urgent treatment support.',
+          whyUrgent: 'Treatment is needed quickly.',
+          fundUsage: 'The funds will cover care.',
+          story:
+              'This is a sufficiently long fundraiser story that satisfies validation.',
+          fundingMode: 'ONE_TIME',
+          targetAmountMinor: 120000,
+          endsAt: DateTime(2026, 9, 1),
+          customLocationNote: 'Dhaka, Bangladesh',
+          locationText: 'Dhaka, Bangladesh',
+        ),
+        autosave: false,
+      );
 
-        final failed = await controller.submitForReview();
-        expect(failed, isNull);
-        expect(controller.submissionFailure, isNotNull);
-        expect(
-          controller.submissionFailure!.message,
-          'End date must be a valid future date.',
-        );
+      final failed = await controller.submitForReview();
+      expect(failed, isNull);
+      expect(controller.submissionFailure, isNotNull);
+      expect(
+        controller.submissionFailure!.apiCode,
+        'FUNDRAISING_VALIDATION_ERROR',
+      );
+      expect(
+        controller.submissionFailure!.message,
+        'End date must be a valid future date.',
+      );
 
-        final retried = await controller.submitForReview();
-        expect(retried, isNotNull);
-        expect(controller.submissionFailure, isNull);
-      },
-    );
+      final retried = await controller.submitForReview();
+      expect(retried, isNotNull);
+      expect(controller.submissionFailure, isNull);
+    });
   });
 }
 
@@ -420,6 +866,9 @@ class _FakeFundraisingRepository extends FundraisingRepository {
   bool submitFailsFirst;
   int createDraftCalls = 0;
   int submitDraftCalls = 0;
+  Map<String, dynamic>? lastCreatePayload;
+  Map<String, dynamic>? lastUpdatePayload;
+  String? lastSubmitIdempotencyKey;
 
   @override
   Future<FundraisingAccount?> fetchMyAccount() async => _account;
@@ -433,6 +882,7 @@ class _FakeFundraisingRepository extends FundraisingRepository {
     required Map<String, dynamic> payload,
   }) async {
     createDraftCalls += 1;
+    lastCreatePayload = Map<String, dynamic>.from(payload);
     if (createFailsFirst && createDraftCalls == 1) {
       throw ApiClientException(
         message: 'Draft save failed',
@@ -448,6 +898,7 @@ class _FakeFundraisingRepository extends FundraisingRepository {
     required String draftId,
     required Map<String, dynamic> payload,
   }) async {
+    lastUpdatePayload = Map<String, dynamic>.from(payload);
     return _draftRecord(id: int.tryParse(draftId) ?? 1);
   }
 
@@ -457,6 +908,7 @@ class _FakeFundraisingRepository extends FundraisingRepository {
     required String idempotencyKey,
   }) async {
     submitDraftCalls += 1;
+    lastSubmitIdempotencyKey = idempotencyKey;
     if (submitFailsFirst && submitDraftCalls == 1) {
       throw ApiClientException(
         message: 'Invalid fundraising request.',
@@ -506,15 +958,20 @@ FundraisingAccount _completedAccount({required String status}) {
     id: 1,
     status: status,
     accountType: 'INDIVIDUAL',
+    fullName: 'Amina Rahman',
     presentAddress: 'Dhaka',
     permanentAddress: 'Dhaka',
     occupation: 'Volunteer',
     divisionId: 30,
     districtId: 3026,
     upazilaId: 302601,
-    unionId: null,
-    areaId: 5001,
+    // areaId is intentionally null — a union with no areas is still a
+    // complete Bangladesh location once division/district/upazila/union
+    // are set.
+    unionId: 30260101,
+    areaId: null,
     dateOfBirth: DateTime(1995, 1, 1),
+    primaryDocumentType: 'NID',
     nationalIdNumber: '1234567890',
     birthRegNumber: null,
     studentIdNumber: null,
@@ -525,7 +982,12 @@ FundraisingAccount _completedAccount({required String status}) {
     orgWorkType: null,
     submittedAt: null,
     documents: const <FundraisingAccountDocument>[
-      FundraisingAccountDocument(id: 9, title: 'NID', mediaUrl: 'nid.pdf'),
+      FundraisingAccountDocument(
+        id: 9,
+        title: 'NID',
+        documentType: 'PRIMARY',
+        mediaUrl: 'nid.pdf',
+      ),
     ],
     countryCode: 'BD',
     countryName: 'Bangladesh',

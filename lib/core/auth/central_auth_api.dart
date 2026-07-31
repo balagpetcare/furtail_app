@@ -356,6 +356,8 @@ class CentralAuthException implements Exception {
 /// refresh).
 class CentralAuthApi {
   final Dio _dio;
+  static Future<CentralAuthTokenResult> Function(String refreshToken)?
+  _refreshTokenOverride;
 
   CentralAuthApi()
     : _dio = Dio(
@@ -425,6 +427,10 @@ class CentralAuthApi {
   }
 
   Future<CentralAuthTokenResult> refreshToken(String refreshToken) async {
+    final override = _refreshTokenOverride;
+    if (override != null) {
+      return override(refreshToken);
+    }
     try {
       final response = await _dio.post(
         '/auth/refresh',
@@ -839,6 +845,18 @@ class CentralAuthApi {
       dioExceptionType: e.type.name,
       details: details,
     );
+  }
+
+  @visibleForTesting
+  static void installRefreshTokenOverride(
+    Future<CentralAuthTokenResult> Function(String refreshToken) override,
+  ) {
+    _refreshTokenOverride = override;
+  }
+
+  @visibleForTesting
+  static void clearRefreshTokenOverride() {
+    _refreshTokenOverride = null;
   }
 }
 

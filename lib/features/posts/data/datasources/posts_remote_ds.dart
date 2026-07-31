@@ -152,6 +152,9 @@ class PostsRemoteDs {
     Object file, {
     int? listingId,
     String? draftId,
+    String? contentType,
+    String? contentId,
+    String? idempotencyKey,
     int? trimStartMs,
     int? trimEndMs,
     double? volume,
@@ -166,6 +169,9 @@ class PostsRemoteDs {
       file,
       listingId: listingId,
       draftId: draftId,
+      contentType: contentType,
+      contentId: contentId,
+      idempotencyKey: idempotencyKey,
       trimStartMs: trimStartMs,
       trimEndMs: trimEndMs,
       volume: volume,
@@ -183,6 +189,9 @@ class PostsRemoteDs {
     Object file, {
     int? listingId,
     String? draftId,
+    String? contentType,
+    String? contentId,
+    String? idempotencyKey,
     int? trimStartMs,
     int? trimEndMs,
     double? volume,
@@ -198,6 +207,8 @@ class PostsRemoteDs {
       fields: _buildUploadFields(
         listingId: listingId,
         draftId: draftId,
+        contentType: contentType,
+        contentId: contentId,
         trimStartMs: trimStartMs,
         trimEndMs: trimEndMs,
         volume: volume,
@@ -208,6 +219,7 @@ class PostsRemoteDs {
         uploadContext: uploadContext,
         folder: folder,
       ),
+      headers: _buildUploadHeaders(idempotencyKey: idempotencyKey),
     );
   }
 
@@ -219,6 +231,9 @@ class PostsRemoteDs {
     void Function(int sentBytes, int totalBytes)? onProgress,
     int? listingId,
     String? draftId,
+    String? contentType,
+    String? contentId,
+    String? idempotencyKey,
     int? trimStartMs,
     int? trimEndMs,
     double? volume,
@@ -234,6 +249,9 @@ class PostsRemoteDs {
       onProgress: onProgress,
       listingId: listingId,
       draftId: draftId,
+      contentType: contentType,
+      contentId: contentId,
+      idempotencyKey: idempotencyKey,
       trimStartMs: trimStartMs,
       trimEndMs: trimEndMs,
       volume: volume,
@@ -252,6 +270,9 @@ class PostsRemoteDs {
     void Function(int sentBytes, int totalBytes)? onProgress,
     int? listingId,
     String? draftId,
+    String? contentType,
+    String? contentId,
+    String? idempotencyKey,
     int? trimStartMs,
     int? trimEndMs,
     double? volume,
@@ -268,6 +289,8 @@ class PostsRemoteDs {
       fields: _buildUploadFields(
         listingId: listingId,
         draftId: draftId,
+        contentType: contentType,
+        contentId: contentId,
         trimStartMs: trimStartMs,
         trimEndMs: trimEndMs,
         volume: volume,
@@ -278,6 +301,7 @@ class PostsRemoteDs {
         uploadContext: uploadContext,
         folder: folder,
       ),
+      headers: _buildUploadHeaders(idempotencyKey: idempotencyKey),
       onProgress: onProgress,
       cancelToken: cancelToken,
     );
@@ -286,6 +310,8 @@ class PostsRemoteDs {
   Map<String, String> _buildUploadFields({
     int? listingId,
     String? draftId,
+    String? contentType,
+    String? contentId,
     int? trimStartMs,
     int? trimEndMs,
     double? volume,
@@ -299,6 +325,9 @@ class PostsRemoteDs {
     return <String, String>{
       if (listingId != null) 'listingId': listingId.toString(),
       if (draftId != null && draftId.isNotEmpty) 'draftId': draftId,
+      if (contentType != null && contentType.isNotEmpty)
+        'contentType': contentType,
+      if (contentId != null && contentId.isNotEmpty) 'contentId': contentId,
       if (uploadContext != null && uploadContext.isNotEmpty)
         'uploadContext': uploadContext,
       if (trimStartMs != null) 'trimStartMs': trimStartMs.toString(),
@@ -311,6 +340,12 @@ class PostsRemoteDs {
       if (quality != null) 'quality': quality,
       if (folder != null && folder.isNotEmpty) 'folder': folder,
     };
+  }
+
+  Map<String, String>? _buildUploadHeaders({String? idempotencyKey}) {
+    final cleaned = idempotencyKey?.trim();
+    if (cleaned == null || cleaned.isEmpty) return null;
+    return <String, String>{'Idempotency-Key': cleaned};
   }
 
   Future<PostModel> createPost({

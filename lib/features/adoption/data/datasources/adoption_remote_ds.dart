@@ -1,12 +1,7 @@
-import 'dart:convert';
-
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
 import 'package:furtail_app/core/network/api_endpoints.dart';
-import 'package:furtail_app/dtos/pets/animal_type_dto.dart';
-import 'package:furtail_app/dtos/pets/breed_dto.dart';
-import 'package:furtail_app/features/legacy/data/models/country_model.dart';
+import 'package:furtail_app/features/common/data/models/country_reference_model.dart';
 import 'package:furtail_app/services/api_client.dart';
-import 'package:http/http.dart' as http;
 
 class AdoptionRemoteDs {
   final ApiClient _api;
@@ -18,6 +13,26 @@ class AdoptionRemoteDs {
   dynamic _data(dynamic res) {
     if (res is Map && res['data'] != null) return res['data'];
     return res;
+  }
+
+  List<Map<String, dynamic>> _extractAdoptionItems(dynamic res) {
+    final data = _data(res);
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map) {
+      final items = data['items'];
+      if (items is List) {
+        return items
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+    }
+    return const [];
   }
 
   Future<bool> _hasToken() => _secureStorage.hasSession;
@@ -50,7 +65,7 @@ class AdoptionRemoteDs {
   }) async {
     final auth = await _hasToken();
     final res = await _api.get(
-      ApiEndpoints.adoptions(
+      ApiEndpoints.adoptionFeed(
         species: species,
         search: search,
         breed: breed,
@@ -78,12 +93,7 @@ class AdoptionRemoteDs {
       ),
       auth: auth,
     );
-    final data = _data(res);
-    if (data is! List) return const [];
-    return data
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    return _extractAdoptionItems(res);
   }
 
   Future<Map<String, dynamic>> fetchAdoptionDetail(int id) async {
@@ -203,7 +213,7 @@ class AdoptionRemoteDs {
     throw Exception('Invalid adoption submit response');
   }
 
-  Future<Country> fetchBangladeshCountry() async {
+  Future<CountryReferenceModel> fetchBangladeshCountry() async {
     final res = await _api.get(ApiEndpoints.publicCountries, auth: false);
     final data = _data(res);
     if (data is! List) {
@@ -211,12 +221,13 @@ class AdoptionRemoteDs {
     }
     final countries = data
         .whereType<Map>()
-        .map((entry) => Country.fromJson(Map<String, dynamic>.from(entry)))
+        .map(
+          (entry) =>
+              CountryReferenceModel.fromJson(Map<String, dynamic>.from(entry)),
+        )
         .toList();
     for (final country in countries) {
-      final iso2 = country.iso2.trim().toUpperCase();
-      final name = country.name.trim().toLowerCase();
-      if (iso2 == 'BD' || name == 'bangladesh') {
+      if (country.isBangladesh) {
         return country;
       }
     }
@@ -228,7 +239,7 @@ class AdoptionRemoteDs {
     Map<String, dynamic> payload,
   ) async {
     final res = await _api.post(
-      '${ApiEndpoints.adoptionDetail(adoptionId)}/apply',
+      ApiEndpoints.adoptionApplications(adoptionId),
       payload,
       auth: true,
     );
@@ -297,9 +308,13 @@ class AdoptionRemoteDs {
     String status, {
     String? note,
   }) async {
+    final payload = <String, dynamic>{'status': status};
+    if (note != null) {
+      payload['note'] = note;
+    }
     final res = await _api.post(
       ApiEndpoints.updateAdoptionApplicationStatus(applicationId),
-      {'status': status, if (note != null) 'note': note},
+      payload,
       auth: true,
     );
     final data = _data(res);
@@ -336,21 +351,22 @@ class AdoptionRemoteDs {
     throw Exception('Failed to submit report');
   }
 
-  Future<List<AnimalTypeDto>> fetchAnimalTypes() async {
-    final res = await http.get(Uri.parse(ApiEndpoints.animalTypes()));
-    if (res.statusCode != 200) throw Exception('Failed to load animal types');
-    final json = jsonDecode(res.body);
-    final list = (json['types'] as List? ?? const [])
-        .whereType<Map<String, dynamic>>();
-    return list.map(AnimalTypeDto.fromJson).toList();
+  Future<Map<String, dynamic>> updateAdoptionListingStatus(
+    int id,
+    String status,
+  ) async {
+    final res = await _api.patch(ApiEndpoints.updateAdoptionStatus(id), {
+      'status': status,
+    }, auth: true);
+    final data = _data(res);
+    if (data is Map) return Map<String, dynamic>.from(data);
+    throw Exception('Invalid status update response');
   }
 
-  Future<List<BreedDto>> fetchBreedsByType(int typeId) async {
-    final res = await http.get(Uri.parse(ApiEndpoints.breedsByType(typeId)));
-    if (res.statusCode != 200) throw Exception('Failed to load breeds');
-    final json = jsonDecode(res.body);
-    final list = (json['breeds'] as List? ?? const [])
-        .whereType<Map<String, dynamic>>();
-    return list.map(BreedDto.fromJson).toList();
+  Future<Map<String, dynamic>> deleteAdoptionListing(int id) async {
+    final res = await _api.delete(ApiEndpoints.deleteAdoption(id), auth: true);
+    final data = _data(res);
+    if (data is Map) return Map<String, dynamic>.from(data);
+    throw Exception('Invalid delete response');
   }
 }

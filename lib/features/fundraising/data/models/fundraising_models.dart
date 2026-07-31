@@ -195,16 +195,20 @@ class FundraisingAccountDocument {
   final int? accountId;
   final int? mediaId;
   final String title;
+  final String documentType;
   final String? mediaUrl;
   final String? mediaType;
   final DateTime? createdAt;
   final DateTime? deletedAt;
+
+  bool get isPrimary => documentType.toUpperCase() == 'PRIMARY';
 
   const FundraisingAccountDocument({
     required this.id,
     this.accountId,
     this.mediaId,
     required this.title,
+    this.documentType = 'SUPPORTING',
     required this.mediaUrl,
     this.mediaType,
     this.createdAt,
@@ -287,6 +291,8 @@ class FundraisingAccountDocument {
     final title =
         FundraisingAccount._readString(json['title']) ??
         'Verification document';
+    final documentType =
+        FundraisingAccount._readString(json['documentType']) ?? 'SUPPORTING';
     final u = FundraisingAccount._readString(media['url']);
     final mediaType = FundraisingAccount._readString(media['type']);
     return FundraisingAccountDocument(
@@ -294,6 +300,7 @@ class FundraisingAccountDocument {
       accountId: accountId,
       mediaId: mediaId,
       title: title,
+      documentType: documentType,
       mediaUrl: u == null ? null : MediaUrl.normalize(u),
       mediaType: mediaType,
       createdAt: createdAt,
@@ -306,19 +313,23 @@ class FundraisingAccount {
   final int id;
   final String status; // DRAFT/PENDING/VERIFIED/REJECTED
   final String? accountType; // INDIVIDUAL/ORGANIZATION
+  final String? fullName;
   final String? presentAddress;
   final String? permanentAddress;
   final String? occupation;
+  final bool isInternational;
   final int? divisionId;
   final int? districtId;
   final int? upazilaId;
   final int? unionId;
   final int? areaId;
   final DateTime? dateOfBirth;
+  final String? primaryDocumentType;
   final String? nationalIdNumber;
   final String? birthRegNumber;
   final String? studentIdNumber;
   final String? passportNumber;
+  final String? drivingLicenceNumber;
   final Map<String, dynamic>? verificationDraftJson;
   final String? area;
   final int? rescueSinceYear;
@@ -343,19 +354,23 @@ class FundraisingAccount {
     required this.id,
     required this.status,
     required this.accountType,
+    this.fullName,
     required this.presentAddress,
     required this.permanentAddress,
     required this.occupation,
+    this.isInternational = false,
     required this.divisionId,
     required this.districtId,
     required this.upazilaId,
     required this.unionId,
     required this.areaId,
     required this.dateOfBirth,
+    this.primaryDocumentType,
     required this.nationalIdNumber,
     required this.birthRegNumber,
     required this.studentIdNumber,
     this.passportNumber,
+    this.drivingLicenceNumber,
     this.verificationDraftJson,
     required this.area,
     required this.rescueSinceYear,
@@ -444,24 +459,23 @@ class FundraisingAccount {
       id: id,
       status: status,
       accountType: accountType,
+      fullName: _readString(payload['fullName']),
       presentAddress: _readString(payload['presentAddress']),
       permanentAddress: _readString(payload['permanentAddress']),
       occupation: _readString(payload['occupation']),
+      isInternational: payload['isInternational'] == true,
       divisionId: _readInt(payload['divisionId']),
       districtId: _readInt(payload['districtId']),
       upazilaId: _readInt(payload['upazilaId']),
       unionId: _readInt(payload['unionId']),
       areaId: _readInt(payload['areaId']),
-      dateOfBirth: _readDateTime(
-        payload['dateOfBirth'],
-        parserName: 'FundraisingAccount',
-        fieldPath: 'dateOfBirth',
-        topLevelKeys: topLevelKeys,
-      ),
+      dateOfBirth: _readDateOnly(payload['dateOfBirth']),
+      primaryDocumentType: _readString(payload['primaryDocumentType']),
       nationalIdNumber: _readString(payload['nationalIdNumber']),
       birthRegNumber: _readString(payload['birthRegNumber']),
       studentIdNumber: _readString(payload['studentIdNumber']),
       passportNumber: _readString(payload['passportNumber']),
+      drivingLicenceNumber: _readString(payload['drivingLicenceNumber']),
       verificationDraftJson: payload['verificationDraftJson'] is Map
           ? Map<String, dynamic>.from(payload['verificationDraftJson'] as Map)
           : null,
@@ -548,6 +562,24 @@ class FundraisingAccount {
     return text.isEmpty ? null : text;
   }
 
+  /// Parses a canonical YYYY-MM-DD date-only value into a local-midnight
+  /// [DateTime]. Deliberately does not call [DateTime.parse]/[DateTime.tryParse]
+  /// on the raw string for this field: those treat a bare `YYYY-MM-DD` string
+  /// as UTC, which can render as the previous day once converted to the
+  /// device's local timezone. Parsing the components manually and
+  /// constructing a local [DateTime] keeps the selected calendar day stable.
+  static DateTime? _readDateOnly(Object? value) {
+    final text = _readString(value);
+    if (text == null) return null;
+    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(text);
+    if (match == null) return null;
+    final year = int.tryParse(match.group(1)!);
+    final month = int.tryParse(match.group(2)!);
+    final day = int.tryParse(match.group(3)!);
+    if (year == null || month == null || day == null) return null;
+    return DateTime(year, month, day);
+  }
+
   static DateTime? _readDateTime(
     Object? value, {
     required String parserName,
@@ -618,6 +650,9 @@ class FundraisingAccountReadiness {
     final hasAccount = account != null;
     final missingProfileFields = <String>[];
 
+    if (account == null || (account.fullName ?? '').trim().isEmpty) {
+      missingProfileFields.add('fullName');
+    }
     if (account == null || (account.presentAddress ?? '').trim().isEmpty) {
       missingProfileFields.add('presentAddress');
     }
@@ -629,6 +664,9 @@ class FundraisingAccountReadiness {
     }
     if (account == null || account.dateOfBirth == null) {
       missingProfileFields.add('dateOfBirth');
+    }
+    if (account == null || !_hasPrimaryIdentityNumber(account)) {
+      missingProfileFields.add('primaryDocumentNumber');
     }
 
     final hasRequiredDocuments = _hasPrimaryVerificationDocument(
@@ -655,33 +693,61 @@ class FundraisingAccountReadiness {
     );
   }
 
+  /// A Bangladesh location is complete at division/district/upazila/union —
+  /// area is always optional, even when the selected union has no areas.
   static bool _hasVerificationLocation(FundraisingAccount? account) {
     if (account == null) return false;
-    final hasStructuredLocation =
-        account.divisionId != null &&
+    if (account.isInternational) {
+      final hasCountry =
+          (account.countryCode ?? '').trim().isNotEmpty ||
+          (account.countryName ?? '').trim().isNotEmpty;
+      final hasCity = (account.cityName ?? '').trim().isNotEmpty;
+      final hasAddress =
+          (account.addressLine ?? '').trim().isNotEmpty ||
+          (account.formattedAddress ?? '').trim().isNotEmpty;
+      return hasCountry && hasCity && hasAddress;
+    }
+    return account.divisionId != null &&
         account.districtId != null &&
-        (account.upazilaId != null ||
-            account.unionId != null ||
-            account.areaId != null);
-    final hasGlobalLocation = (account.formattedAddress ?? '')
-        .trim()
-        .isNotEmpty;
-    return hasStructuredLocation || hasGlobalLocation;
+        account.upazilaId != null &&
+        account.unionId != null;
+  }
+
+  static bool _hasPrimaryIdentityNumber(FundraisingAccount account) {
+    final selected = (account.primaryDocumentType ?? '').trim().toUpperCase();
+    if (selected.isEmpty) return false;
+    String? numberFor(String type) {
+      switch (type) {
+        case 'NID':
+        case 'NATIONAL_ID':
+          return account.nationalIdNumber;
+        case 'BIRTH REGISTRATION':
+        case 'BIRTH_REGISTRATION':
+        case 'BIRTHREG':
+        case 'BIRTH':
+          return account.birthRegNumber;
+        case 'PASSPORT':
+          return account.passportNumber;
+        case 'SCHOOL/COLLEGE ID':
+        case 'STUDENT ID':
+        case 'STUDENT_ID':
+          return account.studentIdNumber;
+        case 'DRIVING_LICENCE':
+        case 'DRIVING LICENCE':
+        case 'DRIVING':
+          return account.drivingLicenceNumber;
+        default:
+          return null;
+      }
+    }
+
+    return (numberFor(selected) ?? '').trim().isNotEmpty;
   }
 
   static bool _hasPrimaryVerificationDocument(
     List<FundraisingAccountDocument> documents,
   ) {
-    return documents.any((document) {
-      final title = document.title.trim().toLowerCase();
-      return title.contains('verification') ||
-          title.contains('primary') ||
-          title.contains('nid') ||
-          title.contains('national id') ||
-          title.contains('birth') ||
-          title.contains('passport') ||
-          title.contains('driving');
-    });
+    return documents.any((document) => document.isPrimary);
   }
 }
 
@@ -705,6 +771,7 @@ class FundraisingCampaign {
   final List<FundraisingMediaItem> media;
   final FundraisingStats stats;
   final bool isAccountVerified;
+  final bool? donationAllowed;
   final String? category;
   final String? locationText;
   final List<FundraisingDonor> last3Donors;
@@ -729,6 +796,7 @@ class FundraisingCampaign {
     required this.media,
     required this.stats,
     required this.isAccountVerified,
+    this.donationAllowed,
     required this.category,
     required this.locationText,
     required this.last3Donors,
@@ -855,6 +923,11 @@ class FundraisingCampaign {
       stats: FundraisingStats.fromJson(statsJson),
       isAccountVerified:
           (account['status']?.toString().toUpperCase() == 'VERIFIED'),
+      donationAllowed: fundraisingBool(
+        json['donationAllowed'] ??
+            json['acceptingDonations'] ??
+            json['canDonate'],
+      ),
       category: json['category']?.toString(),
       locationText: json['locationText']?.toString(),
       last3Donors: last3Donors,
@@ -871,7 +944,6 @@ class FundraisingCampaign {
 
   bool get isDonationEligible {
     final normalized = status.trim().toUpperCase();
-    if (!isPublished) return false;
     if (const <String>{
       'DRAFT',
       'REJECTED',
@@ -882,6 +954,7 @@ class FundraisingCampaign {
       'FUNDED',
       'COMPLETED',
       'EXPIRED',
+      'DELETED',
     }.contains(normalized)) {
       return false;
     }
@@ -889,13 +962,23 @@ class FundraisingCampaign {
     if (effectiveEnd != null && effectiveEnd.isBefore(DateTime.now())) {
       return false;
     }
-    return const <String>{'PENDING_REVIEW', 'ACTIVE'}.contains(normalized);
+
+    // Prefer the API's explicit policy flag when present. Older API builds
+    // may omit it, so keep a safe status-based fallback that allows public
+    // pending-review campaigns to receive donations.
+    if (donationAllowed != null) return donationAllowed!;
+    return const <String>{
+      'PENDING_REVIEW',
+      'APPROVED',
+      'PUBLISHED',
+      'ACTIVE',
+    }.contains(normalized);
   }
 
   String? get donationUnavailableMessage {
     final normalized = status.trim().toUpperCase();
-    if (!isPublished || normalized == 'DRAFT') {
-      return 'This fundraiser has not been published yet.';
+    if (normalized == 'DRAFT') {
+      return 'This fundraiser is still a draft.';
     }
     switch (normalized) {
       case 'REJECTED':
@@ -914,10 +997,15 @@ class FundraisingCampaign {
         return 'This fundraiser has been completed.';
       case 'EXPIRED':
         return 'This fundraiser has expired.';
+      case 'DELETED':
+        return 'This fundraiser is no longer available.';
     }
     final effectiveEnd = endsAt ?? deadline;
     if (effectiveEnd != null && effectiveEnd.isBefore(DateTime.now())) {
       return 'This fundraiser has expired.';
+    }
+    if (donationAllowed == false) {
+      return 'Donations are temporarily unavailable for this fundraiser.';
     }
     return null;
   }

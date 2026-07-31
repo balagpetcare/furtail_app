@@ -18,6 +18,12 @@ enum FundraisingErrorCategory {
   serverFailure,
   validation,
   parseFailure,
+
+  /// The campaign exists and is visible, but isn't currently accepting
+  /// donations (under review, expired, or fully funded) — distinct from
+  /// [notFound] (campaign doesn't exist / isn't visible to this viewer) and
+  /// [permissionDenied] (a real ownership/relationship restriction).
+  notDonatable,
   unknown,
 }
 
@@ -38,7 +44,9 @@ class FundraisingSafeError {
   final Map<String, dynamic>? details;
   final String? requestId;
 
-  bool get isNetwork => category == FundraisingErrorCategory.network;
+  bool get isNetwork =>
+      category == FundraisingErrorCategory.network ||
+      category == FundraisingErrorCategory.timeout;
   bool get isTimeout => category == FundraisingErrorCategory.timeout;
   bool get isNotFound => category == FundraisingErrorCategory.notFound;
   bool get isPermissionDenied =>
@@ -54,6 +62,7 @@ class FundraisingSafeError {
       category == FundraisingErrorCategory.schemaUnavailable;
   bool get isServerFailure =>
       category == FundraisingErrorCategory.serverFailure;
+  bool get isNotDonatable => category == FundraisingErrorCategory.notDonatable;
 
   List<String>? get missingRequirements {
     if (details case {'missingRequirements': List<dynamic> list}) {
@@ -114,9 +123,53 @@ FundraisingSafeError mapFundraisingSafeError(Object error) {
       case 'FUNDRAISING_CAMPAIGN_NOT_FOUND':
       case 'CAMPAIGN_NOT_FOUND':
       case 'CAMPAIGN_DELETED':
+      case 'FUNDRAISER_NOT_FOUND':
+        // Deliberately the same message whether the campaign is truly gone
+        // or exists but is private/unpublished to this viewer — telling
+        // those apart would leak the existence of a non-public campaign.
         return FundraisingSafeError(
           category: FundraisingErrorCategory.notFound,
           message: 'This fundraiser is unavailable.',
+          statusCode: statusCode,
+          backendCode: code,
+          details: details,
+        );
+
+      case 'FUNDRAISER_NOT_PUBLIC':
+        return FundraisingSafeError(
+          category: FundraisingErrorCategory.notFound,
+          message: 'This fundraiser is unavailable.',
+          statusCode: statusCode,
+          backendCode: code,
+          details: details,
+        );
+
+      case 'FUNDRAISER_ACCESS_DENIED':
+        return FundraisingSafeError(
+          category: FundraisingErrorCategory.permissionDenied,
+          message:
+              (responseData?['message']?.toString()) ??
+              'You do not have permission to view this fundraiser.',
+          statusCode: statusCode,
+          backendCode: code,
+          details: details,
+        );
+
+      case 'FUNDRAISER_EDIT_FORBIDDEN':
+        return FundraisingSafeError(
+          category: FundraisingErrorCategory.permissionDenied,
+          message: 'You do not have permission to edit this fundraiser.',
+          statusCode: statusCode,
+          backendCode: code,
+          details: details,
+        );
+
+      case 'FUNDRAISER_NOT_DONATABLE':
+        return FundraisingSafeError(
+          category: FundraisingErrorCategory.notDonatable,
+          message:
+              (responseData?['message']?.toString()) ??
+              'This fundraiser is not currently accepting donations.',
           statusCode: statusCode,
           backendCode: code,
           details: details,
@@ -134,10 +187,10 @@ FundraisingSafeError mapFundraisingSafeError(Object error) {
 
       case 'FUNDRAISING_FORBIDDEN':
         return FundraisingSafeError(
-          category: FundraisingErrorCategory.permissionDenied,
+          category: FundraisingErrorCategory.accountRejected,
           message:
               (responseData?['message']?.toString()) ??
-              'Your fundraising account is restricted. Please contact support.',
+              'Your fundraising account was rejected. Please contact support.',
           statusCode: statusCode,
           backendCode: code,
           details: details,
@@ -288,6 +341,8 @@ String fundraisingErrorTitle(FundraisingSafeError? error) {
       return "We couldn't read the server response";
     case FundraisingErrorCategory.validation:
       return 'Please check your information';
+    case FundraisingErrorCategory.notDonatable:
+      return 'Not accepting donations';
     case FundraisingErrorCategory.unknown:
     case null:
       return 'Something went wrong';
@@ -354,12 +409,25 @@ List<String> formatFundraisingMissingRequirements(List<String> requirements) {
 String? fundraisingValidationDetailMessage(ApiClientException error) {
   final data = error.responseData;
   if (data is! Map) return null;
-  final details = data['details'];
+  final nestedError = data['error'];
+  final envelope = nestedError is Map ? nestedError : data;
+  final details = envelope['details'];
   if (details is! List || details.isEmpty) return null;
   final first = details.first;
   if (first is! Map) return null;
   final message = first['message']?.toString().trim();
   return (message == null || message.isEmpty) ? null : message;
+}
+
+String? fundraisingApiMessage(ApiClientException error) {
+  final message = error.message.trim();
+  if (message.isNotEmpty && message != 'API Error') return message;
+  final data = error.responseData;
+  if (data is! Map) return null;
+  final nestedError = data['error'];
+  final envelope = nestedError is Map ? nestedError : data;
+  final raw = envelope['message']?.toString().trim();
+  return raw == null || raw.isEmpty ? null : raw;
 }
 
 class FundraisingUserSafeException implements Exception {
@@ -400,15 +468,27 @@ String mapFundraisingError(Object error) {
         return 'A decision reason is required for this withdrawal.';
       case 'FUNDRAISING_ACCOUNT_NOT_VERIFIED_FOR_WITHDRAWAL':
         return 'Complete verification or wait for review before requesting a withdrawal.';
+      case 'FUNDRAISING_ACCOUNT_NOT_VERIFIED':
+        return 'Complete verification or wait for review before requesting a withdrawal.';
       case 'CENTRAL_TOKEN_EXPIRED':
       case 'TOKEN_REVOKED':
         return 'Your session has expired. Please sign in again.';
       case 'FUNDRAISING_DATETIME_INVALID':
         return fundraisingValidationDetailMessage(error) ??
+            fundraisingApiMessage(error) ??
             'A date field is invalid. Please select it again.';
+      case 'MEDIA_NOT_OWNED':
+      case 'MEDIA_NOT_FOUND':
+        return 'One or more uploaded files are unavailable. Please upload them again.';
+      case 'FUNDRAISER_NOT_FOUND':
+        return 'We could not verify your fundraising account. Please complete your fundraising profile and try again.';
+      case 'LOCATION_PARENT_INVALID':
+        return 'Your selected location is no longer valid. Please choose it again.';
       case 'FUNDRAISING_VALIDATION_ERROR':
+      case 'VALIDATION_ERROR':
         return fundraisingValidationDetailMessage(error) ??
-            'Please check the highlighted details and try again.';
+            fundraisingApiMessage(error) ??
+            'Please review the highlighted fields before submitting.';
     }
     if (error.isNetworkError) {
       return 'We could not reach the server. Please check your connection and try again.';
@@ -417,7 +497,12 @@ String mapFundraisingError(Object error) {
       return 'The service is temporarily unavailable. Please try again shortly.';
     }
     if ((error.statusCode ?? 0) == 400 || (error.statusCode ?? 0) == 422) {
-      return 'Please check the highlighted details and try again.';
+      return fundraisingValidationDetailMessage(error) ??
+          fundraisingApiMessage(error) ??
+          'Please review the highlighted fields before submitting.';
+    }
+    if ((error.statusCode ?? 0) == 404) {
+      return 'We could not complete this request. Please try again.';
     }
     return 'Something went wrong. Please try again.';
   }

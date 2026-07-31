@@ -27,3 +27,16 @@ double? fundraisingDouble(Object? value) {
   if (raw.isEmpty) return null;
   return double.tryParse(raw);
 }
+
+/// Tolerant boolean reader for fundraising API payloads.
+bool? fundraisingBool(Object? value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+
+  final raw = value.toString().trim().toLowerCase();
+  if (raw.isEmpty) return null;
+  if (const <String>{'true', '1', 'yes', 'y'}.contains(raw)) return true;
+  if (const <String>{'false', '0', 'no', 'n'}.contains(raw)) return false;
+  return null;
+}

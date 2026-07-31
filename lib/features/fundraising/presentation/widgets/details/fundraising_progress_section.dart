@@ -27,105 +27,170 @@ class FundraisingProgressSection extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: <Color>[
-            colorScheme.surfaceContainerHighest,
-            colorScheme.surface,
+            colorScheme.primaryContainer.withValues(alpha: 0.38),
+            colorScheme.surfaceContainerLowest,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.07),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'Fundraising progress',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Fundraising progress',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        overfunded
+                            ? 'The original target has been exceeded.'
+                            : target <= 0
+                            ? 'This campaign does not have a fixed target.'
+                            : 'Every contribution moves this campaign forward.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: 13,
+                    vertical: 9,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF6C945).withValues(alpha: 0.2),
+                    color: colorScheme.surface.withValues(alpha: 0.82),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     '${percentage.clamp(0, 999)}%',
                     style: theme.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF5C4300),
+                      color: colorScheme.primary,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             ClipRRect(
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 12,
-                backgroundColor: colorScheme.surfaceContainerHighest,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFFF6C945),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              overfunded
-                  ? 'This fundraiser is beyond its original target.'
-                  : target <= 0
-                  ? 'This fundraiser does not have a fixed target yet.'
-                  : 'Supporters have helped cover part of the goal.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                backgroundColor: colorScheme.surface.withValues(alpha: 0.72),
+                color: colorScheme.primary,
               ),
             ),
             const SizedBox(height: 18),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _SummaryCell(
-                  label: 'Raised',
-                  value: formatFundraisingMoney(context, raised),
-                  emphasis: true,
-                ),
-                _SummaryCell(
-                  label: 'Target',
-                  value: formatFundraisingMoney(context, target),
-                ),
-                _SummaryCell(
-                  label: 'Remaining',
-                  value: formatFundraisingMoney(context, remaining),
-                ),
-                _SummaryCell(
-                  label: 'Withdrawn',
-                  value: formatFundraisingMoney(context, withdrawn),
-                ),
-                _SummaryCell(
-                  label: 'Available',
-                  value: formatFundraisingMoney(context, available),
-                  emphasis: true,
-                ),
-                _SummaryCell(
-                  label: 'Donors',
-                  value: '${campaign.stats.donorsCount}',
-                ),
-              ],
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Raised so far',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onPrimary.withValues(alpha: 0.82),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    formatFundraisingMoney(context, raised),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: colorScheme.onPrimary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cellWidth = (constraints.maxWidth - 12) / 2;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _SummaryCell(
+                      width: cellWidth,
+                      icon: Icons.flag_outlined,
+                      label: 'Target',
+                      value: formatFundraisingMoney(context, target),
+                    ),
+                    _SummaryCell(
+                      width: cellWidth,
+                      icon: Icons.trending_up_rounded,
+                      label: 'Remaining',
+                      value: formatFundraisingMoney(context, remaining),
+                    ),
+                    _SummaryCell(
+                      width: cellWidth,
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'Available',
+                      value: formatFundraisingMoney(context, available),
+                    ),
+                    _SummaryCell(
+                      width: cellWidth,
+                      icon: Icons.people_alt_outlined,
+                      label: 'Donors',
+                      value: '${campaign.stats.donorsCount}',
+                    ),
+                  ],
+                );
+              },
+            ),
+            if (withdrawn > 0) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Icon(
+                    Icons.payments_outlined,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Withdrawn ${formatFundraisingMoney(context, withdrawn)}',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -135,52 +200,50 @@ class FundraisingProgressSection extends StatelessWidget {
 
 class _SummaryCell extends StatelessWidget {
   const _SummaryCell({
+    required this.width,
+    required this.icon,
     required this.label,
     required this.value,
-    this.emphasis = false,
   });
 
+  final double width;
+  final IconData icon;
   final String label;
   final String value;
-  final bool emphasis;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final width = (MediaQuery.of(context).size.width - 72) / 2;
-    return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: width, maxWidth: width),
-      child: DecoratedBox(
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: emphasis
-              ? Theme.of(
-                  context,
-                ).colorScheme.primaryContainer.withValues(alpha: 0.45)
-              : Theme.of(context).colorScheme.surface,
+          color: theme.colorScheme.surface.withValues(alpha: 0.84),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 19, color: theme.colorScheme.primary),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

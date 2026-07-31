@@ -1244,7 +1244,8 @@ class AppLocalizationsBn extends AppLocalizations {
       '০-এর বেশি একটি লক্ষ্য পরিমাণ দিন।';
 
   @override
-  String get fundraisingValidationDeadline => 'একটি শেষ তারিখ নির্বাচন করুন।';
+  String get fundraisingValidationDeadline =>
+      'অনুগ্রহ করে একটি ক্যাম্পেইন শেষ তারিখ যোগ করুন।';
 
   @override
   String get fundraisingValidationEstimatedExpense =>
@@ -1263,7 +1264,11 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get fundraisingValidationMediaBlocking =>
-      'এগিয়ে যাওয়ার আগে ব্যর্থ বা অসম্পূর্ণ মিডিয়া আইটেম সমাধান করুন।';
+      'এক বা একাধিক আপলোড করা ফাইল অনুপলব্ধ। অনুগ্রহ করে সেগুলো আবার আপলোড করুন।';
+
+  @override
+  String get fundraisingValidationMediaUploading =>
+      'সব মিডিয়া আপলোড সম্পূর্ণ না হওয়া পর্যন্ত অপেক্ষা করুন।';
 
   @override
   String get fundraisingValidationPayout =>
