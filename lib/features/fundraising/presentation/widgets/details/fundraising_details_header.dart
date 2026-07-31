@@ -16,8 +16,7 @@ class FundraisingDetailsHeader extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onPostUpdate;
   final VoidCallback onDelete;
-  final VoidCallback? onPayoutMethods;
-  final VoidCallback? onWithdraw;
+  final VoidCallback? onViewWallet;
 
   const FundraisingDetailsHeader({
     super.key,
@@ -30,8 +29,7 @@ class FundraisingDetailsHeader extends StatelessWidget {
     required this.onEdit,
     required this.onPostUpdate,
     required this.onDelete,
-    this.onPayoutMethods,
-    this.onWithdraw,
+    this.onViewWallet,
   });
 
   @override
@@ -76,8 +74,7 @@ class FundraisingDetailsHeader extends StatelessWidget {
             onSelected: (v) {
               if (v == 'edit') onEdit();
               if (v == 'update') onPostUpdate();
-              if (v == 'payout_methods') onPayoutMethods?.call();
-              if (v == 'withdraw') onWithdraw?.call();
+              if (v == 'wallet') onViewWallet?.call();
               if (v == 'delete') onDelete();
               if (v == 'report') onReport();
             },
@@ -89,15 +86,10 @@ class FundraisingDetailsHeader extends StatelessWidget {
                   value: 'update',
                   child: Text('Post Update'),
                 ),
-              if (isOwner && onPayoutMethods != null)
+              if (isOwner && onViewWallet != null)
                 const PopupMenuItem(
-                  value: 'payout_methods',
-                  child: Text('Payout Methods'),
-                ),
-              if (isOwner && onWithdraw != null)
-                const PopupMenuItem(
-                  value: 'withdraw',
-                  child: Text('Withdraw Request'),
+                  value: 'wallet',
+                  child: Text('View Wallet'),
                 ),
               if (isOwner)
                 const PopupMenuItem(

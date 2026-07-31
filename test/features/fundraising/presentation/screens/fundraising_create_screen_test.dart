@@ -125,7 +125,7 @@ void main() {
       'a payout-REJECTED account opens the wizard with no verification detour',
       (tester) async {
         final rejected = _completedAccount(status: 'REJECTED');
-        expect(rejected.readiness.canStartFundraiser, isFalse);
+        expect(rejected.readiness.canStartFundraiser, isTrue);
 
         final repo = _SequenceFundraisingRepository(<FundraisingAccount?>[
           rejected,

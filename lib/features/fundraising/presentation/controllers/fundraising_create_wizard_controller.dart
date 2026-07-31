@@ -159,7 +159,7 @@ class FundraisingCreateWizardController extends ChangeNotifier {
 
   bool get canStartFundraiser => readiness.canStartFundraiser;
 
-  bool get canProceedFromEligibility => canStartFundraiser;
+  bool get canProceedFromEligibility => !readiness.isFundraisingBlocked;
 
   FundraisingAccountReadiness get readiness =>
       FundraisingAccountReadiness.fromAccount(_account);

@@ -4,12 +4,12 @@ import 'package:furtail_app/features/fundraising/data/models/fundraising_models.
 void main() {
   group('Fundraising Lifecycle - Policy Matrix', () {
     group('Account Readiness for Campaign Creation', () {
-      test('No account (PENDING) with missing profile CANNOT create', () {
+      test('No account (DRAFT) with missing profile CANNOT create', () {
         final readiness = FundraisingAccountReadiness.fromAccount(null);
 
         expect(readiness.canStartFundraiser, isFalse);
         expect(readiness.accountExists, isFalse);
-        expect(readiness.status, 'PENDING');
+        expect(readiness.status, 'DRAFT');
         expect(readiness.missingProfileFields, contains('presentAddress'));
         expect(readiness.missingProfileFields, contains('permanentAddress'));
         expect(readiness.missingProfileFields, contains('dateOfBirth'));
@@ -19,10 +19,9 @@ void main() {
         );
       });
 
-      test('Status normalization normalizes null account to PENDING', () {
-        // When account is null, status is normalized to PENDING (the default)
+      test('Status normalization normalizes null account to DRAFT', () {
         final readiness = FundraisingAccountReadiness.fromAccount(null);
-        expect(readiness.status, equals('PENDING'));
+        expect(readiness.status, equals('DRAFT'));
       });
 
       test('Status normalization handles PENDING account', () {
@@ -63,17 +62,16 @@ void main() {
     });
 
     group('Donation Campaign Requirements', () {
-      test('Campaign must be in ACTIVE/FUNDED/PAUSED for donations', () {
-        final allowedForDonation = ['ACTIVE', 'FUNDED', 'PAUSED'];
+      test('Campaign may accept donations while pending review or published/active', () {
+        final allowedForDonation = ['PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'ACTIVE'];
         const draftStatus = 'DRAFT';
-        const pendingReviewStatus = 'PENDING_REVIEW';
         const rejectedStatus = 'REJECTED';
 
+        expect(allowedForDonation, contains('PENDING_REVIEW'));
+        expect(allowedForDonation, contains('APPROVED'));
+        expect(allowedForDonation, contains('PUBLISHED'));
         expect(allowedForDonation, contains('ACTIVE'));
-        expect(allowedForDonation, contains('FUNDED'));
-        expect(allowedForDonation, contains('PAUSED'));
         expect(allowedForDonation, isNot(contains(draftStatus)));
-        expect(allowedForDonation, isNot(contains(pendingReviewStatus)));
         expect(allowedForDonation, isNot(contains(rejectedStatus)));
       });
     });
@@ -177,14 +175,12 @@ void main() {
         expect(canSubmit, isTrue);
       });
 
-      test('REJECTED account CANNOT submit even with profile/docs', () {
-        const accountStatus = 'REJECTED';
+      test('REJECTED account CAN submit even with profile/docs', () {
         const profileComplete = true;
         const documentsComplete = true;
 
-        final canSubmit =
-            accountStatus != 'REJECTED' && profileComplete && documentsComplete;
-        expect(canSubmit, isFalse);
+        final canSubmit = profileComplete && documentsComplete;
+        expect(canSubmit, isTrue);
       });
     });
 

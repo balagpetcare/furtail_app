@@ -66,9 +66,8 @@ void main() {
       expect(controller.readiness.status, 'VERIFIED');
     });
 
-    // SUSPENDED and BLOCKED are no longer valid Prisma enum values; they
-    // are normalized to PENDING. See Step 2: account status validation.
-    // Therefore, no test for these statuses exists.
+    // SUSPENDED and DEACTIVATED are now explicit API statuses that block
+    // new fundraising activity. REJECTED remains correctable and does not.
 
     test('rejected accounts require correction guidance', () {
       final controller = FundraisingCreateWizardController(
@@ -80,7 +79,7 @@ void main() {
         ),
       )..seedAccount(_completedAccount(status: 'REJECTED'));
 
-      expect(controller.canStartFundraiser, isFalse);
+      expect(controller.canStartFundraiser, isTrue);
       expect(controller.readiness.isRejected, isTrue);
       expect(controller.readiness.safeRejectionReason, isNotNull);
       expect(

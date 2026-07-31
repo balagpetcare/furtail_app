@@ -70,11 +70,14 @@ class WalletRepository {
     required Map<String, dynamic> payoutDetails,
     String? note,
   }) async {
+    final idempotencyKey =
+        'wallet-withdraw-${DateTime.now().microsecondsSinceEpoch}';
     await _api.post(ApiEndpoints.walletWithdrawCreate(), {
       'amount': amount,
       'method': method,
       'payoutDetails': payoutDetails,
       if (note != null) 'note': note,
+      'idempotencyKey': idempotencyKey,
     }, auth: true);
   }
 

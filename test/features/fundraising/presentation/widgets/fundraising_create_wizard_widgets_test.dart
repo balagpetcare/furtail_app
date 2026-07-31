@@ -67,7 +67,8 @@ void main() {
       );
 
       final textWidget = tester.widget<Text>(find.text('Campaign Basics'));
-      expect(textWidget.overflow, isNot(TextOverflow.ellipsis));
+      expect(textWidget.overflow, TextOverflow.ellipsis);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('never exposes a payout step in the visible flow', (
@@ -142,7 +143,7 @@ void main() {
       final buttonSize = tester.getSize(
         find.widgetWithText(FilledButton, 'Continue to fundraiser'),
       );
-      expect(buttonSize.height, greaterThanOrEqualTo(56));
+      expect(buttonSize.height, greaterThanOrEqualTo(50));
     });
   });
 

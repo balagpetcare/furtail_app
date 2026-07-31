@@ -31,7 +31,6 @@ import 'package:furtail_app/features/profile/presentation/screens/user_profile_s
 
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_feed_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
-import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_payout_methods_screen.dart';
 import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 
 import 'package:furtail_app/core/navigation/home_back_handler.dart';
@@ -663,9 +662,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
         {
           await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const FundraisingPayoutMethodsScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const WalletScreen()),
           );
           return;
         }

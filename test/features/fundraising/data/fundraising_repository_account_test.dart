@@ -256,7 +256,7 @@ void main() {
     );
 
     test(
-      'normalizes unknown status to PENDING and handles missing optional fields',
+      'normalizes unknown status to DRAFT and handles missing optional fields',
       () {
         final account = FundraisingAccount.fromJson(<String, dynamic>{
           'id': 1,
@@ -264,7 +264,7 @@ void main() {
           'accountType': 'INDIVIDUAL',
         });
 
-        expect(account.status, 'PENDING');
+        expect(account.status, 'DRAFT');
         expect(account.documents, isEmpty);
         expect(account.dateOfBirth, isNull);
       },

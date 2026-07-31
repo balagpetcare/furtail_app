@@ -527,19 +527,25 @@ class FundraisingAccount {
 
   static String _normalizedStatus(Object? value) {
     final raw = (value?.toString() ?? '').trim().toUpperCase();
-    // Only PENDING, VERIFIED, and REJECTED are valid Prisma enum values
-    const allowed = <String>{'PENDING', 'VERIFIED', 'REJECTED'};
+    const allowed = <String>{
+      'DRAFT',
+      'PENDING',
+      'VERIFIED',
+      'REJECTED',
+      'SUSPENDED',
+      'DEACTIVATED',
+    };
     if (raw.isEmpty) {
-      return 'PENDING'; // Default to PENDING for new accounts
+      return 'DRAFT';
     }
     if (!allowed.contains(raw)) {
       if (kDebugMode) {
         developer.log(
-          'Unexpected fundraising account status: $raw (not in Prisma enum)',
+          'Unexpected fundraising account status: $raw',
           name: 'Fundraising',
         );
       }
-      return 'PENDING'; // Fallback to PENDING for unknown values
+      return 'DRAFT';
     }
     return raw;
   }
@@ -604,6 +610,8 @@ class FundraisingAccount {
   bool get isVerified => status.toUpperCase() == 'VERIFIED';
   bool get isPending => status.toUpperCase() == 'PENDING';
   bool get isRejected => status.toUpperCase() == 'REJECTED';
+  bool get isSuspended => status.toUpperCase() == 'SUSPENDED';
+  bool get isDeactivated => status.toUpperCase() == 'DEACTIVATED';
 
   FundraisingAccountReadiness get readiness =>
       FundraisingAccountReadiness.fromAccount(this);
@@ -617,6 +625,8 @@ class FundraisingAccountReadiness {
   final bool statusNotRejectedOrBlocked;
   final bool isPendingReview;
   final bool isRejected;
+  final bool isSuspended;
+  final bool isDeactivated;
   final List<String> missingProfileFields;
   final List<String> missingDocumentTypes;
   final String? safeRejectionReason;
@@ -629,24 +639,30 @@ class FundraisingAccountReadiness {
     required this.statusNotRejectedOrBlocked,
     required this.isPendingReview,
     required this.isRejected,
+    required this.isSuspended,
+    required this.isDeactivated,
     required this.missingProfileFields,
     required this.missingDocumentTypes,
     required this.safeRejectionReason,
   });
 
+  bool get isFundraisingBlocked => isSuspended || isDeactivated;
+
   bool get canStartFundraiser =>
       requiredProfileComplete &&
       requiredDocumentsUploaded &&
-      statusNotRejectedOrBlocked;
+      !isFundraisingBlocked;
 
   bool get requiresVerificationRoute => !canStartFundraiser;
 
   factory FundraisingAccountReadiness.fromAccount(FundraisingAccount? account) {
-    final normalizedStatus = (account?.status ?? 'PENDING').toUpperCase();
-    // Only PENDING, VERIFIED, and REJECTED are valid Prisma enum values
+    final normalizedStatus = (account?.status ?? 'DRAFT').toUpperCase();
     final isRejected = normalizedStatus == 'REJECTED';
-    final isPending = normalizedStatus == 'PENDING';
+    final isPending =
+        normalizedStatus == 'DRAFT' || normalizedStatus == 'PENDING';
     final isVerified = normalizedStatus == 'VERIFIED';
+    final isSuspended = normalizedStatus == 'SUSPENDED';
+    final isDeactivated = normalizedStatus == 'DEACTIVATED';
     final hasAccount = account != null;
     final missingProfileFields = <String>[];
 
@@ -678,9 +694,11 @@ class FundraisingAccountReadiness {
       status: normalizedStatus,
       requiredProfileComplete: missingProfileFields.isEmpty,
       requiredDocumentsUploaded: hasRequiredDocuments,
-      statusNotRejectedOrBlocked: !isRejected,
+      statusNotRejectedOrBlocked: !isRejected && !isSuspended && !isDeactivated,
       isPendingReview: isPending || isVerified,
       isRejected: isRejected,
+      isSuspended: isSuspended,
+      isDeactivated: isDeactivated,
       missingProfileFields: missingProfileFields,
       missingDocumentTypes: hasRequiredDocuments
           ? const <String>[]

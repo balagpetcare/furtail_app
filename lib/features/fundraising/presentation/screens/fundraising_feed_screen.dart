@@ -169,7 +169,6 @@ class _FundraisingFeedScreenState extends ConsumerState<FundraisingFeedScreen> {
       title: 'Fundraising',
       showBack: true,
       showDonationHistory: true,
-      showWithdrawHub: true,
       showFilters: true,
       showVerification: true,
       showCreate: true,

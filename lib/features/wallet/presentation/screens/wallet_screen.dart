@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/wallet_providers.dart';
-import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_withdraw_hub_screen.dart';
 import 'wallet_withdraw_screen.dart';
 import 'wallet_withdraw_requests_screen.dart';
 
@@ -88,23 +87,6 @@ class WalletScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const FundraisingWithdrawHubScreen(),
-                    ),
-                  );
-                  // Refresh wallet after returning (withdraw may have reserved funds)
-                  ref.invalidate(walletSummaryProvider);
-                  ref.invalidate(walletTransactionsProvider);
-                  ref.invalidate(walletWithdrawRequestsProvider);
-                },
-                icon: const Icon(Icons.volunteer_activism_rounded),
-                label: const Text('Fundraising Withdraw'),
               ),
 
               const SizedBox(height: 14),

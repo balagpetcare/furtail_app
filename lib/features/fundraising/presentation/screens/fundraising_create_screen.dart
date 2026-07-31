@@ -18,7 +18,7 @@ import 'package:furtail_app/features/fundraising/data/services/fundraising_deadl
 import 'package:furtail_app/features/fundraising/data/services/fundraising_draft_recovery_service.dart';
 import 'package:furtail_app/features/fundraising/presentation/controllers/fundraising_create_wizard_controller.dart';
 import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
-import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_payout_methods_screen.dart';
+import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_campaign_preview_card.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_create_wizard_widgets.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_media_needs_attention_panel.dart';
@@ -602,9 +602,9 @@ class _FundraisingCreateScreenState
   }
 
   Future<void> _openPayoutMethods() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const FundraisingPayoutMethodsScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const WalletScreen()));
     if (!mounted) return;
     await _wizardController.refreshEligibility();
   }

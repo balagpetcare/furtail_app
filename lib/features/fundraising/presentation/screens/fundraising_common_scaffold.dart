@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'fundraising_account_setup_screen.dart';
 import 'fundraising_create_screen.dart';
 import 'fundraising_my_donations_screen.dart';
-import 'fundraising_withdraw_hub_screen.dart';
 
 class FundraisingCommonScaffold extends ConsumerWidget {
   final String title;
@@ -22,9 +21,6 @@ class FundraisingCommonScaffold extends ConsumerWidget {
   /// If true, shows + create icon (feed).
   final bool showCreate;
 
-  /// If true, shows Withdraw hub icon.
-  final bool showWithdrawHub;
-
   /// If true, shows donation history icon.
   final bool showDonationHistory;
 
@@ -39,7 +35,6 @@ class FundraisingCommonScaffold extends ConsumerWidget {
     this.showFilters = false,
     this.showVerification = true,
     this.showCreate = false,
-    this.showWithdrawHub = false,
     this.showDonationHistory = false,
     this.onOpenFilters,
   });
@@ -90,7 +85,7 @@ class FundraisingCommonScaffold extends ConsumerWidget {
                 }
               },
             ),
-          if (showDonationHistory || showWithdrawHub || showVerification)
+          if (showDonationHistory || showVerification)
             PopupMenuButton<int>(
               tooltip: 'More',
               onSelected: (value) {
@@ -103,13 +98,6 @@ class FundraisingCommonScaffold extends ConsumerWidget {
                     );
                     break;
                   case 2:
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const FundraisingWithdrawHubScreen(),
-                      ),
-                    );
-                    break;
-                  case 3:
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const FundraisingAccountSetupScreen(),
@@ -128,18 +116,9 @@ class FundraisingCommonScaffold extends ConsumerWidget {
                       title: Text('My donations'),
                     ),
                   ),
-                if (showWithdrawHub)
-                  const PopupMenuItem<int>(
-                    value: 2,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.account_balance_wallet_outlined),
-                      title: Text('Payouts and withdrawals'),
-                    ),
-                  ),
                 if (showVerification)
                   const PopupMenuItem<int>(
-                    value: 3,
+                    value: 2,
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(Icons.verified_user_outlined),

@@ -24,12 +24,11 @@ import '../widgets/details/fundraising_updates_section.dart';
 import '../widgets/details/read_more_text.dart';
 import '../widgets/fundraising_donation_checkout_sheet.dart';
 import '../widgets/fundraising_status_views.dart';
+import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'fundraising_donation_result_screen.dart';
 import 'fundraising_donations_screen.dart';
 import 'fundraising_edit_screen.dart';
-import 'fundraising_payout_methods_screen.dart';
 import 'fundraising_update_editor_screen.dart';
-import 'fundraising_withdraw_request_screen.dart';
 
 class FundraisingDetailsScreen extends ConsumerStatefulWidget {
   const FundraisingDetailsScreen({
@@ -293,31 +292,13 @@ class _DetailsBody extends ConsumerWidget {
                       ref.invalidate(fundraisingFeedProvider);
                       if (context.mounted) Navigator.maybePop(context);
                     },
-                    onPayoutMethods: isOwner
+                    onViewWallet: isOwner
                         ? () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    const FundraisingPayoutMethodsScreen(),
+                                builder: (_) => const WalletScreen(),
                               ),
                             );
-                          }
-                        : null,
-                    onWithdraw: isOwner
-                        ? () async {
-                            final ok = await Navigator.of(context).push<bool>(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    FundraisingWithdrawRequestScreen(
-                                      campaign: campaign,
-                                    ),
-                              ),
-                            );
-                            if (ok == true) {
-                              ref.invalidate(
-                                fundraisingCampaignProvider(campaign.id),
-                              );
-                            }
                           }
                         : null,
                   ),
