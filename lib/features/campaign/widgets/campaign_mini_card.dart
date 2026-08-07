@@ -25,10 +25,7 @@ class CampaignMiniCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AspectRatio(
-                aspectRatio: 16 / 10,
-                child: _thumb(campaign),
-              ),
+              AspectRatio(aspectRatio: 16 / 10, child: _thumb(campaign)),
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -39,15 +36,19 @@ class CampaignMiniCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         CampaignPriceBadge(campaign: campaign, compact: true),
                         const Spacer(),
-                        Icon(Icons.arrow_forward_ios, size: 14, color: cs.outline),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: cs.outline,
+                        ),
                       ],
                     ),
                   ],

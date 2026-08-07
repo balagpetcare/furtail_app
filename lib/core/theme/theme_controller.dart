@@ -7,8 +7,9 @@ class ThemeController {
 
   static final ThemeController instance = ThemeController._();
 
-  final ValueNotifier<ThemeMode> themeMode =
-      ValueNotifier<ThemeMode>(ThemeMode.light);
+  final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(
+    ThemeMode.light,
+  );
 
   void setThemeMode(ThemeMode mode) {
     themeMode.value = ThemeMode.light;

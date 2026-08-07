@@ -35,13 +35,17 @@ class PostCardHeader extends StatelessWidget {
     final feelingLabel = (post.feelingLabel ?? '').trim();
     final feelingEmoji = (post.feelingEmoji ?? '').trim();
     if (feelingLabel.isNotEmpty) {
-      parts.add('${feelingEmoji.isNotEmpty ? feelingEmoji : '😊'} $feelingLabel');
+      parts.add(
+        '${feelingEmoji.isNotEmpty ? feelingEmoji : '😊'} $feelingLabel',
+      );
     }
 
     final activityLabel = (post.activityLabel ?? '').trim();
     final activityEmoji = (post.activityEmoji ?? '').trim();
     if (activityLabel.isNotEmpty) {
-      parts.add('${activityEmoji.isNotEmpty ? activityEmoji : '🏆'} $activityLabel');
+      parts.add(
+        '${activityEmoji.isNotEmpty ? activityEmoji : '🏆'} $activityLabel',
+      );
     }
 
     final location = (post.locationTag ?? '').trim();
@@ -67,8 +71,9 @@ class PostCardHeader extends StatelessWidget {
               post.author.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppTypography.cardTitle(context)
-                  .copyWith(fontWeight: FontWeight.bold),
+              style: AppTypography.cardTitle(
+                context,
+              ).copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           if (isVerified) ...[

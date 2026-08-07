@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/theme/typography.dart';
+
 class PetStepHeader extends StatelessWidget {
   final int current;
   final List<String> titles;

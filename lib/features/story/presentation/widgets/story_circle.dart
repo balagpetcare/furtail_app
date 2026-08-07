@@ -53,9 +53,7 @@ class StoryCircle extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isUnviewed
-                          ? cs.primary
-                          : cs.outlineVariant,
+                      color: isUnviewed ? cs.primary : cs.outlineVariant,
                       width: isUnviewed ? 2.5 : 1.5,
                     ),
                   ),
@@ -79,11 +77,7 @@ class StoryCircle extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: cs.surface, width: 2),
                       ),
-                      child: Icon(
-                        Icons.add,
-                        color: cs.onPrimary,
-                        size: 14,
-                      ),
+                      child: Icon(Icons.add, color: cs.onPrimary, size: 14),
                     ),
                   ),
               ],
@@ -95,9 +89,9 @@ class StoryCircle extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: cs.onSurface,
-                  ),
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface,
+              ),
             ),
           ],
         ),

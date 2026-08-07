@@ -15,7 +15,9 @@ class CampaignAreaStat {
 
   factory CampaignAreaStat.fromJson(Map<String, dynamic> json) {
     return CampaignAreaStat(
-      bdAreaId: json['bdAreaId'] == null ? null : int.tryParse('${json['bdAreaId']}'),
+      bdAreaId: json['bdAreaId'] == null
+          ? null
+          : int.tryParse('${json['bdAreaId']}'),
       bookingArea: json['bookingArea']?.toString() ?? 'Unknown',
       totalBookings: json['totalBookings'] is int
           ? json['totalBookings'] as int
@@ -51,9 +53,11 @@ class CampaignLiveAnalytics {
     final areasRaw = json['areaStats'];
     final areas = areasRaw is List
         ? areasRaw
-            .whereType<Map>()
-            .map((e) => CampaignAreaStat.fromJson(Map<String, dynamic>.from(e)))
-            .toList()
+              .whereType<Map>()
+              .map(
+                (e) => CampaignAreaStat.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .toList()
         : <CampaignAreaStat>[];
 
     return CampaignLiveAnalytics(
@@ -70,7 +74,9 @@ class CampaignLiveAnalytics {
           ? json['participatingClinics'] as int
           : int.tryParse('${json['participatingClinics']}') ?? 0,
       areaStats: areas,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse('${json['updatedAt']}') : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse('${json['updatedAt']}')
+          : null,
     );
   }
 }

@@ -61,9 +61,9 @@ class MyDaySection extends ConsumerWidget {
     List<StoryEntity> active,
   ) {
     final myStory = active.cast<StoryEntity?>().firstWhere(
-          (s) => s != null && s.isOwnStory,
-          orElse: () => null,
-        );
+      (s) => s != null && s.isOwnStory,
+      orElse: () => null,
+    );
 
     // Exclude own story from the "others" list so it only shows at position 0
     final otherStories = active.where((s) => !s.isOwnStory).toList();
@@ -72,7 +72,8 @@ class MyDaySection extends ConsumerWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.only(left: AppSpacing.lg),
       itemCount: otherStories.length + 1,
-      separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.md),
+      separatorBuilder: (context, index) =>
+          const SizedBox(width: AppSpacing.md),
       itemBuilder: (context, index) {
         if (index == 0) {
           return StoryCircle(

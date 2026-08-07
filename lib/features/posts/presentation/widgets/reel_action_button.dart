@@ -37,11 +37,9 @@ class ReelActionButton extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white,
-                    shadows: const [
-                      Shadow(blurRadius: 4, color: Colors.black54),
-                    ],
-                  ),
+                color: Colors.white,
+                shadows: const [Shadow(blurRadius: 4, color: Colors.black54)],
+              ),
             ),
           ],
         ),

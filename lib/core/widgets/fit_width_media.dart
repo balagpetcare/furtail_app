@@ -15,11 +15,7 @@ class FitWidthNetworkImage extends StatelessWidget {
   final String url;
   final BorderRadius? borderRadius;
 
-  const FitWidthNetworkImage({
-    super.key,
-    required this.url,
-    this.borderRadius,
-  });
+  const FitWidthNetworkImage({super.key, required this.url, this.borderRadius});
 
   @override
   Widget build(BuildContext context) {

@@ -31,7 +31,11 @@ class CampaignSuccessPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(Icons.check_circle, size: 72, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.check_circle,
+              size: 72,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 16),
             Text(
               'Your vaccination is booked!',
@@ -51,16 +55,23 @@ class CampaignSuccessPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Booking ID', style: Theme.of(context).textTheme.labelLarge),
+                    Text(
+                      'Booking ID',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                     SelectableText(
                       bookingRef,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    if (verificationCode != null && verificationCode!.isNotEmpty) ...[
+                    if (verificationCode != null &&
+                        verificationCode!.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Text('Verification code', style: Theme.of(context).textTheme.labelLarge),
+                      Text(
+                        'Verification code',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                       SelectableText(verificationCode!),
                     ],
                   ],
@@ -68,12 +79,16 @@ class CampaignSuccessPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Text('Per-cat tickets', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Per-cat tickets',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: ticketsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => const Text('Tickets will arrive via SMS shortly.'),
+                error: (_, _) =>
+                    const Text('Tickets will arrive via SMS shortly.'),
                 data: (tickets) {
                   if (tickets.isEmpty) {
                     return const Text('Tickets are being generated…');
@@ -91,7 +106,9 @@ class CampaignSuccessPage extends ConsumerWidget {
                           trailing: IconButton(
                             icon: const Icon(Icons.qr_code_2),
                             onPressed: () {
-                              final payload = t.qrImageBase64 != null && t.qrImageBase64!.startsWith('data:')
+                              final payload =
+                                  t.qrImageBase64 != null &&
+                                      t.qrImageBase64!.startsWith('data:')
                                   ? t.ticketUrl
                                   : t.ticketToken;
                               Navigator.push(
@@ -101,7 +118,9 @@ class CampaignSuccessPage extends ConsumerWidget {
                                     title: t.petName,
                                     payload: payload,
                                     subtitle: bookingRef,
-                                    qrImageBase64: _extractBase64(t.qrImageBase64),
+                                    qrImageBase64: _extractBase64(
+                                      t.qrImageBase64,
+                                    ),
                                   ),
                                 ),
                               );

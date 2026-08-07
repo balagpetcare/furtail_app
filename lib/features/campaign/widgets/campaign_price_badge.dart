@@ -7,7 +7,11 @@ class CampaignPriceBadge extends StatelessWidget {
   final PublicCampaign campaign;
   final bool compact;
 
-  const CampaignPriceBadge({super.key, required this.campaign, this.compact = false});
+  const CampaignPriceBadge({
+    super.key,
+    required this.campaign,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +36,9 @@ class CampaignPriceBadge extends StatelessWidget {
       child: Text(
         campaign.displayPrice,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w700,
-            ),
+          color: fg,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

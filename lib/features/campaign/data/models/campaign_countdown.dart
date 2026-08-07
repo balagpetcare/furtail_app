@@ -26,7 +26,10 @@ class CampaignCountdownSnapshot {
 
   bool get isExpired => remaining != null && remaining!.inSeconds <= 0;
 
-  factory CampaignCountdownSnapshot.fromJson(String slug, Map<String, dynamic> json) {
+  factory CampaignCountdownSnapshot.fromJson(
+    String slug,
+    Map<String, dynamic> json,
+  ) {
     final bookingEnd = json['bookingEndAt'];
     final bookingStart = json['bookingStartAt'];
     DateTime? target;
@@ -38,8 +41,11 @@ class CampaignCountdownSnapshot {
       campaignName: json['campaignName']?.toString() ?? '',
       targetAt: target,
       countdownEnabled: json['countdownEnabled'] == true,
-      isBookingWindow: bookingStart == null ||
-          DateTime.now().isAfter(DateTime.tryParse(bookingStart.toString()) ?? DateTime.now()),
+      isBookingWindow:
+          bookingStart == null ||
+          DateTime.now().isAfter(
+            DateTime.tryParse(bookingStart.toString()) ?? DateTime.now(),
+          ),
     );
   }
 }

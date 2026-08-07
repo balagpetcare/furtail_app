@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/theme/typography.dart';
+
 class PostsPlaceholder extends StatelessWidget {
   final VoidCallback onEditProfile;
   const PostsPlaceholder({super.key, required this.onEditProfile});
@@ -19,7 +20,12 @@ class PostsPlaceholder extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Posts', style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900)),
+              Text(
+                'Posts',
+                style: context.appText.bodyLarge!.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
               const Spacer(),
               TextButton(
                 onPressed: onEditProfile,

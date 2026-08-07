@@ -23,50 +23,66 @@ class CampaignPerformanceTracker {
 
   Future<void> recordView(String slug, {String? abVariant}) async {
     final m = await load(slug);
-    await _save(CampaignPerformanceMetrics(
-      slug: slug,
-      views: m.views + 1,
-      clicks: m.clicks,
-      bookings: m.bookings,
-      revenue: m.revenue,
-      abVariant: abVariant ?? m.abVariant,
-    ));
+    await _save(
+      CampaignPerformanceMetrics(
+        slug: slug,
+        views: m.views + 1,
+        clicks: m.clicks,
+        bookings: m.bookings,
+        revenue: m.revenue,
+        abVariant: abVariant ?? m.abVariant,
+      ),
+    );
   }
 
   Future<void> recordClick(String slug, {String? abVariant}) async {
     final m = await load(slug);
-    await _save(CampaignPerformanceMetrics(
-      slug: slug,
-      views: m.views,
-      clicks: m.clicks + 1,
-      bookings: m.bookings,
-      revenue: m.revenue,
-      abVariant: abVariant ?? m.abVariant,
-    ));
+    await _save(
+      CampaignPerformanceMetrics(
+        slug: slug,
+        views: m.views,
+        clicks: m.clicks + 1,
+        bookings: m.bookings,
+        revenue: m.revenue,
+        abVariant: abVariant ?? m.abVariant,
+      ),
+    );
   }
 
-  Future<void> recordBooking(String slug, {num revenue = 0, String? abVariant}) async {
+  Future<void> recordBooking(
+    String slug, {
+    num revenue = 0,
+    String? abVariant,
+  }) async {
     final m = await load(slug);
-    await _save(CampaignPerformanceMetrics(
-      slug: slug,
-      views: m.views,
-      clicks: m.clicks,
-      bookings: m.bookings + 1,
-      revenue: m.revenue + revenue,
-      abVariant: abVariant ?? m.abVariant,
-    ));
+    await _save(
+      CampaignPerformanceMetrics(
+        slug: slug,
+        views: m.views,
+        clicks: m.clicks,
+        bookings: m.bookings + 1,
+        revenue: m.revenue + revenue,
+        abVariant: abVariant ?? m.abVariant,
+      ),
+    );
   }
 
-  Future<void> recordPayment(String slug, {required num amount, String? abVariant}) async {
+  Future<void> recordPayment(
+    String slug, {
+    required num amount,
+    String? abVariant,
+  }) async {
     final m = await load(slug);
-    await _save(CampaignPerformanceMetrics(
-      slug: slug,
-      views: m.views,
-      clicks: m.clicks,
-      bookings: m.bookings,
-      revenue: m.revenue + amount,
-      abVariant: abVariant ?? m.abVariant,
-    ));
+    await _save(
+      CampaignPerformanceMetrics(
+        slug: slug,
+        views: m.views,
+        clicks: m.clicks,
+        bookings: m.bookings,
+        revenue: m.revenue + amount,
+        abVariant: abVariant ?? m.abVariant,
+      ),
+    );
   }
 
   Future<List<CampaignPerformanceMetrics>> loadAll() async {
@@ -76,9 +92,11 @@ class CampaignPerformanceTracker {
       final raw = prefs.getString(k);
       if (raw == null) continue;
       try {
-        out.add(CampaignPerformanceMetrics.fromJson(
-          Map<String, dynamic>.from(jsonDecode(raw) as Map),
-        ));
+        out.add(
+          CampaignPerformanceMetrics.fromJson(
+            Map<String, dynamic>.from(jsonDecode(raw) as Map),
+          ),
+        );
       } catch (_) {}
     }
     return out;

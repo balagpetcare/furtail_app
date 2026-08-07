@@ -28,7 +28,8 @@ class FullscreenVideoPlayerScreen extends StatefulWidget {
       _FullscreenVideoPlayerScreenState();
 }
 
-class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScreen> {
+class _FullscreenVideoPlayerScreenState
+    extends State<FullscreenVideoPlayerScreen> {
   VideoPlayerController? _c;
   Future<void>? _init;
   bool _muted = false;
@@ -54,7 +55,9 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
       try {
         file = await VideoCacheService.instance.getVideoFile(widget.url);
       } catch (e) {
-        debugPrint('[FullscreenPlayer] Cache load failed, fallback to network: $e');
+        debugPrint(
+          '[FullscreenPlayer] Cache load failed, fallback to network: $e',
+        );
         try {
           await VideoCacheService.instance.removeFile(widget.url);
         } catch (_) {}
@@ -88,13 +91,19 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
       } catch (_) {}
 
       if (widget.startAt > Duration.zero) {
-        try { await c.seekTo(widget.startAt); } catch (_) {}
+        try {
+          await c.seekTo(widget.startAt);
+        } catch (_) {}
       }
       c.setLooping(true);
-      try { c.setVolume(_muted ? 0.0 : 1.0); } catch (_) {}
+      try {
+        c.setVolume(_muted ? 0.0 : 1.0);
+      } catch (_) {}
 
       if (widget.autoplay) {
-        try { await c.play(); } catch (_) {}
+        try {
+          await c.play();
+        } catch (_) {}
         if (!_wakelockHeld) {
           _wakelockHeld = true;
           WakelockPlus.enable();
@@ -194,7 +203,8 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                       builder: (_, snap) {
                         if (snap.connectionState != ConnectionState.done) {
                           return const Center(
-                              child: CircularProgressIndicator());
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         return Center(
                           child: AspectRatio(
@@ -226,7 +236,9 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                         .toDouble();
                     return Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(16),
@@ -243,9 +255,12 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                               size: 32,
                             ),
                           ),
-                          Text(_fmt(pos),
-                              style: context.appText.bodySmall!
-                                  .copyWith(color: Colors.white)),
+                          Text(
+                            _fmt(pos),
+                            style: context.appText.bodySmall!.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Slider(
@@ -257,9 +272,12 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                               },
                             ),
                           ),
-                          Text(_fmt(dur),
-                              style: context.appText.bodySmall!
-                                  .copyWith(color: Colors.white)),
+                          Text(
+                            _fmt(dur),
+                            style: context.appText.bodySmall!.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
                           IconButton(
                             onPressed: _toggleMute,
                             icon: Icon(
@@ -271,8 +289,10 @@ class _FullscreenVideoPlayerScreenState extends State<FullscreenVideoPlayerScree
                           ),
                           IconButton(
                             onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.fullscreen_exit_rounded,
-                                color: Colors.white),
+                            icon: const Icon(
+                              Icons.fullscreen_exit_rounded,
+                              color: Colors.white,
+                            ),
                           ),
                         ],
                       ),

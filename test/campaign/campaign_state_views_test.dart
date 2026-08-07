@@ -24,9 +24,7 @@ void main() {
   testWidgets('CampaignEmptyView shows title', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(
-          body: CampaignEmptyView(title: 'No campaigns'),
-        ),
+        home: Scaffold(body: CampaignEmptyView(title: 'No campaigns')),
       ),
     );
     expect(find.text('No campaigns'), findsOneWidget);

@@ -31,7 +31,9 @@ class MyPetsFamilyWhite extends StatelessWidget {
             children: [
               Text(
                 'My Pets Family',
-                style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900),
+                style: context.appText.bodyLarge!.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const Spacer(),
               TextButton.icon(
@@ -68,9 +70,12 @@ class MyPetsFamilyWhite extends StatelessWidget {
                     label: const Text('Add Pet'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ],
@@ -122,7 +127,9 @@ class MyPetsFamilyWhite extends StatelessWidget {
                                 : pet.breedName ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: context.appText.bodySmall!.copyWith(color: Colors.black54),
+                            style: context.appText.bodySmall!.copyWith(
+                              color: Colors.black54,
+                            ),
                           ),
                         ],
                       ),

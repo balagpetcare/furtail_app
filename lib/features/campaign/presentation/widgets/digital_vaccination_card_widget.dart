@@ -69,7 +69,11 @@ class DigitalVaccinationCardWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.verified_rounded, color: Color(0xFFC8A951), size: 32),
+                  const Icon(
+                    Icons.verified_rounded,
+                    color: Color(0xFFC8A951),
+                    size: 32,
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -89,7 +93,10 @@ class DigitalVaccinationCardWidget extends StatelessWidget {
               if (record.certificateToken != null) ...[
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
@@ -145,10 +152,7 @@ class _PetAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (photoUrl != null && photoUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 28,
-        backgroundImage: NetworkImage(photoUrl!),
-      );
+      return CircleAvatar(radius: 28, backgroundImage: NetworkImage(photoUrl!));
     }
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return CircleAvatar(

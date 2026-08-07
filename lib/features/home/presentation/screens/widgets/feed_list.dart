@@ -29,12 +29,7 @@ class FeedList extends StatefulWidget {
   /// Callback when the feed decides a parent-level refresh is needed.
   final VoidCallback? onNeedRefresh;
 
-  const FeedList({
-    super.key,
-    this.meId,
-    this.refreshToken,
-    this.onNeedRefresh,
-  });
+  const FeedList({super.key, this.meId, this.refreshToken, this.onNeedRefresh});
 
   @override
   State<FeedList> createState() => _FeedListState();
@@ -255,5 +250,3 @@ class _FeedListState extends State<FeedList> {
     );
   }
 }
-
-

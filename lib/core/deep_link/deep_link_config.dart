@@ -30,7 +30,9 @@ abstract final class DeepLinkConfig {
   static bool isAllowedHost(String? host) {
     if (host == null || host.isEmpty) return false;
     final h = host.toLowerCase();
-    return allowedHosts.any((allowed) => h == allowed || h.endsWith('.$allowed'));
+    return allowedHosts.any(
+      (allowed) => h == allowed || h.endsWith('.$allowed'),
+    );
   }
 
   /// Example universal link: https://app.furtail.global/campaign/42

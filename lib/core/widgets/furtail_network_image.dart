@@ -104,21 +104,23 @@ class FurtailNetworkAvatar extends StatelessWidget {
     final fg = foregroundColor ?? cs.primary;
     final initial = displayName.trim().isNotEmpty
         ? displayName.trim()[0].toUpperCase()
-        : '?';
+        : null;
     final url = (imageUrl ?? '').trim();
 
     final avatar = CircleAvatar(
       radius: radius,
       backgroundColor: bg,
       child: url.isEmpty
-          ? Text(
-              initial,
-              style: TextStyle(
-                color: fg,
-                fontWeight: FontWeight.w800,
-                fontSize: radius * 0.85,
-              ),
-            )
+          ? (initial == null
+                ? Icon(Icons.person_outline, color: fg, size: radius * 0.95)
+                : Text(
+                    initial,
+                    style: TextStyle(
+                      color: fg,
+                      fontWeight: FontWeight.w800,
+                      fontSize: radius * 0.85,
+                    ),
+                  ))
           : ClipOval(
               child: FurtailCachedImage(
                 imageUrl: url,
@@ -137,14 +139,20 @@ class FurtailNetworkAvatar extends StatelessWidget {
                 errorWidget: CircleAvatar(
                   radius: radius,
                   backgroundColor: bg,
-                  child: Text(
-                    initial,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w800,
-                      fontSize: radius * 0.85,
-                    ),
-                  ),
+                  child: initial == null
+                      ? Icon(
+                          Icons.person_outline,
+                          color: fg,
+                          size: radius * 0.95,
+                        )
+                      : Text(
+                          initial,
+                          style: TextStyle(
+                            color: fg,
+                            fontWeight: FontWeight.w800,
+                            fontSize: radius * 0.85,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -192,7 +200,9 @@ class BpaMembershipBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isMember ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
+            isMember
+                ? Icons.workspace_premium_rounded
+                : Icons.lock_outline_rounded,
             size: 14,
             color: isMember ? const Color(0xFF5B4300) : Colors.white,
           ),

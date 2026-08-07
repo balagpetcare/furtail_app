@@ -6,7 +6,9 @@ class VetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Find a Vet")), // ব্যাক বাটন অটোমেটিক আসবে
+      appBar: AppBar(
+        title: const Text("Find a Vet"),
+      ), // ব্যাক বাটন অটোমেটিক আসবে
       body: ListView.builder(
         itemCount: 5,
         itemBuilder: (context, index) => ListTile(

@@ -16,7 +16,9 @@ class ReminderStorage {
       if (list is! List) return const [];
       return list
           .whereType<Map>()
-          .map((e) => VaccinationReminder.fromJson(Map<String, dynamic>.from(e)))
+          .map(
+            (e) => VaccinationReminder.fromJson(Map<String, dynamic>.from(e)),
+          )
           .toList();
     } catch (_) {
       return const [];
@@ -41,7 +43,8 @@ class ReminderStorage {
   }
 
   Future<void> remove(String id) async {
-    final list = await load()..removeWhere((r) => r.id == id);
+    final list = await load()
+      ..removeWhere((r) => r.id == id);
     await save(list);
   }
 }

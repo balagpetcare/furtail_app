@@ -6,8 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:furtail_app/main.dart';
 
 void main() {
-  testWidgets('App builds MaterialApp root without crashing',
-      (WidgetTester tester) async {
+  testWidgets('App builds MaterialApp root without crashing', (
+    WidgetTester tester,
+  ) async {
     // Provide an empty (unauthenticated) SharedPreferences store so the app
     // does not try to resume a session.
     SharedPreferences.setMockInitialValues({});

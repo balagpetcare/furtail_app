@@ -7,10 +7,7 @@ import 'package:video_player/video_player.dart';
 class ReelSeekBar extends StatelessWidget {
   final VideoPlayerController controller;
 
-  const ReelSeekBar({
-    super.key,
-    required this.controller,
-  });
+  const ReelSeekBar({super.key, required this.controller});
 
   String _fmt(Duration d) {
     final m = d.inMinutes;
@@ -79,9 +76,7 @@ class ReelSeekBar extends StatelessWidget {
                     onChanged: durMs > 0
                         ? (val) {
                             controller.seekTo(
-                              Duration(
-                                milliseconds: (val * durMs).round(),
-                              ),
+                              Duration(milliseconds: (val * durMs).round()),
                             );
                           }
                         : null,

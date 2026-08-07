@@ -21,7 +21,10 @@ class CertificateShareService {
       'Token: ${cert.certificateToken}',
       'Verify at your Furtail app or campaign verify page.',
     ].join('\n');
-    await Share.share(text, subject: 'Vaccination certificate — ${cert.petName}');
+    await Share.share(
+      text,
+      subject: 'Vaccination certificate — ${cert.petName}',
+    );
   }
 
   Future<bool> shareCertificatePdf(String token) async {

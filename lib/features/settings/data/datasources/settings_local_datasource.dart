@@ -21,15 +21,15 @@ class SettingsLocalDatasource {
     try {
       final map = jsonDecode(raw);
       if (map is Map) {
-        return NotificationPreferences.fromJson(
-          Map<String, dynamic>.from(map),
-        );
+        return NotificationPreferences.fromJson(Map<String, dynamic>.from(map));
       }
     } catch (_) {}
     return const NotificationPreferences();
   }
 
-  Future<void> saveNotificationPreferences(NotificationPreferences value) async {
+  Future<void> saveNotificationPreferences(
+    NotificationPreferences value,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kNotificationPrefs, jsonEncode(value.toJson()));
   }
@@ -71,10 +71,7 @@ class SettingsLocalDatasource {
 
   Future<void> blockUser(BlockedUser user) async {
     final list = await loadBlockedUsers();
-    final next = [
-      ...list.where((u) => u.userId != user.userId),
-      user,
-    ];
+    final next = [...list.where((u) => u.userId != user.userId), user];
     await saveBlockedUsers(next);
   }
 

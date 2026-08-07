@@ -35,8 +35,10 @@ class PrivacySettingsScreen extends ConsumerWidget {
                     title: t.profileVisible,
                     subtitle: t.profileVisibleDesc,
                     value: prefs.profileVisibleToEveryone,
-                    onChanged: (v) =>
-                        _patch(ref, (p) => p.copyWith(profileVisibleToEveryone: v)),
+                    onChanged: (v) => _patch(
+                      ref,
+                      (p) => p.copyWith(profileVisibleToEveryone: v),
+                    ),
                   ),
                   Divider(height: 1, color: cs.outline),
                   _switch(
@@ -76,21 +78,24 @@ class PrivacySettingsScreen extends ConsumerWidget {
                     context,
                     title: t.messagesFollowersOnly,
                     value: prefs.allowMessagesFromFollowersOnly,
-                    onChanged: (v) =>
-                        _patch(ref, (p) => p.copyWith(allowMessagesFromFollowersOnly: v)),
+                    onChanged: (v) => _patch(
+                      ref,
+                      (p) => p.copyWith(allowMessagesFromFollowersOnly: v),
+                    ),
                   ),
                   Divider(height: 1, color: cs.outline),
                   // Who can comment — segmented radio list
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           t.whoCanComment,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
+                          style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
@@ -102,9 +107,27 @@ class PrivacySettingsScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        _commentPermissionRow(context, ref, prefs, CommentPermission.everyone, t.everyone),
-                        _commentPermissionRow(context, ref, prefs, CommentPermission.followersOnly, t.followersOnly),
-                        _commentPermissionRow(context, ref, prefs, CommentPermission.noOne, t.noOne),
+                        _commentPermissionRow(
+                          context,
+                          ref,
+                          prefs,
+                          CommentPermission.everyone,
+                          t.everyone,
+                        ),
+                        _commentPermissionRow(
+                          context,
+                          ref,
+                          prefs,
+                          CommentPermission.followersOnly,
+                          t.followersOnly,
+                        ),
+                        _commentPermissionRow(
+                          context,
+                          ref,
+                          prefs,
+                          CommentPermission.noOne,
+                          t.noOne,
+                        ),
                       ],
                     ),
                   ),
@@ -133,9 +156,9 @@ class PrivacySettingsScreen extends ConsumerWidget {
                     icon: Icons.gavel_outlined,
                     title: t.communityGuidelinesShort,
                     subtitle: t.communityGuidelinesDesc,
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(t.comingSoon)),
-                    ),
+                    onTap: () => ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(t.comingSoon))),
                   ),
                 ],
               ),

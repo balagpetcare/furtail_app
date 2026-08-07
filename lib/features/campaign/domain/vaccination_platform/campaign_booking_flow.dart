@@ -1,11 +1,5 @@
 /// Wizard steps for production vaccination booking (parity with web).
-enum CampaignBookingStep {
-  location,
-  cats,
-  contact,
-  review,
-  success,
-}
+enum CampaignBookingStep { location, cats, contact, review, success }
 
 class DhakaCityCorporation {
   final int id;
@@ -22,7 +16,9 @@ class DhakaCityCorporation {
 
   factory DhakaCityCorporation.fromJson(Map<String, dynamic> json) {
     return DhakaCityCorporation(
-      id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
       code: json['code']?.toString() ?? '',
       nameEn: json['nameEn']?.toString() ?? '',
       nameBn: json['nameBn']?.toString(),
@@ -51,7 +47,9 @@ class DhakaBookingArea {
 
   factory DhakaBookingArea.fromJson(Map<String, dynamic> json) {
     return DhakaBookingArea(
-      id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
       code: json['code']?.toString() ?? '',
       nameEn: json['nameEn']?.toString() ?? '',
       nameBn: json['nameBn']?.toString(),

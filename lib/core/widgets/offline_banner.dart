@@ -15,9 +15,7 @@ class OfflineBanner extends ConsumerWidget {
     return statusAsync.when(
       data: (status) {
         if (status == ConnectivityStatus.online) return const SizedBox.shrink();
-        return _BannerBar(
-          isOffline: status == ConnectivityStatus.offline,
-        );
+        return _BannerBar(isOffline: status == ConnectivityStatus.offline);
       },
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
@@ -32,7 +30,9 @@ class _BannerBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isOffline ? const Color(0xFFB71C1C) : const Color(0xFFE65100);
-    final icon = isOffline ? Icons.wifi_off_rounded : Icons.signal_wifi_statusbar_connected_no_internet_4_rounded;
+    final icon = isOffline
+        ? Icons.wifi_off_rounded
+        : Icons.signal_wifi_statusbar_connected_no_internet_4_rounded;
     final message = isOffline
         ? 'You\'re offline · Showing cached feed'
         : 'Slow connection · Showing cached feed';

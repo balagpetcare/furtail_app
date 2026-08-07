@@ -21,8 +21,12 @@ class SocialStatus {
       isFollowing: json['isFollowing'] == true,
       isLiked: json['isLiked'] == true,
       isFriend: json['isFriend'] == true,
-      outgoingRequestId: (json['outgoingRequestId'] is num) ? (json['outgoingRequestId'] as num).toInt() : null,
-      incomingRequestId: (json['incomingRequestId'] is num) ? (json['incomingRequestId'] as num).toInt() : null,
+      outgoingRequestId: (json['outgoingRequestId'] is num)
+          ? (json['outgoingRequestId'] as num).toInt()
+          : null,
+      incomingRequestId: (json['incomingRequestId'] is num)
+          ? (json['incomingRequestId'] as num).toInt()
+          : null,
     );
   }
 }
@@ -36,10 +40,14 @@ class SocialService {
     return (decoded as Map).cast<String, dynamic>();
   }
 
-  Future<Map<String, dynamic>> getVisitorProfileByUsername(String username) async {
+  Future<Map<String, dynamic>> getVisitorProfileByUsername(
+    String username,
+  ) async {
     final clean = username.trim().replaceFirst(RegExp(r'^@'), '');
     if (clean.isEmpty) throw Exception('Username is required');
-    final decoded = await _client.get(ApiEndpoints.visitorProfileByUsername(clean));
+    final decoded = await _client.get(
+      ApiEndpoints.visitorProfileByUsername(clean),
+    );
     return (decoded as Map).cast<String, dynamic>();
   }
 
@@ -67,7 +75,10 @@ class SocialService {
   }
 
   Future<int?> sendFriendRequest(int userId) async {
-    final decoded = await _client.post(ApiEndpoints.friendRequestSend(userId), {});
+    final decoded = await _client.post(
+      ApiEndpoints.friendRequestSend(userId),
+      {},
+    );
     final map = (decoded as Map).cast<String, dynamic>();
     final data = (map['data'] as Map?)?.cast<String, dynamic>();
     if (data == null) return null;

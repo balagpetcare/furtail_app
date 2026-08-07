@@ -8,14 +8,19 @@ class GeoTargetingService {
 
   final UserGeoPreferencesService _geoPrefs;
 
-  Future<List<PublicCampaign>> filterForUser(List<PublicCampaign> campaigns) async {
+  Future<List<PublicCampaign>> filterForUser(
+    List<PublicCampaign> campaigns,
+  ) async {
     final user = await _geoPrefs.load();
     if (!user.isConfigured) return campaigns;
 
     return campaigns.where((c) => _matchesUser(c, user)).toList();
   }
 
-  bool shouldDeliverNotification(PublicCampaign campaign, UserGeoPreferences user) {
+  bool shouldDeliverNotification(
+    PublicCampaign campaign,
+    UserGeoPreferences user,
+  ) {
     if (campaign.smartConfig.geoTarget.isEmpty) return true;
     if (!user.isConfigured) return false;
     return _matchesUser(campaign, user);
@@ -45,13 +50,19 @@ class GeoTargetingService {
     for (final loc in campaign.locations) {
       final name = loc.name.toLowerCase();
       final addr = (loc.address ?? '').toLowerCase();
-      if (target.cities.any((c) => name.contains(c.toLowerCase()) || addr.contains(c.toLowerCase()))) {
+      if (target.cities.any(
+        (c) => name.contains(c.toLowerCase()) || addr.contains(c.toLowerCase()),
+      )) {
         return true;
       }
-      if (target.districts.any((d) => name.contains(d.toLowerCase()) || addr.contains(d.toLowerCase()))) {
+      if (target.districts.any(
+        (d) => name.contains(d.toLowerCase()) || addr.contains(d.toLowerCase()),
+      )) {
         return true;
       }
-      if (target.serviceAreas.any((a) => name.contains(a.toLowerCase()) || addr.contains(a.toLowerCase()))) {
+      if (target.serviceAreas.any(
+        (a) => name.contains(a.toLowerCase()) || addr.contains(a.toLowerCase()),
+      )) {
         return true;
       }
     }

@@ -61,7 +61,10 @@ class PetPhotoPicker extends StatelessWidget {
     if (source == null) return;
 
     final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: source, imageQuality: 90);
+    final XFile? picked = await picker.pickImage(
+      source: source,
+      imageQuality: 90,
+    );
     if (picked == null) return;
 
     final CroppedFile? cropped = await _cropImage(context, picked.path);

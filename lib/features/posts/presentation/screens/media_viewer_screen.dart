@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -204,7 +204,10 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
     // Compute the video aspect ratio from metadata so we can size the player
     // area correctly before the controller initialises.
     double videoRatio = 16 / 9;
-    if (isVideo && item.width != null && item.height != null && item.height! > 0) {
+    if (isVideo &&
+        item.width != null &&
+        item.height != null &&
+        item.height! > 0) {
       videoRatio = item.width! / item.height!;
     }
 
@@ -943,7 +946,8 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                               icon: _post.isLikedByMe
                                   ? Icons.pets
                                   : Icons.pets_outlined,
-                              label: '${_likeLabel(context)} (${_post.likeCount})',
+                              label:
+                                  '${_likeLabel(context)} (${_post.likeCount})',
                               color: _post.isLikedByMe
                                   ? theme.colorScheme.primary
                                   : Colors.white70,
@@ -1020,8 +1024,3 @@ class _MediaActionButton extends StatelessWidget {
     );
   }
 }
-
-
-
-
-

@@ -33,7 +33,11 @@ class ProfileHighlights extends StatelessWidget {
               color: cs.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.auto_awesome_outlined, color: cs.primary, size: 22),
+            child: Icon(
+              Icons.auto_awesome_outlined,
+              color: cs.primary,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

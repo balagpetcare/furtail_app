@@ -22,7 +22,9 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           Text(
             'Language',
-            style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900),
+            style: context.appText.bodyLarge!.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 10),
           Container(
@@ -67,7 +69,9 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 18),
           Text(
             'Note',
-            style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900),
+            style: context.appText.bodyLarge!.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(

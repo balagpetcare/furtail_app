@@ -6,23 +6,33 @@ import 'package:flutter/foundation.dart';
 
 import 'central_auth_api.dart';
 import 'secure_storage_service.dart';
+import 'session_recovery.dart';
 
 /// Attaches the Central Auth access token to outgoing requests and, on a
-/// refreshable 401, refreshes the token exactly once for any number of
-/// concurrently failing requests (mutex via a shared [Completer]),
+/// refreshable 401, delegates to the shared [SessionRecovery] single-flight
+/// refresh (also used by any code that calls Central Auth directly),
 /// retrying the original request afterwards.
 class AuthInterceptor extends Interceptor {
   final SecureStorageService secureStorage;
   final CentralAuthApi centralAuthApi;
   final void Function() onSessionExpired;
   final Dio? retryDio;
+  final SessionRecovery sessionRecovery;
 
+  // Note: [onSessionExpired] is accepted for API compatibility but is NOT
+  // wired into the shared [SessionRecovery] singleton here — doing so per
+  // instance would let whichever AuthInterceptor is constructed last (e.g.
+  // a throwaway one inside ProfileService/SafetyService) silently
+  // overwrite the app's real logout callback. Configure
+  // `SessionRecovery.instance.onSessionExpired` exactly once, at app
+  // startup (see `apiClientProvider`), instead.
   AuthInterceptor({
     required this.secureStorage,
     required this.centralAuthApi,
     required this.onSessionExpired,
     this.retryDio,
-  });
+    SessionRecovery? sessionRecovery,
+  }) : sessionRecovery = sessionRecovery ?? SessionRecovery.instance;
 
   static const _authBypassPaths = {
     '/auth/login',
@@ -43,14 +53,8 @@ class AuthInterceptor extends Interceptor {
     return path.startsWith('/auth/identity/') && !path.endsWith('/link');
   }
 
-  bool _isRefreshing = false;
-  Completer<String?>? _refreshCompleter;
-
   @override
-  Future<void> onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
+  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     // Callers opt out via `options.extra['auth'] = false` (ApiClient passes
     // this through from its own `auth` parameter) to preserve the previous
     // package:http implementation's behavior of never attaching a token to
@@ -74,38 +78,30 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
-  Future<void> onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) async {
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     if (!_shouldAttemptRefresh(err)) {
       handler.next(err);
       return;
     }
 
-    final failedAccessToken = _bearerToken(
-      err.requestOptions.headers['Authorization'],
-    );
+    final failedAccessToken = _bearerToken(err.requestOptions.headers['Authorization']);
     final currentAccessToken = await secureStorage.accessToken;
     if (currentAccessToken != null &&
         currentAccessToken.isNotEmpty &&
         currentAccessToken != failedAccessToken) {
-      final retried = await _retryWithAccessToken(
-        err.requestOptions,
-        currentAccessToken,
-      );
+      final retried = await _retryWithAccessToken(err.requestOptions, currentAccessToken);
       if (retried != null) {
         handler.resolve(retried);
         return;
       }
     }
 
-    final refreshOutcome = await _refreshAccessToken();
-    if (refreshOutcome.accessToken == null) {
-      if (refreshOutcome.shouldLogout) {
-        await secureStorage.clear();
-        onSessionExpired();
-      }
+    // SessionRecovery.refresh() already clears the session and fires
+    // onSessionExpired on a definitive failure (rotated refresh token
+    // missing, refresh token expired/revoked, or save failure) — exactly
+    // once, however many concurrent requests triggered it.
+    final newAccessToken = await sessionRecovery.refresh();
+    if (newAccessToken == null) {
       handler.next(err);
       return;
     }
@@ -114,8 +110,7 @@ class AuthInterceptor extends Interceptor {
     // Authorization header. A failure here is not a session-expiry event.
     final retryOptions = err.requestOptions;
     final previousAuthorization = retryOptions.headers['Authorization'];
-    retryOptions.headers['Authorization'] =
-        'Bearer ${refreshOutcome.accessToken}';
+    retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
     try {
       final retryFactory = retryOptions.extra['multipartRetryFactory'];
       if (retryFactory is Future<FormData> Function()) {
@@ -204,69 +199,8 @@ class AuthInterceptor extends Interceptor {
   String? _bearerToken(Object? authorization) {
     if (authorization is! String) return null;
     final value = authorization.trim();
-    if (!value.toLowerCase().startsWith('bearer '))
-      return value.isEmpty ? null : value;
+    if (!value.toLowerCase().startsWith('bearer ')) return value.isEmpty ? null : value;
     final token = value.substring(7).trim();
     return token.isEmpty ? null : token;
   }
-
-  Future<_RefreshOutcome> _refreshAccessToken() async {
-    if (_isRefreshing) {
-      final awaited = await _refreshCompleter?.future;
-      return _RefreshOutcome(accessToken: awaited, shouldLogout: false);
-    }
-
-    _isRefreshing = true;
-    _refreshCompleter = Completer<String?>();
-    try {
-      final refreshToken = await secureStorage.refreshToken;
-      if (refreshToken == null || refreshToken.isEmpty) {
-        _refreshCompleter?.complete(null);
-        return const _RefreshOutcome(accessToken: null, shouldLogout: true);
-      }
-
-      final result = await centralAuthApi.refreshToken(refreshToken);
-      final rotatedRefreshToken = result.refreshToken;
-      if (rotatedRefreshToken == null || rotatedRefreshToken.isEmpty) {
-        _refreshCompleter?.complete(null);
-        return const _RefreshOutcome(accessToken: null, shouldLogout: true);
-      }
-
-      try {
-        await secureStorage.saveTokens(
-          accessToken: result.accessToken,
-          refreshToken: rotatedRefreshToken,
-        );
-      } catch (_) {
-        _refreshCompleter?.complete(null);
-        return const _RefreshOutcome(accessToken: null, shouldLogout: true);
-      }
-
-      _refreshCompleter?.complete(result.accessToken);
-      return _RefreshOutcome(
-        accessToken: result.accessToken,
-        shouldLogout: false,
-      );
-    } on CentralAuthException catch (e) {
-      final shouldLogout = e.isDefinitiveSessionFailure || e.isUnauthorized;
-      _refreshCompleter?.complete(null);
-      return _RefreshOutcome(accessToken: null, shouldLogout: shouldLogout);
-    } catch (_) {
-      _refreshCompleter?.complete(null);
-      return const _RefreshOutcome(accessToken: null, shouldLogout: false);
-    } finally {
-      _isRefreshing = false;
-      _refreshCompleter = null;
-    }
-  }
-}
-
-class _RefreshOutcome {
-  const _RefreshOutcome({
-    required this.accessToken,
-    required this.shouldLogout,
-  });
-
-  final String? accessToken;
-  final bool shouldLogout;
 }

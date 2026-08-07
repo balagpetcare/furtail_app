@@ -37,7 +37,9 @@ class PrimaryButton extends StatelessWidget {
               )
             : Text(
                 text,
-                style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w700),
+                style: context.appText.bodyLarge!.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
       ),
     );

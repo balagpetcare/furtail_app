@@ -23,12 +23,7 @@ class VaccinationTimelineEvent {
   });
 }
 
-enum VaccinationTimelineEventType {
-  vaccination,
-  booking,
-  checkIn,
-  completed,
-}
+enum VaccinationTimelineEventType { vaccination, booking, checkIn, completed }
 
 List<VaccinationRecord> recordsForPet(
   List<VaccinationRecord> all, {
@@ -100,7 +95,8 @@ List<VaccinationTimelineEvent> buildVaccinationTimeline({
           type: VaccinationTimelineEventType.booking,
           at: b.bookingDate,
           title: 'Campaign booking',
-          subtitle: '${b.campaignName ?? "Campaign"} · ${b.locationName ?? b.coverageZoneName ?? "Venue pending"}',
+          subtitle:
+              '${b.campaignName ?? "Campaign"} · ${b.locationName ?? b.coverageZoneName ?? "Venue pending"}',
           petId: petId,
           petName: b.pets.isNotEmpty ? b.pets.first.name : 'Pet',
         ),
@@ -143,6 +139,12 @@ List<VaccinationTimelineEvent> buildVaccinationTimeline({
   return events;
 }
 
-List<VaccinationRecord> recordsWithCertificates(List<VaccinationRecord> records) {
-  return records.where((r) => r.certificateToken != null && r.certificateToken!.isNotEmpty).toList();
+List<VaccinationRecord> recordsWithCertificates(
+  List<VaccinationRecord> records,
+) {
+  return records
+      .where(
+        (r) => r.certificateToken != null && r.certificateToken!.isNotEmpty,
+      )
+      .toList();
 }

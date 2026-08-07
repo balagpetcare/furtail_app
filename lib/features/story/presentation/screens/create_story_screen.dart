@@ -32,10 +32,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         foregroundColor: cs.onSurface,
         title: Text(
           'Add to My Day',
-          style: TextStyle(
-            color: cs.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
           icon: Icon(Icons.close, color: cs.onSurface),
@@ -71,19 +68,22 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                 child: Text(
                   'Share your moment',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: cs.onSurface,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: cs.onSurface,
+                  ),
                 ),
               ),
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   child: Text(
                     'Stories disappear after 24 hours.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                      color: cs.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -124,10 +124,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                   icon: const Icon(Icons.text_fields_rounded),
                   label: const Text(
                     'Create Text Story',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -138,9 +135,9 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
               Center(
                 child: Text(
                   'Supports photos and videos',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
               const SizedBox(height: 8),
@@ -182,10 +179,8 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (_) => StoryEditorScreen(
-            filePath: picked!.path,
-            isVideo: isVideo,
-          ),
+          builder: (_) =>
+              StoryEditorScreen(filePath: picked!.path, isVideo: isVideo),
         ),
       );
 

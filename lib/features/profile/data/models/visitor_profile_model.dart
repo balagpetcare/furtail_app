@@ -211,31 +211,42 @@ class VisitorProfileModel {
     }
 
     // Display name: profile.displayName is the canonical field.
-    final rawDisplayName = (profile['displayName'] ?? profile['name'] ?? '').toString().trim();
+    final rawDisplayName = (profile['displayName'] ?? profile['name'] ?? '')
+        .toString()
+        .trim();
     final rawUsername = (profile['username'] ?? '').toString().trim();
     final rawBio = (profile['bio'] ?? '').toString().trim();
-    final rawAvatar = (avatarMedia['url'] ?? profile['avatarUrl'] ?? '').toString().trim();
-    final rawCover = (coverMedia['url'] ?? profile['coverUrl'] ?? '').toString().trim();
+    final rawAvatar = (avatarMedia['url'] ?? profile['avatarUrl'] ?? '')
+        .toString()
+        .trim();
+    final rawCover = (coverMedia['url'] ?? profile['coverUrl'] ?? '')
+        .toString()
+        .trim();
 
     // Intro/about fields (camelCase preferred, snake_case fallback)
-    final parsedEducation  = strVal('education');
-    final parsedPlaceLive  = strVal('placeLive', ['place_live', 'place_live']);
-    final parsedFrom       = strVal('from');
+    final parsedEducation = strVal('education');
+    final parsedPlaceLive = strVal('placeLive', ['place_live', 'place_live']);
+    final parsedFrom = strVal('from');
     final parsedProfileType = strVal('profileType', ['profile_type']);
     final parsedWorkStatus = strVal('workStatus', ['work_status']);
     final parsedFansAndFriends = strVal('fansAndFriends', ['fans_and_friends']);
-    final parsedReligiousStatus = strVal('religiousStatus', ['religious_status']);
-    final parsedGender     = strVal('gender');
-    final parsedMarital    = strVal('maritalStatus', ['marital_status']);
+    final parsedReligiousStatus = strVal('religiousStatus', [
+      'religious_status',
+    ]);
+    final parsedGender = strVal('gender');
+    final parsedMarital = strVal('maritalStatus', ['marital_status']);
     // Birthdate — may come as ISO string or timestamp
     DateTime? parsedBirthdate;
-    final bdRaw = profile['birthdate'] ?? profile['birthDate'] ?? profile['birthday'];
+    final bdRaw =
+        profile['birthdate'] ?? profile['birthDate'] ?? profile['birthday'];
     if (bdRaw is String && bdRaw.trim().isNotEmpty) {
       parsedBirthdate = DateTime.tryParse(bdRaw.trim());
     } else if (bdRaw is num) {
       // Unix timestamp in seconds or milliseconds
       final ts = bdRaw.toInt();
-      parsedBirthdate = DateTime.fromMillisecondsSinceEpoch(ts > 1e12 ? ts : ts * 1000);
+      parsedBirthdate = DateTime.fromMillisecondsSinceEpoch(
+        ts > 1e12 ? ts : ts * 1000,
+      );
     }
 
     // followersCount/followingCount are at data level, not nested under stats.
@@ -258,7 +269,7 @@ class VisitorProfileModel {
 
     return VisitorProfileModel(
       id: (data['id'] is num) ? (data['id'] as num).toInt() : 0,
-      displayName: rawDisplayName.isEmpty ? 'Unknown User' : rawDisplayName,
+      displayName: rawDisplayName.isEmpty ? 'Furtail Member' : rawDisplayName,
       username: rawUsername.isEmpty ? null : rawUsername,
       bio: rawBio.isEmpty ? null : rawBio,
       education: parsedEducation,

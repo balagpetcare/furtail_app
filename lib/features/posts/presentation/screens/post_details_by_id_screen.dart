@@ -48,9 +48,7 @@ class _PostDetailsByIdScreenState extends State<PostDetailsByIdScreen> {
         }
         final post = snapshot.data;
         if (post == null) {
-          return const Scaffold(
-            body: Center(child: Text('Post not found')),
-          );
+          return const Scaffold(body: Center(child: Text('Post not found')));
         }
         return PostDetailsScreen(post: post);
       },

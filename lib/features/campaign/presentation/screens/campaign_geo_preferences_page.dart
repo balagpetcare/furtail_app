@@ -11,10 +11,12 @@ class CampaignGeoPreferencesPage extends ConsumerStatefulWidget {
   const CampaignGeoPreferencesPage({super.key});
 
   @override
-  ConsumerState<CampaignGeoPreferencesPage> createState() => _CampaignGeoPreferencesPageState();
+  ConsumerState<CampaignGeoPreferencesPage> createState() =>
+      _CampaignGeoPreferencesPageState();
 }
 
-class _CampaignGeoPreferencesPageState extends ConsumerState<CampaignGeoPreferencesPage> {
+class _CampaignGeoPreferencesPageState
+    extends ConsumerState<CampaignGeoPreferencesPage> {
   final _cityCtrl = TextEditingController();
   final _districtCtrl = TextEditingController();
   final _areaCtrl = TextEditingController();
@@ -83,13 +85,19 @@ class _CampaignGeoPreferencesPageState extends ConsumerState<CampaignGeoPreferen
           const SizedBox(height: 12),
           TextField(
             controller: _areaCtrl,
-            decoration: const InputDecoration(labelText: 'Preferred service area'),
+            decoration: const InputDecoration(
+              labelText: 'Preferred service area',
+            ),
           ),
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Text('Save preferences'),
           ),
         ],

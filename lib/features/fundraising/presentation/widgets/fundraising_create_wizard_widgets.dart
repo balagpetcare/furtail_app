@@ -752,25 +752,64 @@ class FundraisingWizardBottomBar extends StatelessWidget {
     }
 
     Widget primaryButton() {
+      final enabled = !disabled && continueEnabled;
+      final disabledBackground = scheme.surfaceContainerHighest;
+      final disabledForeground = scheme.onSurfaceVariant;
+      final enabledBackground = scheme.primary;
+      final enabledForeground = Colors.white;
       return SizedBox(
         width: double.infinity,
         height: 50,
         child: FilledButton(
-          onPressed: (disabled || !continueEnabled) ? null : onContinue,
+          onPressed: enabled ? onContinue : null,
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return disabledBackground;
+              }
+              if (states.contains(WidgetState.pressed)) {
+                return Color.alphaBlend(
+                  enabledForeground.withValues(alpha: 0.10),
+                  enabledBackground,
+                );
+              }
+              return enabledBackground;
+            }),
+            foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.disabled)) {
+                return disabledForeground;
+              }
+              return enabledForeground;
+            }),
+            overlayColor: WidgetStateProperty.resolveWith<Color>((states) {
+              if (states.contains(WidgetState.pressed) ||
+                  states.contains(WidgetState.focused) ||
+                  states.contains(WidgetState.hovered)) {
+                return enabledForeground.withValues(alpha: 0.10);
+              }
+              return Colors.transparent;
+            }),
+            elevation: const WidgetStatePropertyAll<double>(0),
+            textStyle: WidgetStatePropertyAll<TextStyle?>(
+              theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
           child: busy
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      enabled ? enabledForeground : disabledForeground,
+                    ),
+                  ),
                 )
               : Text(
                   continueLabel,
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
                 ),
         ),
       );

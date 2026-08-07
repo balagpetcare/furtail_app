@@ -206,138 +206,131 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Logout clears cached user data and shared preferences',
-      (tester) async {
-        late WidgetRef capturedRef;
-        final container = ProviderContainer(
-          overrides: [
-            notificationControllerProvider.overrideWith(
-              () => _FakeNotificationController(),
-            ),
-            centralAuthApiProvider.overrideWithValue(_FakeCentralAuthApi()),
-          ],
-        );
-        addTearDown(container.dispose);
+    testWidgets('Logout clears cached user data and shared preferences', (
+      tester,
+    ) async {
+      late WidgetRef capturedRef;
+      final container = ProviderContainer(
+        overrides: [
+          notificationControllerProvider.overrideWith(
+            () => _FakeNotificationController(),
+          ),
+          centralAuthApiProvider.overrideWithValue(_FakeCentralAuthApi()),
+        ],
+      );
+      addTearDown(container.dispose);
 
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              home: Consumer(
-                builder: (context, ref, _) {
-                  capturedRef = ref;
-                  return const SizedBox();
-                },
-              ),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Consumer(
+              builder: (context, ref, _) {
+                capturedRef = ref;
+                return const SizedBox();
+              },
             ),
           ),
-        );
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
 
-        await container.read(currentUserProvider.notifier).reloadFromPrefs();
-        expect(container.read(currentUserProvider).name, 'Test User');
+      await container.read(currentUserProvider.notifier).reloadFromPrefs();
+      expect(container.read(currentUserProvider).name, 'Test User');
 
-        // Act: logout
-        await resetSessionScopedState(capturedRef);
+      // Act: logout
+      await resetSessionScopedState(capturedRef);
 
-        // Assert: user data is cleared
-        expect(container.read(currentUserProvider).name, 'Guest');
+      // Assert: user data is cleared
+      expect(container.read(currentUserProvider).name, 'Guest');
 
-        // Assert: shared preferences are cleared
-        final prefs = await SharedPreferences.getInstance();
-        expect(prefs.getString('userName'), isNull);
-        expect(prefs.getString('userEmail'), isNull);
-      },
-    );
+      // Assert: shared preferences are cleared
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('userName'), isNull);
+      expect(prefs.getString('userEmail'), isNull);
+    });
 
-    testWidgets(
-      'Logout unregisters push notifications',
-      (tester) async {
-        late WidgetRef capturedRef;
-        final container = ProviderContainer(
-          overrides: [
-            notificationControllerProvider.overrideWith(
-              () => _FakeNotificationController(),
-            ),
-            centralAuthApiProvider.overrideWithValue(_FakeCentralAuthApi()),
-          ],
-        );
-        addTearDown(container.dispose);
+    testWidgets('Logout unregisters push notifications', (tester) async {
+      late WidgetRef capturedRef;
+      final container = ProviderContainer(
+        overrides: [
+          notificationControllerProvider.overrideWith(
+            () => _FakeNotificationController(),
+          ),
+          centralAuthApiProvider.overrideWithValue(_FakeCentralAuthApi()),
+        ],
+      );
+      addTearDown(container.dispose);
 
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              home: Consumer(
-                builder: (context, ref, _) {
-                  capturedRef = ref;
-                  return const SizedBox();
-                },
-              ),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Consumer(
+              builder: (context, ref, _) {
+                capturedRef = ref;
+                return const SizedBox();
+              },
             ),
           ),
-        );
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
 
-        // Act: logout
-        await resetSessionScopedState(capturedRef);
+      // Act: logout
+      await resetSessionScopedState(capturedRef);
 
-        // Assert: push was unregistered once
-        final notifController =
-            container.read(notificationControllerProvider.notifier)
-                as _FakeNotificationController;
-        expect(notifController.unregisterCalls, 1);
-      },
-    );
+      // Assert: push was unregistered once
+      final notifController =
+          container.read(notificationControllerProvider.notifier)
+              as _FakeNotificationController;
+      expect(notifController.unregisterCalls, 1);
+    });
 
-    testWidgets(
-      'Multiple logout calls do not cause issues',
-      (tester) async {
-        late WidgetRef capturedRef;
-        final fakeApi = _FakeCentralAuthApi();
-        final container = ProviderContainer(
-          overrides: [
-            notificationControllerProvider.overrideWith(
-              () => _FakeNotificationController(),
-            ),
-            centralAuthApiProvider.overrideWithValue(fakeApi),
-          ],
-        );
-        addTearDown(container.dispose);
+    testWidgets('Multiple logout calls do not cause issues', (tester) async {
+      late WidgetRef capturedRef;
+      final fakeApi = _FakeCentralAuthApi();
+      final container = ProviderContainer(
+        overrides: [
+          notificationControllerProvider.overrideWith(
+            () => _FakeNotificationController(),
+          ),
+          centralAuthApiProvider.overrideWithValue(fakeApi),
+        ],
+      );
+      addTearDown(container.dispose);
 
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              home: Consumer(
-                builder: (context, ref, _) {
-                  capturedRef = ref;
-                  return const SizedBox();
-                },
-              ),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Consumer(
+              builder: (context, ref, _) {
+                capturedRef = ref;
+                return const SizedBox();
+              },
             ),
           ),
-        );
-        await tester.pump();
+        ),
+      );
+      await tester.pump();
 
-        final secureStorage = container.read(secureStorageServiceProvider);
-        await secureStorage.saveTokens(
-          accessToken: 'token',
-          refreshToken: 'refresh',
-        );
+      final secureStorage = container.read(secureStorageServiceProvider);
+      await secureStorage.saveTokens(
+        accessToken: 'token',
+        refreshToken: 'refresh',
+      );
 
-        // Act: call logout twice
-        await resetSessionScopedState(capturedRef);
-        await resetSessionScopedState(capturedRef);
+      // Act: call logout twice
+      await resetSessionScopedState(capturedRef);
+      await resetSessionScopedState(capturedRef);
 
-        // Assert: auth is still unauthenticated (idempotent)
-        expect(
-          container.read(authControllerProvider).status,
-          AuthStatus.unauthenticated,
-        );
-        expect(await secureStorage.accessToken, isNull);
-      },
-    );
+      // Assert: auth is still unauthenticated (idempotent)
+      expect(
+        container.read(authControllerProvider).status,
+        AuthStatus.unauthenticated,
+      );
+      expect(await secureStorage.accessToken, isNull);
+    });
   });
 }

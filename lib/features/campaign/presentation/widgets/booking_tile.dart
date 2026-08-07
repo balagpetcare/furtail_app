@@ -23,7 +23,9 @@ class BookingTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     booking.bookingRef,
-                    style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w700),
+                    style: context.appText.bodyLarge!.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 _StatusChip(status: booking.status),
@@ -31,7 +33,10 @@ class BookingTile extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             if (booking.campaignName != null)
-              Text(booking.campaignName!, style: const TextStyle(color: Colors.black54)),
+              Text(
+                booking.campaignName!,
+                style: const TextStyle(color: Colors.black54),
+              ),
             Text(
               formatCampaignDateTime(
                 booking.bookingDate,

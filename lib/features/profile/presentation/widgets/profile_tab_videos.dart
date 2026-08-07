@@ -108,8 +108,14 @@ class _ProfileTabVideosState extends State<ProfileTabVideos> {
                     title: const Text('Delete post?'),
                     content: const Text('This will remove the video post.'),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                      ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete'),
+                      ),
                     ],
                   ),
                 );
@@ -117,12 +123,16 @@ class _ProfileTabVideosState extends State<ProfileTabVideos> {
                 try {
                   await _ds.deletePost(postId: p.id);
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted ✅')));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Deleted ✅')));
                   await _load();
                 } catch (e) {
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                    SnackBar(
+                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                    ),
                   );
                 }
               },
@@ -163,10 +173,7 @@ class _ProfileTabVideosState extends State<ProfileTabVideos> {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: const [
-          Text(
-            'No videos yet.',
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
+          Text('No videos yet.', style: TextStyle(fontWeight: FontWeight.w800)),
           SizedBox(height: 6),
           Text('When you post a video or reel, it will appear here.'),
         ],
@@ -225,7 +232,9 @@ class _ProfileTabVideosState extends State<ProfileTabVideos> {
                         const SizedBox(height: 4),
                         Text(
                           'Like (${p.likeCount}) · Comment (${p.commentCount})',
-                          style: context.appText.bodySmall!.copyWith(color: Colors.black54),
+                          style: context.appText.bodySmall!.copyWith(
+                            color: Colors.black54,
+                          ),
                         ),
                       ],
                     ),

@@ -28,12 +28,16 @@ class PostDetailsHeader extends StatelessWidget {
     final feelingLabel = (post.feelingLabel ?? '').trim();
     final feelingEmoji = (post.feelingEmoji ?? '').trim();
     if (feelingLabel.isNotEmpty) {
-      parts.add('${feelingEmoji.isNotEmpty ? feelingEmoji : '😊'} $feelingLabel');
+      parts.add(
+        '${feelingEmoji.isNotEmpty ? feelingEmoji : '😊'} $feelingLabel',
+      );
     }
     final activityLabel = (post.activityLabel ?? '').trim();
     final activityEmoji = (post.activityEmoji ?? '').trim();
     if (activityLabel.isNotEmpty) {
-      parts.add('${activityEmoji.isNotEmpty ? activityEmoji : '🏆'} $activityLabel');
+      parts.add(
+        '${activityEmoji.isNotEmpty ? activityEmoji : '🏆'} $activityLabel',
+      );
     }
     final location = (post.locationTag ?? '').trim();
     if (location.isNotEmpty) parts.add('📍 $location');
@@ -79,8 +83,9 @@ class PostDetailsHeader extends StatelessWidget {
                     meta.isNotEmpty ? '${meta.join(' · ')} · $time' : time,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium!
-                        .copyWith(color: Colors.black54),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium!.copyWith(color: Colors.black54),
                   );
                 }(),
               ],

@@ -41,13 +41,13 @@ class ApiConfig {
       return _resolveLocalhost(_stripApiV1(legacyHost));
     }
 
-    // Default fallback when no dart-define is set
+    // Default fallback when no dart-define is set.
     if (kIsWeb) {
-      return 'http://localhost:7200';
+      return 'http://localhost:7300';
     } else if (Platform.isAndroid) {
-      return 'http://192.168.10.111:7200';
+      return 'http://10.0.2.2:7300';
     } else {
-      return 'http://localhost:7200';
+      return 'http://localhost:7300';
     }
   }
 

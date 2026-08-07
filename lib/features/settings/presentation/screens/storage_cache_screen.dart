@@ -79,14 +79,22 @@ class StorageCacheScreen extends ConsumerWidget {
         title: Text(t.clearCache),
         content: Text(t.clearCacheConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t.clearCache)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(t.clearCache),
+          ),
         ],
       ),
     );
     if (ok != true || !context.mounted) return;
     await ref.read(storageUsageProvider.notifier).clearCache();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.cacheCleared)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(t.cacheCleared)));
   }
 }

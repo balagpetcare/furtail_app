@@ -46,19 +46,21 @@ class CampaignHomeSection extends ConsumerWidget {
             onVisibilityChanged: (info) {
               if (info.visibleFraction >= 0.5) {
                 for (final c in state.campaigns) {
-                  ref.read(campaignPerformanceTrackerProvider).recordView(
-                        c.slug,
-                        abVariant: c.abVariant?.variant,
+                  ref
+                      .read(campaignPerformanceTrackerProvider)
+                      .recordView(c.slug, abVariant: c.abVariant?.variant);
+                  ref
+                      .read(analyticsServiceProvider)
+                      .logEvent(
+                        AnalyticsEvents.campaignBannerImpression,
+                        parameters: {
+                          AnalyticsEvents.campaignId: c.id,
+                          'campaign_slug': c.slug,
+                          AnalyticsEvents.source: 'home',
+                          if (c.abVariant != null)
+                            ...c.abVariant!.analyticsParams(),
+                        },
                       );
-                  ref.read(analyticsServiceProvider).logEvent(
-                    AnalyticsEvents.campaignBannerImpression,
-                    parameters: {
-                      AnalyticsEvents.campaignId: c.id,
-                      'campaign_slug': c.slug,
-                      AnalyticsEvents.source: 'home',
-                      if (c.abVariant != null) ...c.abVariant!.analyticsParams(),
-                    },
-                  );
                 }
               }
             },
@@ -92,19 +94,21 @@ class CampaignHomeSection extends ConsumerWidget {
     campaign, {
     required bool bookNow,
   }) {
-    ref.read(campaignPerformanceTrackerProvider).recordClick(
-          campaign.slug,
-          abVariant: campaign.abVariant?.variant,
+    ref
+        .read(campaignPerformanceTrackerProvider)
+        .recordClick(campaign.slug, abVariant: campaign.abVariant?.variant);
+    ref
+        .read(analyticsServiceProvider)
+        .logEvent(
+          AnalyticsEvents.campaignBannerClick,
+          parameters: {
+            AnalyticsEvents.campaignId: campaign.id,
+            'campaign_slug': campaign.slug,
+            'target': bookNow ? 'book' : 'detail',
+            if (campaign.abVariant != null)
+              ...campaign.abVariant!.analyticsParams(),
+          },
         );
-    ref.read(analyticsServiceProvider).logEvent(
-      AnalyticsEvents.campaignBannerClick,
-      parameters: {
-        AnalyticsEvents.campaignId: campaign.id,
-        'campaign_slug': campaign.slug,
-        'target': bookNow ? 'book' : 'detail',
-        if (campaign.abVariant != null) ...campaign.abVariant!.analyticsParams(),
-      },
-    );
 
     if (bookNow) {
       Navigator.push(

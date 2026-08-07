@@ -21,7 +21,8 @@ class CampaignBookingPage extends ConsumerStatefulWidget {
   const CampaignBookingPage({super.key, required this.slug});
 
   @override
-  ConsumerState<CampaignBookingPage> createState() => _CampaignBookingPageState();
+  ConsumerState<CampaignBookingPage> createState() =>
+      _CampaignBookingPageState();
 }
 
 class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
@@ -38,7 +39,8 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
 
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    _phoneCtrl.text = prefs.getString('userPhone') ?? prefs.getString('phone') ?? '';
+    _phoneCtrl.text =
+        prefs.getString('userPhone') ?? prefs.getString('phone') ?? '';
     _nameCtrl.text = prefs.getString('userName') ?? '';
     if (mounted) setState(() {});
   }
@@ -55,7 +57,9 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
       ref.read(campaignBookingDraftProvider(widget.slug));
 
   void _patchDraft(CampaignBookingDraft Function(CampaignBookingDraft) fn) {
-    ref.read(campaignBookingDraftProvider(widget.slug).notifier).update(fn(_draft));
+    ref
+        .read(campaignBookingDraftProvider(widget.slug).notifier)
+        .update(fn(_draft));
   }
 
   @override
@@ -111,9 +115,17 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
     }
   }
 
-  List<Widget> _buildStep(BuildContext context, PublicCampaign campaign, CampaignBookingDraft draft) {
-    final maxCats = campaign.config?.maxCatsPerBooking ?? campaign.maxPetsPerBooking;
-    final pricing = computeCampaignPriceBreakdown(campaign: campaign, catCount: draft.catCount);
+  List<Widget> _buildStep(
+    BuildContext context,
+    PublicCampaign campaign,
+    CampaignBookingDraft draft,
+  ) {
+    final maxCats =
+        campaign.config?.maxCatsPerBooking ?? campaign.maxPetsPerBooking;
+    final pricing = computeCampaignPriceBreakdown(
+      campaign: campaign,
+      catCount: draft.catCount,
+    );
 
     switch (draft.step) {
       case 0:
@@ -122,18 +134,19 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
             cityCorporationCode: draft.cityCorporationCode,
             bdAreaId: draft.bdAreaId,
             onCorporationChanged: (corp) {
-              _patchDraft((d) => d.copyWith(
-                    cityCorporationCode: corp.code,
-                    cityCorporationName: corp.displayLabel,
-                    clearBdArea: true,
-                    bookingArea: '',
-                  ));
+              _patchDraft(
+                (d) => d.copyWith(
+                  cityCorporationCode: corp.code,
+                  cityCorporationName: corp.displayLabel,
+                  clearBdArea: true,
+                  bookingArea: '',
+                ),
+              );
             },
             onAreaChanged: (area) {
-              _patchDraft((d) => d.copyWith(
-                    bdAreaId: area.id,
-                    bookingArea: area.nameEn,
-                  ));
+              _patchDraft(
+                (d) => d.copyWith(bdAreaId: area.id, bookingArea: area.nameEn),
+              );
             },
           ),
           const SizedBox(height: 24),
@@ -151,14 +164,21 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
             children: [
               IconButton(
                 onPressed: draft.catCount > 1
-                    ? () => _patchDraft((d) => d.copyWith(catCount: d.catCount - 1))
+                    ? () => _patchDraft(
+                        (d) => d.copyWith(catCount: d.catCount - 1),
+                      )
                     : null,
                 icon: const Icon(Icons.remove_circle_outline),
               ),
-              Text('${draft.catCount}', style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                '${draft.catCount}',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               IconButton(
                 onPressed: draft.catCount < maxCats
-                    ? () => _patchDraft((d) => d.copyWith(catCount: d.catCount + 1))
+                    ? () => _patchDraft(
+                        (d) => d.copyWith(catCount: d.catCount + 1),
+                      )
                     : null,
                 icon: const Icon(Icons.add_circle_outline),
               ),
@@ -203,12 +223,14 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
             onBack: () => _patchDraft((d) => d.copyWith(step: 1)),
             onNext: _phoneCtrl.text.trim().isNotEmpty
                 ? () {
-                    _patchDraft((d) => d.copyWith(
-                          phone: _phoneCtrl.text.trim(),
-                          alternatePhone: _altPhoneCtrl.text.trim(),
-                          ownerName: _nameCtrl.text.trim(),
-                          step: 3,
-                        ));
+                    _patchDraft(
+                      (d) => d.copyWith(
+                        phone: _phoneCtrl.text.trim(),
+                        alternatePhone: _altPhoneCtrl.text.trim(),
+                        ownerName: _nameCtrl.text.trim(),
+                        step: 3,
+                      ),
+                    );
                   }
                 : null,
           ),
@@ -242,7 +264,9 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
           ),
           const SizedBox(height: 8),
           OutlinedButton(
-            onPressed: _submitting ? null : () => _patchDraft((d) => d.copyWith(step: 2)),
+            onPressed: _submitting
+                ? null
+                : () => _patchDraft((d) => d.copyWith(step: 2)),
             child: const Text('Back'),
           ),
         ];
@@ -253,7 +277,10 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(label),
-      trailing: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+      trailing: Text(
+        value,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -266,23 +293,20 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
       children: [
         if (showBack)
           Expanded(
-            child: OutlinedButton(
-              onPressed: onBack,
-              child: const Text('Back'),
-            ),
+            child: OutlinedButton(onPressed: onBack, child: const Text('Back')),
           ),
         if (showBack) const SizedBox(width: 12),
         Expanded(
-          child: FilledButton(
-            onPressed: onNext,
-            child: const Text('Continue'),
-          ),
+          child: FilledButton(onPressed: onNext, child: const Text('Continue')),
         ),
       ],
     );
   }
 
-  Future<void> _submit(PublicCampaign campaign, CampaignPriceBreakdown pricing) async {
+  Future<void> _submit(
+    PublicCampaign campaign,
+    CampaignPriceBreakdown pricing,
+  ) async {
     final phone = _phoneCtrl.text.trim();
     if (!_draft.hasLocationSelection) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -291,21 +315,23 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
       return;
     }
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter your mobile number')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter your mobile number')));
       return;
     }
 
     setState(() => _submitting = true);
-    ref.read(analyticsServiceProvider).logEvent(
-      AnalyticsEvents.campaignBookingStarted,
-      parameters: {
-        'campaign_slug': widget.slug,
-        'cat_count': _draft.catCount,
-        'booking_mode': 'zone_interest',
-      },
-    );
+    ref
+        .read(analyticsServiceProvider)
+        .logEvent(
+          AnalyticsEvents.campaignBookingStarted,
+          parameters: {
+            'campaign_slug': widget.slug,
+            'cat_count': _draft.catCount,
+            'booking_mode': 'zone_interest',
+          },
+        );
 
     final draft = _draft.copyWith(
       phone: phone,
@@ -315,18 +341,22 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
     );
 
     try {
-      final result = await ref.read(campaignCheckoutProvider.notifier).submit(draft);
+      final result = await ref
+          .read(campaignCheckoutProvider.notifier)
+          .submit(draft);
       if (!mounted) return;
 
       if (result.requiresPayment && result.paymentUrl != null) {
-        ref.read(analyticsServiceProvider).logEvent(
-          AnalyticsEvents.campaignPaymentStarted,
-          parameters: {
-            'campaign_slug': widget.slug,
-            'checkout_id': result.checkoutId,
-            AnalyticsEvents.amount: result.amount,
-          },
-        );
+        ref
+            .read(analyticsServiceProvider)
+            .logEvent(
+              AnalyticsEvents.campaignPaymentStarted,
+              parameters: {
+                'campaign_slug': widget.slug,
+                'checkout_id': result.checkoutId,
+                AnalyticsEvents.amount: result.amount,
+              },
+            );
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -338,31 +368,37 @@ class _CampaignBookingPageState extends ConsumerState<CampaignBookingPage> {
           ),
         );
       } else {
-        await _goSuccess(result.bookingRef ?? '', result.verificationCode, pricing.total);
+        await _goSuccess(
+          result.bookingRef ?? '',
+          result.verificationCode,
+          pricing.total,
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Booking failed: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Booking failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
-  Future<void> _goSuccess(String bookingRef, String? verificationCode, num revenue) async {
-    ref.read(campaignPerformanceTrackerProvider).recordBooking(
-          widget.slug,
-          revenue: revenue,
+  Future<void> _goSuccess(
+    String bookingRef,
+    String? verificationCode,
+    num revenue,
+  ) async {
+    ref
+        .read(campaignPerformanceTrackerProvider)
+        .recordBooking(widget.slug, revenue: revenue);
+    ref
+        .read(analyticsServiceProvider)
+        .logEvent(
+          AnalyticsEvents.campaignBookingCompleted,
+          parameters: {'campaign_slug': widget.slug, 'booking_ref': bookingRef},
         );
-    ref.read(analyticsServiceProvider).logEvent(
-      AnalyticsEvents.campaignBookingCompleted,
-      parameters: {
-        'campaign_slug': widget.slug,
-        'booking_ref': bookingRef,
-      },
-    );
     if (!mounted) return;
     await Navigator.pushReplacement(
       context,

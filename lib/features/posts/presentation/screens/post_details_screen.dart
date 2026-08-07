@@ -125,9 +125,9 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
     try {
       await _ds.deletePost(postId: _post.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted ✅')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Post deleted ✅')));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -211,8 +211,11 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
             onPressed: () {
               final fundraisingId = _post.fundraisingCampaignId;
               if (fundraisingId != null) {
-                ShareService.share(context,
-                    type: 'fundraising', id: fundraisingId);
+                ShareService.share(
+                  context,
+                  type: 'fundraising',
+                  id: fundraisingId,
+                );
               } else {
                 ShareService.share(context, type: 'post', id: _post.id);
               }
@@ -221,10 +224,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: Colors.grey.shade200,
-          ),
+          child: Container(height: 1, color: Colors.grey.shade200),
         ),
       ),
       body: Column(
@@ -332,10 +332,7 @@ class _CaptionSection extends StatelessWidget {
       child: _ReadMoreText(
         text: cleanPostBodyForDisplay(post.caption!),
         trimLines: 8,
-        style: Theme.of(context)
-            .textTheme
-            .bodyLarge
-            ?.copyWith(height: 1.4),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.4),
       ),
     );
   }
@@ -361,31 +358,25 @@ class _CommentComposerBar extends StatelessWidget {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
         top: false,
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade200),
-            ),
+            border: Border(top: BorderSide(color: Colors.grey.shade200)),
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 16,
                 backgroundColor: const Color(0xFFEFEFEF),
-                backgroundImage:
-                    (myAvatarUrl ?? '').isEmpty
-                        ? null
-                        : NetworkImage(myAvatarUrl!),
+                backgroundImage: (myAvatarUrl ?? '').isEmpty
+                    ? null
+                    : NetworkImage(myAvatarUrl!),
                 child: (myAvatarUrl ?? '').isEmpty
-                    ? const Icon(Icons.person, size: 18,
-                        color: Colors.black45)
+                    ? const Icon(Icons.person, size: 18, color: Colors.black45)
                     : null,
               ),
               const SizedBox(width: 10),
@@ -400,7 +391,9 @@ class _CommentComposerBar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(999),
@@ -440,11 +433,7 @@ class _ReadMoreText extends StatefulWidget {
   final int trimLines;
   final TextStyle? style;
 
-  const _ReadMoreText({
-    required this.text,
-    this.trimLines = 3,
-    this.style,
-  });
+  const _ReadMoreText({required this.text, this.trimLines = 3, this.style});
 
   @override
   State<_ReadMoreText> createState() => _ReadMoreTextState();

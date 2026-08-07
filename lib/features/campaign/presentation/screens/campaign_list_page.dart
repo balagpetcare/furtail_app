@@ -22,7 +22,8 @@ class CampaignListPage extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () => ref.read(homeCampaignsProvider.notifier).refresh(),
         child: async.when(
-          loading: () => const CampaignLoadingView(message: 'Loading campaigns…'),
+          loading: () =>
+              const CampaignLoadingView(message: 'Loading campaigns…'),
           error: (e, _) => CampaignErrorView(
             message: 'Could not load campaigns.',
             onRetry: () => ref.read(homeCampaignsProvider.notifier).refresh(),
@@ -57,7 +58,11 @@ class CampaignListPage extends ConsumerWidget {
     );
   }
 
-  Widget _grid(BuildContext context, List<PublicCampaign> campaigns, bool isTablet) {
+  Widget _grid(
+    BuildContext context,
+    List<PublicCampaign> campaigns,
+    bool isTablet,
+  ) {
     final crossAxisCount = isTablet ? 3 : 1;
     if (crossAxisCount == 1) {
       return Column(
@@ -67,7 +72,9 @@ class CampaignListPage extends ConsumerWidget {
               campaign: c,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => CampaignDetailsPage(slug: c.slug)),
+                MaterialPageRoute(
+                  builder: (_) => CampaignDetailsPage(slug: c.slug),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -92,7 +99,9 @@ class CampaignListPage extends ConsumerWidget {
           campaign: c,
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => CampaignDetailsPage(slug: c.slug)),
+            MaterialPageRoute(
+              builder: (_) => CampaignDetailsPage(slug: c.slug),
+            ),
           ),
         );
       },

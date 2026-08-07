@@ -71,25 +71,26 @@ class NotificationPreferences {
   }
 
   Map<String, dynamic> toJson() => {
-        'pushEnabled': pushEnabled,
-        'campaignReminders': campaignReminders,
-        'vaccineReminders': vaccineReminders,
-        'donationUpdates': donationUpdates,
-        'communityActivity': communityActivity,
-        'comments': comments,
-        'likes': likes,
-        'follows': follows,
-        'mentions': mentions,
-        'messages': messages,
-        'announcements': announcements,
-        'emergency': emergency,
-        'marketing': marketing,
-        'allowEmail': allowEmail,
-        'allowSms': allowSms,
-      };
+    'pushEnabled': pushEnabled,
+    'campaignReminders': campaignReminders,
+    'vaccineReminders': vaccineReminders,
+    'donationUpdates': donationUpdates,
+    'communityActivity': communityActivity,
+    'comments': comments,
+    'likes': likes,
+    'follows': follows,
+    'mentions': mentions,
+    'messages': messages,
+    'announcements': announcements,
+    'emergency': emergency,
+    'marketing': marketing,
+    'allowEmail': allowEmail,
+    'allowSms': allowSms,
+  };
 
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) {
-    bool b(String key, {bool fallback = true}) => json[key] == false ? false : fallback;
+    bool b(String key, {bool fallback = true}) =>
+        json[key] == false ? false : fallback;
     return NotificationPreferences(
       pushEnabled: b('pushEnabled'),
       campaignReminders: b('campaignReminders'),
@@ -111,7 +112,8 @@ class NotificationPreferences {
 
   /// Merge server notification settings when available.
   factory NotificationPreferences.fromServer(Map<String, dynamic>? server) {
-    if (server == null || server.isEmpty) return const NotificationPreferences();
+    if (server == null || server.isEmpty)
+      return const NotificationPreferences();
     return NotificationPreferences(
       allowEmail: server['allowEmail'] != false,
       allowSms: server['allowSms'] == true,

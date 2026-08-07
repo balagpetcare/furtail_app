@@ -40,40 +40,64 @@ final fundraisingDonationHistoryProvider =
     });
 
 // ---------------- Feed Query State ----------------
+enum FundraisingFeedView { publicFeed, myFundraisers }
+
 enum FundraisingSort {
-  newCampaigns('NEW'),
-  topDonated('TOP_DONATED'),
-  endingSoon('ENDING_SOON');
+  newest('NEWEST'),
+  oldest('OLDEST'),
+  endingSoon('ENDING_SOON'),
+  mostFunded('MOST_FUNDED');
 
   final String apiValue;
   const FundraisingSort(this.apiValue);
 }
 
 class FundraisingFeedQuery {
+  final FundraisingFeedView view;
   final bool? verified;
   final String? category;
+  final String? beneficiaryType;
+  final String? urgency;
+  final String? status;
   final String? location;
   final FundraisingSort sort;
 
   const FundraisingFeedQuery({
+    this.view = FundraisingFeedView.publicFeed,
     this.verified,
     this.category,
+    this.beneficiaryType,
+    this.urgency,
+    this.status,
     this.location,
     this.sort = FundraisingSort.endingSoon,
   });
 
   FundraisingFeedQuery copyWith({
+    FundraisingFeedView? view,
     bool? verified,
     bool clearVerified = false,
     String? category,
     bool clearCategory = false,
+    String? beneficiaryType,
+    bool clearBeneficiaryType = false,
+    String? urgency,
+    bool clearUrgency = false,
+    String? status,
+    bool clearStatus = false,
     String? location,
     bool clearLocation = false,
     FundraisingSort? sort,
   }) {
     return FundraisingFeedQuery(
+      view: view ?? this.view,
       verified: clearVerified ? null : (verified ?? this.verified),
       category: clearCategory ? null : (category ?? this.category),
+      beneficiaryType: clearBeneficiaryType
+          ? null
+          : (beneficiaryType ?? this.beneficiaryType),
+      urgency: clearUrgency ? null : (urgency ?? this.urgency),
+      status: clearStatus ? null : (status ?? this.status),
       location: clearLocation ? null : (location ?? this.location),
       sort: sort ?? this.sort,
     );
@@ -84,15 +108,26 @@ class FundraisingFeedQueryNotifier extends Notifier<FundraisingFeedQuery> {
   @override
   FundraisingFeedQuery build() => const FundraisingFeedQuery();
 
+  void setView(FundraisingFeedView view) => state = state.copyWith(view: view);
   void setVerified(bool? v) =>
       state = state.copyWith(verified: v, clearVerified: v == null);
   void setCategory(String? v) =>
       state = state.copyWith(category: v, clearCategory: v == null);
+  void setBeneficiaryType(String? v) => state = state.copyWith(
+    beneficiaryType: v,
+    clearBeneficiaryType: v == null,
+  );
+  void setUrgency(String? v) =>
+      state = state.copyWith(urgency: v, clearUrgency: v == null);
+  void setStatus(String? v) =>
+      state = state.copyWith(status: v, clearStatus: v == null);
   void setLocation(String? v) =>
       state = state.copyWith(location: v, clearLocation: v == null);
   void setSort(FundraisingSort v) => state = state.copyWith(sort: v);
 
-  void clearAll() => state = const FundraisingFeedQuery();
+  void clearAll({bool preserveView = true}) => state = FundraisingFeedQuery(
+    view: preserveView ? state.view : FundraisingFeedView.publicFeed,
+  );
 }
 
 final fundraisingFeedQueryProvider =
@@ -104,10 +139,26 @@ final fundraisingFeedProvider =
     FutureProvider.autoDispose<List<FundraisingCampaign>>((ref) async {
       final repo = ref.read(fundraisingRepositoryProvider);
       final q = ref.watch(fundraisingFeedQueryProvider);
+      if (q.view == FundraisingFeedView.myFundraisers) {
+        final page = await repo.fetchMyCampaignsPage(
+          limit: 50,
+          verified: q.verified,
+          category: q.category,
+          beneficiaryType: q.beneficiaryType,
+          urgency: q.urgency,
+          status: q.status,
+          location: q.location,
+          sort: q.sort.apiValue,
+        );
+        return page.items;
+      }
       return repo.fetchFeed(
         limit: 50,
         verified: q.verified,
         category: q.category,
+        beneficiaryType: q.beneficiaryType,
+        urgency: q.urgency,
+        status: q.status,
         location: q.location,
         sort: q.sort.apiValue,
       );

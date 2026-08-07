@@ -12,10 +12,7 @@ class ImageEditResult {
   final List<File> files;
   final int currentIndex;
 
-  const ImageEditResult({
-    required this.files,
-    required this.currentIndex,
-  });
+  const ImageEditResult({required this.files, required this.currentIndex});
 
   File get file => files[currentIndex];
 }
@@ -165,18 +162,22 @@ class _EditorSnapshot {
   }) {
     return _EditorSnapshot(
       baseFile: baseFile ?? this.baseFile,
-      selectedAspectRatioId: selectedAspectRatioId ?? this.selectedAspectRatioId,
+      selectedAspectRatioId:
+          selectedAspectRatioId ?? this.selectedAspectRatioId,
       filterPresetId: filterPresetId ?? this.filterPresetId,
       brightness: brightness ?? this.brightness,
       contrast: contrast ?? this.contrast,
       saturation: saturation ?? this.saturation,
-      overlays: overlays ??
-          this.overlays.map((item) => item.copyWith()).toList(),
-      strokes: strokes ??
+      overlays:
+          overlays ?? this.overlays.map((item) => item.copyWith()).toList(),
+      strokes:
+          strokes ??
           this.strokes
-              .map((stroke) => stroke.copyWith(
-                    points: List<_StrokePoint>.from(stroke.points),
-                  ))
+              .map(
+                (stroke) => stroke.copyWith(
+                  points: List<_StrokePoint>.from(stroke.points),
+                ),
+              )
               .toList(),
     );
   }
@@ -192,11 +193,34 @@ const _aspectRatios = <_AspectRatioOption>[
 
 const _filterPresets = <_FilterPreset>[
   _FilterPreset(id: 'original', label: 'Original'),
-  _FilterPreset(id: 'bright', label: 'Bright', brightness: 0.10, contrast: 1.05, saturation: 1.02),
-  _FilterPreset(id: 'warm', label: 'Warm', brightness: 0.04, saturation: 1.08, warmth: 0.14),
-  _FilterPreset(id: 'cool', label: 'Cool', contrast: 1.02, saturation: 0.96, warmth: -0.12),
+  _FilterPreset(
+    id: 'bright',
+    label: 'Bright',
+    brightness: 0.10,
+    contrast: 1.05,
+    saturation: 1.02,
+  ),
+  _FilterPreset(
+    id: 'warm',
+    label: 'Warm',
+    brightness: 0.04,
+    saturation: 1.08,
+    warmth: 0.14,
+  ),
+  _FilterPreset(
+    id: 'cool',
+    label: 'Cool',
+    contrast: 1.02,
+    saturation: 0.96,
+    warmth: -0.12,
+  ),
   _FilterPreset(id: 'bw', label: 'B & W', saturation: 0, contrast: 1.06),
-  _FilterPreset(id: 'high_contrast', label: 'High Contrast', contrast: 1.22, saturation: 1.06),
+  _FilterPreset(
+    id: 'high_contrast',
+    label: 'High Contrast',
+    contrast: 1.22,
+    saturation: 1.06,
+  ),
 ];
 
 const _commonColors = <Color>[
@@ -236,7 +260,8 @@ class ImageEditorScreen extends StatefulWidget {
 class _ImageEditorScreenState extends State<ImageEditorScreen> {
   final GlobalKey _compositionKey = GlobalKey();
   final TextEditingController _textController = TextEditingController();
-  final TransformationController _previewController = TransformationController();
+  final TransformationController _previewController =
+      TransformationController();
 
   late List<_EditorSnapshot> _images;
   late List<List<_EditorSnapshot>> _history;
@@ -287,14 +312,14 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
       _historyIndex[_activeImageIndex] < _history[_activeImageIndex].length - 1;
 
   _FilterPreset get _currentPreset => _filterPresets.firstWhere(
-        (preset) => preset.id == _state.filterPresetId,
-        orElse: () => _filterPresets.first,
-      );
+    (preset) => preset.id == _state.filterPresetId,
+    orElse: () => _filterPresets.first,
+  );
 
   _AspectRatioOption get _currentAspect => _aspectRatios.firstWhere(
-        (aspect) => aspect.id == _state.selectedAspectRatioId,
-        orElse: () => _aspectRatios.first,
-      );
+    (aspect) => aspect.id == _state.selectedAspectRatioId,
+    orElse: () => _aspectRatios.first,
+  );
 
   _OverlayItem? get _selectedOverlay {
     final id = _selectedOverlayId;
@@ -325,7 +350,8 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
   Future<File> _exportCompositionToFile(String suffix) async {
     await Future<void>.delayed(const Duration(milliseconds: 16));
     final boundary =
-        _compositionKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+        _compositionKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
     if (boundary == null) return _state.baseFile;
     final width = boundary.size.width <= 0 ? 1.0 : boundary.size.width;
     final image = await boundary.toImage(
@@ -385,10 +411,16 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
       final path = sourceFile.path;
 
       // Validate source before handing to native cropper.
-      if (path.isEmpty || !sourceFile.existsSync() || sourceFile.lengthSync() == 0) {
+      if (path.isEmpty ||
+          !sourceFile.existsSync() ||
+          sourceFile.lengthSync() == 0) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image not ready for crop. Please wait or re-select.')),
+            const SnackBar(
+              content: Text(
+                'Image not ready for crop. Please wait or re-select.',
+              ),
+            ),
           );
         }
         return;
@@ -436,7 +468,9 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Crop failed: ${e.toString().split('\n').first}')),
+          SnackBar(
+            content: Text('Crop failed: ${e.toString().split('\n').first}'),
+          ),
         );
       }
     } finally {
@@ -450,9 +484,11 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
     _commitState(
       _state.copyWith(
         overlays: _state.overlays
-            .map((item) => item.id == selected.id
-                ? item.copyWith(rotation: item.rotation + 0.35)
-                : item.copyWith())
+            .map(
+              (item) => item.id == selected.id
+                  ? item.copyWith(rotation: item.rotation + 0.35)
+                  : item.copyWith(),
+            )
             .toList(),
       ),
     );
@@ -462,7 +498,9 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
     if (_processing) return;
     if (_state.baseFile.path.isEmpty || !_state.baseFile.existsSync()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image file not found. Please select an image again.')),
+        const SnackBar(
+          content: Text('Image file not found. Please select an image again.'),
+        ),
       );
       return;
     }
@@ -492,7 +530,9 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
     _selectedOverlayId = null;
     _commitState(
       _state.copyWith(
-        overlays: _state.overlays.where((item) => item.id != selected.id).toList(),
+        overlays: _state.overlays
+            .where((item) => item.id != selected.id)
+            .toList(),
       ),
     );
   }
@@ -560,7 +600,14 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Add text', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Add text',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _textController,
@@ -587,7 +634,8 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                       itemBuilder: (context, index) {
                         final color = _commonColors[index];
                         return GestureDetector(
-                          onTap: () => setModalState(() => selectedColor = color),
+                          onTap: () =>
+                              setModalState(() => selectedColor = color),
                           child: Container(
                             width: 32,
                             height: 32,
@@ -595,7 +643,9 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                               color: color,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: color == selectedColor ? Colors.white : Colors.white24,
+                                color: color == selectedColor
+                                    ? Colors.white
+                                    : Colors.white24,
                                 width: color == selectedColor ? 3 : 1,
                               ),
                             ),
@@ -611,7 +661,10 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                       onPressed: () {
                         final text = _textController.text.trim();
                         if (text.isEmpty) return;
-                        Navigator.pop(ctx, {'text': text, 'color': selectedColor});
+                        Navigator.pop(ctx, {
+                          'text': text,
+                          'color': selectedColor,
+                        });
                       },
                       child: const Text('Add'),
                     ),
@@ -674,11 +727,27 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
   }
 
   List<double> _identity() => <double>[
-        1, 0, 0, 0, 0,
-        0, 1, 0, 0, 0,
-        0, 0, 1, 0, 0,
-        0, 0, 0, 1, 0,
-      ];
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
 
   List<double> _multiply(List<double> a, List<double> b) {
     final out = List<double>.filled(20, 0);
@@ -696,19 +765,51 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
   }
 
   List<double> _brightnessMatrix(double value) => <double>[
-        1, 0, 0, 0, value * 255,
-        0, 1, 0, 0, value * 255,
-        0, 0, 1, 0, value * 255,
-        0, 0, 0, 1, 0,
-      ];
+    1,
+    0,
+    0,
+    0,
+    value * 255,
+    0,
+    1,
+    0,
+    0,
+    value * 255,
+    0,
+    0,
+    1,
+    0,
+    value * 255,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
 
   List<double> _contrastMatrix(double value) {
     final t = (1 - value) * 128;
     return <double>[
-      value, 0, 0, 0, t,
-      0, value, 0, 0, t,
-      0, 0, value, 0, t,
-      0, 0, 0, 1, 0,
+      value,
+      0,
+      0,
+      0,
+      t,
+      0,
+      value,
+      0,
+      0,
+      t,
+      0,
+      0,
+      value,
+      0,
+      t,
+      0,
+      0,
+      0,
+      1,
+      0,
     ];
   }
 
@@ -721,26 +822,67 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
     final g = inv * gw;
     final b = inv * bw;
     return <double>[
-      r + value, g, b, 0, 0,
-      r, g + value, b, 0, 0,
-      r, g, b + value, 0, 0,
-      0, 0, 0, 1, 0,
+      r + value,
+      g,
+      b,
+      0,
+      0,
+      r,
+      g + value,
+      b,
+      0,
+      0,
+      r,
+      g,
+      b + value,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
     ];
   }
 
   List<double> _warmMatrix(double value) => <double>[
-        1 + (value * 0.18), 0, 0, 0, 0,
-        0, 1 + (value * 0.05), 0, 0, 0,
-        0, 0, 1 - (value * 0.18), 0, 0,
-        0, 0, 0, 1, 0,
-      ];
+    1 + (value * 0.18),
+    0,
+    0,
+    0,
+    0,
+    0,
+    1 + (value * 0.05),
+    0,
+    0,
+    0,
+    0,
+    0,
+    1 - (value * 0.18),
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
 
   List<double> _colorMatrix() {
     final preset = _currentPreset;
     var matrix = _identity();
-    matrix = _multiply(matrix, _brightnessMatrix(preset.brightness + _state.brightness));
-    matrix = _multiply(matrix, _contrastMatrix(preset.contrast * _state.contrast));
-    matrix = _multiply(matrix, _saturationMatrix(preset.saturation * _state.saturation));
+    matrix = _multiply(
+      matrix,
+      _brightnessMatrix(preset.brightness + _state.brightness),
+    );
+    matrix = _multiply(
+      matrix,
+      _contrastMatrix(preset.contrast * _state.contrast),
+    );
+    matrix = _multiply(
+      matrix,
+      _saturationMatrix(preset.saturation * _state.saturation),
+    );
     if (preset.warmth != 0) {
       matrix = _multiply(matrix, _warmMatrix(preset.warmth));
     }
@@ -749,7 +891,8 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
 
   Widget _overlayWidget(_OverlayItem item, double width, double height) {
     final selected = item.id == _selectedOverlayId;
-    final baseSize = (width < height ? width : height) *
+    final baseSize =
+        (width < height ? width : height) *
         (item.kind == _OverlayKind.text ? 0.11 : 0.14);
     final child = item.kind == _OverlayKind.text
         ? Text(
@@ -763,19 +906,19 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
             ),
           )
         : item.kind == _OverlayKind.emoji
-            ? Text(
-                item.text ?? '',
-                style: TextStyle(
-                  fontSize: baseSize,
-                  shadows: const [Shadow(color: Colors.black38, blurRadius: 8)],
-                ),
-              )
-            : Icon(
-                item.icon,
-                size: baseSize,
-                color: item.color,
-                shadows: const [Shadow(color: Colors.black38, blurRadius: 8)],
-              );
+        ? Text(
+            item.text ?? '',
+            style: TextStyle(
+              fontSize: baseSize,
+              shadows: const [Shadow(color: Colors.black38, blurRadius: 8)],
+            ),
+          )
+        : Icon(
+            item.icon,
+            size: baseSize,
+            color: item.color,
+            shadows: const [Shadow(color: Colors.black38, blurRadius: 8)],
+          );
 
     return Positioned(
       left: item.x * width,
@@ -788,14 +931,19 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
           _replaceStateWithoutHistory(
             _state.copyWith(
               overlays: _state.overlays
-                  .map((overlay) => overlay.id == item.id
-                      ? overlay.copyWith(
-                          x: (overlay.x + dx).clamp(0.06, 0.94),
-                          y: (overlay.y + dy).clamp(0.06, 0.94),
-                          scale: (overlay.scale * details.scale).clamp(0.5, 3.5),
-                          rotation: overlay.rotation + details.rotation,
-                        )
-                      : overlay.copyWith())
+                  .map(
+                    (overlay) => overlay.id == item.id
+                        ? overlay.copyWith(
+                            x: (overlay.x + dx).clamp(0.06, 0.94),
+                            y: (overlay.y + dy).clamp(0.06, 0.94),
+                            scale: (overlay.scale * details.scale).clamp(
+                              0.5,
+                              3.5,
+                            ),
+                            rotation: overlay.rotation + details.rotation,
+                          )
+                        : overlay.copyWith(),
+                  )
                   .toList(),
             ),
           );
@@ -833,7 +981,11 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                             color: Colors.redAccent,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -869,7 +1021,11 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                 size: Size.infinite,
               ),
               ..._state.overlays.map(
-                (item) => _overlayWidget(item, constraints.maxWidth, constraints.maxHeight),
+                (item) => _overlayWidget(
+                  item,
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                ),
               ),
               if (_activeTab == _EditorTab.draw)
                 GestureDetector(
@@ -889,9 +1045,16 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                     if (strokes.isEmpty) return;
                     final last = strokes.removeLast();
                     strokes.add(
-                      last.copyWith(points: [...last.points, _StrokePoint(details.localPosition)]),
+                      last.copyWith(
+                        points: [
+                          ...last.points,
+                          _StrokePoint(details.localPosition),
+                        ],
+                      ),
                     );
-                    _replaceStateWithoutHistory(_state.copyWith(strokes: strokes));
+                    _replaceStateWithoutHistory(
+                      _state.copyWith(strokes: strokes),
+                    );
                   },
                   onPanEnd: (_) => _commitState(_state),
                 ),
@@ -919,19 +1082,26 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: selected ? Theme.of(context).colorScheme.primary : Colors.white24,
+                  color: selected
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.white24,
                   width: selected ? 2 : 1,
                 ),
               ),
               clipBehavior: Clip.antiAlias,
-              child: Builder(builder: (ctx) {
-                final f = _images[index].baseFile;
-                if (f.path.isNotEmpty && f.existsSync()) {
-                  return Image.file(f, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const _ThumbErrorBox());
-                }
-                return const _ThumbErrorBox();
-              }),
+              child: Builder(
+                builder: (ctx) {
+                  final f = _images[index].baseFile;
+                  if (f.path.isNotEmpty && f.existsSync()) {
+                    return Image.file(
+                      f,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const _ThumbErrorBox(),
+                    );
+                  }
+                  return const _ThumbErrorBox();
+                },
+              ),
             ),
           );
         },
@@ -955,10 +1125,16 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
               return ChoiceChip(
                 selected: selected,
                 label: Text(item.label),
-                onSelected: (_) => _commitState(_state.copyWith(selectedAspectRatioId: item.id)),
+                onSelected: (_) => _commitState(
+                  _state.copyWith(selectedAspectRatioId: item.id),
+                ),
                 backgroundColor: Colors.white10,
-                selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
-                labelStyle: TextStyle(color: selected ? Colors.white : Colors.white70),
+                selectedColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.24),
+                labelStyle: TextStyle(
+                  color: selected ? Colors.white : Colors.white70,
+                ),
               );
             },
           ),
@@ -967,8 +1143,16 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _ToolButton(icon: Icons.crop, label: 'Crop', onTap: _processing ? null : _cropImage),
-            _ToolButton(icon: Icons.rotate_90_degrees_ccw, label: 'Rotate', onTap: _rotateSelectedOverlay),
+            _ToolButton(
+              icon: Icons.crop,
+              label: 'Crop',
+              onTap: _processing ? null : _cropImage,
+            ),
+            _ToolButton(
+              icon: Icons.rotate_90_degrees_ccw,
+              label: 'Rotate',
+              onTap: _rotateSelectedOverlay,
+            ),
             _ToolButton(icon: Icons.flip, label: 'Flip', onTap: _flipImage),
             _ToolButton(icon: Icons.refresh, label: 'Reset', onTap: _reset),
           ],
@@ -1067,7 +1251,10 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(_emojiStickers[index], style: const TextStyle(fontSize: 22)),
+                child: Text(
+                  _emojiStickers[index],
+                  style: const TextStyle(fontSize: 22),
+                ),
               ),
             ),
           ),
@@ -1114,7 +1301,9 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: selected
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.24)
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.24)
                     : Colors.white10,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -1191,7 +1380,11 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 20, color: selected ? Colors.white : Colors.white38),
+              Icon(
+                icon,
+                size: 20,
+                color: selected ? Colors.white : Colors.white38,
+              ),
               const SizedBox(height: 4),
               Text(
                 label,
@@ -1251,11 +1444,23 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
         title: const Text('Edit photo'),
         centerTitle: true,
         actions: [
-          IconButton(onPressed: _canUndo ? _undo : null, icon: const Icon(Icons.undo_rounded)),
-          IconButton(onPressed: _canRedo ? _redo : null, icon: const Icon(Icons.redo_rounded)),
+          IconButton(
+            onPressed: _canUndo ? _undo : null,
+            icon: const Icon(Icons.undo_rounded),
+          ),
+          IconButton(
+            onPressed: _canRedo ? _redo : null,
+            icon: const Icon(Icons.redo_rounded),
+          ),
           TextButton(
             onPressed: _processing ? null : _done,
-            child: const Text('Done', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            child: const Text(
+              'Done',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -1283,7 +1488,9 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                 if (_processing)
                   Container(
                     color: Colors.black54,
-                    child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
                   ),
               ],
             ),
@@ -1306,7 +1513,11 @@ class _ImageEditorScreenState extends State<ImageEditorScreen> {
                       _tabButton(_EditorTab.crop, Icons.crop, 'Crop'),
                       _tabButton(_EditorTab.draw, Icons.brush_outlined, 'Draw'),
                       _tabButton(_EditorTab.text, Icons.text_fields, 'Text'),
-                      _tabButton(_EditorTab.stickers, Icons.emoji_emotions_outlined, 'Stickers'),
+                      _tabButton(
+                        _EditorTab.stickers,
+                        Icons.emoji_emotions_outlined,
+                        'Stickers',
+                      ),
                       _tabButton(_EditorTab.filters, Icons.filter, 'Filters'),
                       _tabButton(_EditorTab.adjust, Icons.tune, 'Adjust'),
                     ],
@@ -1337,7 +1548,8 @@ class _StrokePainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..blendMode = stroke.erase ? BlendMode.clear : BlendMode.srcOver;
-      final path = Path()..moveTo(stroke.points.first.point.dx, stroke.points.first.point.dy);
+      final path = Path()
+        ..moveTo(stroke.points.first.point.dx, stroke.points.first.point.dy);
       for (final point in stroke.points.skip(1)) {
         path.lineTo(point.point.dx, point.point.dy);
       }
@@ -1432,7 +1644,11 @@ class _ThumbErrorBox extends StatelessWidget {
   const _ThumbErrorBox();
   @override
   Widget build(BuildContext context) => Container(
-        color: Colors.white10,
-        child: const Icon(Icons.broken_image_outlined, color: Colors.white30, size: 20),
-      );
+    color: Colors.white10,
+    child: const Icon(
+      Icons.broken_image_outlined,
+      color: Colors.white30,
+      size: 20,
+    ),
+  );
 }

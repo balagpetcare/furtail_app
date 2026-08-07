@@ -124,7 +124,10 @@ class MediaStorageSettingsScreen extends ConsumerWidget {
                     onChanged: (v) => ref
                         .read(mediaUploadSettingsProvider.notifier)
                         .patch((s) => s.copyWith(compressVideos: v)),
-                    secondary: Icon(Icons.video_settings_outlined, color: cs.primary),
+                    secondary: Icon(
+                      Icons.video_settings_outlined,
+                      color: cs.primary,
+                    ),
                     title: Text(t.compressVideos),
                     subtitle: Text(t.compressVideosDesc),
                   ),
@@ -218,8 +221,14 @@ class MediaStorageSettingsScreen extends ConsumerWidget {
         title: Text(t.clearMediaCache),
         content: Text(t.clearCacheConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t.clearCache)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(t.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(t.clearCache),
+          ),
         ],
       ),
     );

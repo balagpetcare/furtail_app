@@ -22,7 +22,8 @@ class CampaignPaymentPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<CampaignPaymentPage> createState() => _CampaignPaymentPageState();
+  ConsumerState<CampaignPaymentPage> createState() =>
+      _CampaignPaymentPageState();
 }
 
 class _CampaignPaymentPageState extends ConsumerState<CampaignPaymentPage> {
@@ -60,17 +61,18 @@ class _CampaignPaymentPageState extends ConsumerState<CampaignPaymentPage> {
           .pollStatus(widget.checkoutId);
       if (!mounted) return;
       if (status.isPaid) {
-        ref.read(analyticsServiceProvider).logEvent(
-          AnalyticsEvents.campaignPaymentCompleted,
-          parameters: {
-            'campaign_slug': widget.slug,
-            'checkout_id': widget.checkoutId,
-          },
-        );
-        ref.read(campaignPerformanceTrackerProvider).recordPayment(
-              widget.slug,
-              amount: status.amount,
+        ref
+            .read(analyticsServiceProvider)
+            .logEvent(
+              AnalyticsEvents.campaignPaymentCompleted,
+              parameters: {
+                'campaign_slug': widget.slug,
+                'checkout_id': widget.checkoutId,
+              },
             );
+        ref
+            .read(campaignPerformanceTrackerProvider)
+            .recordPayment(widget.slug, amount: status.amount);
         await Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -85,7 +87,9 @@ class _CampaignPaymentPageState extends ConsumerState<CampaignPaymentPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment status check failed. Tap refresh.')),
+          const SnackBar(
+            content: Text('Payment status check failed. Tap refresh.'),
+          ),
         );
       }
     } finally {
@@ -94,13 +98,18 @@ class _CampaignPaymentPageState extends ConsumerState<CampaignPaymentPage> {
   }
 
   void _onFailed() {
-    ref.read(analyticsServiceProvider).logEvent(
-      AnalyticsEvents.campaignPaymentFailed,
-      parameters: {'campaign_slug': widget.slug, 'checkout_id': widget.checkoutId},
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Payment was not completed.')),
-    );
+    ref
+        .read(analyticsServiceProvider)
+        .logEvent(
+          AnalyticsEvents.campaignPaymentFailed,
+          parameters: {
+            'campaign_slug': widget.slug,
+            'checkout_id': widget.checkoutId,
+          },
+        );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Payment was not completed.')));
   }
 
   Future<void> _manualCheck() async {
@@ -115,9 +124,9 @@ class _CampaignPaymentPageState extends ConsumerState<CampaignPaymentPage> {
       } else if (status.isFailed) {
         _onFailed();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Status: ${status.status}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Status: ${status.status}')));
       }
     } finally {
       if (mounted) setState(() => _polling = false);

@@ -39,10 +39,8 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => MediaViewerScreen(
-          post: widget.post,
-          initialIndex: imageIndex,
-        ),
+        builder: (_) =>
+            MediaViewerScreen(post: widget.post, initialIndex: imageIndex),
       ),
     );
   }
@@ -65,9 +63,14 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
     final maxHeight = screenHeight * 0.6;
 
     // Use the first video's aspect ratio if available, otherwise 16:9
-    final video = widget.media.where((m) => m.type.toUpperCase() == 'VIDEO').firstOrNull;
+    final video = widget.media
+        .where((m) => m.type.toUpperCase() == 'VIDEO')
+        .firstOrNull;
     double aspectRatio = 16 / 9;
-    if (video != null && video.width != null && video.height != null && video.height! > 0) {
+    if (video != null &&
+        video.width != null &&
+        video.height != null &&
+        video.height! > 0) {
       aspectRatio = video.width! / video.height!;
     }
 
@@ -107,16 +110,14 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
                         )
                       else
                         Container(color: Colors.black26),
-                      Container(
-                          color: Colors.black.withValues(alpha: 0.20)),
+                      Container(color: Colors.black.withValues(alpha: 0.20)),
                       const Center(
                         child: Icon(
                           Icons.play_circle_fill,
                           size: 72,
                           color: Colors.white,
                           shadows: [
-                            Shadow(
-                                blurRadius: 12, color: Colors.black45)
+                            Shadow(blurRadius: 12, color: Colors.black45),
                           ],
                         ),
                       ),
@@ -128,8 +129,7 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
               // IMAGE fallback
               final imageIndex = widget.imageUrls.indexOf(m.url);
               return InkWell(
-                onTap: () =>
-                    _openImage(imageIndex < 0 ? 0 : imageIndex),
+                onTap: () => _openImage(imageIndex < 0 ? 0 : imageIndex),
                 child: Hero(
                   tag: '$tagPrefix-$i',
                   child: Image.network(
@@ -139,8 +139,8 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
                     errorBuilder: (_, _, _) => Container(
                       color: Colors.black12,
                       child: const Center(
-                          child:
-                              Icon(Icons.broken_image_outlined)),
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
                     ),
                   ),
                 ),
@@ -160,9 +160,7 @@ class _PostMediaCarouselState extends State<PostMediaCarousel> {
                   height: 7,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
-                    color: i == _index
-                        ? Colors.black87
-                        : Colors.black26,
+                    color: i == _index ? Colors.black87 : Colors.black26,
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),

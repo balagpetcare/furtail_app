@@ -67,5 +67,5 @@ class CurrentUserNotifier extends StateNotifier<CurrentUser> {
 
 final currentUserProvider =
     StateNotifierProvider<CurrentUserNotifier, CurrentUser>(
-  (ref) => CurrentUserNotifier(),
-);
+      (ref) => CurrentUserNotifier(),
+    );

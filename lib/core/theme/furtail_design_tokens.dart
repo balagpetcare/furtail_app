@@ -28,8 +28,7 @@ abstract final class FurtailDesignTokens {
   static Color border(BuildContext context) =>
       Theme.of(context).colorScheme.outline;
 
-  static Color divider(BuildContext context) =>
-      Theme.of(context).dividerColor;
+  static Color divider(BuildContext context) => Theme.of(context).dividerColor;
 
   static const Color success = AppPalette.success;
   static const Color warning = AppPalette.warning;

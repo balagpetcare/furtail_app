@@ -18,7 +18,8 @@ class CertificateViewerScreen extends ConsumerStatefulWidget {
       _CertificateViewerScreenState();
 }
 
-class _CertificateViewerScreenState extends ConsumerState<CertificateViewerScreen> {
+class _CertificateViewerScreenState
+    extends ConsumerState<CertificateViewerScreen> {
   bool _downloading = false;
   bool _certificateViewLogged = false;
 
@@ -43,8 +44,9 @@ class _CertificateViewerScreenState extends ConsumerState<CertificateViewerScree
             IconButton(
               icon: const Icon(Icons.share_rounded),
               tooltip: 'Share link',
-              onPressed: () =>
-                  ref.read(certificateShareServiceProvider).shareCertificateLink(cert),
+              onPressed: () => ref
+                  .read(certificateShareServiceProvider)
+                  .shareCertificateLink(cert),
             ),
             IconButton(
               icon: const Icon(Icons.download_rounded),
@@ -87,7 +89,9 @@ class _CertificateViewerScreenState extends ConsumerState<CertificateViewerScree
                       _info(
                         'Vaccinated',
                         cert.vaccinatedAt != null
-                            ? DateFormat('d MMM yyyy').format(cert.vaccinatedAt!)
+                            ? DateFormat(
+                                'd MMM yyyy',
+                              ).format(cert.vaccinatedAt!)
                             : '—',
                       ),
                       _info(
@@ -142,7 +146,12 @@ class _CertificateViewerScreenState extends ConsumerState<CertificateViewerScree
             width: 100,
             child: Text(label, style: const TextStyle(color: Colors.black54)),
           ),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
@@ -173,9 +182,9 @@ class _CertificateViewerScreenState extends ConsumerState<CertificateViewerScree
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _downloading = false);

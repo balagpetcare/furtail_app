@@ -35,8 +35,8 @@ class ApiEndpoints {
   static String updateMyProfile() => "${ApiConfig.userApi}/profile"; // PATCH
 
   // ---------- PETS ----------
-  static String allPets() => "${ApiConfig.userApi}/pets/all";
-  static String registerPet() => "${ApiConfig.userApi}/pets/register";
+  static String allPets() => "${ApiConfig.userApi}/pets";
+  static String registerPet() => "${ApiConfig.userApi}/pets";
   static String updatePet(int petId) => "${ApiConfig.userApi}/pets/$petId";
   static String deletePet(int petId) =>
       "${ApiConfig.userApi}/pets/$petId"; // DELETE
@@ -293,6 +293,9 @@ class ApiEndpoints {
     String? cursor,
     bool? verified,
     String? category,
+    String? beneficiaryType,
+    String? urgency,
+    String? status,
     String? location,
     String? sort,
   }) {
@@ -303,6 +306,15 @@ class ApiEndpoints {
     if (verified != null) qp['verified'] = verified.toString();
     if (category != null && category.trim().isNotEmpty) {
       qp['category'] = category.trim();
+    }
+    if (beneficiaryType != null && beneficiaryType.trim().isNotEmpty) {
+      qp['beneficiaryType'] = beneficiaryType.trim();
+    }
+    if (urgency != null && urgency.trim().isNotEmpty) {
+      qp['urgency'] = urgency.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      qp['status'] = status.trim();
     }
     if (location != null && location.trim().isNotEmpty) {
       qp['location'] = location.trim();
@@ -320,8 +332,48 @@ class ApiEndpoints {
   }
 
   // ✅ Unified withdraw hub needs: list only my campaigns
-  static String fundraisingMyCampaigns({int limit = 100}) =>
-      "${ApiConfig.apiV1}/fundraising/my/campaigns?limit=$limit";
+  static String fundraisingMyCampaigns({
+    int limit = 100,
+    String? cursor,
+    bool? verified,
+    String? category,
+    String? beneficiaryType,
+    String? urgency,
+    String? status,
+    String? location,
+    String? sort,
+  }) {
+    final qp = <String, String>{'limit': '$limit'};
+    if (cursor != null && cursor.trim().isNotEmpty) {
+      qp['cursor'] = cursor.trim();
+    }
+    if (verified != null) qp['verified'] = verified.toString();
+    if (category != null && category.trim().isNotEmpty) {
+      qp['category'] = category.trim();
+    }
+    if (beneficiaryType != null && beneficiaryType.trim().isNotEmpty) {
+      qp['beneficiaryType'] = beneficiaryType.trim();
+    }
+    if (urgency != null && urgency.trim().isNotEmpty) {
+      qp['urgency'] = urgency.trim();
+    }
+    if (status != null && status.trim().isNotEmpty) {
+      qp['status'] = status.trim();
+    }
+    if (location != null && location.trim().isNotEmpty) {
+      qp['location'] = location.trim();
+    }
+    if (sort != null && sort.trim().isNotEmpty) {
+      qp['sort'] = sort.trim();
+    }
+    final query = qp.entries
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
+        .join('&');
+    return "${ApiConfig.apiV1}/fundraising/my/campaigns?$query";
+  }
 
   // Fundraising account (verification profile)
   static String fundraisingAccountMe() =>

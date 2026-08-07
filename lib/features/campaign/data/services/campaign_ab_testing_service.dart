@@ -30,7 +30,8 @@ class CampaignAbTestingService {
   }
 
   Future<Map<String, CampaignAbVariant>> assignAll({
-    required List<({String slug, String? testKey, List<String> variants})> items,
+    required List<({String slug, String? testKey, List<String> variants})>
+    items,
     required String userSeed,
   }) async {
     final out = <String, CampaignAbVariant>{};

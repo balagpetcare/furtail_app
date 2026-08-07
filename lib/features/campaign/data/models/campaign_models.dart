@@ -110,9 +110,12 @@ class CampaignBooking {
     final petsRaw = json['pets'];
     final pets = petsRaw is List
         ? petsRaw
-            .whereType<Map>()
-            .map((e) => CampaignBookingPet.fromJson(Map<String, dynamic>.from(e)))
-            .toList()
+              .whereType<Map>()
+              .map(
+                (e) =>
+                    CampaignBookingPet.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .toList()
         : <CampaignBookingPet>[];
 
     return CampaignBooking(
@@ -227,9 +230,12 @@ class UpcomingVaccination {
     final petsRaw = json['pets'];
     final pets = petsRaw is List
         ? petsRaw
-            .whereType<Map>()
-            .map((e) => CampaignBookingPet.fromJson(Map<String, dynamic>.from(e)))
-            .toList()
+              .whereType<Map>()
+              .map(
+                (e) =>
+                    CampaignBookingPet.fromJson(Map<String, dynamic>.from(e)),
+              )
+              .toList()
         : <CampaignBookingPet>[];
 
     return UpcomingVaccination(
@@ -286,21 +292,23 @@ class CampaignBenefits {
       startDate: campaignJsonDate(json['startDate']),
       endDate: campaignJsonDate(json['endDate']),
       pricingType: json['pricingType']?.toString(),
-      priceAmount: json['priceAmount'] is num ? json['priceAmount'] as num : null,
+      priceAmount: json['priceAmount'] is num
+          ? json['priceAmount'] as num
+          : null,
       benefits: json['benefits'] is List
           ? (json['benefits'] as List).map((e) => e.toString()).toList()
           : const [],
       vaccineTypes: json['vaccineTypes'] is List
           ? (json['vaccineTypes'] as List)
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList()
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
           : const [],
       locations: json['locations'] is List
           ? (json['locations'] as List)
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList()
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList()
           : const [],
     );
   }
@@ -391,13 +399,13 @@ class VaccinationReminder {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'petName': petName,
-        'vaccineType': vaccineType,
-        'dueDate': dueDate.toIso8601String(),
-        'enabled': enabled,
-        'daysBefore': daysBefore,
-      };
+    'id': id,
+    'petName': petName,
+    'vaccineType': vaccineType,
+    'dueDate': dueDate.toIso8601String(),
+    'enabled': enabled,
+    'daysBefore': daysBefore,
+  };
 
   factory VaccinationReminder.fromJson(Map<String, dynamic> json) {
     return VaccinationReminder(

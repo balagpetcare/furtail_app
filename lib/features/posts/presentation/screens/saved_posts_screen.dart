@@ -24,9 +24,7 @@ class SavedPostsScreen extends StatelessWidget {
           onPressed: () => Navigator.maybePop(context),
         ),
       ),
-      body: const SafeArea(
-        child: SavedPostsList(),
-      ),
+      body: const SafeArea(child: SavedPostsList()),
     );
   }
 }
@@ -86,9 +84,7 @@ class _SavedPostsListState extends State<SavedPostsList> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {
@@ -100,13 +96,18 @@ class _SavedPostsListState extends State<SavedPostsList> {
             children: [
               Text(
                 'Failed to load saved posts',
-                style: context.appText.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: context.appText.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyRegular(context, color: Colors.black54),
+                style: AppTypography.bodyRegular(
+                  context,
+                  color: Colors.black54,
+                ),
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
@@ -137,7 +138,9 @@ class _SavedPostsListState extends State<SavedPostsList> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -149,13 +152,18 @@ class _SavedPostsListState extends State<SavedPostsList> {
               const SizedBox(height: 16),
               Text(
                 'No saved posts yet',
-                style: context.appText.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: context.appText.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Post bookmarks will show up here for easy access.',
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyRegular(context, color: Colors.black54),
+                style: AppTypography.bodyRegular(
+                  context,
+                  color: Colors.black54,
+                ),
               ),
             ],
           ),
@@ -172,11 +180,7 @@ class _SavedPostsListState extends State<SavedPostsList> {
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final p = _items[index];
-          return PostCard(
-            post: p,
-            meId: _meId,
-            onNeedRefresh: _load,
-          );
+          return PostCard(post: p, meId: _meId, onNeedRefresh: _load);
         },
       ),
     );

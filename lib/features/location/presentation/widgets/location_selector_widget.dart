@@ -1045,9 +1045,7 @@ class _SelectorTile extends StatelessWidget {
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: hasValue
-                      ? scheme.onSurface
-                      : scheme.onSurfaceVariant,
+                  color: hasValue ? scheme.onSurface : scheme.onSurfaceVariant,
                 ),
               ),
             ),

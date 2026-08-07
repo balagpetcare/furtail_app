@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 
 import '../../data/models/user_profile_model.dart';
 import '../../data/profile_service.dart';
 
 import '../../../pets/presentation/screens/pet_profile_screen.dart';
-
-
 import '../../../pets/presentation/pet_create_screen.dart';
+import '../../../pets/presentation/providers/pet_providers.dart';
+import '../../../pets/data/models/pet_model.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/user_stats.dart';
 import '../widgets/pet_horizontal_list.dart';
@@ -15,16 +16,16 @@ import '../widgets/trophy_case.dart';
 import '../widgets/profile_gallery.dart';
 import '../widgets/profile_quick_actions.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   final Future<void> Function()? onPetChanged;
 
   const ProfileScreen({super.key, this.onPetChanged});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _profileService = ProfileService();
 
   UserProfileModel? profile;
@@ -91,7 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final p = profile;
     if (p == null) return _errorView("Profile not found.");
 
-    final pets = p.pets;
+    final pets = ref
+        .watch(ownerPetListProvider)
+        .pets
+        .whereType<PetModel>()
+        .toList(growable: false);
 
     return Column(
       children: [
@@ -143,6 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(builder: (_) => const PetCreateScreen()),
               );
               if (changed == true) {
+                await ref.read(ownerPetListProvider.notifier).refresh();
                 await _load();
                 await widget.onPetChanged?.call();
               }

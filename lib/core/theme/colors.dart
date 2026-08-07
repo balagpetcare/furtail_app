@@ -16,6 +16,7 @@ abstract final class AppPalette {
   static const Color lightOutline = Color(0xFFE6E6E6);
   static const Color lightOnSurface = Color(0xFF1A1A1A);
   static const Color lightOnSurfaceVariant = Color(0xFF666666);
+
   /// Muted text — ≥4.5:1 on white (WCAG AA body text).
   static const Color lightOutlineVariant = Color(0xFF5C5C5C);
 

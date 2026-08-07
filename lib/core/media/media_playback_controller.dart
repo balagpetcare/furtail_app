@@ -45,7 +45,8 @@ class MediaPlaybackController {
     _prefs = await SharedPreferences.getInstance();
     isMuted.value = _prefs?.getBool(_kPrefMute) ?? false;
     volume.value = _prefs?.getDouble(_kPrefVolume) ?? 1.0;
-    playOneByOneWifiOnly.value = _prefs?.getBool(_kPrefOneByOneWifiOnly) ?? true;
+    playOneByOneWifiOnly.value =
+        _prefs?.getBool(_kPrefOneByOneWifiOnly) ?? true;
 
     // Persist changes.
     isMuted.addListener(() {

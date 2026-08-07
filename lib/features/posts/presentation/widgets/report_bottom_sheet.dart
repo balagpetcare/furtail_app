@@ -38,12 +38,13 @@ extension _ReportTargetTypeX on ReportTargetType {
   }
 }
 
-typedef ReportSubmitter = Future<void> Function(
-  ReportTargetType type,
-  int targetId,
-  String reasonCode, {
-  String? details,
-});
+typedef ReportSubmitter =
+    Future<void> Function(
+      ReportTargetType type,
+      int targetId,
+      String reasonCode, {
+      String? details,
+    });
 
 /// A clean, reusable report bottom sheet.
 ///
@@ -93,7 +94,12 @@ class ReportBottomSheet extends StatefulWidget {
     required int postId,
     ReportSubmitter? onSubmit,
   }) {
-    return show(context, targetType: ReportTargetType.post, targetId: postId, onSubmit: onSubmit);
+    return show(
+      context,
+      targetType: ReportTargetType.post,
+      targetId: postId,
+      onSubmit: onSubmit,
+    );
   }
 
   @override
@@ -101,44 +107,45 @@ class ReportBottomSheet extends StatefulWidget {
 }
 
 class _ReportBottomSheetState extends State<ReportBottomSheet> {
-  static const Map<ReportTargetType, List<Map<String, String>>> _reasonCatalog = {
-    ReportTargetType.post: [
-      {'code': 'SPAM', 'label': 'Spam'},
-      {'code': 'INAPPROPRIATE', 'label': 'Inappropriate content'},
-      {'code': 'ANIMAL_ABUSE', 'label': 'Animal abuse'},
-      {'code': 'FALSE_INFO', 'label': 'False or misleading information'},
-      {'code': 'HARASSMENT', 'label': 'Harassment or hate'},
-      {'code': 'OTHER', 'label': 'Other'},
-    ],
-    ReportTargetType.fundraising: [
-      {'code': 'FRAUD', 'label': 'Fraud / scam'},
-      {'code': 'MISLEADING', 'label': 'Misleading fundraising details'},
-      {'code': 'DUPLICATE', 'label': 'Duplicate campaign'},
-      {'code': 'IMPROPER_USE', 'label': 'Suspicious use of funds'},
-      {'code': 'INAPPROPRIATE', 'label': 'Inappropriate content'},
-      {'code': 'OTHER', 'label': 'Other'},
-    ],
-    ReportTargetType.user: [
-      {'code': 'IMPERSONATION', 'label': 'Impersonation'},
-      {'code': 'HARASSMENT', 'label': 'Harassment or hate'},
-      {'code': 'SPAM', 'label': 'Spam'},
-      {'code': 'SCAM', 'label': 'Scam or suspicious behavior'},
-      {'code': 'OTHER', 'label': 'Other'},
-    ],
-    ReportTargetType.pet: [
-      {'code': 'FAKE_PROFILE', 'label': 'Fake pet profile'},
-      {'code': 'WRONG_INFO', 'label': 'Wrong or misleading information'},
-      {'code': 'ABUSE', 'label': 'Animal abuse / cruelty'},
-      {'code': 'SPAM', 'label': 'Spam'},
-      {'code': 'OTHER', 'label': 'Other'},
-    ],
-    ReportTargetType.comment: [
-      {'code': 'SPAM', 'label': 'Spam'},
-      {'code': 'INAPPROPRIATE', 'label': 'Inappropriate comment'},
-      {'code': 'HARASSMENT', 'label': 'Harassment or hate speech'},
-      {'code': 'OTHER', 'label': 'Other'},
-    ],
-  };
+  static const Map<ReportTargetType, List<Map<String, String>>> _reasonCatalog =
+      {
+        ReportTargetType.post: [
+          {'code': 'SPAM', 'label': 'Spam'},
+          {'code': 'INAPPROPRIATE', 'label': 'Inappropriate content'},
+          {'code': 'ANIMAL_ABUSE', 'label': 'Animal abuse'},
+          {'code': 'FALSE_INFO', 'label': 'False or misleading information'},
+          {'code': 'HARASSMENT', 'label': 'Harassment or hate'},
+          {'code': 'OTHER', 'label': 'Other'},
+        ],
+        ReportTargetType.fundraising: [
+          {'code': 'FRAUD', 'label': 'Fraud / scam'},
+          {'code': 'MISLEADING', 'label': 'Misleading fundraising details'},
+          {'code': 'DUPLICATE', 'label': 'Duplicate campaign'},
+          {'code': 'IMPROPER_USE', 'label': 'Suspicious use of funds'},
+          {'code': 'INAPPROPRIATE', 'label': 'Inappropriate content'},
+          {'code': 'OTHER', 'label': 'Other'},
+        ],
+        ReportTargetType.user: [
+          {'code': 'IMPERSONATION', 'label': 'Impersonation'},
+          {'code': 'HARASSMENT', 'label': 'Harassment or hate'},
+          {'code': 'SPAM', 'label': 'Spam'},
+          {'code': 'SCAM', 'label': 'Scam or suspicious behavior'},
+          {'code': 'OTHER', 'label': 'Other'},
+        ],
+        ReportTargetType.pet: [
+          {'code': 'FAKE_PROFILE', 'label': 'Fake pet profile'},
+          {'code': 'WRONG_INFO', 'label': 'Wrong or misleading information'},
+          {'code': 'ABUSE', 'label': 'Animal abuse / cruelty'},
+          {'code': 'SPAM', 'label': 'Spam'},
+          {'code': 'OTHER', 'label': 'Other'},
+        ],
+        ReportTargetType.comment: [
+          {'code': 'SPAM', 'label': 'Spam'},
+          {'code': 'INAPPROPRIATE', 'label': 'Inappropriate comment'},
+          {'code': 'HARASSMENT', 'label': 'Harassment or hate speech'},
+          {'code': 'OTHER', 'label': 'Other'},
+        ],
+      };
 
   String? _selectedCode;
   final _details = TextEditingController();
@@ -154,9 +161,16 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
     if (_selectedCode == null) return;
     setState(() => _submitting = true);
     try {
-      final details = _details.text.trim().isEmpty ? null : _details.text.trim();
+      final details = _details.text.trim().isEmpty
+          ? null
+          : _details.text.trim();
       if (widget.onSubmit != null) {
-        await widget.onSubmit!(widget.targetType, widget.targetId, _selectedCode!, details: details);
+        await widget.onSubmit!(
+          widget.targetType,
+          widget.targetId,
+          _selectedCode!,
+          details: details,
+        );
       } else {
         await ReportService.submit(
           type: widget.targetType.apiType,
@@ -169,7 +183,9 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thanks for helping keep Furtail safe 🐾')),
+        const SnackBar(
+          content: Text('Thanks for helping keep Furtail safe 🐾'),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -204,7 +220,9 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
             const SizedBox(height: 12),
             Text(
               widget.targetType.title,
-              style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w800),
+              style: context.appText.bodyLarge!.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 6),
             const Text(
@@ -212,8 +230,9 @@ class _ReportBottomSheetState extends State<ReportBottomSheet> {
               style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 12),
-            ...(_reasonCatalog[widget.targetType] ?? const [])
-                .map<Widget>((item) {
+            ...(_reasonCatalog[widget.targetType] ?? const []).map<Widget>((
+              item,
+            ) {
               final code = item['code'] ?? '';
               final label = item['label'] ?? code;
               final selected = _selectedCode == code;

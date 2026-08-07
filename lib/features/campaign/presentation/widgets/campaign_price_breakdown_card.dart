@@ -16,7 +16,10 @@ class CampaignPriceBreakdownCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Price summary', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Price summary',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 12),
             _row(
               context,
@@ -52,15 +55,15 @@ class CampaignPriceBreakdownCard extends StatelessWidget {
                   Text(
                     'Total',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   Text(
                     formatCampaignMoney(pricing.total, pricing.currency),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onPrimaryContainer,
-                        ),
+                      fontWeight: FontWeight.w800,
+                      color: cs.onPrimaryContainer,
+                    ),
                   ),
                 ],
               ),
@@ -78,7 +81,12 @@ class CampaignPriceBreakdownCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

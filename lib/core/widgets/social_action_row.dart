@@ -32,7 +32,10 @@ class SocialActionRow extends StatelessWidget {
     this.isSaved = false,
     this.onSave,
     this.padding = const EdgeInsets.all(0),
-    this.buttonPadding = const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+    this.buttonPadding = const EdgeInsets.symmetric(
+      vertical: 10,
+      horizontal: 8,
+    ),
     this.backgroundColor,
     this.foregroundColor,
     this.selectedColor,
@@ -90,10 +93,7 @@ class SocialActionRow extends StatelessWidget {
           ],
         ),
         if (showDivider)
-          Divider(
-            color: dividerColor ?? theme.dividerColor,
-            height: 1,
-          ),
+          Divider(color: dividerColor ?? theme.dividerColor, height: 1),
       ],
     );
 
@@ -101,10 +101,7 @@ class SocialActionRow extends StatelessWidget {
         ? content
         : ColoredBox(color: backgroundColor!, child: content);
 
-    return Padding(
-      padding: padding,
-      child: row,
-    );
+    return Padding(padding: padding, child: row);
   }
 
   static String _likeLabel(BuildContext context) {
@@ -134,7 +131,7 @@ class _SocialActionButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-          child: Padding(
+        child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
           child: FittedBox(
             fit: BoxFit.scaleDown,
@@ -151,9 +148,9 @@ class _SocialActionButton extends StatelessWidget {
                   softWrap: false,
                   overflow: TextOverflow.visible,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),

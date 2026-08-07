@@ -61,7 +61,10 @@ class CertificateWalletScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(14),
                     child: Row(
                       children: [
-                        Icon(Icons.account_balance_wallet_rounded, color: context.colorScheme.primary),
+                        Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: context.colorScheme.primary,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -80,16 +83,19 @@ class CertificateWalletScreen extends ConsumerWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => CertificateViewerScreen(token: r.certificateToken!),
+                        builder: (_) =>
+                            CertificateViewerScreen(token: r.certificateToken!),
                       ),
                     ),
                   );
                 }),
                 const SizedBox(height: 8),
                 Text(
-                  'Issued between ${ _range(wallet) }',
+                  'Issued between ${_range(wallet)}',
                   textAlign: TextAlign.center,
-                  style: context.appText.bodySmall!.copyWith(color: Colors.grey.shade600),
+                  style: context.appText.bodySmall!.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
@@ -102,11 +108,9 @@ class CertificateWalletScreen extends ConsumerWidget {
   }
 
   String _range(List<VaccinationRecord> wallet) {
-    final dates = wallet
-        .map((r) => r.administeredAt)
-        .whereType<DateTime>()
-        .toList()
-      ..sort();
+    final dates =
+        wallet.map((r) => r.administeredAt).whereType<DateTime>().toList()
+          ..sort();
     if (dates.isEmpty) return '—';
     final fmt = DateFormat('MMM yyyy');
     if (dates.length == 1) return fmt.format(dates.first);

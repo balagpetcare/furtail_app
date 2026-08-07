@@ -22,6 +22,7 @@ import 'package:furtail_app/features/posts/data/models/post_model.dart';
 import 'package:furtail_app/features/posts/presentation/screens/reels_player_screen.dart';
 import 'package:furtail_app/features/posts/presentation/screens/saved_posts_screen.dart';
 import 'package:furtail_app/features/pets/presentation/pet_create_screen.dart';
+import 'package:furtail_app/features/pets/presentation/pet_list_screen.dart';
 import 'package:furtail_app/features/pets/presentation/screens/pet_profile_screen.dart';
 import 'package:furtail_app/features/pets/presentation/screens/pet_public_profile_screen.dart';
 import '../../features/settings/presentation/screens/account_settings_screen.dart';
@@ -245,8 +246,8 @@ class AppRouter {
           builder: (_) => const FurtailHomeScreen(initialIndex: 4),
         );
 
-      // case AppRoutes.petList:
-      //   return MaterialPageRoute(builder: (_) => const PetListScreen());
+      case AppRoutes.petList:
+        return MaterialPageRoute(builder: (_) => const PetListScreen());
 
       default:
         return _notFound('Route not found');

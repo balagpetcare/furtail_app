@@ -6,7 +6,10 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Pet Shop"), automaticallyImplyLeading: false), // ব্যাক বাটন লুকানো কারণ এটি ট্যাবে থাকবে
+      appBar: AppBar(
+        title: const Text("Pet Shop"),
+        automaticallyImplyLeading: false,
+      ), // ব্যাক বাটন লুকানো কারণ এটি ট্যাবে থাকবে
       body: GridView.builder(
         padding: const EdgeInsets.all(10),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -21,7 +24,12 @@ class ShopScreen extends StatelessWidget {
             child: Column(
               children: [
                 Expanded(
-                  child: Container(color: Colors.grey.shade200, child: const Center(child: Icon(Icons.shopping_bag, size: 40))),
+                  child: Container(
+                    color: Colors.grey.shade200,
+                    child: const Center(
+                      child: Icon(Icons.shopping_bag, size: 40),
+                    ),
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),

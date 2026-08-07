@@ -8,7 +8,8 @@ enum CampaignNotificationCategory {
   final String code;
 
   static CampaignNotificationCategory fromCode(String? raw) {
-    if (raw == null || raw.isEmpty) return CampaignNotificationCategory.campaign;
+    if (raw == null || raw.isEmpty)
+      return CampaignNotificationCategory.campaign;
     final n = raw.trim().toLowerCase();
     for (final c in CampaignNotificationCategory.values) {
       if (c.code == n) return c;

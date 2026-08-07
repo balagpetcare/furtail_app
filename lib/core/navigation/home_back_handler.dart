@@ -49,9 +49,9 @@ class _HomeBackHandlerState extends State<HomeBackHandler> {
         SnackBar(
           content: Text(
             'Press back again to exit',
-            style: AppTypography.bodyRegular(context).copyWith(
-              color: Theme.of(context).colorScheme.onInverseSurface,
-            ),
+            style: AppTypography.bodyRegular(
+              context,
+            ).copyWith(color: Theme.of(context).colorScheme.onInverseSurface),
           ),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
@@ -69,7 +69,7 @@ class _HomeBackHandlerState extends State<HomeBackHandler> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         final scaffoldState = Scaffold.maybeOf(context);
         if (scaffoldState?.isDrawerOpen == true) {
           scaffoldState!.closeDrawer();

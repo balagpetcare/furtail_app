@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 import '../../data/pet_service.dart';
 
@@ -11,6 +12,7 @@ class PetEditFieldScreen extends StatefulWidget {
   final String fieldKey;
   final String initialValue;
   final EditFieldType type;
+  final int? currentVersion;
 
   const PetEditFieldScreen({
     super.key,
@@ -19,6 +21,7 @@ class PetEditFieldScreen extends StatefulWidget {
     required this.fieldKey,
     required this.initialValue,
     required this.type,
+    this.currentVersion,
   });
 
   @override
@@ -83,14 +86,17 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
         value = _c.text.trim();
       }
 
-      await _service.updatePet(widget.petId, {widget.fieldKey: value});
+      await _service.updatePet(widget.petId, {
+        widget.fieldKey: value,
+        if (widget.currentVersion != null) 'version': widget.currentVersion,
+      });
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_messageFor(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -101,18 +107,31 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
       final initialDate = _tryParse(widget.initialValue);
       return _selectedDate != initialDate;
     } else if (widget.type == EditFieldType.gender) {
-      final initialGender = (widget.initialValue.trim().toUpperCase() == 'FEMALE') ? 'FEMALE' : 'MALE';
+      final initialGender =
+          (widget.initialValue.trim().toUpperCase() == 'FEMALE')
+          ? 'FEMALE'
+          : 'MALE';
       return _gender != initialGender;
     } else {
       return _c.text != widget.initialValue;
     }
   }
 
+  String _messageFor(Object error) {
+    if (error is ApiClientException && error.statusCode == 409) {
+      return 'This pet changed elsewhere. Refresh and try again.';
+    }
+    return error.toString().replaceAll('Exception: ', '');
+  }
+
   Widget _genderPicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Select Gender', style: TextStyle(fontWeight: FontWeight.w700)),
+        const Text(
+          'Select Gender',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 10),
         Row(
           children: [
@@ -161,7 +180,9 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Discard Changes?'),
-              content: const Text('Are you sure you want to discard your changes?'),
+              content: const Text(
+                'Are you sure you want to discard your changes?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
@@ -181,51 +202,51 @@ class _PetEditFieldScreenState extends State<PetEditFieldScreen> {
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            if (isDate)
-              ListTile(
-                title: const Text('Selected Date'),
-                subtitle: Text(
-                  _selectedDate == null
-                      ? 'Not selected'
-                      : "${_selectedDate!.day.toString().padLeft(2, '0')}-"
-                        "${_selectedDate!.month.toString().padLeft(2, '0')}-"
-                        "${_selectedDate!.year}",
+          child: Column(
+            children: [
+              if (isDate)
+                ListTile(
+                  title: const Text('Selected Date'),
+                  subtitle: Text(
+                    _selectedDate == null
+                        ? 'Not selected'
+                        : "${_selectedDate!.day.toString().padLeft(2, '0')}-"
+                              "${_selectedDate!.month.toString().padLeft(2, '0')}-"
+                              "${_selectedDate!.year}",
+                  ),
+                  trailing: OutlinedButton(
+                    onPressed: _pickDate,
+                    child: const Text('Pick'),
+                  ),
+                )
+              else if (isGender)
+                _genderPicker()
+              else
+                TextField(
+                  controller: _c,
+                  maxLines: widget.type == EditFieldType.multiline ? 6 : 1,
+                  decoration: InputDecoration(
+                    labelText: widget.label,
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
-                trailing: OutlinedButton(
-                  onPressed: _pickDate,
-                  child: const Text('Pick'),
-                ),
-              )
-            else if (isGender)
-              _genderPicker()
-            else
-              TextField(
-                controller: _c,
-                maxLines: widget.type == EditFieldType.multiline ? 6 : 1,
-                decoration: InputDecoration(
-                  labelText: widget.label,
-                  border: const OutlineInputBorder(),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
                 ),
               ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Save'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

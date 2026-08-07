@@ -26,7 +26,9 @@ class CampaignTicket {
 
   factory CampaignTicket.fromJson(Map<String, dynamic> json) {
     return CampaignTicket(
-      id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
       petName: json['petName']?.toString() ?? json['name']?.toString() ?? 'Cat',
       ticketToken: json['ticketToken']?.toString() ?? '',
       ticketUrl: json['ticketUrl']?.toString() ?? '',

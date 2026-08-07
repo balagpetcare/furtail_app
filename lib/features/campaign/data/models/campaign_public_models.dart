@@ -49,7 +49,9 @@ class PublicCampaign {
   });
 
   bool get isFree =>
-      pricingType == 'FREE' || pricing?.isFree == true || (priceAmount ?? 0) <= 0;
+      pricingType == 'FREE' ||
+      pricing?.isFree == true ||
+      (priceAmount ?? 0) <= 0;
 
   String get displayPrice {
     if (isFree) return 'Free';
@@ -94,9 +96,13 @@ class PublicCampaign {
     final locsRaw = json['locations'];
     final locations = locsRaw is List
         ? locsRaw
-            .whereType<Map>()
-            .map((e) => PublicCampaignLocation.fromJson(Map<String, dynamic>.from(e)))
-            .toList()
+              .whereType<Map>()
+              .map(
+                (e) => PublicCampaignLocation.fromJson(
+                  Map<String, dynamic>.from(e),
+                ),
+              )
+              .toList()
         : <PublicCampaignLocation>[];
 
     final featuresRaw = json['packageFeatures'];
@@ -129,9 +135,14 @@ class PublicCampaign {
       startDate: campaignJsonDate(json['startDate']) ?? DateTime.now(),
       endDate: campaignJsonDate(json['endDate']) ?? DateTime.now(),
       pricingType: json['pricingType']?.toString() ?? 'FREE',
-      priceAmount: json['priceAmount'] is num ? json['priceAmount'] as num : null,
+      priceAmount: json['priceAmount'] is num
+          ? json['priceAmount'] as num
+          : null,
       currency: json['currency']?.toString() ?? 'BDT',
-      maxPetsPerBooking: campaignJsonInt(json['maxPetsPerBooking'], fallback: 5),
+      maxPetsPerBooking: campaignJsonInt(
+        json['maxPetsPerBooking'],
+        fallback: 5,
+      ),
       locations: locations,
       packageFeatures: features,
       pricing: pricing,
@@ -140,8 +151,8 @@ class PublicCampaign {
       primaryLocationLabel: locations.isEmpty
           ? null
           : locations.length == 1
-              ? locations.first.name
-              : '${locations.first.name} +${locations.length - 1}',
+          ? locations.first.name
+          : '${locations.first.name} +${locations.length - 1}',
       smartConfig: smartConfig,
     );
   }
@@ -153,32 +164,33 @@ class PublicCampaign {
       final url = mobile['bannerImageUrl'] ?? mobile['imageUrl'];
       if (url != null && url.toString().isNotEmpty) return url.toString();
     }
-    final direct = metadataJson['bannerImageUrl'] ?? metadataJson['mobileBannerUrl'];
+    final direct =
+        metadataJson['bannerImageUrl'] ?? metadataJson['mobileBannerUrl'];
     return direct?.toString();
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'id': id,
-        'name': name,
-        'slug': slug,
-        'description': description,
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
-        'pricingType': pricingType,
-        'priceAmount': priceAmount,
-        'currency': currency,
-        'maxPetsPerBooking': maxPetsPerBooking,
-        'locations': locations.map((e) => e.toCacheJson()).toList(),
-        'packageFeatures': packageFeatures,
-        'pricing': pricing?.toCacheJson(),
-        'config': config?.toCacheJson(),
-        'imageUrl': imageUrl,
-        'remainingSlots': remainingSlots,
-        'nextSlotDate': nextSlotDate,
-        'primaryLocationLabel': primaryLocationLabel,
-        'smartConfigType': smartConfig.campaignType.code,
-        'priority': smartConfig.priority.code,
-      };
+    'id': id,
+    'name': name,
+    'slug': slug,
+    'description': description,
+    'startDate': startDate.toIso8601String(),
+    'endDate': endDate.toIso8601String(),
+    'pricingType': pricingType,
+    'priceAmount': priceAmount,
+    'currency': currency,
+    'maxPetsPerBooking': maxPetsPerBooking,
+    'locations': locations.map((e) => e.toCacheJson()).toList(),
+    'packageFeatures': packageFeatures,
+    'pricing': pricing?.toCacheJson(),
+    'config': config?.toCacheJson(),
+    'imageUrl': imageUrl,
+    'remainingSlots': remainingSlots,
+    'nextSlotDate': nextSlotDate,
+    'primaryLocationLabel': primaryLocationLabel,
+    'smartConfigType': smartConfig.campaignType.code,
+    'priority': smartConfig.priority.code,
+  };
 
   factory PublicCampaign.fromCacheJson(Map<String, dynamic> json) {
     return PublicCampaign.fromJson(json);
@@ -203,7 +215,9 @@ class PublicCampaignPricing {
   factory PublicCampaignPricing.fromJson(Map<String, dynamic> json) {
     return PublicCampaignPricing(
       vaccineCost: json['vaccineCost'] is num ? json['vaccineCost'] as num : 0,
-      serviceCharge: json['serviceCharge'] is num ? json['serviceCharge'] as num : 0,
+      serviceCharge: json['serviceCharge'] is num
+          ? json['serviceCharge'] as num
+          : 0,
       totalPrice: json['totalPrice'] is num ? json['totalPrice'] as num : 0,
       currency: json['currency']?.toString() ?? 'BDT',
       isFree: json['isFree'] == true,
@@ -211,12 +225,12 @@ class PublicCampaignPricing {
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'vaccineCost': vaccineCost,
-        'serviceCharge': serviceCharge,
-        'totalPrice': totalPrice,
-        'currency': currency,
-        'isFree': isFree,
-      };
+    'vaccineCost': vaccineCost,
+    'serviceCharge': serviceCharge,
+    'totalPrice': totalPrice,
+    'currency': currency,
+    'isFree': isFree,
+  };
 }
 
 class PublicCampaignConfig {
@@ -242,19 +256,22 @@ class PublicCampaignConfig {
       onlinePaymentEnabled: json['onlinePaymentEnabled'] == true,
       payAtVenueEnabled: json['payAtVenueEnabled'] == true,
       slotRequired: json['slotRequired'] != false,
-      maxCatsPerBooking: campaignJsonInt(json['maxCatsPerBooking'], fallback: 5),
+      maxCatsPerBooking: campaignJsonInt(
+        json['maxCatsPerBooking'],
+        fallback: 5,
+      ),
       showRemainingSlots: json['showRemainingSlots'] != false,
     );
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'bookingEnabled': bookingEnabled,
-        'onlinePaymentEnabled': onlinePaymentEnabled,
-        'payAtVenueEnabled': payAtVenueEnabled,
-        'slotRequired': slotRequired,
-        'maxCatsPerBooking': maxCatsPerBooking,
-        'showRemainingSlots': showRemainingSlots,
-      };
+    'bookingEnabled': bookingEnabled,
+    'onlinePaymentEnabled': onlinePaymentEnabled,
+    'payAtVenueEnabled': payAtVenueEnabled,
+    'slotRequired': slotRequired,
+    'maxCatsPerBooking': maxCatsPerBooking,
+    'showRemainingSlots': showRemainingSlots,
+  };
 }
 
 class PublicCampaignLocation {
@@ -293,15 +310,15 @@ class PublicCampaignLocation {
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'id': id,
-        'name': name,
-        'address': address,
-        'dailyCapacity': dailyCapacity,
-        'availableCapacity': availableCapacity,
-        'isAvailable': isAvailable,
-        'nextSlotDate': nextSlotDate,
-        'availableSlots': availableSlots,
-      };
+    'id': id,
+    'name': name,
+    'address': address,
+    'dailyCapacity': dailyCapacity,
+    'availableCapacity': availableCapacity,
+    'isAvailable': isAvailable,
+    'nextSlotDate': nextSlotDate,
+    'availableSlots': availableSlots,
+  };
 }
 
 class PublicCampaignSlot {
@@ -331,10 +348,9 @@ class PublicCampaignSlot {
     required this.status,
   });
 
-  String get displayTime =>
-      startTimeLabel != null && endTimeLabel != null
-          ? '$startTimeLabel – $endTimeLabel'
-          : '$startTime – $endTime';
+  String get displayTime => startTimeLabel != null && endTimeLabel != null
+      ? '$startTimeLabel – $endTimeLabel'
+      : '$startTime – $endTime';
 
   factory PublicCampaignSlot.fromJson(Map<String, dynamic> json) {
     return PublicCampaignSlot(
@@ -347,7 +363,9 @@ class PublicCampaignSlot {
       sessionName: json['sessionName']?.toString(),
       capacity: campaignJsonInt(json['capacity']),
       bookedCount: campaignJsonInt(json['bookedCount']),
-      availableCount: campaignJsonInt(json['availableCount'] ?? json['remainingCapacity']),
+      availableCount: campaignJsonInt(
+        json['availableCount'] ?? json['remainingCapacity'],
+      ),
       status: json['status']?.toString() ?? 'OPEN',
     );
   }
@@ -386,7 +404,9 @@ class PublicCampaignNotification {
       title: data['title']?.toString() ?? 'Campaign',
       body: data['body']?.toString() ?? data['message']?.toString() ?? '',
       campaignSlug: data['campaignSlug']?.toString(),
-      campaignId: data['campaignId'] == null ? null : campaignJsonInt(data['campaignId']),
+      campaignId: data['campaignId'] == null
+          ? null
+          : campaignJsonInt(data['campaignId']),
       bookingRef: data['bookingRef']?.toString(),
       actionUrl: data['actionUrl']?.toString(),
     );
@@ -449,7 +469,9 @@ class CheckoutInitResult {
       currency: json['currency']?.toString() ?? 'BDT',
       requiresPayment: json['requiresPayment'] == true,
       paymentUrl: json['paymentUrl']?.toString(),
-      expiresAt: campaignJsonDate(json['expiresAt']) ?? DateTime.now().add(const Duration(hours: 1)),
+      expiresAt:
+          campaignJsonDate(json['expiresAt']) ??
+          DateTime.now().add(const Duration(hours: 1)),
       bookingRef: json['bookingRef']?.toString(),
       verificationCode: json['verificationCode']?.toString(),
     );

@@ -7,9 +7,8 @@ import '../storage/local_storage.dart';
 /// Riverpod-only locale controller (Furtail rule).
 /// - Loads saved locale from SharedPreferences.
 /// - Defaults to English if nothing selected.
-final localeControllerProvider = AsyncNotifierProvider<LocaleController, Locale>(
-  LocaleController.new,
-);
+final localeControllerProvider =
+    AsyncNotifierProvider<LocaleController, Locale>(LocaleController.new);
 
 class LocaleController extends AsyncNotifier<Locale> {
   @override

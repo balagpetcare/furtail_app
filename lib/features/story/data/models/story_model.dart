@@ -33,9 +33,12 @@ class StoryModel {
       id: (json['id'] as num?)?.toInt() ?? 0,
       userId: (json['userId'] ?? json['user_id'] ?? '').toString(),
       userName: (json['userName'] ?? json['user_name'] ?? '').toString(),
-      userAvatarUrl: (json['userAvatarUrl'] ?? json['user_avatar_url'])?.toString(),
-      mediaUrl: (json['mediaUrl'] ?? json['media_url'] ?? json['imageUrl'])?.toString(),
-      mediaType: (json['mediaType'] ?? json['media_type'] ?? 'image').toString(),
+      userAvatarUrl: (json['userAvatarUrl'] ?? json['user_avatar_url'])
+          ?.toString(),
+      mediaUrl: (json['mediaUrl'] ?? json['media_url'] ?? json['imageUrl'])
+          ?.toString(),
+      mediaType: (json['mediaType'] ?? json['media_type'] ?? 'image')
+          .toString(),
       caption: json['caption']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
@@ -44,7 +47,8 @@ class StoryModel {
           ? DateTime.tryParse(json['expiresAt'])
           : null,
       viewCount: (json['viewCount'] ?? json['view_count'] ?? 0) as int,
-      isViewedByMe: (json['isViewedByMe'] ?? json['is_viewed_by_me'] ?? false) as bool,
+      isViewedByMe:
+          (json['isViewedByMe'] ?? json['is_viewed_by_me'] ?? false) as bool,
       isOwnStory: (json['isOwnStory'] ?? json['is_own_story'] ?? false) as bool,
     );
   }

@@ -16,8 +16,10 @@ import 'package:furtail_app/features/fundraising/data/models/fundraising_models.
 import 'package:furtail_app/features/fundraising/data/repositories/fundraising_repository.dart';
 import 'package:furtail_app/features/fundraising/data/services/fundraising_deadline_options.dart';
 import 'package:furtail_app/features/fundraising/data/services/fundraising_draft_recovery_service.dart';
+import 'package:furtail_app/features/fundraising/presentation/fundraising_option_catalog.dart';
 import 'package:furtail_app/features/fundraising/presentation/controllers/fundraising_create_wizard_controller.dart';
 import 'package:furtail_app/features/fundraising/presentation/providers/fundraising_providers.dart';
+import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_common_scaffold.dart';
 import 'package:furtail_app/features/wallet/presentation/screens/wallet_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_campaign_preview_card.dart';
 import 'package:furtail_app/features/fundraising/presentation/widgets/fundraising_create_wizard_widgets.dart';
@@ -80,31 +82,6 @@ class _FundraisingCreateScreenState
     'jpeg',
     'png',
     'webp',
-  ];
-
-  static const List<String> _categoryValues = <String>[
-    'TREATMENT',
-    'RESCUE',
-    'SHELTER',
-    'FOOD',
-    'EQUIPMENT',
-    'OTHER',
-  ];
-
-  static const List<String> _beneficiaryTypes = <String>[
-    'PET',
-    'PERSON',
-    'SHELTER',
-    'ORGANIZATION',
-    'COMMUNITY',
-    'OTHER',
-  ];
-
-  static const List<String> _urgencyValues = <String>[
-    'LOW',
-    'MEDIUM',
-    'HIGH',
-    'CRITICAL',
   ];
 
   final _picker = ImagePicker();
@@ -1193,20 +1170,10 @@ class _FundraisingCreateScreenState
       onWillPop: _confirmExit,
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-        appBar: AppBar(
-          centerTitle: false,
-          scrolledUnderElevation: 0,
-          leading: IconButton(
-            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-          title: Text(
-            t.fundraisingWizardTitle,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
+        appBar: buildFundraisingAppBar(
+          context: context,
+          title: t.fundraisingWizardTitle,
+          showBack: true,
         ),
         body: isBusy
             ? Center(
@@ -1315,6 +1282,16 @@ class _FundraisingCreateScreenState
 
   Widget _buildBeneficiaryStep(BuildContext context, AppLocalizations t) {
     final draft = _wizardController.draft;
+    final categoryOptions = resolveFundraisingOptionSet(
+      draft.category,
+      fundraisingCategoryOptions,
+      legacyLabelBuilder: (value) => 'Legacy category: $value',
+    );
+    final beneficiaryOptions = resolveFundraisingOptionSet(
+      draft.beneficiaryType,
+      fundraisingBeneficiaryTypeOptions,
+      legacyLabelBuilder: (value) => 'Legacy beneficiary type: $value',
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1325,14 +1302,14 @@ class _FundraisingCreateScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FundraisingDropdownField<String>(
-                value: draft.category.trim().isEmpty ? null : draft.category,
+                value: categoryOptions.selectedValue,
                 labelText: t.fundraisingCategoryField,
                 hintText: 'Select the closest campaign category',
-                items: _categoryValues
+                items: categoryOptions.items
                     .map(
-                      (value) => DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(_categoryLabel(t, value)),
+                      (option) => DropdownMenuItem<String>(
+                        value: option.value,
+                        child: Text(option.label),
                       ),
                     )
                     .toList(),
@@ -1389,14 +1366,14 @@ class _FundraisingCreateScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FundraisingDropdownField<String>(
-                value: draft.beneficiaryType,
+                value: beneficiaryOptions.selectedValue,
                 labelText: t.fundraisingBeneficiaryTypeField,
                 hintText: 'Choose a beneficiary type',
-                items: _beneficiaryTypes
+                items: beneficiaryOptions.items
                     .map(
-                      (value) => DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(_beneficiaryLabel(t, value)),
+                      (option) => DropdownMenuItem<String>(
+                        value: option.value,
+                        child: Text(option.label),
                       ),
                     )
                     .toList(),
@@ -1463,6 +1440,11 @@ class _FundraisingCreateScreenState
   }
 
   Widget _buildStoryStep(BuildContext context, AppLocalizations t) {
+    final urgencyOptions = resolveFundraisingOptionSet(
+      _wizardController.draft.urgency,
+      fundraisingUrgencyOptions,
+      legacyLabelBuilder: (value) => 'Legacy urgency: $value',
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1568,14 +1550,14 @@ class _FundraisingCreateScreenState
               ),
               const SizedBox(height: 12),
               FundraisingDropdownField<String>(
-                value: _wizardController.draft.urgency,
+                value: urgencyOptions.selectedValue,
                 labelText: t.fundraisingUrgencyField,
                 hintText: 'Select the current urgency level',
-                items: _urgencyValues
+                items: urgencyOptions.items
                     .map(
-                      (value) => DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(_urgencyLabel(t, value)),
+                      (option) => DropdownMenuItem<String>(
+                        value: option.value,
+                        child: Text(option.label),
                       ),
                     )
                     .toList(),

@@ -34,12 +34,12 @@ class MediaUploadSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'uploadQuality': uploadQuality.name,
-        'autoPlayVideos': autoPlayVideos.name,
-        'saveUploadedMedia': saveUploadedMedia,
-        'compressImages': compressImages,
-        'compressVideos': compressVideos,
-      };
+    'uploadQuality': uploadQuality.name,
+    'autoPlayVideos': autoPlayVideos.name,
+    'saveUploadedMedia': saveUploadedMedia,
+    'compressImages': compressImages,
+    'compressVideos': compressVideos,
+  };
 
   factory MediaUploadSettings.fromJson(Map<String, dynamic> json) {
     return MediaUploadSettings(

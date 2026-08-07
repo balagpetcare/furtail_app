@@ -10,6 +10,7 @@ class PetFormState {
 
   // create/edit
   final int? petId;
+  final int? version;
   bool get editMode => petId != null;
 
   // ── Step 1: Basic Info ────────────────────────────────────────────────────
@@ -25,6 +26,8 @@ class PetFormState {
   final XFile? photo;
   final File? photoFile;
   final bool photoChanged;
+  final int? uploadedProfileImageId;
+  final String? createIdempotencyKey;
 
   // ── Step 2: Appearance ───────────────────────────────────────────────────
   final int? colorId;
@@ -64,6 +67,7 @@ class PetFormState {
     required this.step,
     required this.showStep1Errors,
     required this.petId,
+    required this.version,
     required this.name,
     required this.animalTypes,
     required this.animalTypeId,
@@ -76,6 +80,8 @@ class PetFormState {
     required this.photo,
     required this.photoFile,
     required this.photoChanged,
+    required this.uploadedProfileImageId,
+    required this.createIdempotencyKey,
     required this.colorId,
     required this.coatPatternId,
     required this.sizeId,
@@ -107,6 +113,7 @@ class PetFormState {
       step: 0,
       showStep1Errors: false,
       petId: null,
+      version: null,
       name: "",
       animalTypes: [],
       animalTypeId: null,
@@ -119,6 +126,8 @@ class PetFormState {
       photo: null,
       photoFile: null,
       photoChanged: false,
+      uploadedProfileImageId: null,
+      createIdempotencyKey: null,
       colorId: null,
       coatPatternId: null,
       sizeId: null,
@@ -152,6 +161,7 @@ class PetFormState {
     int? step,
     bool? showStep1Errors,
     int? petId,
+    int? version,
     String? name,
     List<Map<String, dynamic>>? animalTypes,
     int? animalTypeId,
@@ -164,6 +174,8 @@ class PetFormState {
     XFile? photo,
     File? photoFile,
     bool? photoChanged,
+    int? uploadedProfileImageId,
+    String? createIdempotencyKey,
     int? colorId,
     int? coatPatternId,
     int? sizeId,
@@ -185,6 +197,27 @@ class PetFormState {
     XFile? coverPhoto,
     int? coverMediaId,
     String? coverMediaUrl,
+    bool clearPetId = false,
+    bool clearVersion = false,
+    bool clearAnimalTypeId = false,
+    bool clearBreedId = false,
+    bool clearCustomBreedText = false,
+    bool clearDob = false,
+    bool clearAgeYears = false,
+    bool clearPhoto = false,
+    bool clearPhotoFile = false,
+    bool clearUploadedProfileImageId = false,
+    bool clearCreateIdempotencyKey = false,
+    bool clearColorId = false,
+    bool clearCoatPatternId = false,
+    bool clearSizeId = false,
+    bool clearCustomColorText = false,
+    bool clearBloodType = false,
+    bool clearWeightKg = false,
+    bool clearCoverPhotoFile = false,
+    bool clearCoverPhoto = false,
+    bool clearCoverMediaId = false,
+    bool clearCoverMediaUrl = false,
   }) {
     return PetFormState(
       loading: loading ?? this.loading,
@@ -192,40 +225,62 @@ class PetFormState {
       error: error,
       step: step ?? this.step,
       showStep1Errors: showStep1Errors ?? this.showStep1Errors,
-      petId: petId ?? this.petId,
+      petId: clearPetId ? null : petId ?? this.petId,
+      version: clearVersion ? null : version ?? this.version,
       name: name ?? this.name,
       animalTypes: animalTypes ?? this.animalTypes,
-      animalTypeId: animalTypeId ?? this.animalTypeId,
+      animalTypeId: clearAnimalTypeId
+          ? null
+          : animalTypeId ?? this.animalTypeId,
       breeds: breeds ?? this.breeds,
-      breedId: breedId ?? this.breedId,
-      customBreedText: customBreedText ?? this.customBreedText,
-      dob: dob ?? this.dob,
-      ageYears: ageYears ?? this.ageYears,
+      breedId: clearBreedId ? null : breedId ?? this.breedId,
+      customBreedText: clearCustomBreedText
+          ? null
+          : customBreedText ?? this.customBreedText,
+      dob: clearDob ? null : dob ?? this.dob,
+      ageYears: clearAgeYears ? null : ageYears ?? this.ageYears,
       sex: sex ?? this.sex,
-      photo: photo ?? this.photo,
-      photoFile: photoFile ?? this.photoFile,
+      photo: clearPhoto ? null : photo ?? this.photo,
+      photoFile: clearPhotoFile ? null : photoFile ?? this.photoFile,
       photoChanged: photoChanged ?? this.photoChanged,
-      colorId: colorId ?? this.colorId,
-      coatPatternId: coatPatternId ?? this.coatPatternId,
-      sizeId: sizeId ?? this.sizeId,
-      customColorText: customColorText ?? this.customColorText,
+      uploadedProfileImageId: clearUploadedProfileImageId
+          ? null
+          : uploadedProfileImageId ?? this.uploadedProfileImageId,
+      createIdempotencyKey: clearCreateIdempotencyKey
+          ? null
+          : createIdempotencyKey ?? this.createIdempotencyKey,
+      colorId: clearColorId ? null : colorId ?? this.colorId,
+      coatPatternId: clearCoatPatternId
+          ? null
+          : coatPatternId ?? this.coatPatternId,
+      sizeId: clearSizeId ? null : sizeId ?? this.sizeId,
+      customColorText: clearCustomColorText
+          ? null
+          : customColorText ?? this.customColorText,
       microchipNumber: microchipNumber ?? this.microchipNumber,
       isRescue: isRescue ?? this.isRescue,
       isNeutered: isNeutered ?? this.isNeutered,
-      bloodType: bloodType ?? this.bloodType,
+      bloodType: clearBloodType ? null : bloodType ?? this.bloodType,
       healthDisorders: healthDisorders ?? this.healthDisorders,
       allergiesText: allergiesText ?? this.allergiesText,
       foodHabits: foodHabits ?? this.foodHabits,
       notes: notes ?? this.notes,
-      weightKg: weightKg ?? this.weightKg,
-      isPublicProfileEnabled: isPublicProfileEnabled ?? this.isPublicProfileEnabled,
+      weightKg: clearWeightKg ? null : weightKg ?? this.weightKg,
+      isPublicProfileEnabled:
+          isPublicProfileEnabled ?? this.isPublicProfileEnabled,
       slug: slug ?? this.slug,
       bio: bio ?? this.bio,
-      coverPhotoFile: coverPhotoFile ?? this.coverPhotoFile,
+      coverPhotoFile: clearCoverPhotoFile
+          ? null
+          : coverPhotoFile ?? this.coverPhotoFile,
       coverPhotoChanged: coverPhotoChanged ?? this.coverPhotoChanged,
-      coverPhoto: coverPhoto ?? this.coverPhoto,
-      coverMediaId: coverMediaId ?? this.coverMediaId,
-      coverMediaUrl: coverMediaUrl ?? this.coverMediaUrl,
+      coverPhoto: clearCoverPhoto ? null : coverPhoto ?? this.coverPhoto,
+      coverMediaId: clearCoverMediaId
+          ? null
+          : coverMediaId ?? this.coverMediaId,
+      coverMediaUrl: clearCoverMediaUrl
+          ? null
+          : coverMediaUrl ?? this.coverMediaUrl,
     );
   }
 }

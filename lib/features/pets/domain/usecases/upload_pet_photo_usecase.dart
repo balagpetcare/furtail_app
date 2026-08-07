@@ -6,7 +6,16 @@ class UpdatePetPhotoUsecase {
   UpdatePetPhotoUsecase(this.repo);
 
   /// Uploads photo and attaches it to pet
-  Future<void> call(int petId, File file) {
-    return repo.updatePetPhoto(petId, file);
+  Future<void> call(int petId, File file, {int? version}) {
+    return repo.updatePetPhoto(petId, file, version: version);
+  }
+}
+
+class RemovePetPhotoUsecase {
+  final PetRepository repo;
+  RemovePetPhotoUsecase(this.repo);
+
+  Future<void> call(int petId, {int? version}) {
+    return repo.removePetPhoto(petId, version: version);
   }
 }

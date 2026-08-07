@@ -8,7 +8,11 @@ import 'package:furtail_app/app/router/app_routes.dart';
 class ProfileTabGallery extends StatefulWidget {
   final int userId;
   final bool canManage;
-  const ProfileTabGallery({super.key, required this.userId, this.canManage = false});
+  const ProfileTabGallery({
+    super.key,
+    required this.userId,
+    this.canManage = false,
+  });
 
   @override
   State<ProfileTabGallery> createState() => _ProfileTabGalleryState();
@@ -39,7 +43,12 @@ class _ProfileTabGalleryState extends State<ProfileTabGallery> {
         cursor: more ? _nextCursor : null,
       );
 
-      final items = (data['items'] as List?)?.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() ?? [];
+      final items =
+          (data['items'] as List?)
+              ?.whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [];
       final next = data['nextCursor']?.toString();
 
       setState(() {
@@ -117,7 +126,11 @@ class _ProfileTabGalleryState extends State<ProfileTabGallery> {
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                      SnackBar(
+                        content: Text(
+                          e.toString().replaceAll('Exception: ', ''),
+                        ),
+                      ),
                     );
                   }
                 },
@@ -131,10 +144,18 @@ class _ProfileTabGalleryState extends State<ProfileTabGallery> {
                     context: context,
                     builder: (_) => AlertDialog(
                       title: const Text('Delete post?'),
-                      content: const Text('This will remove the post from your gallery.'),
+                      content: const Text(
+                        'This will remove the post from your gallery.',
+                      ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete'),
+                        ),
                       ],
                     ),
                   );
@@ -142,14 +163,18 @@ class _ProfileTabGalleryState extends State<ProfileTabGallery> {
                   try {
                     await _ds.deletePost(postId: postId);
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Deleted ✅')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('Deleted ✅')));
                     await _load();
                   } catch (e) {
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                      SnackBar(
+                        content: Text(
+                          e.toString().replaceAll('Exception: ', ''),
+                        ),
+                      ),
                     );
                   }
                 },
@@ -197,7 +222,9 @@ class _ProfileTabGalleryState extends State<ProfileTabGallery> {
                 final postId = (it['postId'] as num?)?.toInt() ?? 0;
                 return InkWell(
                   onTap: postId > 0 ? () => _openPost(postId) : null,
-                  onLongPress: (postId > 0) ? () => _openActions(postId: postId) : null,
+                  onLongPress: (postId > 0)
+                      ? () => _openActions(postId: postId)
+                      : null,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(url, fit: BoxFit.cover),

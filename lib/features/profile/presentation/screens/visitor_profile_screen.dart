@@ -635,7 +635,7 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
 
   Future<void> _blockUser(BuildContext context, dynamic profile) async {
     final userId = profile.id as int;
-    final name = profile.displayName?.toString() ?? 'User';
+    final name = profile.displayName?.toString() ?? 'Furtail Member';
 
     final ok = await showDialog<bool>(
       context: context,

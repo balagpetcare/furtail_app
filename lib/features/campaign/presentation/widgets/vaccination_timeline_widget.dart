@@ -38,7 +38,9 @@ class VaccinationTimelineWidget extends StatelessWidget {
         return _TimelineRow(
           event: e,
           showLine: !isLast,
-          onCertificateTap: e.certificateToken != null ? () => onCertificateTap?.call(e) : null,
+          onCertificateTap: e.certificateToken != null
+              ? () => onCertificateTap?.call(e)
+              : null,
         );
       },
     );
@@ -85,8 +87,9 @@ class _TimelineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _eventColor(context);
-    final dateStr =
-        event.at != null ? DateFormat('d MMM yyyy · HH:mm').format(event.at!) : '—';
+    final dateStr = event.at != null
+        ? DateFormat('d MMM yyyy · HH:mm').format(event.at!)
+        : '—';
 
     return IntrinsicHeight(
       child: Row(
@@ -124,17 +127,23 @@ class _TimelineRow extends StatelessWidget {
                     children: [
                       Text(
                         event.title,
-                        style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w700),
+                        style: context.appText.bodyLarge!.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         event.subtitle,
-                        style: context.appText.bodyMedium!.copyWith(color: Colors.grey.shade700),
+                        style: context.appText.bodyMedium!.copyWith(
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${event.petName} · $dateStr',
-                        style: context.appText.bodySmall!.copyWith(color: Colors.grey.shade600),
+                        style: context.appText.bodySmall!.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
                       ),
                       if (onCertificateTap != null) ...[
                         const SizedBox(height: 8),

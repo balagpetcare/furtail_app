@@ -41,16 +41,14 @@ class _PostDetailsActionsState extends State<PostDetailsActions> {
     );
 
     try {
-      final res =
-          currently ? await _ds.unlikePost(p.id) : await _ds.likePost(p.id);
+      final res = currently
+          ? await _ds.unlikePost(p.id)
+          : await _ds.likePost(p.id);
       final likeCount = (res['likeCount'] as num?)?.toInt();
       if (!mounted) return;
       if (likeCount != null) {
         widget.onChanged(
-          p.copyWith(
-            likeCount: likeCount,
-            isLikedByMe: !currently,
-          ),
+          p.copyWith(likeCount: likeCount, isLikedByMe: !currently),
         );
       }
     } catch (_) {
@@ -77,8 +75,11 @@ class _PostDetailsActionsState extends State<PostDetailsActions> {
             onShare: () {
               final fundraisingId = p.fundraisingCampaignId;
               if (fundraisingId != null) {
-                ShareService.share(context,
-                    type: 'fundraising', id: fundraisingId);
+                ShareService.share(
+                  context,
+                  type: 'fundraising',
+                  id: fundraisingId,
+                );
               } else {
                 ShareService.share(context, type: 'post', id: p.id);
               }

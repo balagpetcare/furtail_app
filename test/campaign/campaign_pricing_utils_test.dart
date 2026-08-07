@@ -13,7 +13,10 @@ void main() {
       pricingType: 'PAID',
       priceAmount: 200,
     );
-    final breakdown = computeCampaignPriceBreakdown(campaign: campaign, catCount: 3);
+    final breakdown = computeCampaignPriceBreakdown(
+      campaign: campaign,
+      catCount: 3,
+    );
     expect(breakdown.quantity, 3);
     expect(breakdown.subtotal, 600);
     expect(breakdown.total, 600);
@@ -28,7 +31,10 @@ void main() {
       endDate: DateTime(2026, 12, 31),
       pricingType: 'FREE',
     );
-    final breakdown = computeCampaignPriceBreakdown(campaign: campaign, catCount: 2);
+    final breakdown = computeCampaignPriceBreakdown(
+      campaign: campaign,
+      catCount: 2,
+    );
     expect(breakdown.isFree, true);
     expect(breakdown.total, 0);
   });

@@ -38,15 +38,18 @@ class VaccinationReminderEngine {
 
   Future<void> _scheduleOne(VaccinationRecord record, int daysBefore) async {
     final due = record.nextDueDate!;
-    final scheduled = DateTime(due.year, due.month, due.day)
-        .subtract(Duration(days: daysBefore));
+    final scheduled = DateTime(
+      due.year,
+      due.month,
+      due.day,
+    ).subtract(Duration(days: daysBefore));
     if (scheduled.isBefore(DateTime.now())) return;
 
     final label = daysBefore == 0
         ? 'due today'
         : daysBefore == 1
-            ? 'due tomorrow'
-            : 'due in $daysBefore days';
+        ? 'due tomorrow'
+        : 'due in $daysBefore days';
 
     await _notifications.scheduleCampaignReminder(
       dedupeKey: 'vax-${record.id}-${record.vaccineType}-$daysBefore',

@@ -48,28 +48,32 @@ class _CommentsPreviewSectionState extends State<CommentsPreviewSection> {
           if (widget.showTitle) ...[
             Text(
               'Comments',
-              style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900),
+              style: context.appText.bodyLarge!.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 10),
           ],
           FutureBuilder<List<PostCommentModel>>(
             key: ValueKey('${widget.reloadToken}-$_localReload'),
-            future: ds.listComments(
-              widget.postId,
-              limit: widget.previewCount,
-            ),
+            future: ds.listComments(widget.postId, limit: widget.previewCount),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 );
               }
               final list = snap.data ?? const [];
               if (list.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.only(bottom: 10),
-                  child: Text('No comments yet', style: TextStyle(color: Colors.black54)),
+                  child: Text(
+                    'No comments yet',
+                    style: TextStyle(color: Colors.black54),
+                  ),
                 );
               }
 
@@ -123,7 +127,6 @@ class _CommentsPreviewSectionState extends State<CommentsPreviewSection> {
     );
   }
 }
-
 
 String _formatCommentTime(DateTime dt) {
   final now = DateTime.now();
@@ -187,7 +190,9 @@ class _MiniCommentTile extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     _formatCommentTime(item.createdAt),
-                    style: context.appText.labelMedium!.copyWith(color: Colors.black54),
+                    style: context.appText.labelMedium!.copyWith(
+                      color: Colors.black54,
+                    ),
                   ),
                 ],
               ),
@@ -207,9 +212,15 @@ class _MiniCommentTile extends StatelessWidget {
                     onTap: () async {
                       try {
                         if (item.isLikedByMe) {
-                          await ds.unlikeComment(postId: postId, commentId: item.id);
+                          await ds.unlikeComment(
+                            postId: postId,
+                            commentId: item.id,
+                          );
                         } else {
-                          await ds.likeComment(postId: postId, commentId: item.id);
+                          await ds.likeComment(
+                            postId: postId,
+                            commentId: item.id,
+                          );
                         }
                         onChanged();
                       } catch (_) {}
@@ -217,7 +228,9 @@ class _MiniCommentTile extends StatelessWidget {
                   ),
                   Text(
                     '${item.likeCount} likes',
-                    style: context.appText.labelMedium!.copyWith(color: Colors.black54),
+                    style: context.appText.labelMedium!.copyWith(
+                      color: Colors.black54,
+                    ),
                   ),
                   if (!isReply)
                     _MiniAction(
@@ -251,7 +264,11 @@ class _MiniCommentTile extends StatelessWidget {
                           final text = ctrl.text.trim();
                           if (text.isEmpty) return;
                           try {
-                            await ds.addReply(postId: postId, commentId: item.id, text: text);
+                            await ds.addReply(
+                              postId: postId,
+                              commentId: item.id,
+                              text: text,
+                            );
                             onChanged();
                           } catch (_) {}
                         }

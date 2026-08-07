@@ -58,7 +58,11 @@ class CommentTile extends StatelessWidget {
               ? null
               : NetworkImage(item.author.avatarUrl!),
           child: (item.author.avatarUrl ?? '').isEmpty
-              ? Icon(Icons.person, size: isReply ? 16 : 18, color: Colors.black45)
+              ? Icon(
+                  Icons.person,
+                  size: isReply ? 16 : 18,
+                  color: Colors.black45,
+                )
               : null,
         ),
         const SizedBox(width: 10),
@@ -74,7 +78,11 @@ class CommentTile extends StatelessWidget {
                       : const Color(0xFFF6F6F6),
                   borderRadius: BorderRadius.circular(14),
                   border: isHighlighted
-                      ? Border.all(color: const Color(0xFF2196F3).withValues(alpha: 0.35))
+                      ? Border.all(
+                          color: const Color(
+                            0xFF2196F3,
+                          ).withValues(alpha: 0.35),
+                        )
                       : null,
                 ),
                 child: Column(
@@ -144,11 +152,18 @@ class CommentTile extends StatelessWidget {
                 children: [
                   _LikeButton(item: item, onTap: onLike, context: context),
                   const SizedBox(width: 8),
-                  _ActionLabel(label: 'Reply', onTap: onReply, context: context),
+                  _ActionLabel(
+                    label: 'Reply',
+                    onTap: onReply,
+                    context: context,
+                  ),
                   if (item.replyCount > 0) ...[
                     const SizedBox(width: 8),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
+                      ),
                       child: Text(
                         '${item.replyCount} ${item.replyCount == 1 ? 'reply' : 'replies'}',
                         style: context.appText.labelSmall!.copyWith(

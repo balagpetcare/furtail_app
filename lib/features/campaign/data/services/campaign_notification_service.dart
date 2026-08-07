@@ -30,8 +30,10 @@ class CampaignNotificationService {
       case CampaignNotificationCategory.reminder:
         return AppNotificationType.campaignReminder;
       case CampaignNotificationCategory.campaign:
-        if (n.type.contains('cancel')) return AppNotificationType.campaignCancelled;
-        if (n.type.contains('update')) return AppNotificationType.campaignUpdate;
+        if (n.type.contains('cancel'))
+          return AppNotificationType.campaignCancelled;
+        if (n.type.contains('update'))
+          return AppNotificationType.campaignUpdate;
         return AppNotificationType.campaignNew;
     }
   }
@@ -59,7 +61,9 @@ class CampaignNotificationService {
   }
 
   Future<void> showLocal(PublicCampaignNotification notification) async {
-    await _ref.read(notificationControllerProvider.notifier).showTyped(
+    await _ref
+        .read(notificationControllerProvider.notifier)
+        .showTyped(
           type: typeForPayload(notification),
           title: notification.title,
           body: notification.body,
@@ -77,7 +81,9 @@ class CampaignNotificationService {
       if (user.isConfigured) {
         final geoRaw = data['geoTargets'];
         if (geoRaw is Map) {
-          final target = CampaignGeoTarget.fromJson(Map<String, dynamic>.from(geoRaw));
+          final target = CampaignGeoTarget.fromJson(
+            Map<String, dynamic>.from(geoRaw),
+          );
           final synthetic = PublicCampaign(
             id: notification.campaignId ?? 0,
             name: notification.title,
@@ -96,10 +102,11 @@ class CampaignNotificationService {
   }
 }
 
-final campaignNotificationServiceProvider = Provider<CampaignNotificationService>((ref) {
-  return CampaignNotificationService(
-    ref,
-    ref.read(smartCampaignEngineProvider),
-    ref.read(userGeoPreferencesServiceProvider),
-  );
-});
+final campaignNotificationServiceProvider =
+    Provider<CampaignNotificationService>((ref) {
+      return CampaignNotificationService(
+        ref,
+        ref.read(smartCampaignEngineProvider),
+        ref.read(userGeoPreferencesServiceProvider),
+      );
+    });

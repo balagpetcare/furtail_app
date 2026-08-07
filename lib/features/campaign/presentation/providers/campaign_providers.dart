@@ -16,19 +16,27 @@ final reminderStorageProvider = Provider<ReminderStorage>((ref) {
   return ReminderStorage();
 });
 
-final campaignSummaryProvider = FutureProvider<CampaignLinkSummary>((ref) async {
+final campaignSummaryProvider = FutureProvider<CampaignLinkSummary>((
+  ref,
+) async {
   return ref.read(campaignRepositoryProvider).fetchSummary();
 });
 
-final myCampaignBookingsProvider = FutureProvider<List<CampaignBooking>>((ref) async {
+final myCampaignBookingsProvider = FutureProvider<List<CampaignBooking>>((
+  ref,
+) async {
   return ref.read(campaignRepositoryProvider).fetchMyBookings();
 });
 
-final vaccinationRecordsProvider = FutureProvider<List<VaccinationRecord>>((ref) async {
+final vaccinationRecordsProvider = FutureProvider<List<VaccinationRecord>>((
+  ref,
+) async {
   return ref.read(campaignRepositoryProvider).fetchVaccinations();
 });
 
-final upcomingVaccinationsProvider = FutureProvider<List<UpcomingVaccination>>((ref) async {
+final upcomingVaccinationsProvider = FutureProvider<List<UpcomingVaccination>>((
+  ref,
+) async {
   return ref.read(campaignRepositoryProvider).fetchUpcoming();
 });
 
@@ -37,11 +45,13 @@ final campaignBenefitsProvider = FutureProvider<CampaignBenefits>((ref) async {
 });
 
 final vaccinationRemindersProvider =
-    AsyncNotifierProvider<VaccinationRemindersNotifier, List<VaccinationReminder>>(
-  VaccinationRemindersNotifier.new,
-);
+    AsyncNotifierProvider<
+      VaccinationRemindersNotifier,
+      List<VaccinationReminder>
+    >(VaccinationRemindersNotifier.new);
 
-class VaccinationRemindersNotifier extends AsyncNotifier<List<VaccinationReminder>> {
+class VaccinationRemindersNotifier
+    extends AsyncNotifier<List<VaccinationReminder>> {
   @override
   Future<List<VaccinationReminder>> build() async {
     final storage = ref.read(reminderStorageProvider);
@@ -69,14 +79,18 @@ class VaccinationRemindersNotifier extends AsyncNotifier<List<VaccinationReminde
   Future<void> toggle(String id, bool enabled) async {
     final current = state.valueOrNull ?? await future;
     final updated = current
-        .map((r) => r.id == id ? VaccinationReminder(
-              id: r.id,
-              petName: r.petName,
-              vaccineType: r.vaccineType,
-              dueDate: r.dueDate,
-              enabled: enabled,
-              daysBefore: r.daysBefore,
-            ) : r)
+        .map(
+          (r) => r.id == id
+              ? VaccinationReminder(
+                  id: r.id,
+                  petName: r.petName,
+                  vaccineType: r.vaccineType,
+                  dueDate: r.dueDate,
+                  enabled: enabled,
+                  daysBefore: r.daysBefore,
+                )
+              : r,
+        )
         .toList();
     state = AsyncData(updated);
     await ref.read(reminderStorageProvider).save(updated);
@@ -128,12 +142,16 @@ Future<void> _syncLocalReminders(
   } catch (_) {}
 }
 
-final certificateProvider =
-    FutureProvider.family<CertificateData, String>((ref, token) async {
+final certificateProvider = FutureProvider.family<CertificateData, String>((
+  ref,
+  token,
+) async {
   return ref.read(campaignRepositoryProvider).fetchCertificate(token);
 });
 
-final certificateShareServiceProvider = Provider<CertificateShareService>((ref) {
+final certificateShareServiceProvider = Provider<CertificateShareService>((
+  ref,
+) {
   return CertificateShareService(ref.read(campaignRepositoryProvider));
 });
 
@@ -145,7 +163,9 @@ class PetHealthFilter {
 
   @override
   bool operator ==(Object other) =>
-      other is PetHealthFilter && other.petId == petId && other.petName == petName;
+      other is PetHealthFilter &&
+      other.petId == petId &&
+      other.petName == petName;
 
   @override
   int get hashCode => Object.hash(petId, petName);
@@ -153,7 +173,10 @@ class PetHealthFilter {
 
 /// Vaccination records filtered for a permanent pet profile.
 final petVaccinationRecordsProvider =
-    FutureProvider.family<List<VaccinationRecord>, PetHealthFilter>((ref, filter) async {
-  final all = await ref.read(vaccinationRecordsProvider.future);
-  return recordsForPet(all, petId: filter.petId, petName: filter.petName);
-});
+    FutureProvider.family<List<VaccinationRecord>, PetHealthFilter>((
+      ref,
+      filter,
+    ) async {
+      final all = await ref.read(vaccinationRecordsProvider.future);
+      return recordsForPet(all, petId: filter.petId, petName: filter.petName);
+    });

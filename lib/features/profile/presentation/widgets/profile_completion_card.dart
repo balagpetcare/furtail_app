@@ -31,9 +31,15 @@ class ProfileCompletionCard extends StatelessWidget {
             children: [
               const Icon(Icons.check_circle_outline, size: 18),
               const SizedBox(width: 8),
-              const Text('Profile Completion', style: TextStyle(fontWeight: FontWeight.w900)),
+              const Text(
+                'Profile Completion',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
               const Spacer(),
-              Text('$completionPercent%', style: const TextStyle(fontWeight: FontWeight.w900)),
+              Text(
+                '$completionPercent%',
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
             ],
           ),
           const SizedBox(height: 10),

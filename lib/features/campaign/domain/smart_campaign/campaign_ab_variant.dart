@@ -11,8 +11,8 @@ class CampaignAbVariant {
   });
 
   Map<String, String> analyticsParams() => {
-        'ab_test_key': testKey,
-        'ab_variant': variant,
-        'campaign_slug': slug,
-      };
+    'ab_test_key': testKey,
+    'ab_variant': variant,
+    'campaign_slug': slug,
+  };
 }

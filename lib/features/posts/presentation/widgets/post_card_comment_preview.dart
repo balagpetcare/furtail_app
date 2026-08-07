@@ -43,10 +43,9 @@ class PostCardCommentPreview extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 6),
               child: RichText(
                 text: TextSpan(
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.black87),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.black87),
                   children: [
                     TextSpan(
                       text: '$author  ',

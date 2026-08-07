@@ -27,7 +27,7 @@ class ProfileHeader extends StatelessWidget {
     final title = profile.name;
     final subtitle = profile.username?.isNotEmpty == true
         ? "@${profile.username}"
-        : (profile.email ?? profile.phone ?? "Furtail Member");
+        : "Furtail Member";
 
     final cover = profile.coverUrl;
     final avatar = profile.photoUrl;
@@ -37,101 +37,104 @@ class ProfileHeader extends StatelessWidget {
         final coverHeight = constraints.maxWidth >= 600 ? 280.0 : 240.0;
         return Stack(
           children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(26),
-            bottomRight: Radius.circular(26),
-          ),
-          child: SizedBox(
-            height: coverHeight,
-            width: double.infinity,
-            child: (cover == null || cover.isEmpty)
-                ? const _DefaultCover()
-                : FurtailCachedImage(
-                    imageUrl: cover,
-                    width: double.infinity,
-                    height: coverHeight,
-                    fit: BoxFit.cover,
-                    errorWidget: const _DefaultCover(),
-                    placeholder: const _DefaultCover(),
-                  ),
-          ),
-        ),
-
-        // Cover overlay (glass/gradient)
-        Positioned.fill(
-          child: Container(
-            height: coverHeight,
-            decoration: BoxDecoration(
+            ClipRRect(
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(26),
                 bottomRight: Radius.circular(26),
               ),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.black.withValues(alpha: 0.05),
-                  const Color(0xFF0B1220).withValues(alpha: 0.80),
+              child: SizedBox(
+                height: coverHeight,
+                width: double.infinity,
+                child: (cover == null || cover.isEmpty)
+                    ? const _DefaultCover()
+                    : FurtailCachedImage(
+                        imageUrl: cover,
+                        width: double.infinity,
+                        height: coverHeight,
+                        fit: BoxFit.cover,
+                        errorWidget: const _DefaultCover(),
+                        placeholder: const _DefaultCover(),
+                      ),
+              ),
+            ),
+
+            // Cover overlay (glass/gradient)
+            Positioned.fill(
+              child: Container(
+                height: coverHeight,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(26),
+                    bottomRight: Radius.circular(26),
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.05),
+                      const Color(0xFF0B1220).withValues(alpha: 0.80),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+
+            // Top actions
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    _TopIcon(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      onTap: onBack ?? () => Navigator.maybePop(context),
+                    ),
+                    const Spacer(),
+                    _TopIcon(icon: Icons.favorite_border, onTap: onFavorite),
+                    const SizedBox(width: 10),
+                    _TopIcon(icon: Icons.more_horiz, onTap: onMore),
+                  ],
+                ),
+              ),
+            ),
+
+            // Center avatar + badge + name
+            Positioned(
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
+              bottom: AppSpacing.md,
+              child: Column(
+                children: [
+                  _AvatarWithRibbon(name: title, photoUrl: avatar),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: context.appText.headlineMedium!.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: AppTypographyScale.pageTitle,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: context.appText.bodyMedium!.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
               ),
             ),
-          ),
-        ),
-
-        // Top actions
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                _TopIcon(
-                  icon: Icons.arrow_back_ios_new_rounded,
-                  onTap: onBack ?? () => Navigator.maybePop(context),
-                ),
-                const Spacer(),
-                _TopIcon(icon: Icons.favorite_border, onTap: onFavorite),
-                const SizedBox(width: 10),
-                _TopIcon(icon: Icons.more_horiz, onTap: onMore),
-              ],
-            ),
-          ),
-        ),
-
-        // Center avatar + badge + name
-        Positioned(
-          left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          bottom: AppSpacing.md,
-          child: Column(
-            children: [
-              _AvatarWithRibbon(name: title, photoUrl: avatar),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: context.appText.headlineMedium!.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: AppTypographyScale.pageTitle,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: context.appText.bodyMedium!.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
           ],
         );
       },

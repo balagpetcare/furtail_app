@@ -51,19 +51,19 @@ class Country {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'iso2': iso2,
-        'name': name,
-        'iso3': iso3,
-        'phoneCode': phoneCode,
-        'currencyCode': currencyCode,
-        'currencySymbol': currencySymbol,
-        'flagEmoji': flagEmoji,
-        'flagAssetUrl': flagAssetUrl,
-        'isSupported': isSupported,
-        'isDefault': isDefault,
-        'paymentEnabled': paymentEnabled,
-        'contentEnabled': contentEnabled,
-        'supportEnabled': supportEnabled,
-      };
+    'id': id,
+    'iso2': iso2,
+    'name': name,
+    'iso3': iso3,
+    'phoneCode': phoneCode,
+    'currencyCode': currencyCode,
+    'currencySymbol': currencySymbol,
+    'flagEmoji': flagEmoji,
+    'flagAssetUrl': flagAssetUrl,
+    'isSupported': isSupported,
+    'isDefault': isDefault,
+    'paymentEnabled': paymentEnabled,
+    'contentEnabled': contentEnabled,
+    'supportEnabled': supportEnabled,
+  };
 }

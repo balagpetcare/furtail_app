@@ -25,6 +25,7 @@ class ProfileMediaUploadResult {
 class ProfileMediaUploadScreen extends StatefulWidget {
   final String title;
   final ProfileCropStyle cropStyle;
+
   /// When set, auto-opens the picker for this source on screen open.
   final ImageSource? initialSource;
 
@@ -160,9 +161,7 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
           // ✅ Requirement: profile picture must ALWAYS be square.
           lockAspectRatio: isAvatar,
           aspectRatioPresets: isAvatar
-              ? const [
-                  CropAspectRatioPreset.square,
-                ]
+              ? const [CropAspectRatioPreset.square]
               : const [
                   CropAspectRatioPreset.original,
                   CropAspectRatioPreset.ratio16x9,
@@ -225,7 +224,9 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
           color: const Color(0xFFF6F8FC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+            color: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.15),
             width: 2,
           ),
         ),
@@ -235,13 +236,13 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isAvatar
-                    ? Icons.account_circle_outlined
-                    : Icons.image_outlined,
+                isAvatar ? Icons.account_circle_outlined : Icons.image_outlined,
                 size: 56,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -250,9 +251,9 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
             Text(
               isAvatar ? 'Select profile photo' : 'Select cover photo',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -262,9 +263,9 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
                     ? 'Choose a photo from your gallery. It will be cropped to a square.'
                     : 'Choose a wide image for your cover header. You can crop it before uploading.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.black54,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
               ),
             ),
             const SizedBox(height: 24),
@@ -273,7 +274,10 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
               icon: const Icon(Icons.photo_library_outlined),
               label: const Text('Choose from Gallery'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -290,9 +294,7 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
     if (file == null) {
       return Container(
         color: const Color(0xFFF2F2F2),
-        child: const Center(
-          child: Text('No image selected'),
-        ),
+        child: const Center(child: Text('No image selected')),
       );
     }
 
@@ -381,8 +383,12 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
                         label: const Text('Adjust Crop'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                          foregroundColor: Theme.of(context).colorScheme.primary,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -429,7 +435,12 @@ class _ProfileMediaUploadScreenState extends State<ProfileMediaUploadScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : Text('Upload & Apply', style: AppTypography.menuTitle(context).copyWith(fontWeight: FontWeight.bold)),
+                        : Text(
+                            'Upload & Apply',
+                            style: AppTypography.menuTitle(
+                              context,
+                            ).copyWith(fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ] else ...[

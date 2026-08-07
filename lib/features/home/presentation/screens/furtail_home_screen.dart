@@ -39,6 +39,7 @@ import 'package:furtail_app/app/router/app_routes.dart';
 // Ã¢Å“â€¦ Pet create screen import (Ã Â¦â€ Ã Â¦ÂªÃ Â¦Â¨Ã Â¦Â¾Ã Â¦Â° path Ã Â¦â€¦Ã Â¦Â¨Ã Â§ÂÃ Â¦Â¯Ã Â¦Â¾Ã Â§Å¸Ã Â§â‚¬ Ã Â¦Â Ã Â¦Â¿Ã Â¦â€¢ Ã Â¦â€¢Ã Â¦Â°Ã Â§ÂÃ Â¦Â¨)
 
 import 'package:furtail_app/features/pets/presentation/pet_create_screen.dart';
+import 'package:furtail_app/features/pets/presentation/pet_list_screen.dart';
 import 'package:furtail_app/features/campaign/presentation/screens/campaign_hub_screen.dart';
 import 'package:furtail_app/features/notifications/presentation/providers/notification_controller.dart';
 import 'package:furtail_app/features/settings/presentation/screens/privacy_settings_screen.dart';
@@ -563,10 +564,9 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
       case BPADrawerDestination.petList:
         {
-          pushPlaceholder(
-            'Pet List',
-            'Pet list is coming soon. Stay tuned!',
-            icon: Icons.pets_rounded,
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PetListScreen()),
           );
           return;
         }

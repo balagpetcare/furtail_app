@@ -18,9 +18,9 @@ class SettingsRepository {
     SettingsLocalDatasource? local,
     ApiClient? api,
     NotificationRepository? notificationRepository,
-  })  : _local = local ?? SettingsLocalDatasource(),
-        _api = api,
-        _notificationRepository = notificationRepository;
+  }) : _local = local ?? SettingsLocalDatasource(),
+       _api = api,
+       _notificationRepository = notificationRepository;
 
   final SettingsLocalDatasource _local;
   final ApiClient? _api;
@@ -30,7 +30,9 @@ class SettingsRepository {
     final local = await _local.loadNotificationPreferences();
     if (_api == null) return local;
     try {
-      final server = await NotificationRepository(_api).fetchNotificationPrefs();
+      final server = await NotificationRepository(
+        _api,
+      ).fetchNotificationPrefs();
       if (server == null) return local;
       return local.copyWith(
         allowEmail: server['allowEmail'] != false,
@@ -41,24 +43,21 @@ class SettingsRepository {
     }
   }
 
-  Future<void> saveNotificationPreferences(NotificationPreferences prefs) async {
+  Future<void> saveNotificationPreferences(
+    NotificationPreferences prefs,
+  ) async {
     await _local.saveNotificationPreferences(prefs);
     final api = _api;
     if (api == null) return;
     try {
-      await api.patch(
-        ApiEndpoints.notificationSettings(),
-        {
-          'allowEmail': prefs.allowEmail,
-          'allowSms': prefs.allowSms,
-        },
-        auth: true,
-      );
+      await api.patch(ApiEndpoints.notificationSettings(), {
+        'allowEmail': prefs.allowEmail,
+        'allowSms': prefs.allowSms,
+      }, auth: true);
     } catch (_) {}
   }
 
-  Future<PrivacySettings> getPrivacySettings() =>
-      _local.loadPrivacySettings();
+  Future<PrivacySettings> getPrivacySettings() => _local.loadPrivacySettings();
 
   Future<void> savePrivacySettings(PrivacySettings prefs) =>
       _local.savePrivacySettings(prefs);
@@ -67,10 +66,7 @@ class SettingsRepository {
 
   Future<void> blockUser(BlockedUser user) async {
     final list = await _local.loadBlockedUsers();
-    final next = [
-      ...list.where((u) => u.userId != user.userId),
-      user,
-    ];
+    final next = [...list.where((u) => u.userId != user.userId), user];
     await _local.saveBlockedUsers(next);
   }
 

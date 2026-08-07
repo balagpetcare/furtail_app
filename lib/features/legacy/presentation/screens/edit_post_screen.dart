@@ -76,8 +76,12 @@ class _EditMediaItem {
     required int id,
     required String url,
     required String type,
-  }) =>
-      _EditMediaItem._(key: UniqueKey(), type: type, existingId: id, existingUrl: url);
+  }) => _EditMediaItem._(
+    key: UniqueKey(),
+    type: type,
+    existingId: id,
+    existingUrl: url,
+  );
 
   factory _EditMediaItem.local({
     required File file,
@@ -90,20 +94,19 @@ class _EditMediaItem {
     String? aspectRatio,
     String? quality,
     int? coverTimestampMs,
-  }) =>
-      _EditMediaItem._(
-        key: UniqueKey(),
-        file: file,
-        type: type,
-        thumbnail: thumbnail,
-        trimStartMs: trimStartMs,
-        trimEndMs: trimEndMs,
-        mute: mute,
-        volume: volume,
-        aspectRatio: aspectRatio,
-        quality: quality,
-        coverTimestampMs: coverTimestampMs,
-      );
+  }) => _EditMediaItem._(
+    key: UniqueKey(),
+    file: file,
+    type: type,
+    thumbnail: thumbnail,
+    trimStartMs: trimStartMs,
+    trimEndMs: trimEndMs,
+    mute: mute,
+    volume: volume,
+    aspectRatio: aspectRatio,
+    quality: quality,
+    coverTimestampMs: coverTimestampMs,
+  );
 
   bool get isExisting => existingId != null;
   bool get isNew => file != null && existingId == null;
@@ -121,19 +124,18 @@ class _EditMediaItem {
     String? aspectRatio,
     String? quality,
     int? coverTimestampMs,
-  }) =>
-      _EditMediaItem.local(
-        file: file,
-        type: 'VIDEO',
-        thumbnail: thumbnail,
-        trimStartMs: trimStartMs,
-        trimEndMs: trimEndMs,
-        mute: mute,
-        volume: volume,
-        aspectRatio: aspectRatio,
-        quality: quality,
-        coverTimestampMs: coverTimestampMs,
-      );
+  }) => _EditMediaItem.local(
+    file: file,
+    type: 'VIDEO',
+    thumbnail: thumbnail,
+    trimStartMs: trimStartMs,
+    trimEndMs: trimEndMs,
+    mute: mute,
+    volume: volume,
+    aspectRatio: aspectRatio,
+    quality: quality,
+    coverTimestampMs: coverTimestampMs,
+  );
 
   static _EditMediaItem document(File file) =>
       _EditMediaItem.local(file: file, type: 'FILE');
@@ -197,7 +199,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
     // Feeling
     if (post.feelingId != null && post.feelingLabel != null) {
-      _selectedFeeling = FeelingActivityItem.byId(post.feelingId) ??
+      _selectedFeeling =
+          FeelingActivityItem.byId(post.feelingId) ??
           FeelingActivityItem(
             id: post.feelingId!,
             label: post.feelingLabel ?? '',
@@ -210,7 +213,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
 
     // Activity
     if (post.activityId != null && post.activityLabel != null) {
-      _selectedActivity = FeelingActivityItem.byId(post.activityId) ??
+      _selectedActivity =
+          FeelingActivityItem.byId(post.activityId) ??
           FeelingActivityItem(
             id: post.activityId!,
             label: post.activityLabel ?? '',
@@ -379,8 +383,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
     try {
       items = await FeelingActivityRemoteDs().fetch(type: 'FEELING');
     } catch (_) {
-      items =
-          FeelingActivityItem.all.where((i) => i.type == 'FEELING').toList();
+      items = FeelingActivityItem.all
+          .where((i) => i.type == 'FEELING')
+          .toList();
     }
     if (!mounted) return;
 
@@ -403,8 +408,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
     try {
       items = await FeelingActivityRemoteDs().fetch(type: 'ACTIVITY');
     } catch (_) {
-      items =
-          FeelingActivityItem.all.where((i) => i.type == 'ACTIVITY').toList();
+      items = FeelingActivityItem.all
+          .where((i) => i.type == 'ACTIVITY')
+          .toList();
     }
     if (!mounted) return;
 
@@ -454,18 +460,16 @@ class _EditPostScreenState extends State<EditPostScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Background',
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Applies to short text-only posts.',
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.black54),
+                  style: Theme.of(
+                    ctx,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
                 GridView.builder(
@@ -601,10 +605,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
                 'Tag a Pet',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             ..._petList.map(
@@ -621,8 +624,10 @@ class _EditPostScreenState extends State<EditPostScreen> {
                 ),
                 title: Text(pet.name),
                 trailing: _taggedPetId == pet.id
-                    ? Icon(Icons.check_circle,
-                        color: Theme.of(context).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_circle,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
                     : null,
                 onTap: () => Navigator.pop(ctx, pet.id),
               ),
@@ -762,11 +767,14 @@ class _EditPostScreenState extends State<EditPostScreen> {
     if (edited == null) return;
     if (!mounted) return;
     setState(() {
-      for (int i = 0;
-          i < imageItemIndexes.length && i < edited.files.length;
-          i++) {
-        _mediaItems[imageItemIndexes[i]] =
-            _EditMediaItem.image(edited.files[i]);
+      for (
+        int i = 0;
+        i < imageItemIndexes.length && i < edited.files.length;
+        i++
+      ) {
+        _mediaItems[imageItemIndexes[i]] = _EditMediaItem.image(
+          edited.files[i],
+        );
       }
     });
   }
@@ -798,10 +806,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
       int newCount = 0;
       for (final item in _mediaItems) {
         if (item.existingId != null) {
-          drafts.add(PostUploadDraft(
-            existingId: item.existingId,
-            type: item.type,
-          ));
+          drafts.add(
+            PostUploadDraft(existingId: item.existingId, type: item.type),
+          );
           existingCount++;
           debugPrint(
             '[EditPostScreen] draft[${drafts.length - 1}] '
@@ -810,10 +817,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
         } else if (item.isNew && item.file != null) {
           final fileExists = await item.file!.exists();
           final fileSize = await item.file!.length();
-          drafts.add(PostUploadDraft(
-            file: item.file,
-            type: item.type,
-          ));
+          drafts.add(PostUploadDraft(file: item.file, type: item.type));
           newCount++;
           debugPrint(
             '[EditPostScreen] draft[${drafts.length - 1}] '
@@ -832,8 +836,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
       for (final draft in drafts) {
         if (draft.file == null) continue;
         final size = await draft.file!.length();
-        final maxBytes =
-            draft.type == 'VIDEO' ? _maxVideoBytes : _maxImageBytes;
+        final maxBytes = draft.type == 'VIDEO'
+            ? _maxVideoBytes
+            : _maxImageBytes;
         if (size > maxBytes) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1001,8 +1006,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
     final isTextOnly = _mediaItems.isEmpty;
     final isShortPost = textLength <= 160;
     final selectedStyle = _selectedBackgroundStyle;
-    final applyStyle =
-        isTextOnly && isShortPost && selectedStyle.id != 'none';
+    final applyStyle = isTextOnly && isShortPost && selectedStyle.id != 'none';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -1057,8 +1061,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
                       width: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Text('Update'),
@@ -1121,8 +1124,11 @@ class _EditPostScreenState extends State<EditPostScreen> {
                               ? null
                               : NetworkImage(_avatarUrl!),
                           child: (_avatarUrl ?? '').isEmpty
-                              ? const Icon(Icons.person,
-                                  size: 22, color: Colors.black45)
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 22,
+                                  color: Colors.black45,
+                                )
                               : null,
                         ),
                         const SizedBox(width: 10),
@@ -1132,14 +1138,12 @@ class _EditPostScreenState extends State<EditPostScreen> {
                             children: [
                               Text(
                                 _userName ?? 'Pet Lover',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                               ),
                               const SizedBox(height: 6),
@@ -1151,13 +1155,14 @@ class _EditPostScreenState extends State<EditPostScreen> {
                                   // Feeling chip
                                   if (_selectedFeeling != null)
                                     _buildCompactChip(
-                                      icon:
-                                          Icons.sentiment_satisfied_alt_outlined,
+                                      icon: Icons
+                                          .sentiment_satisfied_alt_outlined,
                                       label: _selectedFeeling!.chipLabel,
                                       color: Colors.purple.shade700,
                                       backgroundColor: Colors.purple.shade50,
                                       onRemove: () => setState(
-                                          () => _selectedFeeling = null),
+                                        () => _selectedFeeling = null,
+                                      ),
                                     ),
                                   // Activity chip
                                   if (_selectedActivity != null)
@@ -1167,7 +1172,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
                                       color: Colors.orange.shade700,
                                       backgroundColor: Colors.orange.shade50,
                                       onRemove: () => setState(
-                                          () => _selectedActivity = null),
+                                        () => _selectedActivity = null,
+                                      ),
                                     ),
                                   // Location chip
                                   if (_selectedLocationName != null)
@@ -1177,7 +1183,8 @@ class _EditPostScreenState extends State<EditPostScreen> {
                                       color: Colors.red.shade700,
                                       backgroundColor: Colors.red.shade50,
                                       onRemove: () => setState(
-                                          () => _selectedLocationName = null),
+                                        () => _selectedLocationName = null,
+                                      ),
                                     ),
                                   // Tagged pet chip
                                   if (_taggedPetName != null)
@@ -1205,8 +1212,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
                       key: _composerEditorKey,
                       child: applyStyle
                           ? Container(
-                              constraints:
-                                  const BoxConstraints(minHeight: 180),
+                              constraints: const BoxConstraints(minHeight: 180),
                               width: double.infinity,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
@@ -1288,8 +1294,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
                                 disabledBorder: InputBorder.none,
                                 filled: false,
                                 isCollapsed: true,
-                                contentPadding:
-                                    EdgeInsets.symmetric(vertical: 8),
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                               ),
                             ),
                     ),
@@ -1522,8 +1529,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
               bottom: 6,
               left: 6,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(4),
@@ -1775,9 +1781,9 @@ class _EditPostScreenState extends State<EditPostScreen> {
               Text(
                 'Add to your post',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                ),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -1814,9 +1820,7 @@ class _EditPostScreenState extends State<EditPostScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Discard Changes?'),
-        content: const Text(
-          'Are you sure you want to discard your changes?',
-        ),
+        content: const Text('Are you sure you want to discard your changes?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),

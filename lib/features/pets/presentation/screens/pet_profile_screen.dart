@@ -86,7 +86,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     const SizedBox(height: 18),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _SectionTitle(title: 'Health Status', icon: Icons.shield_outlined),
+                      child: _SectionTitle(
+                        title: 'Health Status',
+                        icon: Icons.shield_outlined,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Padding(
@@ -103,7 +106,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => DigitalHealthCardScreen(petId: widget.petId),
+                              builder: (_) =>
+                                  DigitalHealthCardScreen(petId: widget.petId),
                             ),
                           );
                         },
@@ -112,7 +116,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     const SizedBox(height: 18),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _SectionTitle(title: 'My Family', icon: Icons.pets_outlined),
+                      child: _SectionTitle(
+                        title: 'My Family',
+                        icon: Icons.pets_outlined,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Padding(
@@ -122,7 +129,10 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     const SizedBox(height: 18),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _SectionTitle(title: 'Activity & Points', icon: Icons.directions_run_rounded),
+                      child: _SectionTitle(
+                        title: 'Activity & Points',
+                        icon: Icons.directions_run_rounded,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Padding(
@@ -133,14 +143,18 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _QuickActions(
-                        onMedical: () => _toast(context, 'Next: Medical History'),
+                        onMedical: () =>
+                            _toast(context, 'Next: Medical History'),
                         onDiet: () => _toast(context, 'Next: Diet Chart'),
                         onGallery: () => _toast(context, 'Next: Gallery'),
                         onEdit: () async {
                           final ok = await Navigator.push(
                             context,
                             // ✅ New edit flow: overview page -> per-field edit pages
-                            MaterialPageRoute(builder: (_) => PetEditOverviewScreen(petId: widget.petId)),
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PetEditOverviewScreen(petId: widget.petId),
+                            ),
                           );
                           if (ok == true) {
                             await _refresh();
@@ -257,13 +271,15 @@ class _HeaderHero extends StatelessWidget {
                     value: 'report',
                     child: Row(
                       children: [
-                        Icon(Icons.flag_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                        Icon(
+                          Icons.flag_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         const SizedBox(width: 10),
                         const Text(
                           'Report Pet Profile',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -281,10 +297,18 @@ class _HeaderHero extends StatelessWidget {
             children: [
               Text(
                 pet.name,
-                style: context.appText.displayLarge!.copyWith(color: Colors.white, fontWeight: FontWeight.w800, height: 1.0),
+                style: context.appText.displayLarge!.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
+                ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.verified_rounded, color: Color(0xFF2D7FF9), size: 24),
+              const Icon(
+                Icons.verified_rounded,
+                color: Color(0xFF2D7FF9),
+                size: 24,
+              ),
             ],
           ),
         ),
@@ -343,7 +367,9 @@ class _InfoGrid extends StatelessWidget {
     } else {
       ageText = '${pet.ageYears} Yrs';
     }
-    final weightText = pet.weightKg == null ? '--' : '${pet.weightKg!.toStringAsFixed(0)} Kg';
+    final weightText = pet.weightKg == null
+        ? '--'
+        : '${pet.weightKg!.toStringAsFixed(0)} Kg';
     final genderText = (pet.gender ?? 'UNKNOWN').toLowerCase();
 
     return _GlassCard(
@@ -351,17 +377,44 @@ class _InfoGrid extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: _InfoItem(icon: Icons.schedule, label: 'Age', value: ageText)),
+              Expanded(
+                child: _InfoItem(
+                  icon: Icons.schedule,
+                  label: 'Age',
+                  value: ageText,
+                ),
+              ),
               _DividerV(),
-              Expanded(child: _InfoItem(icon: Icons.pets, label: 'Breed', value: pet.breed ?? '--')),
+              Expanded(
+                child: _InfoItem(
+                  icon: Icons.pets,
+                  label: 'Breed',
+                  value: pet.breed ?? '--',
+                ),
+              ),
             ],
           ),
           const _DividerH(),
           Row(
             children: [
-              Expanded(child: _InfoItem(icon: Icons.monitor_weight_outlined, label: 'Weight', value: weightText)),
+              Expanded(
+                child: _InfoItem(
+                  icon: Icons.monitor_weight_outlined,
+                  label: 'Weight',
+                  value: weightText,
+                ),
+              ),
               _DividerV(),
-              Expanded(child: _InfoItem(icon: genderText == 'female' ? Icons.female : Icons.male, label: 'Gender', value: (pet.gender ?? '--').toString().toLowerCase().capitalize())),
+              Expanded(
+                child: _InfoItem(
+                  icon: genderText == 'female' ? Icons.female : Icons.male,
+                  label: 'Gender',
+                  value: (pet.gender ?? '--')
+                      .toString()
+                      .toLowerCase()
+                      .capitalize(),
+                ),
+              ),
             ],
           ),
         ],
@@ -374,7 +427,11 @@ class _InfoItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _InfoItem({required this.icon, required this.label, required this.value});
+  const _InfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -396,9 +453,19 @@ class _InfoItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: context.appText.bodyMedium!.copyWith(color: Colors.black54)),
+                Text(
+                  label,
+                  style: context.appText.bodyMedium!.copyWith(
+                    color: Colors.black54,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value, style: context.appText.titleMedium!.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  value,
+                  style: context.appText.titleMedium!.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ],
             ),
           ),
@@ -422,7 +489,11 @@ class _HealthRow extends StatelessWidget {
       children: [
         Expanded(
           child: _Pill(
-            leading: const _PillIcon(bg: Color(0xFFDFF6E7), icon: Icons.verified_rounded, iconColor: Color(0xFF1EAD5A)),
+            leading: const _PillIcon(
+              bg: Color(0xFFDFF6E7),
+              icon: Icons.verified_rounded,
+              iconColor: Color(0xFF1EAD5A),
+            ),
             title: 'Fully',
             value: pet.vaccinated ? 'Vaccinated' : 'Not Vaccinated',
             tint: const Color(0xFFEAF9F0),
@@ -431,7 +502,11 @@ class _HealthRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _Pill(
-            leading: const _PillIcon(bg: Color(0xFFFFE7D6), icon: Icons.calendar_month_rounded, iconColor: Color(0xFFF0852B)),
+            leading: const _PillIcon(
+              bg: Color(0xFFFFE7D6),
+              icon: Icons.calendar_month_rounded,
+              iconColor: Color(0xFFF0852B),
+            ),
             title: 'Next Due:',
             value: due,
             tint: const Color(0xFFFFF1E8),
@@ -447,7 +522,12 @@ class _Pill extends StatelessWidget {
   final String title;
   final String value;
   final Color tint;
-  const _Pill({required this.leading, required this.title, required this.value, required this.tint});
+  const _Pill({
+    required this.leading,
+    required this.title,
+    required this.value,
+    required this.tint,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +537,13 @@ class _Pill extends StatelessWidget {
         color: tint,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -467,9 +553,19 @@ class _Pill extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: context.appText.bodySmall!.copyWith(color: Colors.black54)),
+                Text(
+                  title,
+                  style: context.appText.bodySmall!.copyWith(
+                    color: Colors.black54,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value, style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  value,
+                  style: context.appText.bodyLarge!.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ],
             ),
           ),
@@ -483,14 +579,21 @@ class _PillIcon extends StatelessWidget {
   final Color bg;
   final IconData icon;
   final Color iconColor;
-  const _PillIcon({required this.bg, required this.icon, required this.iconColor});
+  const _PillIcon({
+    required this.bg,
+    required this.icon,
+    required this.iconColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 44,
       height: 44,
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Icon(icon, color: iconColor),
     );
   }
@@ -500,7 +603,11 @@ class _GradientButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _GradientButton({required this.icon, required this.label, required this.onTap});
+  const _GradientButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -511,15 +618,29 @@ class _GradientButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(26),
-          gradient: const LinearGradient(colors: [Color(0xFF2D7FF9), Color(0xFFF0852B)]),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.10), blurRadius: 18, offset: const Offset(0, 10))],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF2D7FF9), Color(0xFFF0852B)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: Colors.white),
             const SizedBox(width: 10),
-            Text(label, style: context.appText.bodyLarge!.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+            Text(
+              label,
+              style: context.appText.bodyLarge!.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
       ),
@@ -562,11 +683,18 @@ class _FamilyRow extends StatelessWidget {
                     CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.black12,
-                      backgroundImage: m.avatarUrl == null ? null : NetworkImage(m.avatarUrl!),
-                      child: m.avatarUrl == null ? const Icon(Icons.person, color: Colors.white70) : null,
+                      backgroundImage: m.avatarUrl == null
+                          ? null
+                          : NetworkImage(m.avatarUrl!),
+                      child: m.avatarUrl == null
+                          ? const Icon(Icons.person, color: Colors.white70)
+                          : null,
                     ),
                     const SizedBox(height: 6),
-                    Text(_relationLabel(m.relation), style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                      _relationLabel(m.relation),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ],
                 ),
               );
@@ -616,13 +744,18 @@ class _PointsCard extends StatelessWidget {
                     color: const Color(0xFFFFE7D6),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.pets_rounded, color: Color(0xFFF0852B)),
+                  child: const Icon(
+                    Icons.pets_rounded,
+                    color: Color(0xFFF0852B),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '${points.toString()} Like Points',
-                    style: context.appText.titleMedium!.copyWith(fontWeight: FontWeight.w800),
+                    style: context.appText.titleMedium!.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const Icon(Icons.star_rounded, color: Color(0xFFF0B429)),
@@ -672,10 +805,26 @@ class _QuickActions extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _Action(icon: Icons.receipt_long_rounded, label: 'Medical\nHistory', onTap: onMedical),
-            _Action(icon: Icons.restaurant_menu_rounded, label: 'Diet\nChart', onTap: onDiet),
-            _Action(icon: Icons.photo_library_rounded, label: 'Gallery', onTap: onGallery),
-            _Action(icon: Icons.edit_rounded, label: 'Edit\nProfile', onTap: onEdit),
+            _Action(
+              icon: Icons.receipt_long_rounded,
+              label: 'Medical\nHistory',
+              onTap: onMedical,
+            ),
+            _Action(
+              icon: Icons.restaurant_menu_rounded,
+              label: 'Diet\nChart',
+              onTap: onDiet,
+            ),
+            _Action(
+              icon: Icons.photo_library_rounded,
+              label: 'Gallery',
+              onTap: onGallery,
+            ),
+            _Action(
+              icon: Icons.edit_rounded,
+              label: 'Edit\nProfile',
+              onTap: onEdit,
+            ),
           ],
         ),
       ),
@@ -708,7 +857,13 @@ class _Action extends StatelessWidget {
               child: Icon(icon, color: const Color(0xFF2D7FF9)),
             ),
             const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center, style: context.appText.labelMedium!.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: context.appText.labelMedium!.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ],
         ),
       ),
@@ -727,7 +882,12 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.black87),
         const SizedBox(width: 10),
-        Text(title, style: context.appText.titleLarge!.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          title,
+          style: context.appText.titleLarge!.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ],
     );
   }
@@ -748,7 +908,13 @@ class _GlassCard extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 10))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: child,
         ),
@@ -774,7 +940,20 @@ class _DividerV extends StatelessWidget {
 }
 
 String _monthShort(int m) {
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return months[(m - 1).clamp(0, 11)];
 }
 

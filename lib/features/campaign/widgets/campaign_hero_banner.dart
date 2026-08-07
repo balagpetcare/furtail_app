@@ -8,7 +8,8 @@ import '../data/models/campaign_public_models.dart';
 import 'campaign_countdown_strip.dart';
 import 'campaign_price_badge.dart';
 
-typedef CampaignTapCallback = void Function(PublicCampaign campaign, {bool bookNow});
+typedef CampaignTapCallback =
+    void Function(PublicCampaign campaign, {bool bookNow});
 
 /// Premium full-width campaign card for the home screen.
 class CampaignHeroBanner extends StatelessWidget {
@@ -34,7 +35,8 @@ class CampaignHeroBanner extends StatelessWidget {
     final dateRange =
         '${dateFmt.format(campaign.startDate)} – ${dateFmt.format(campaign.endDate)}';
     final location = campaign.primaryLocationLabel ?? 'Multiple locations';
-    final showSlots = campaign.config?.showRemainingSlots != false &&
+    final showSlots =
+        campaign.config?.showRemainingSlots != false &&
         campaign.remainingSlots != null &&
         campaign.remainingSlots! > 0;
 
@@ -61,28 +63,29 @@ class CampaignHeroBanner extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
                           'Offline · saved copy',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: cs.outline,
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelSmall?.copyWith(color: cs.outline),
                         ),
                       ),
                     Text(
                       campaign.name,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (campaign.description != null && campaign.description!.isNotEmpty) ...[
+                    if (campaign.description != null &&
+                        campaign.description!.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Text(
                         campaign.description!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 10),
@@ -91,7 +94,10 @@ class CampaignHeroBanner extends StatelessWidget {
                       remainingSlots: campaign.remainingSlots,
                       showSlots: campaign.config?.showRemainingSlots != false,
                     ),
-                    _MetaRow(icon: Icons.calendar_today_outlined, label: dateRange),
+                    _MetaRow(
+                      icon: Icons.calendar_today_outlined,
+                      label: dateRange,
+                    ),
                     const SizedBox(height: 4),
                     _MetaRow(icon: Icons.location_on_outlined, label: location),
                     const SizedBox(height: 12),
@@ -104,8 +110,10 @@ class CampaignHeroBanner extends StatelessWidget {
                         ],
                         const Spacer(),
                         FilledButton(
-                          onPressed: () =>
-                              (onBookNow ?? onTap)?.call(campaign, bookNow: true),
+                          onPressed: () => (onBookNow ?? onTap)?.call(
+                            campaign,
+                            bookNow: true,
+                          ),
                           child: const Text('Book Now'),
                         ),
                       ],
@@ -140,7 +148,8 @@ class _HeroImage extends StatelessWidget {
               imageUrl: url,
               cacheManager: FurtailImageCacheManager(),
               fit: BoxFit.cover,
-              errorWidget: (_, _, _) => Image.asset(fallback, fit: BoxFit.cover),
+              errorWidget: (_, _, _) =>
+                  Image.asset(fallback, fit: BoxFit.cover),
             )
           else
             Image.asset(fallback, fit: BoxFit.cover),
@@ -175,9 +184,9 @@ class _HeroImage extends StatelessWidget {
               ),
               child: Text(
                 'Furtail Official',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -205,7 +214,10 @@ class _CircleBadge extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: Colors.white),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -224,7 +236,12 @@ class _PriorityPill extends StatelessWidget {
         color: Theme.of(context).colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
+      child: Text(
+        label,
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
@@ -252,4 +269,3 @@ class _MetaRow extends StatelessWidget {
     );
   }
 }
-

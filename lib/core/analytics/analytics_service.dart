@@ -52,10 +52,7 @@ class AnalyticsService {
     await setUserId(null);
   }
 
-  Future<void> logEvent(
-    String name, {
-    Map<String, Object?>? parameters,
-  }) async {
+  Future<void> logEvent(String name, {Map<String, Object?>? parameters}) async {
     final a = _analytics;
     if (a == null) return;
     try {
@@ -80,19 +77,27 @@ class AnalyticsService {
         await a.logLogin(loginMethod: method);
       } catch (_) {}
     }
-    await logEvent(AnalyticsEvents.login, parameters: {AnalyticsEvents.method: method});
+    await logEvent(
+      AnalyticsEvents.login,
+      parameters: {AnalyticsEvents.method: method},
+    );
     await setUserIdFromStorage();
     await CrashReportingService.instance.setUserIdFromStorage();
   }
 
-  Future<void> logRegistration({String method = AnalyticsAuthMethod.email}) async {
+  Future<void> logRegistration({
+    String method = AnalyticsAuthMethod.email,
+  }) async {
     final a = _analytics;
     if (a != null) {
       try {
         await a.logSignUp(signUpMethod: method);
       } catch (_) {}
     }
-    await logEvent(AnalyticsEvents.registration, parameters: {AnalyticsEvents.method: method});
+    await logEvent(
+      AnalyticsEvents.registration,
+      parameters: {AnalyticsEvents.method: method},
+    );
   }
 
   Future<void> logPetCreated({required int petId, String? species}) async {

@@ -1,12 +1,11 @@
-
 class ProfanityFilter {
   static const _badWords = [
     // English
-    'fuck','shit','bitch',
+    'fuck', 'shit', 'bitch',
     // Bangla
-    'চোদ','চুদি','মাগী',
+    'চোদ', 'চুদি', 'মাগী',
     // Banglish
-    'chod','chudi','magi',
+    'chod', 'chudi', 'magi',
   ];
 
   static String clean(String input) {

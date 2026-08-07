@@ -77,7 +77,8 @@ class _FeelingActivityPickerState extends State<FeelingActivityPicker> {
             Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 4),
               child: Container(
-                width: 38, height: 4,
+                width: 38,
+                height: 4,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE6E6E6),
                   borderRadius: BorderRadius.circular(99),
@@ -162,8 +163,7 @@ class _FeelingActivityPickerState extends State<FeelingActivityPicker> {
       controller: controller,
       padding: const EdgeInsets.only(bottom: 20),
       children: [
-        for (final category in _categories)
-          ..._buildCategory(category),
+        for (final category in _categories) ..._buildCategory(category),
       ],
     );
   }

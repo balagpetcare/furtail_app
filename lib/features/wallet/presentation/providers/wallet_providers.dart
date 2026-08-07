@@ -19,7 +19,6 @@ final walletTransactionsProvider = FutureProvider((ref) async {
   return repo.listTransactions(limit: 20);
 });
 
-
 final walletWithdrawRequestsProvider = FutureProvider((ref) async {
   final repo = ref.read(walletRepositoryProvider);
   return repo.listWithdrawRequests(limit: 50);

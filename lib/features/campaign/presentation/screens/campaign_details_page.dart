@@ -36,13 +36,17 @@ class CampaignDetailsPage extends ConsumerWidget {
           padding: padding,
           maxWidth: maxWidth,
           onBook: () {
-            ref.read(analyticsServiceProvider).logEvent(
-              AnalyticsEvents.campaignBookingStarted,
-              parameters: {'campaign_slug': slug},
-            );
+            ref
+                .read(analyticsServiceProvider)
+                .logEvent(
+                  AnalyticsEvents.campaignBookingStarted,
+                  parameters: {'campaign_slug': slug},
+                );
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => CampaignBookingPage(slug: slug)),
+              MaterialPageRoute(
+                builder: (_) => CampaignBookingPage(slug: slug),
+              ),
             );
           },
         ),
@@ -89,9 +93,8 @@ class _DetailsBody extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       campaign.name,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     CampaignPriceBadge(campaign: campaign),
@@ -114,7 +117,10 @@ class _DetailsBody extends StatelessWidget {
                       ...campaign.packageFeatures.map(
                         (f) => ListTile(
                           dense: true,
-                          leading: const Icon(Icons.check_circle_outline, size: 20),
+                          leading: const Icon(
+                            Icons.check_circle_outline,
+                            size: 20,
+                          ),
                           title: Text(f),
                         ),
                       ),
@@ -148,7 +154,9 @@ class _DetailsBody extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: FilledButton(
-                  onPressed: campaign.config?.bookingEnabled == false ? null : onBook,
+                  onPressed: campaign.config?.bookingEnabled == false
+                      ? null
+                      : onBook,
                   child: const Text('Book Now'),
                 ),
               ),

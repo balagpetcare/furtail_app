@@ -13,19 +13,19 @@ final campaignCacheServiceProvider = Provider<CampaignCacheService>((ref) {
 /// Home banner campaigns with cache + retry.
 final homeCampaignsProvider =
     AsyncNotifierProvider<HomeCampaignsNotifier, HomeCampaignsState>(
-  HomeCampaignsNotifier.new,
-);
+      HomeCampaignsNotifier.new,
+    );
 
 class HomeCampaignsState {
   final List<PublicCampaign> campaigns;
   final bool isStale;
 
-  const HomeCampaignsState({
-    this.campaigns = const [],
-    this.isStale = false,
-  });
+  const HomeCampaignsState({this.campaigns = const [], this.isStale = false});
 
-  HomeCampaignsState copyWith({List<PublicCampaign>? campaigns, bool? isStale}) {
+  HomeCampaignsState copyWith({
+    List<PublicCampaign>? campaigns,
+    bool? isStale,
+  }) {
     return HomeCampaignsState(
       campaigns: campaigns ?? this.campaigns,
       isStale: isStale ?? this.isStale,
@@ -54,8 +54,12 @@ class HomeCampaignsNotifier extends AsyncNotifier<HomeCampaignsState> {
     }
 
     try {
-      final campaigns = await repo.fetchPublicCampaigns(useCache: !forceNetwork);
-      final prepared = await ref.read(smartCampaignEngineProvider).prepareHomeCampaigns(campaigns);
+      final campaigns = await repo.fetchPublicCampaigns(
+        useCache: !forceNetwork,
+      );
+      final prepared = await ref
+          .read(smartCampaignEngineProvider)
+          .prepareHomeCampaigns(campaigns);
       return HomeCampaignsState(campaigns: prepared, isStale: false);
     } catch (e) {
       final cached = await cache.loadHomeCampaigns();
@@ -70,8 +74,12 @@ class HomeCampaignsNotifier extends AsyncNotifier<HomeCampaignsState> {
     try {
       final repo = ref.read(campaignRepositoryProvider);
       final campaigns = await repo.fetchPublicCampaigns(useCache: false);
-      final prepared = await ref.read(smartCampaignEngineProvider).prepareHomeCampaigns(campaigns);
-      state = AsyncData(HomeCampaignsState(campaigns: prepared, isStale: false));
+      final prepared = await ref
+          .read(smartCampaignEngineProvider)
+          .prepareHomeCampaigns(campaigns);
+      state = AsyncData(
+        HomeCampaignsState(campaigns: prepared, isStale: false),
+      );
     } catch (_) {}
   }
 
@@ -81,44 +89,56 @@ class HomeCampaignsNotifier extends AsyncNotifier<HomeCampaignsState> {
   }
 }
 
-final campaignDetailProvider =
-    FutureProvider.family<PublicCampaign, String>((ref, slug) async {
+final campaignDetailProvider = FutureProvider.family<PublicCampaign, String>((
+  ref,
+  slug,
+) async {
   return ref.read(campaignRepositoryProvider).fetchCampaignBySlug(slug);
 });
 
 final campaignLocationsProvider =
-    FutureProvider.family<List<PublicCampaignLocation>, String>((ref, slug) async {
-  return ref.read(campaignRepositoryProvider).fetchCampaignLocations(slug);
-});
+    FutureProvider.family<List<PublicCampaignLocation>, String>((
+      ref,
+      slug,
+    ) async {
+      return ref.read(campaignRepositoryProvider).fetchCampaignLocations(slug);
+    });
 
-final campaignSlotsProvider = FutureProvider.family<
-    List<PublicCampaignSlot>,
-    ({int locationId, String startDate, String endDate})>((ref, args) async {
-  return ref.read(campaignRepositoryProvider).fetchLocationSlots(
-        locationId: args.locationId,
-        startDate: args.startDate,
-        endDate: args.endDate,
-      );
-});
+final campaignSlotsProvider =
+    FutureProvider.family<
+      List<PublicCampaignSlot>,
+      ({int locationId, String startDate, String endDate})
+    >((ref, args) async {
+      return ref
+          .read(campaignRepositoryProvider)
+          .fetchLocationSlots(
+            locationId: args.locationId,
+            startDate: args.startDate,
+            endDate: args.endDate,
+          );
+    });
 
 final campaignBookingDraftProvider =
-    StateNotifierProvider.family<CampaignBookingDraftNotifier, CampaignBookingDraft, String>(
-  (ref, slug) => CampaignBookingDraftNotifier(slug),
-);
+    StateNotifierProvider.family<
+      CampaignBookingDraftNotifier,
+      CampaignBookingDraft,
+      String
+    >((ref, slug) => CampaignBookingDraftNotifier(slug));
 
 class CampaignBookingDraftNotifier extends StateNotifier<CampaignBookingDraft> {
   CampaignBookingDraftNotifier(String slug)
-      : super(CampaignBookingDraft(slug: slug));
+    : super(CampaignBookingDraft(slug: slug));
 
   void update(CampaignBookingDraft draft) => state = draft;
   void nextStep() => state = state.copyWith(step: state.step + 1);
-  void prevStep() => state = state.copyWith(step: state.step > 0 ? state.step - 1 : 0);
+  void prevStep() =>
+      state = state.copyWith(step: state.step > 0 ? state.step - 1 : 0);
 }
 
 final campaignCheckoutProvider =
     AsyncNotifierProvider<CampaignCheckoutNotifier, CheckoutInitResult?>(
-  CampaignCheckoutNotifier.new,
-);
+      CampaignCheckoutNotifier.new,
+    );
 
 class CampaignCheckoutNotifier extends AsyncNotifier<CheckoutInitResult?> {
   @override
@@ -127,10 +147,9 @@ class CampaignCheckoutNotifier extends AsyncNotifier<CheckoutInitResult?> {
   Future<CheckoutInitResult> submit(CampaignBookingDraft draft) async {
     state = const AsyncLoading();
     try {
-      final result = await ref.read(campaignRepositoryProvider).initCheckout(
-            draft: draft,
-            campaignSlug: draft.slug,
-          );
+      final result = await ref
+          .read(campaignRepositoryProvider)
+          .initCheckout(draft: draft, campaignSlug: draft.slug);
       if (!result.requiresPayment) {
         final confirmed = await ref
             .read(campaignRepositoryProvider)

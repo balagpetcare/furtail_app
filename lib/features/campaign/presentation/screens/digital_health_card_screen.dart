@@ -25,10 +25,12 @@ class DigitalHealthCardScreen extends ConsumerStatefulWidget {
   const DigitalHealthCardScreen({super.key, this.petId});
 
   @override
-  ConsumerState<DigitalHealthCardScreen> createState() => _DigitalHealthCardScreenState();
+  ConsumerState<DigitalHealthCardScreen> createState() =>
+      _DigitalHealthCardScreenState();
 }
 
-class _DigitalHealthCardScreenState extends ConsumerState<DigitalHealthCardScreen> {
+class _DigitalHealthCardScreenState
+    extends ConsumerState<DigitalHealthCardScreen> {
   int? _selectedPetId;
   PetProfileModel? _profile;
   bool _loadingProfile = false;
@@ -91,7 +93,9 @@ class _DigitalHealthCardScreenState extends ConsumerState<DigitalHealthCardScree
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(
-            petVaccinationRecordsProvider(PetHealthFilter(petId: petId, petName: _profile?.name)),
+            petVaccinationRecordsProvider(
+              PetHealthFilter(petId: petId, petName: _profile?.name),
+            ),
           );
           ref.invalidate(vaccinationRecordsProvider);
           await _loadProfile(petId);
@@ -100,24 +104,36 @@ class _DigitalHealthCardScreenState extends ConsumerState<DigitalHealthCardScree
           padding: const EdgeInsets.all(16),
           children: [
             if (_loadingProfile)
-              const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(),
+                ),
+              )
             else if (_profile != null)
               _ProfileSummary(profile: _profile!),
             const SizedBox(height: 16),
             _QuickActions(
               onWallet: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CertificateWalletScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const CertificateWalletScreen(),
+                ),
               ),
               onTimeline: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => VaccinationTimelineScreen(petId: petId, petName: _profile?.name),
+                  builder: (_) => VaccinationTimelineScreen(
+                    petId: petId,
+                    petName: _profile?.name,
+                  ),
                 ),
               ),
               onReminders: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const VaccinationRemindersScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const VaccinationRemindersScreen(),
+                ),
               ),
               onVerify: () => Navigator.push(
                 context,
@@ -127,7 +143,9 @@ class _DigitalHealthCardScreenState extends ConsumerState<DigitalHealthCardScree
             const SizedBox(height: 20),
             Text(
               'Vaccination cards',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             recordsAsync.when(
@@ -155,11 +173,13 @@ class _DigitalHealthCardScreenState extends ConsumerState<DigitalHealthCardScree
                           onTap: r.certificateToken == null
                               ? null
                               : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CertificateViewerScreen(token: r.certificateToken!),
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => CertificateViewerScreen(
+                                      token: r.certificateToken!,
                                     ),
                                   ),
+                                ),
                         ),
                       )
                       .toList(),
@@ -193,11 +213,16 @@ class _ProfileSummary extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 32,
-              backgroundImage:
-                  profile.photoUrl != null ? NetworkImage(profile.photoUrl!) : null,
+              backgroundImage: profile.photoUrl != null
+                  ? NetworkImage(profile.photoUrl!)
+                  : null,
               child: profile.photoUrl == null
-                  ? Text(profile.name.isNotEmpty ? profile.name[0] : '?',
-                      style: context.appText.headlineLarge!.copyWith(fontWeight: FontWeight.bold))
+                  ? Text(
+                      profile.name.isNotEmpty ? profile.name[0] : '?',
+                      style: context.appText.headlineLarge!.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
                   : null,
             ),
             const SizedBox(width: 14),
@@ -205,18 +230,32 @@ class _ProfileSummary extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(profile.name, style: context.appText.titleMedium!.copyWith(fontWeight: FontWeight.w800)),
-                  if (profile.breed != null) Text(profile.breed!, style: TextStyle(color: Colors.grey.shade700)),
+                  Text(
+                    profile.name,
+                    style: context.appText.titleMedium!.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (profile.breed != null)
+                    Text(
+                      profile.breed!,
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
                     children: [
                       Chip(
-                        label: Text(profile.vaccinated ? 'Vaccinated' : 'Due / pending'),
-                        backgroundColor:
-                            profile.vaccinated ? Colors.green.shade50 : Colors.orange.shade50,
+                        label: Text(
+                          profile.vaccinated ? 'Vaccinated' : 'Due / pending',
+                        ),
+                        backgroundColor: profile.vaccinated
+                            ? Colors.green.shade50
+                            : Colors.orange.shade50,
                         labelStyle: context.appText.labelMedium!.copyWith(
-                          color: profile.vaccinated ? Colors.green.shade800 : Colors.orange.shade900,
+                          color: profile.vaccinated
+                              ? Colors.green.shade800
+                              : Colors.orange.shade900,
                         ),
                       ),
                       if (due != null)
@@ -307,7 +346,9 @@ class _PetPicker extends ConsumerWidget {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Add a pet profile first to view a digital health card.'),
+                child: Text(
+                  'Add a pet profile first to view a digital health card.',
+                ),
               ),
             );
           }
@@ -320,7 +361,9 @@ class _PetPicker extends ConsumerWidget {
               final id = pet.id;
               if (id == null) return const SizedBox.shrink();
               return ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 tileColor: Colors.white,
                 leading: const CircleAvatar(child: Icon(Icons.pets)),
                 title: Text(pet.name),

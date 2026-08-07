@@ -52,7 +52,9 @@ class _VideoTrimScreenState extends State<VideoTrimScreen> {
             onPressed: _loading ? null : _done,
             child: Text(
               'Done',
-              style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.bold),
+              style: context.appText.bodyLarge!.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

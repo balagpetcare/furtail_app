@@ -17,7 +17,10 @@ class PrintPatternPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final rng = math.Random(42); // fixed seed = deterministic pattern
-    final patternCount = (size.width * size.height / 18000).round().clamp(6, 24);
+    final patternCount = (size.width * size.height / 18000).round().clamp(
+      6,
+      24,
+    );
 
     for (int i = 0; i < patternCount; i++) {
       final cx = rng.nextDouble() * size.width;
@@ -26,7 +29,11 @@ class PrintPatternPainter extends CustomPainter {
 
       // Main pad
       canvas.drawOval(
-        Rect.fromCenter(center: Offset(cx, cy), width: scale * 1.2, height: scale * 1.1),
+        Rect.fromCenter(
+          center: Offset(cx, cy),
+          width: scale * 1.2,
+          height: scale * 1.1,
+        ),
         paint,
       );
 
@@ -203,6 +210,7 @@ class ShortPostBackgroundBox extends StatelessWidget {
   final PostBackgroundStyle style;
   final VoidCallback? onTap;
   final double fontSize;
+
   /// When true, removes border-radius and shadow so the box renders
   /// edge-to-edge (used in the single-post detail screen).
   final bool fullWidth;
@@ -229,7 +237,9 @@ class ShortPostBackgroundBox extends StatelessWidget {
         decoration: BoxDecoration(
           color: style.color,
           gradient: style.gradient,
-          borderRadius: fullWidth ? BorderRadius.zero : BorderRadius.circular(16),
+          borderRadius: fullWidth
+              ? BorderRadius.zero
+              : BorderRadius.circular(16),
           boxShadow: fullWidth
               ? null
               : [
@@ -243,7 +253,8 @@ class ShortPostBackgroundBox extends StatelessWidget {
         child: Stack(
           children: [
             // Pattern covers the full background box area
-            if (style.type == BackgroundStyleType.pattern && style.patternBuilder != null)
+            if (style.type == BackgroundStyleType.pattern &&
+                style.patternBuilder != null)
               Positioned.fill(
                 child: RepaintBoundary(
                   child: CustomPaint(
@@ -323,13 +334,17 @@ class BackgroundStylePreviewCircle extends StatelessWidget {
         gradient: style.gradient,
         shape: BoxShape.circle,
         border: Border.all(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.grey.shade300,
           width: isSelected ? 3 : 1,
         ),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 6,
                   spreadRadius: 1,
                 ),
@@ -339,14 +354,19 @@ class BackgroundStylePreviewCircle extends StatelessWidget {
       child: ClipOval(
         child: Stack(
           children: [
-            if (style.type == BackgroundStyleType.pattern && style.patternBuilder != null)
+            if (style.type == BackgroundStyleType.pattern &&
+                style.patternBuilder != null)
               CustomPaint(
                 painter: style.patternBuilder!(),
                 size: Size(size, size),
               ),
             if (isSelected)
               Center(
-                child: Icon(Icons.check, color: style.textColor, size: size * 0.45),
+                child: Icon(
+                  Icons.check,
+                  color: style.textColor,
+                  size: size * 0.45,
+                ),
               ),
           ],
         ),

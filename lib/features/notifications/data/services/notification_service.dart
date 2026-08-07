@@ -31,14 +31,17 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     );
     final androidPlugin = local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       for (final ch in NotificationChannels.androidChannels()) {
         await androidPlugin.createNotificationChannel(ch);
       }
     }
     final notifId = payload.data['notificationId']?.hashCode.abs() ?? 0;
-    final stableId = notifId > 0 ? notifId % 2147483647 : DateTime.now().millisecondsSinceEpoch % 2147483647;
+    final stableId = notifId > 0
+        ? notifId % 2147483647
+        : DateTime.now().millisecondsSinceEpoch % 2147483647;
     final androidDetails = AndroidNotificationDetails(
       NotificationChannels.idFor(payload.type),
       payload.type.code,
@@ -71,8 +74,7 @@ NotificationPayload _backgroundPayloadFromMessage(RemoteMessage message) {
     ...message.data,
     if (message.notification?.title != null)
       'title': message.notification!.title,
-    if (message.notification?.body != null)
-      'body': message.notification!.body,
+    if (message.notification?.body != null) 'body': message.notification!.body,
   };
   return NotificationPayload.fromFcmMap(merged);
 }
@@ -83,7 +85,7 @@ typedef IncomingFcmHandler = Future<bool> Function(Map<String, dynamic> data);
 /// Orchestrates FCM + local notifications.
 class NotificationService {
   NotificationService({required NotificationRepository repository})
-      : _repository = repository;
+    : _repository = repository;
 
   final NotificationRepository _repository;
   final FlutterLocalNotificationsPlugin _local =
@@ -114,13 +116,17 @@ class NotificationService {
     try {
       await _initLocalNotifications();
     } catch (e, st) {
-      debugPrint('[NotificationService] Local notifications init failed: $e\n$st');
+      debugPrint(
+        '[NotificationService] Local notifications init failed: $e\n$st',
+      );
     }
 
     try {
       await _initFirebaseMessaging();
     } catch (e, st) {
-      debugPrint('[NotificationService] Firebase Messaging init failed: $e\n$st');
+      debugPrint(
+        '[NotificationService] Firebase Messaging init failed: $e\n$st',
+      );
     }
 
     _initialized = true;
@@ -153,12 +159,14 @@ class NotificationService {
     await _local.initialize(
       settings,
       onDidReceiveNotificationResponse: _onLocalNotificationTap,
-      onDidReceiveBackgroundNotificationResponse: notificationTapBackgroundHandler,
+      onDidReceiveBackgroundNotificationResponse:
+          notificationTapBackgroundHandler,
     );
 
     final androidPlugin = _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       for (final ch in NotificationChannels.androidChannels()) {
         await androidPlugin.createNotificationChannel(ch);
@@ -244,24 +252,34 @@ class NotificationService {
     try {
       final androidPlugin = _local
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (androidPlugin != null) {
         await androidPlugin.requestNotificationsPermission();
       }
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('[NotificationService] Android permission request failed: $e\n$st');
+        debugPrint(
+          '[NotificationService] Android permission request failed: $e\n$st',
+        );
       }
     }
 
     try {
       final iosPlugin = _local
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
-      await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      await iosPlugin?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('[NotificationService] iOS permission request failed: $e\n$st');
+        debugPrint(
+          '[NotificationService] iOS permission request failed: $e\n$st',
+        );
       }
     }
 
@@ -276,7 +294,9 @@ class NotificationService {
       }
     } catch (e, st) {
       if (kDebugMode) {
-        debugPrint('[NotificationService] FCM permission request failed: $e\n$st');
+        debugPrint(
+          '[NotificationService] FCM permission request failed: $e\n$st',
+        );
       }
     }
   }
@@ -372,7 +392,9 @@ class NotificationService {
   }
 
   /// Schedules enabled vaccination reminders as local notifications.
-  Future<void> syncVaccinationReminders(List<VaccinationReminder> reminders) async {
+  Future<void> syncVaccinationReminders(
+    List<VaccinationReminder> reminders,
+  ) async {
     for (final r in reminders) {
       final id = _stableId(r.id);
       if (!r.enabled) {
@@ -449,7 +471,8 @@ class NotificationService {
   }
 
   int _notificationId(NotificationPayload payload) {
-    final key = payload.notificationId ?? '${payload.type.code}_${payload.title}';
+    final key =
+        payload.notificationId ?? '${payload.type.code}_${payload.title}';
     return _stableId(key);
   }
 

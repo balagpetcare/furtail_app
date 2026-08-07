@@ -17,6 +17,7 @@ import '../utils/fundraising_media_session.dart';
 import '../../../posts/data/datasources/posts_remote_ds.dart';
 import '../../data/fundraising_error_mapper.dart';
 import '../../data/models/fundraising_models.dart';
+import '../fundraising_option_catalog.dart';
 import '../providers/fundraising_providers.dart';
 
 class FundraisingEditScreen extends ConsumerStatefulWidget {
@@ -69,7 +70,7 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
   String? _upazilaName;
   String? _unionName;
   String? _areaName;
-  String _category = 'Treatment';
+  String _category = 'TREATMENT';
   DateTime? _deadline;
   String _status = 'ACTIVE';
   bool _saving = false;
@@ -116,9 +117,12 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
     _captionCtrl.text = campaign.caption ?? '';
     _amountCtrl.text = campaign.targetAmount.toString();
     _locationCtrl.text = campaign.locationText ?? '';
-    _category = (campaign.category?.trim().isNotEmpty ?? false)
-        ? campaign.category!.trim()
-        : 'Treatment';
+    _category =
+        normalizeFundraisingOptionValue(
+          campaign.category,
+          fundraisingCategoryOptions,
+        ) ??
+        'TREATMENT';
     _deadline = campaign.deadline;
     _status = campaign.status;
 
@@ -379,7 +383,6 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
         locationText: _locationCtrl.text.trim(),
         targetAmount: target,
         deadline: _deadline,
-        status: _status,
         mediaIds: mediaIds,
       );
 
@@ -417,6 +420,23 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
 
   @override
   Widget build(BuildContext context) {
+    final categoryOptions = resolveFundraisingOptionSet(
+      _category,
+      fundraisingCategoryOptions,
+      legacyLabelBuilder: (value) => 'Legacy category: $value',
+    );
+    final normalizedStatus = normalizeFundraisingOptionValue(
+      _status,
+      fundraisingEditableStatusOptions,
+    );
+    String statusLabel = _status.trim();
+    for (final option in fundraisingEditableStatusOptions) {
+      if (option.value == normalizedStatus) {
+        statusLabel = option.label;
+        break;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Fundraiser'),
@@ -525,23 +545,22 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: _category,
+                  initialValue: categoryOptions.selectedValue,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'Treatment',
-                      child: Text('Treatment'),
-                    ),
-                    DropdownMenuItem(value: 'Food', child: Text('Food')),
-                    DropdownMenuItem(value: 'Shelter', child: Text('Shelter')),
-                    DropdownMenuItem(value: 'Rescue', child: Text('Rescue')),
-                    DropdownMenuItem(value: 'Other', child: Text('Other')),
-                  ],
+                  items: categoryOptions.items
+                      .map(
+                        (option) => DropdownMenuItem<String>(
+                          value: option.value,
+                          child: Text(option.label),
+                        ),
+                      )
+                      .toList(growable: false),
                   onChanged: (value) {
-                    setState(() => _category = value ?? 'Treatment');
+                    if (value == null) return;
+                    setState(() => _category = value);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -726,24 +745,26 @@ class _FundraisingEditScreenState extends ConsumerState<FundraisingEditScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _status,
+                InputDecorator(
                   decoration: const InputDecoration(
                     labelText: 'Status',
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
-                    DropdownMenuItem(value: 'PAUSED', child: Text('PAUSED')),
-                    DropdownMenuItem(value: 'ENDED', child: Text('ENDED')),
-                  ],
-                  onChanged: (value) {
-                    setState(() => _status = value ?? 'ACTIVE');
-                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          statusLabel.isEmpty ? 'Unknown' : statusLabel,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Tip: Save to update both post and fundraising details.',
+                  'Tip: Save to update the fundraiser details. Status changes stay server-controlled.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

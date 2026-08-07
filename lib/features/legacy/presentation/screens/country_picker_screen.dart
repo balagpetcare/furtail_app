@@ -13,7 +13,8 @@ class CountryPickerScreen extends ConsumerStatefulWidget {
   const CountryPickerScreen({super.key});
 
   @override
-  ConsumerState<CountryPickerScreen> createState() => _CountryPickerScreenState();
+  ConsumerState<CountryPickerScreen> createState() =>
+      _CountryPickerScreenState();
 }
 
 class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
@@ -48,7 +49,9 @@ class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
         auth: false,
       );
 
-      if (response is Map && response['success'] == true && response['data'] is List) {
+      if (response is Map &&
+          response['success'] == true &&
+          response['data'] is List) {
         final list = (response['data'] as List)
             .map((e) => Country.fromJson(e as Map<String, dynamic>))
             .toList();
@@ -105,10 +108,10 @@ class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? _buildError()
-                : _filtered.isEmpty
-                    ? _buildEmpty()
-                    : _buildList(),
+            ? _buildError()
+            : _filtered.isEmpty
+            ? _buildEmpty()
+            : _buildList(),
       ),
     );
   }
@@ -123,13 +126,17 @@ class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
           const SizedBox(height: 16),
           Text(
             'Could not load countries',
-            style: context.appText.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: context.appText.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             _error!,
-            style: context.appText.bodySmall?.copyWith(color: Colors.grey.shade600),
+            style: context.appText.bodySmall?.copyWith(
+              color: Colors.grey.shade600,
+            ),
             textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
@@ -152,15 +159,14 @@ class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
         children: [
           const Icon(Icons.search_off, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          Text(
-            'No countries found',
-            style: context.appText.titleMedium,
-          ),
+          Text('No countries found', style: context.appText.titleMedium),
           if (_searchCtrl.text.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               'Try a different search term',
-              style: context.appText.bodySmall?.copyWith(color: Colors.grey.shade600),
+              style: context.appText.bodySmall?.copyWith(
+                color: Colors.grey.shade600,
+              ),
             ),
           ],
         ],
@@ -193,7 +199,10 @@ class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               filled: true,
               fillColor: Colors.grey.shade50,
             ),
@@ -208,10 +217,7 @@ class _CountryPickerScreenState extends ConsumerState<CountryPickerScreen> {
             separatorBuilder: (_, _) => const SizedBox(height: 4),
             itemBuilder: (context, index) {
               final c = _filtered[index];
-              return _CountryTile(
-                country: c,
-                onTap: () => _onSelect(c),
-              );
+              return _CountryTile(country: c, onTap: () => _onSelect(c));
             },
           ),
         ),
@@ -263,7 +269,9 @@ class _CountryTile extends StatelessWidget {
                   children: [
                     Text(
                       country.name,
-                      style: context.appText.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                      style: context.appText.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (country.isDefault)
@@ -280,7 +288,10 @@ class _CountryTile extends StatelessWidget {
               const SizedBox(width: 8),
               // ISO2 code
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),

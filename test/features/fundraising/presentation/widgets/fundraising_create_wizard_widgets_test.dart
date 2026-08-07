@@ -119,6 +119,63 @@ void main() {
       );
     });
 
+    testWidgets(
+      'renders a neutral disabled Continue button with readable text',
+      (tester) async {
+        await _pump(
+          tester,
+          FundraisingWizardBottomBar(
+            canGoBack: false,
+            onBack: () {},
+            onCancel: () {},
+            onSaveDraft: () {},
+            onContinue: () {},
+            continueLabel: 'Continue',
+            continueEnabled: false,
+          ),
+        );
+
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Continue'),
+        );
+        final background = button.style?.backgroundColor?.resolve({
+          WidgetState.disabled,
+        });
+        final foreground = button.style?.foregroundColor?.resolve({
+          WidgetState.disabled,
+        });
+
+        expect(background, isNotNull);
+        expect(foreground, isNotNull);
+      },
+    );
+
+    testWidgets('renders an enabled blue Continue button with white text', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        FundraisingWizardBottomBar(
+          canGoBack: false,
+          onBack: () {},
+          onCancel: () {},
+          onSaveDraft: () {},
+          onContinue: () {},
+          continueLabel: 'Continue',
+          continueEnabled: true,
+        ),
+      );
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Continue'),
+      );
+      final background = button.style?.backgroundColor?.resolve({});
+      final foreground = button.style?.foregroundColor?.resolve({});
+
+      expect(background, isNotNull);
+      expect(foreground, Colors.white);
+    });
+
     testWidgets('keeps the continue action readable at 320dp and 1.3x scale', (
       tester,
     ) async {

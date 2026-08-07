@@ -74,8 +74,7 @@ class _StoryTextComposerScreenState
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
-        title:
-            const Text('Text Story', style: TextStyle(color: Colors.white)),
+        title: const Text('Text Story', style: TextStyle(color: Colors.white)),
         actions: [
           TextButton(
             onPressed: _isUploading ? null : _submit,
@@ -84,11 +83,17 @@ class _StoryTextComposerScreenState
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
-                : const Text('Share',
+                : const Text(
+                    'Share',
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -96,11 +101,7 @@ class _StoryTextComposerScreenState
         child: Column(
           children: [
             // ── Story preview ─────────────────────────────────────────────
-            Expanded(
-              child: Center(
-                child: _buildPreview(),
-              ),
-            ),
+            Expanded(child: Center(child: _buildPreview())),
 
             // ── Text input ────────────────────────────────────────────────
             Padding(
@@ -128,7 +129,11 @@ class _StoryTextComposerScreenState
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  const Icon(Icons.text_fields, color: Colors.white54, size: 16),
+                  const Icon(
+                    Icons.text_fields,
+                    color: Colors.white54,
+                    size: 16,
+                  ),
                   Expanded(
                     child: Slider(
                       value: _fontSize,
@@ -221,8 +226,10 @@ class _StoryTextComposerScreenState
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          Text(label,
-              style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
+          ),
           const SizedBox(width: 8),
           ...List.generate(colors.length, (i) {
             final selected = i == selectedIndex;
@@ -254,8 +261,10 @@ class _StoryTextComposerScreenState
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          const Text('BG',
-              style: TextStyle(color: Colors.white54, fontSize: 12)),
+          const Text(
+            'BG',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
           const SizedBox(width: 8),
           ...List.generate(_kGradients.length, (i) {
             final selected = i == _gradientIndex;
@@ -298,10 +307,9 @@ class _StoryTextComposerScreenState
       final file = await _capturePreviewAsPng();
       if (!mounted) return;
 
-      await ref.read(storyFeedProvider.notifier).createStory(
-            mediaPath: file.path,
-            caption: text,
-          );
+      await ref
+          .read(storyFeedProvider.notifier)
+          .createStory(mediaPath: file.path, caption: text);
 
       if (mounted) {
         showAppSnackBar(context, 'Text story added to My Day! ✅');
@@ -321,11 +329,12 @@ class _StoryTextComposerScreenState
 
   /// Renders the preview widget to a high-res PNG file in the system temp dir.
   Future<File> _capturePreviewAsPng() async {
-    final boundary = _previewKey.currentContext!.findRenderObject()
-        as RenderRepaintBoundary;
+    final boundary =
+        _previewKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-    final ByteData? byteData =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
     final tempDir = Directory.systemTemp.createTempSync('furtail_story_');

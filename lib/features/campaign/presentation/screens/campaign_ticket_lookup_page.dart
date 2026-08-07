@@ -9,10 +9,12 @@ class CampaignTicketLookupPage extends ConsumerStatefulWidget {
   const CampaignTicketLookupPage({super.key});
 
   @override
-  ConsumerState<CampaignTicketLookupPage> createState() => _CampaignTicketLookupPageState();
+  ConsumerState<CampaignTicketLookupPage> createState() =>
+      _CampaignTicketLookupPageState();
 }
 
-class _CampaignTicketLookupPageState extends ConsumerState<CampaignTicketLookupPage> {
+class _CampaignTicketLookupPageState
+    extends ConsumerState<CampaignTicketLookupPage> {
   final _controller = TextEditingController();
   bool _loading = false;
   String? _error;

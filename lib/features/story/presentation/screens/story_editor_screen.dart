@@ -43,10 +43,38 @@ class _StickerOverlay {
 // ── Emoji sticker list ────────────────────────────────────────────────────────
 
 const _kStickers = [
-  '❤️', '😍', '🐾', '🐶', '🐱', '🐰', '🐹', '🦊',
-  '🐻', '🐼', '🐸', '🦁', '🐯', '🐮', '🐷', '🐔',
-  '🌟', '✨', '🎉', '🎊', '🔥', '💯', '😂', '😎',
-  '🥺', '🥰', '😊', '😄', '🤩', '🙌', '👍', '💪',
+  '❤️',
+  '😍',
+  '🐾',
+  '🐶',
+  '🐱',
+  '🐰',
+  '🐹',
+  '🦊',
+  '🐻',
+  '🐼',
+  '🐸',
+  '🦁',
+  '🐯',
+  '🐮',
+  '🐷',
+  '🐔',
+  '🌟',
+  '✨',
+  '🎉',
+  '🎊',
+  '🔥',
+  '💯',
+  '😂',
+  '😎',
+  '🥺',
+  '🥰',
+  '😊',
+  '😄',
+  '🤩',
+  '🙌',
+  '👍',
+  '💪',
 ];
 
 // ── Drawing canvas ────────────────────────────────────────────────────────────
@@ -129,8 +157,11 @@ class _StrokePainter extends CustomPainter {
   void _drawStroke(Canvas canvas, List<Offset> points, Paint paint) {
     if (points.isEmpty) return;
     if (points.length == 1) {
-      canvas.drawCircle(points.first, strokeWidth / 2,
-          paint..style = PaintingStyle.fill);
+      canvas.drawCircle(
+        points.first,
+        strokeWidth / 2,
+        paint..style = PaintingStyle.fill,
+      );
       paint.style = PaintingStyle.stroke;
       return;
     }
@@ -237,7 +268,9 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
               Expanded(child: _buildComposite()),
               SafeArea(
                 top: false,
-                child: _isDrawMode ? _buildDrawControls() : _buildBottomControls(),
+                child: _isDrawMode
+                    ? _buildDrawControls()
+                    : _buildBottomControls(),
               ),
             ],
           ),
@@ -262,21 +295,29 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+            ),
             onPressed: _isUploading ? null : () => Navigator.pop(context),
           ),
           const Expanded(
             child: Text(
               'Story Editor',
               style: TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
           if (!widget.isVideo) ...[
             IconButton(
               icon: Icon(
-                _isCoverFit ? Icons.fit_screen_outlined : Icons.fullscreen_rounded,
+                _isCoverFit
+                    ? Icons.fit_screen_outlined
+                    : Icons.fullscreen_rounded,
                 color: Colors.white,
               ),
               tooltip: _isCoverFit ? 'Fit to Canvas' : 'Fill Canvas',
@@ -287,8 +328,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
               tooltip: 'Crop',
               onPressed: (_isUploading || _isCropping) ? null : _cropImage,
             ),
-          ]
-          else
+          ] else
             const SizedBox(width: 48),
         ],
       ),
@@ -319,10 +359,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
                   color: _drawColor,
                   strokeWidth: _strokeWidth,
                   isActive: _isDrawMode,
-                  onStrokeStart: (p) =>
-                      setState(() => _currentStroke = [p]),
-                  onStrokeUpdate: (p) =>
-                      setState(() => _currentStroke.add(p)),
+                  onStrokeStart: (p) => setState(() => _currentStroke = [p]),
+                  onStrokeUpdate: (p) => setState(() => _currentStroke.add(p)),
                   onStrokeEnd: () => setState(() {
                     if (_currentStroke.isNotEmpty) {
                       _drawStrokes.add(List.from(_currentStroke));
@@ -346,8 +384,10 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
           children: [
             Icon(Icons.play_circle_outline, size: 72, color: Colors.white54),
             SizedBox(height: 12),
-            Text('Video selected',
-                style: TextStyle(color: Colors.white54, fontSize: 14)),
+            Text(
+              'Video selected',
+              style: TextStyle(color: Colors.white54, fontSize: 14),
+            ),
           ],
         ),
       );
@@ -360,7 +400,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       errorBuilder: (_, e1, e2) => Container(
         color: Colors.grey[900],
         child: const Center(
-            child: Icon(Icons.broken_image, color: Colors.white54, size: 64)),
+          child: Icon(Icons.broken_image, color: Colors.white54, size: 64),
+        ),
       ),
     );
   }
@@ -373,8 +414,9 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       top: overlay.position.dy,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onPanUpdate:
-            _isDrawMode ? null : (d) => setState(() => overlay.position += d.delta),
+        onPanUpdate: _isDrawMode
+            ? null
+            : (d) => setState(() => overlay.position += d.delta),
         onTap: _isDrawMode ? null : () => _editText(overlay),
         onLongPress: _isDrawMode ? null : () => _deleteText(overlay),
         child: Container(
@@ -390,7 +432,11 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
               fontSize: overlay.fontSize,
               fontWeight: FontWeight.bold,
               shadows: const [
-                Shadow(blurRadius: 4, color: Colors.black54, offset: Offset(1, 1))
+                Shadow(
+                  blurRadius: 4,
+                  color: Colors.black54,
+                  offset: Offset(1, 1),
+                ),
               ],
             ),
           ),
@@ -405,8 +451,9 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       top: overlay.position.dy,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onPanUpdate:
-            _isDrawMode ? null : (d) => setState(() => overlay.position += d.delta),
+        onPanUpdate: _isDrawMode
+            ? null
+            : (d) => setState(() => overlay.position += d.delta),
         onLongPress: _isDrawMode ? null : () => _deleteSticker(overlay),
         child: Text(overlay.emoji, style: TextStyle(fontSize: overlay.size)),
       ),
@@ -431,9 +478,17 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _ToolBtn(icon: Icons.text_fields_rounded, label: 'Text', onTap: _addText),
+              _ToolBtn(
+                icon: Icons.text_fields_rounded,
+                label: 'Text',
+                onTap: _addText,
+              ),
               const SizedBox(width: 20),
-              _ToolBtn(icon: Icons.emoji_emotions_outlined, label: 'Sticker', onTap: _addSticker),
+              _ToolBtn(
+                icon: Icons.emoji_emotions_outlined,
+                label: 'Sticker',
+                onTap: _addSticker,
+              ),
               const SizedBox(width: 20),
               _ToolBtn(
                 icon: Icons.brush_outlined,
@@ -467,7 +522,10 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -481,12 +539,17 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.send_rounded),
               label: Text(
                 _isUploading ? _uploadStatus : 'Share to My Day',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -512,8 +575,10 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
         children: [
           Row(
             children: [
-              const Text('Color:',
-                  style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const Text(
+                'Color:',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
               const SizedBox(width: 8),
               ...drawColors.map(
                 (c) => GestureDetector(
@@ -559,9 +624,13 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
               ),
               TextButton(
                 onPressed: () => setState(() => _isDrawMode = false),
-                child: const Text('Done',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
@@ -589,9 +658,10 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
                 Text(
                   _uploadStatus,
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500),
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -613,13 +683,15 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final text = (result['text'] as String?)?.trim() ?? '';
     if (text.isEmpty) return;
     setState(() {
-      _textOverlays.add(_TextOverlay(
-        key: UniqueKey(),
-        text: text,
-        position: _centerPosition,
-        color: result['color'] as Color? ?? Colors.white,
-        fontSize: result['fontSize'] as double? ?? 28.0,
-      ));
+      _textOverlays.add(
+        _TextOverlay(
+          key: UniqueKey(),
+          text: text,
+          position: _centerPosition,
+          color: result['color'] as Color? ?? Colors.white,
+          fontSize: result['fontSize'] as double? ?? 28.0,
+        ),
+      );
     });
     _refreshStackSize();
   }
@@ -650,7 +722,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     });
   }
 
-  void _deleteText(_TextOverlay overlay) => setState(() => _textOverlays.remove(overlay));
+  void _deleteText(_TextOverlay overlay) =>
+      setState(() => _textOverlays.remove(overlay));
 
   Future<void> _addSticker() async {
     final emoji = await showModalBottomSheet<String>(
@@ -663,11 +736,13 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     );
     if (emoji == null || !mounted) return;
     setState(() {
-      _stickerOverlays.add(_StickerOverlay(
-        key: UniqueKey(),
-        emoji: emoji,
-        position: _centerPosition,
-      ));
+      _stickerOverlays.add(
+        _StickerOverlay(
+          key: UniqueKey(),
+          emoji: emoji,
+          position: _centerPosition,
+        ),
+      );
     });
     _refreshStackSize();
   }
@@ -722,7 +797,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       String fileToUpload = _currentFilePath;
 
       // For images with any overlay: capture composite as PNG
-      final hasOverlays = _textOverlays.isNotEmpty ||
+      final hasOverlays =
+          _textOverlays.isNotEmpty ||
           _stickerOverlays.isNotEmpty ||
           _drawStrokes.isNotEmpty;
 
@@ -743,10 +819,9 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
         finalCaption = caption.isNotEmpty ? '$texts — $caption' : texts;
       }
 
-      await ref.read(storyFeedProvider.notifier).createStory(
-            mediaPath: fileToUpload,
-            caption: finalCaption,
-          );
+      await ref
+          .read(storyFeedProvider.notifier)
+          .createStory(mediaPath: fileToUpload, caption: finalCaption);
 
       if (!mounted) return;
       _setStatus(false, '');
@@ -778,12 +853,14 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     await Future.delayed(const Duration(milliseconds: 80));
 
     final boundary =
-        _compositeKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+        _compositeKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
     if (boundary == null) return _currentFilePath;
 
     final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-    final ByteData? byteData =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
 
     final tempDir = Directory.systemTemp.createTempSync('furtail_composite_');
@@ -808,7 +885,11 @@ class _ToolBtn extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _ToolBtn({required this.icon, required this.label, required this.onTap});
+  const _ToolBtn({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -828,8 +909,10 @@ class _ToolBtn extends StatelessWidget {
             child: Icon(icon, color: Colors.white, size: 24),
           ),
           const SizedBox(height: 4),
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
         ],
       ),
     );
@@ -843,8 +926,11 @@ class _TextDialog extends StatefulWidget {
   final Color? initialColor;
   final double? initialFontSize;
 
-  const _TextDialog(
-      {this.initialText, this.initialColor, this.initialFontSize});
+  const _TextDialog({
+    this.initialText,
+    this.initialColor,
+    this.initialFontSize,
+  });
 
   @override
   State<_TextDialog> createState() => _TextDialogState();
@@ -892,9 +978,10 @@ class _TextDialogState extends State<_TextDialog> {
             Text(
               widget.initialText != null ? 'Edit Text' : 'Add Text',
               style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -908,43 +995,44 @@ class _TextDialogState extends State<_TextDialog> {
                 hintStyle: TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: Colors.white12,
-                border:
-                    OutlineInputBorder(borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderSide: BorderSide.none),
               ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                const Text('Color:',
-                    style:
-                        TextStyle(color: Colors.white54, fontSize: 12)),
+                const Text(
+                  'Color:',
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                ),
                 const SizedBox(width: 8),
-                ..._colors.map((c) => GestureDetector(
-                      onTap: () => setState(() => _color = c),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: c,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: _color == c
-                                ? Colors.white
-                                : Colors.white24,
-                            width: _color == c ? 2.5 : 1,
-                          ),
+                ..._colors.map(
+                  (c) => GestureDetector(
+                    onTap: () => setState(() => _color = c),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _color == c ? Colors.white : Colors.white24,
+                          width: _color == c ? 2.5 : 1,
                         ),
                       ),
-                    )),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('Size:',
-                    style:
-                        TextStyle(color: Colors.white54, fontSize: 12)),
+                const Text(
+                  'Size:',
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                ),
                 Expanded(
                   child: Slider(
                     value: _fontSize,
@@ -965,10 +1053,11 @@ class _TextDialogState extends State<_TextDialog> {
                   Expanded(
                     child: TextButton.icon(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      label: const Text('Delete',
-                          style: TextStyle(color: Colors.red)),
-                      onPressed: () =>
-                          Navigator.pop(context, {'delete': true}),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      onPressed: () => Navigator.pop(context, {'delete': true}),
                     ),
                   ),
                 Expanded(
@@ -1005,21 +1094,21 @@ class _StickerSheet extends StatelessWidget {
           width: 36,
           height: 4,
           decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(2)),
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
         const SizedBox(height: 8),
-        const Text('Choose a Sticker',
-            style: TextStyle(
-                color: Colors.white, fontWeight: FontWeight.bold)),
+        const Text(
+          'Choose a Sticker',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         Flexible(
           child: GridView.builder(
             shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 8),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 8,
               mainAxisSpacing: 8,
               crossAxisSpacing: 8,
@@ -1028,8 +1117,10 @@ class _StickerSheet extends StatelessWidget {
             itemBuilder: (ctx, i) => GestureDetector(
               onTap: () => Navigator.pop(ctx, _kStickers[i]),
               child: Center(
-                child: Text(_kStickers[i],
-                    style: const TextStyle(fontSize: 28)),
+                child: Text(
+                  _kStickers[i],
+                  style: const TextStyle(fontSize: 28),
+                ),
               ),
             ),
           ),

@@ -214,7 +214,8 @@ class PostAuthorModel {
     final profile = (json['profile'] as Map<String, dynamic>?) ?? {};
     final avatarMedia = (profile['avatarMedia'] as Map<String, dynamic>?) ?? {};
     final displayName =
-        (profile['displayName'] ?? profile['username'] ?? 'User').toString();
+        (profile['displayName'] ?? profile['username'] ?? 'Furtail Member')
+            .toString();
     final avatarUrl = (avatarMedia['url'] as String?)?.trim();
     return PostAuthorModel(
       id: (json['id'] as num).toInt(),
@@ -487,7 +488,7 @@ class PostModel {
         authorJson ??
             const {
               'id': 0,
-              'profile': {'displayName': 'User'},
+              'profile': {'displayName': 'Furtail Member'},
             },
       ),
       media: mediaJson

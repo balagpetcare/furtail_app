@@ -22,7 +22,8 @@ class FullscreenGalleryViewer extends StatefulWidget {
   });
 
   @override
-  State<FullscreenGalleryViewer> createState() => _FullscreenGalleryViewerState();
+  State<FullscreenGalleryViewer> createState() =>
+      _FullscreenGalleryViewerState();
 }
 
 class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
@@ -32,7 +33,10 @@ class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
   @override
   void initState() {
     super.initState();
-    _index = widget.initialIndex.clamp(0, (widget.urls.length - 1).clamp(0, 999));
+    _index = widget.initialIndex.clamp(
+      0,
+      (widget.urls.length - 1).clamp(0, 999),
+    );
     _page = PageController(initialPage: _index);
   }
 
@@ -46,7 +50,12 @@ class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
   Widget build(BuildContext context) {
     final urls = widget.urls;
     if (urls.isEmpty) {
-      return const Scaffold(backgroundColor: Colors.black, body: Center(child: Text('No image', style: TextStyle(color: Colors.white))));
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text('No image', style: TextStyle(color: Colors.white)),
+        ),
+      );
     }
 
     return Scaffold(
@@ -59,7 +68,9 @@ class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
             onPageChanged: (i) => setState(() => _index = i),
             itemBuilder: (_, i) {
               final url = urls[i];
-              final heroTag = widget.heroTagPrefix == null ? null : '${widget.heroTagPrefix}-$i';
+              final heroTag = widget.heroTagPrefix == null
+                  ? null
+                  : '${widget.heroTagPrefix}-$i';
               final img = InteractiveViewer(
                 minScale: 1,
                 maxScale: 4,
@@ -73,7 +84,11 @@ class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
                       height: 26,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    errorWidget: (_, _, _) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                    errorWidget: (_, _, _) => const Icon(
+                      Icons.broken_image,
+                      color: Colors.white54,
+                      size: 64,
+                    ),
                   ),
                 ),
               );
@@ -94,7 +109,10 @@ class _FullscreenGalleryViewerState extends State<FullscreenGalleryViewer> {
                   const Spacer(),
                   Text(
                     '${_index + 1}/${urls.length}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(width: 8),
                 ],

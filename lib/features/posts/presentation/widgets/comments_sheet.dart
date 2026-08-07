@@ -213,8 +213,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
       _replyToName = null;
     });
     _ctrl.text = c.text;
-    _ctrl.selection =
-        TextSelection.fromPosition(TextPosition(offset: c.text.length));
+    _ctrl.selection = TextSelection.fromPosition(
+      TextPosition(offset: c.text.length),
+    );
     _focus.requestFocus();
   }
 
@@ -238,10 +239,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -333,9 +331,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _sending = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Edit failed: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Edit failed: ${e.toString()}')));
     }
   }
 
@@ -349,8 +347,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
       final newList = List<PostCommentModel>.from(_items);
       newList[idx] = newList[idx].copyWith(
         isLikedByMe: !currently,
-        likeCount:
-            (_items[idx].likeCount + (currently ? -1 : 1)).clamp(0, 1 << 30),
+        likeCount: (_items[idx].likeCount + (currently ? -1 : 1)).clamp(
+          0,
+          1 << 30,
+        ),
       );
       _items = newList;
     });
@@ -364,8 +364,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
         final idx2 = _items.indexWhere((x) => x.id == c.id);
         if (idx2 >= 0) {
           final newList = List<PostCommentModel>.from(_items);
-          newList[idx2] =
-              newList[idx2].copyWith(likeCount: likeCount, isLikedByMe: !currently);
+          newList[idx2] = newList[idx2].copyWith(
+            likeCount: likeCount,
+            isLikedByMe: !currently,
+          );
           setState(() => _items = newList);
         }
       }
@@ -395,9 +397,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
         child: Container(
           padding: const EdgeInsets.only(top: 10),
@@ -415,8 +415,10 @@ class _CommentsSheetState extends State<CommentsSheet> {
               ),
               // Header
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 child: Row(
                   children: [
                     Text(
@@ -456,7 +458,9 @@ class _CommentsSheetState extends State<CommentsSheet> {
               if (_error)
                 _ErrorState(onRetry: _load)
               else if (_loading)
-                const Expanded(child: Center(child: CircularProgressIndicator()))
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
               else if (topLevel.isEmpty)
                 const _EmptyState()
               else
@@ -465,8 +469,7 @@ class _CommentsSheetState extends State<CommentsSheet> {
                     onRefresh: _load,
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding:
-                          const EdgeInsets.fromLTRB(14, 10, 14, 24),
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
                       itemCount: topLevel.length + (_loadingMore ? 1 : 0),
                       itemBuilder: (_, i) {
                         // Loading-more spinner at the end
@@ -480,14 +483,13 @@ class _CommentsSheetState extends State<CommentsSheet> {
                         }
 
                         final parent = topLevel[i];
-                        final replies =
-                            repliesByParent[parent.id] ?? const [];
+                        final replies = repliesByParent[parent.id] ?? const [];
                         final pKey = _commentKeys.putIfAbsent(
                           parent.id,
                           () => GlobalKey(),
                         );
-                        final isOwn = _myUserId != null &&
-                            parent.author.id == _myUserId;
+                        final isOwn =
+                            _myUserId != null && parent.author.id == _myUserId;
 
                         return Column(
                           key: pKey,
@@ -503,13 +505,11 @@ class _CommentsSheetState extends State<CommentsSheet> {
                               onReport: isOwn
                                   ? null
                                   : () => ReportBottomSheet.show(
-                                        context,
-                                        targetType: ReportTargetType.comment,
-                                        targetId: parent.id,
-                                      ),
-                              onEdit: isOwn
-                                  ? () => _startEdit(parent)
-                                  : null,
+                                      context,
+                                      targetType: ReportTargetType.comment,
+                                      targetId: parent.id,
+                                    ),
+                              onEdit: isOwn ? () => _startEdit(parent) : null,
                               onDelete: isOwn
                                   ? () => _deleteComment(parent)
                                   : null,
@@ -527,20 +527,22 @@ class _CommentsSheetState extends State<CommentsSheet> {
                                       widget.highlightCommentId == r.id,
                                   onLike: () => _toggleLike(r),
                                   onReply: () => _setReplyTarget(parent),
-                                  onReport: (_myUserId != null &&
+                                  onReport:
+                                      (_myUserId != null &&
                                           r.author.id == _myUserId)
                                       ? null
                                       : () => ReportBottomSheet.show(
-                                            context,
-                                            targetType:
-                                                ReportTargetType.comment,
-                                            targetId: r.id,
-                                          ),
-                                  onEdit: (_myUserId != null &&
+                                          context,
+                                          targetType: ReportTargetType.comment,
+                                          targetId: r.id,
+                                        ),
+                                  onEdit:
+                                      (_myUserId != null &&
                                           r.author.id == _myUserId)
                                       ? () => _startEdit(r)
                                       : null,
-                                  onDelete: (_myUserId != null &&
+                                  onDelete:
+                                      (_myUserId != null &&
                                           r.author.id == _myUserId)
                                       ? () => _deleteComment(r)
                                       : null,
@@ -588,8 +590,7 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showReplyBanner =
-        !editingMode && (replyingToName ?? '').isNotEmpty;
+    final showReplyBanner = !editingMode && (replyingToName ?? '').isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
@@ -646,8 +647,8 @@ class _Composer extends StatelessWidget {
                     hintText: editingMode
                         ? 'Edit your comment…'
                         : (replyingToName != null
-                            ? 'Write a reply…'
-                            : 'Write a comment…'),
+                              ? 'Write a reply…'
+                              : 'Write a comment…'),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -669,9 +670,7 @@ class _Composer extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : Icon(
-                        editingMode
-                            ? Icons.check_rounded
-                            : Icons.send_rounded,
+                        editingMode ? Icons.check_rounded : Icons.send_rounded,
                       ),
               ),
             ],
@@ -714,8 +713,9 @@ class _BannerChip extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: AppTypography.caption(context)
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: AppTypography.caption(
+                context,
+              ).copyWith(fontWeight: FontWeight.w700),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -756,17 +756,16 @@ class _EmptyState extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 'No comments yet',
-                style: AppTypography.bodyLarge(context).copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black54,
-                ),
+                style: AppTypography.bodyLarge(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w700, color: Colors.black54),
               ),
               const SizedBox(height: 6),
               Text(
                 'Be the first to comment!',
-                style: AppTypography.caption(context).copyWith(
-                  color: Colors.black38,
-                ),
+                style: AppTypography.caption(
+                  context,
+                ).copyWith(color: Colors.black38),
               ),
             ],
           ),
@@ -798,10 +797,9 @@ class _ErrorState extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 'Could not load comments',
-                style: AppTypography.bodyLarge(context).copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black54,
-                ),
+                style: AppTypography.bodyLarge(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w700, color: Colors.black54),
               ),
               const SizedBox(height: 18),
               FilledButton.icon(

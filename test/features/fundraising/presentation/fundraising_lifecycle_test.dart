@@ -62,18 +62,26 @@ void main() {
     });
 
     group('Donation Campaign Requirements', () {
-      test('Campaign may accept donations while pending review or published/active', () {
-        final allowedForDonation = ['PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'ACTIVE'];
-        const draftStatus = 'DRAFT';
-        const rejectedStatus = 'REJECTED';
+      test(
+        'Campaign may accept donations while pending review or published/active',
+        () {
+          final allowedForDonation = [
+            'PENDING_REVIEW',
+            'APPROVED',
+            'PUBLISHED',
+            'ACTIVE',
+          ];
+          const draftStatus = 'DRAFT';
+          const rejectedStatus = 'REJECTED';
 
-        expect(allowedForDonation, contains('PENDING_REVIEW'));
-        expect(allowedForDonation, contains('APPROVED'));
-        expect(allowedForDonation, contains('PUBLISHED'));
-        expect(allowedForDonation, contains('ACTIVE'));
-        expect(allowedForDonation, isNot(contains(draftStatus)));
-        expect(allowedForDonation, isNot(contains(rejectedStatus)));
-      });
+          expect(allowedForDonation, contains('PENDING_REVIEW'));
+          expect(allowedForDonation, contains('APPROVED'));
+          expect(allowedForDonation, contains('PUBLISHED'));
+          expect(allowedForDonation, contains('ACTIVE'));
+          expect(allowedForDonation, isNot(contains(draftStatus)));
+          expect(allowedForDonation, isNot(contains(rejectedStatus)));
+        },
+      );
     });
 
     group('Withdrawal Requirements', () {

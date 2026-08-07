@@ -14,7 +14,8 @@ class AdoptionCommentAuthorModel {
     final avatarMedia =
         (profile['avatarMedia'] as Map<String, dynamic>?) ?? const {};
     final displayName =
-        (profile['displayName'] ?? profile['username'] ?? 'User').toString();
+        (profile['displayName'] ?? profile['username'] ?? 'Furtail Member')
+            .toString();
     final avatarUrl = (avatarMedia['url'] as String?)?.trim();
     return AdoptionCommentAuthorModel(
       id: (json['id'] as num).toInt(),

@@ -71,6 +71,13 @@ class _PetEditOverviewScreenState extends State<PetEditOverviewScreen> {
     return (u2 ?? '').trim();
   }
 
+  int? _version() {
+    final version = _pet['version'];
+    if (version is num) return version.toInt();
+    if (version is String) return int.tryParse(version);
+    return null;
+  }
+
   Future<void> _editPhoto() async {
     final ok = await Navigator.push<bool>(
       context,
@@ -78,6 +85,7 @@ class _PetEditOverviewScreenState extends State<PetEditOverviewScreen> {
         builder: (_) => PetEditPhotoScreen(
           petId: widget.petId,
           currentPhotoUrl: _petPhotoUrl(),
+          currentVersion: _version(),
         ),
       ),
     );
@@ -105,6 +113,7 @@ class _PetEditOverviewScreenState extends State<PetEditOverviewScreen> {
           fieldKey: fieldKey,
           initialValue: _pet[fieldKey]?.toString() ?? '',
           type: type,
+          currentVersion: _version(),
         ),
       ),
     );
@@ -236,15 +245,16 @@ class _PetEditOverviewScreenState extends State<PetEditOverviewScreen> {
                       );
 
                       if (ok == true) {
+                        final deletedText = t.deleted;
                         try {
                           await _service.deletePet(widget.petId);
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(
                             context,
-                          ).showSnackBar(SnackBar(content: Text(t.deleted)));
+                          ).showSnackBar(SnackBar(content: Text(deletedText)));
                           Navigator.pop(context, true);
                         } catch (e) {
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(
                             context,
                           ).showSnackBar(SnackBar(content: Text(e.toString())));

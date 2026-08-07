@@ -24,11 +24,11 @@ class SyncQueueItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.name,
-        'payload': payload,
-        'queuedAt': queuedAt.toIso8601String(),
-      };
+    'id': id,
+    'type': type.name,
+    'payload': payload,
+    'queuedAt': queuedAt.toIso8601String(),
+  };
 
   factory SyncQueueItem.fromJson(Map<String, dynamic> json) {
     return SyncQueueItem(
@@ -69,10 +69,7 @@ class SyncQueueService {
   Future<void> enqueue(SyncQueueItem item) async {
     final current = await getPendingActions();
     // Deduplicate: replace if same type+payload already queued.
-    final updated = [
-      ...current.where((e) => e.id != item.id),
-      item,
-    ];
+    final updated = [...current.where((e) => e.id != item.id), item];
     await _save(updated);
   }
 

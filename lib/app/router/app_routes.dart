@@ -15,8 +15,10 @@ class AppRoutes {
   static const postDetails = '/posts/details'; // args: {post}
   static const postEdit = '/posts/edit'; // args: {post}
   static const reelsPlayer = '/reels/player'; // args: {reels, initialIndex}
-  static const postMediaDetail = '/posts/media-detail'; // args: {post, initialIndex} or details
-  static const mediaViewer = '/posts/media-viewer'; // args: {post, initialIndex}
+  static const postMediaDetail =
+      '/posts/media-detail'; // args: {post, initialIndex} or details
+  static const mediaViewer =
+      '/posts/media-viewer'; // args: {post, initialIndex}
 
   static const petCreate = '/pets/create';
   static const petList = '/pets';
@@ -27,7 +29,8 @@ class AppRoutes {
   static const donation = '/donation';
   static const wallet = '/wallet';
   static const fundraisingCreate = '/fundraising/create';
-  static const fundraisingDetails = '/fundraising/details'; // args: {campaignId}
+  static const fundraisingDetails =
+      '/fundraising/details'; // args: {campaignId}
   static const vet = '/vet';
   static const campaignHub = '/campaign';
   static const campaignDetail = '/campaign/detail'; // args: {slug}

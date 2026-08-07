@@ -1456,9 +1456,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       width: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: hasContent
-                            ? Colors.white
-                            : Colors.grey.shade400,
+                        color: hasContent ? Colors.white : Colors.grey.shade400,
                       ),
                     )
                   : const Text('Post'),

@@ -27,7 +27,9 @@ class CrashReportingService {
       await _crashlytics!.setCrashlyticsCollectionEnabled(!kDebugMode);
       _initialized = true;
       if (kDebugMode) {
-        debugPrint('[CrashReportingService] initialized (collection off in debug)');
+        debugPrint(
+          '[CrashReportingService] initialized (collection off in debug)',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -51,12 +53,7 @@ class CrashReportingService {
     };
 
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-      recordError(
-        error,
-        stack,
-        source: CrashSource.async,
-        fatal: true,
-      );
+      recordError(error, stack, source: CrashSource.async, fatal: true);
       return true;
     };
   }

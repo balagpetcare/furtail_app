@@ -62,7 +62,6 @@ class WalletTransactionItem {
   }
 }
 
-
 class WalletWithdrawRequest {
   final int id;
   final String amount;

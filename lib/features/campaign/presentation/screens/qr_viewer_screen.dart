@@ -47,7 +47,8 @@ class _QrViewerScreenState extends State<QrViewerScreen> {
                 Text(widget.subtitle!, textAlign: TextAlign.center),
               ],
               const SizedBox(height: 24),
-              if (widget.qrImageBase64 != null && widget.qrImageBase64!.isNotEmpty)
+              if (widget.qrImageBase64 != null &&
+                  widget.qrImageBase64!.isNotEmpty)
                 _buildImage(widget.qrImageBase64!)
               else
                 _buildPlaceholder(context),
@@ -71,7 +72,9 @@ class _QrViewerScreenState extends State<QrViewerScreen> {
 
   Widget _buildImage(String base64Data) {
     try {
-      final raw = base64Data.contains(',') ? base64Data.split(',').last : base64Data;
+      final raw = base64Data.contains(',')
+          ? base64Data.split(',').last
+          : base64Data;
       final bytes = base64Decode(raw);
       return Container(
         padding: const EdgeInsets.all(12),
@@ -80,7 +83,12 @@ class _QrViewerScreenState extends State<QrViewerScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12)],
         ),
-        child: Image.memory(bytes, width: 220, height: 220, fit: BoxFit.contain),
+        child: Image.memory(
+          bytes,
+          width: 220,
+          height: 220,
+          fit: BoxFit.contain,
+        ),
       );
     } catch (_) {
       return _buildPlaceholder(null);
@@ -106,7 +114,9 @@ class _QrViewerScreenState extends State<QrViewerScreen> {
               padding: const EdgeInsets.all(8),
               child: Text(
                 'QR image not available',
-                style: context!.appText.bodySmall!.copyWith(color: Colors.grey.shade600),
+                style: context!.appText.bodySmall!.copyWith(
+                  color: Colors.grey.shade600,
+                ),
               ),
             ),
         ],

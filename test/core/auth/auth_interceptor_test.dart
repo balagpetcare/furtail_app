@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:furtail_app/core/auth/auth_interceptor.dart';
 import 'package:furtail_app/core/auth/central_auth_api.dart';
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
+import 'package:furtail_app/core/auth/session_recovery.dart';
 import 'package:furtail_app/services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,18 +16,12 @@ class _FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   final Map<String, String> _store = {};
 
   @override
-  Future<bool> containsKey({
-    required String key,
-    required Map<String, String> options,
-  }) async {
+  Future<bool> containsKey({required String key, required Map<String, String> options}) async {
     return _store.containsKey(key);
   }
 
   @override
-  Future<void> delete({
-    required String key,
-    required Map<String, String> options,
-  }) async {
+  Future<void> delete({required String key, required Map<String, String> options}) async {
     _store.remove(key);
   }
 
@@ -36,17 +31,12 @@ class _FakeSecureStoragePlatform extends FlutterSecureStoragePlatform {
   }
 
   @override
-  Future<String?> read({
-    required String key,
-    required Map<String, String> options,
-  }) async {
+  Future<String?> read({required String key, required Map<String, String> options}) async {
     return _store[key];
   }
 
   @override
-  Future<Map<String, String>> readAll({
-    required Map<String, String> options,
-  }) async {
+  Future<Map<String, String>> readAll({required Map<String, String> options}) async {
     return Map.of(_store);
   }
 
@@ -73,16 +63,14 @@ class _CountingCentralAuthApi implements CentralAuthApi {
   final CentralAuthTokenResult successResult;
   final CentralAuthException? refreshError;
 
-  _CountingCentralAuthApi({
-    CentralAuthTokenResult? successResult,
-    this.refreshError,
-  }) : successResult =
-           successResult ??
-           CentralAuthTokenResult(
-             accessToken: 'new-access-token',
-             refreshToken: 'new-refresh-token',
-             expiresIn: 3600,
-           );
+  _CountingCentralAuthApi({CentralAuthTokenResult? successResult, this.refreshError})
+    : successResult =
+          successResult ??
+          CentralAuthTokenResult(
+            accessToken: 'new-access-token',
+            refreshToken: 'new-refresh-token',
+            expiresIn: 3600,
+          );
 
   @override
   Future<CentralAuthTokenResult> refreshToken(String refreshToken) async {
@@ -114,16 +102,10 @@ class _CountingCentralAuthApi implements CentralAuthApi {
   }
 
   @override
-  Future<void> forgotPassword({
-    required String email,
-    String? clientId,
-  }) async {}
+  Future<void> forgotPassword({required String email, String? clientId}) async {}
 
   @override
-  Future<void> resetPassword({
-    required String token,
-    required String password,
-  }) async {}
+  Future<void> resetPassword({required String token, required String password}) async {}
 
   @override
   Future<void> logout(String accessToken, {String? refreshToken}) async {}
@@ -132,14 +114,32 @@ class _CountingCentralAuthApi implements CentralAuthApi {
   Future<void> revoke(String accessToken) async {}
 
   @override
-  Future<CentralAuthBootstrap> bootstrap({String? clientId}) =>
+  Future<void> confirmPhoneChange({required String accessToken, required String code}) =>
       throw UnimplementedError();
 
   @override
-  Future<void> requestOtp({
-    required String channel,
-    required String recipient,
+  Future<void> requestEmailVerification({required String accessToken, required String email}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> requestPhoneChange({required String accessToken, required String phone}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<CentralAuthUser> updateProfile({
+    required String accessToken,
+    DateTime? dateOfBirth,
+    String? displayName,
+    String? firstName,
+    String? lastName,
   }) => throw UnimplementedError();
+
+  @override
+  Future<CentralAuthBootstrap> bootstrap({String? clientId}) => throw UnimplementedError();
+
+  @override
+  Future<void> requestOtp({required String channel, required String recipient}) =>
+      throw UnimplementedError();
 
   @override
   Future<({CentralAuthTokenResult tokens, CentralAuthUser user})> verifyOtp({
@@ -155,8 +155,7 @@ class _CountingCentralAuthApi implements CentralAuthApi {
   }) => throw UnimplementedError();
 
   @override
-  Future<({CentralAuthTokenResult tokens, CentralAuthUser user})>
-  identityLogin({
+  Future<({CentralAuthTokenResult tokens, CentralAuthUser user})> identityLogin({
     required String provider,
     String? idToken,
     String? accessToken,
@@ -175,24 +174,35 @@ class _CountingCentralAuthApi implements CentralAuthApi {
   }) => throw UnimplementedError();
 
   @override
-  Future<void> setPassword({
-    required String accessToken,
-    required String password,
-  }) => throw UnimplementedError();
+  Future<void> setPassword({required String accessToken, required String password}) =>
+      throw UnimplementedError();
 
   @override
   Future<CentralAuthUser> me(String accessToken) => throw UnimplementedError();
 
   @override
-  Future<void> logoutAllOtherDevices(String accessToken) =>
+  Future<void> logoutAllOtherDevices(String accessToken) => throw UnimplementedError();
+
+  @override
+  Future<List<CentralAuthSession>> listSessions(String accessToken) => throw UnimplementedError();
+
+  @override
+  Future<void> revokeSession(String accessToken, String sessionId) => throw UnimplementedError();
+
+  @override
+  Future<void> changePassword({
+    required String accessToken,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> deactivateAccount({required String accessToken, String? password}) =>
       throw UnimplementedError();
 
   @override
-  Future<List<CentralAuthSession>> listSessions(String accessToken) =>
-      throw UnimplementedError();
-
-  @override
-  Future<void> revokeSession(String accessToken, String sessionId) =>
+  Future<void> deleteAccount({required String accessToken, String? password}) =>
       throw UnimplementedError();
 }
 
@@ -206,9 +216,7 @@ Future<void> _driveError(
   final requestOptions = RequestOptions(
     path: path,
     baseUrl: 'http://127.0.0.1:1',
-    headers: failedAccessToken == null
-        ? const {}
-        : {'Authorization': 'Bearer $failedAccessToken'},
+    headers: failedAccessToken == null ? const {} : {'Authorization': 'Bearer $failedAccessToken'},
   );
   final err = DioException(
     requestOptions: requestOptions,
@@ -265,11 +273,7 @@ Dio _buildRetryDio(List<String?> capturedAuthHeaders) {
       onRequest: (options, handler) async {
         capturedAuthHeaders.add(options.headers['Authorization']?.toString());
         handler.resolve(
-          Response(
-            requestOptions: options,
-            statusCode: 200,
-            data: {'success': true},
-          ),
+          Response(requestOptions: options, statusCode: 200, data: {'success': true}),
         );
       },
     ),
@@ -342,10 +346,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       secureStorage = SecureStorageService();
       await secureStorage.clear();
-      await secureStorage.saveTokens(
-        accessToken: 'expired-token',
-        refreshToken: 'refresh-token',
-      );
+      await secureStorage.saveTokens(accessToken: 'expired-token', refreshToken: 'refresh-token');
     });
 
     test(
@@ -357,6 +358,10 @@ void main() {
         final interceptor = AuthInterceptor(
           secureStorage: secureStorage,
           centralAuthApi: centralAuthApi,
+          sessionRecovery: SessionRecovery.test(
+            secureStorage: secureStorage,
+            centralAuthApi: centralAuthApi,
+          ),
           onSessionExpired: () => sessionExpiredCalls++,
           retryDio: _buildRetryDio(capturedAuthHeaders),
         );
@@ -376,47 +381,48 @@ void main() {
       },
     );
 
-    test(
-      'several concurrent expired requests share one refresh call',
-      () async {
-        final capturedAuthHeaders = <String?>[];
-        final centralAuthApi = _CountingCentralAuthApi();
-        var sessionExpiredCalls = 0;
-        final interceptor = AuthInterceptor(
+    test('several concurrent expired requests share one refresh call', () async {
+      final capturedAuthHeaders = <String?>[];
+      final centralAuthApi = _CountingCentralAuthApi();
+      var sessionExpiredCalls = 0;
+      final interceptor = AuthInterceptor(
+        secureStorage: secureStorage,
+        centralAuthApi: centralAuthApi,
+        sessionRecovery: SessionRecovery.test(
           secureStorage: secureStorage,
           centralAuthApi: centralAuthApi,
-          onSessionExpired: () => sessionExpiredCalls++,
-          retryDio: _buildRetryDio(capturedAuthHeaders),
-        );
+        ),
+        onSessionExpired: () => sessionExpiredCalls++,
+        retryDio: _buildRetryDio(capturedAuthHeaders),
+      );
 
-        await Future.wait([
-          _driveError(
-            interceptor,
-            statusCode: 401,
-            path: '/protected-a',
-            code: 'CENTRAL_TOKEN_EXPIRED',
-          ),
-          _driveError(
-            interceptor,
-            statusCode: 401,
-            path: '/protected-b',
-            code: 'CENTRAL_TOKEN_EXPIRED',
-          ),
-          _driveError(
-            interceptor,
-            statusCode: 401,
-            path: '/protected-c',
-            code: 'CENTRAL_TOKEN_EXPIRED',
-          ),
-        ]);
+      await Future.wait([
+        _driveError(
+          interceptor,
+          statusCode: 401,
+          path: '/protected-a',
+          code: 'CENTRAL_TOKEN_EXPIRED',
+        ),
+        _driveError(
+          interceptor,
+          statusCode: 401,
+          path: '/protected-b',
+          code: 'CENTRAL_TOKEN_EXPIRED',
+        ),
+        _driveError(
+          interceptor,
+          statusCode: 401,
+          path: '/protected-c',
+          code: 'CENTRAL_TOKEN_EXPIRED',
+        ),
+      ]);
 
-        expect(centralAuthApi.refreshCallCount, equals(1));
-        expect(sessionExpiredCalls, equals(0));
-        expect(await secureStorage.accessToken, equals('new-access-token'));
-        expect(await secureStorage.refreshToken, equals('new-refresh-token'));
-        expect(capturedAuthHeaders, everyElement('Bearer new-access-token'));
-      },
-    );
+      expect(centralAuthApi.refreshCallCount, equals(1));
+      expect(sessionExpiredCalls, equals(0));
+      expect(await secureStorage.accessToken, equals('new-access-token'));
+      expect(await secureStorage.refreshToken, equals('new-refresh-token'));
+      expect(capturedAuthHeaders, everyElement('Bearer new-access-token'));
+    });
 
     test('failed refresh clears the session exactly once', () async {
       final failingApi = _CountingCentralAuthApi(
@@ -427,10 +433,15 @@ void main() {
         ),
       );
       var sessionExpiredCalls = 0;
+      final recovery = SessionRecovery.test(
+        secureStorage: secureStorage,
+        centralAuthApi: failingApi,
+      )..onSessionExpired = () => sessionExpiredCalls++;
       final interceptor = AuthInterceptor(
         secureStorage: secureStorage,
         centralAuthApi: failingApi,
-        onSessionExpired: () => sessionExpiredCalls++,
+        sessionRecovery: recovery,
+        onSessionExpired: () {},
       );
 
       await _driveError(
@@ -452,14 +463,39 @@ void main() {
       final interceptor = AuthInterceptor(
         secureStorage: secureStorage,
         centralAuthApi: centralAuthApi,
+        sessionRecovery: SessionRecovery.test(
+          secureStorage: secureStorage,
+          centralAuthApi: centralAuthApi,
+        ),
+        onSessionExpired: () => sessionExpiredCalls++,
+      );
+
+      await _driveError(interceptor, statusCode: 403, path: '/protected', code: 'FORBIDDEN');
+
+      expect(centralAuthApi.refreshCallCount, equals(0));
+      expect(sessionExpiredCalls, equals(0));
+      expect(await secureStorage.accessToken, equals('expired-token'));
+      expect(await secureStorage.refreshToken, equals('refresh-token'));
+    });
+
+    test('refresh endpoint is bypassed and never recursively intercepted', () async {
+      final centralAuthApi = _CountingCentralAuthApi();
+      var sessionExpiredCalls = 0;
+      final interceptor = AuthInterceptor(
+        secureStorage: secureStorage,
+        centralAuthApi: centralAuthApi,
+        sessionRecovery: SessionRecovery.test(
+          secureStorage: secureStorage,
+          centralAuthApi: centralAuthApi,
+        ),
         onSessionExpired: () => sessionExpiredCalls++,
       );
 
       await _driveError(
         interceptor,
-        statusCode: 403,
-        path: '/protected',
-        code: 'FORBIDDEN',
+        statusCode: 401,
+        path: '/auth/refresh',
+        code: 'CENTRAL_TOKEN_EXPIRED',
       );
 
       expect(centralAuthApi.refreshCallCount, equals(0));
@@ -468,100 +504,69 @@ void main() {
       expect(await secureStorage.refreshToken, equals('refresh-token'));
     });
 
-    test(
-      'refresh endpoint is bypassed and never recursively intercepted',
-      () async {
-        final centralAuthApi = _CountingCentralAuthApi();
-        var sessionExpiredCalls = 0;
-        final interceptor = AuthInterceptor(
+    test('temporary network failure during refresh preserves the stored session', () async {
+      final centralAuthApi = _CountingCentralAuthApi(
+        refreshError: CentralAuthException(message: 'offline', dioExceptionType: 'connectionError'),
+      );
+      var sessionExpiredCalls = 0;
+      final interceptor = AuthInterceptor(
+        secureStorage: secureStorage,
+        centralAuthApi: centralAuthApi,
+        sessionRecovery: SessionRecovery.test(
           secureStorage: secureStorage,
           centralAuthApi: centralAuthApi,
-          onSessionExpired: () => sessionExpiredCalls++,
-        );
+        ),
+        onSessionExpired: () => sessionExpiredCalls++,
+      );
 
-        await _driveError(
-          interceptor,
-          statusCode: 401,
-          path: '/auth/refresh',
-          code: 'CENTRAL_TOKEN_EXPIRED',
-        );
+      await _driveError(
+        interceptor,
+        statusCode: 401,
+        path: '/protected',
+        code: 'CENTRAL_TOKEN_EXPIRED',
+      );
 
-        expect(centralAuthApi.refreshCallCount, equals(0));
-        expect(sessionExpiredCalls, equals(0));
-        expect(await secureStorage.accessToken, equals('expired-token'));
-        expect(await secureStorage.refreshToken, equals('refresh-token'));
-      },
-    );
+      expect(centralAuthApi.refreshCallCount, equals(1));
+      expect(sessionExpiredCalls, equals(0));
+      expect(await secureStorage.accessToken, equals('expired-token'));
+      expect(await secureStorage.refreshToken, equals('refresh-token'));
+    });
 
-    test(
-      'temporary network failure during refresh preserves the stored session',
-      () async {
-        final centralAuthApi = _CountingCentralAuthApi(
-          refreshError: CentralAuthException(
-            message: 'offline',
-            dioExceptionType: 'connectionError',
-          ),
-        );
-        var sessionExpiredCalls = 0;
-        final interceptor = AuthInterceptor(
-          secureStorage: secureStorage,
-          centralAuthApi: centralAuthApi,
-          onSessionExpired: () => sessionExpiredCalls++,
-        );
+    test('ApiClient surfaces typed non-2xx responses instead of generic exceptions', () async {
+      final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1'));
+      final apiClient = ApiClient(dio: dio);
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 409,
+                data: {
+                  'success': false,
+                  'code': 'IDENTITY_CONFLICT',
+                  'message': 'Multiple local accounts match this email; manual resolution required',
+                },
+              ),
+            );
+          },
+        ),
+      );
 
-        await _driveError(
-          interceptor,
-          statusCode: 401,
-          path: '/protected',
-          code: 'CENTRAL_TOKEN_EXPIRED',
-        );
-
-        expect(centralAuthApi.refreshCallCount, equals(1));
-        expect(sessionExpiredCalls, equals(0));
-        expect(await secureStorage.accessToken, equals('expired-token'));
-        expect(await secureStorage.refreshToken, equals('refresh-token'));
-      },
-    );
-
-    test(
-      'ApiClient surfaces typed non-2xx responses instead of generic exceptions',
-      () async {
-        final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1'));
-        final apiClient = ApiClient(dio: dio);
-        dio.interceptors.add(
-          InterceptorsWrapper(
-            onRequest: (options, handler) async {
-              handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 409,
-                  data: {
-                    'success': false,
-                    'code': 'IDENTITY_CONFLICT',
-                    'message':
-                        'Multiple local accounts match this email; manual resolution required',
-                  },
-                ),
-              );
-            },
-          ),
-        );
-
-        await expectLater(
-          apiClient.get('http://127.0.0.1:1/profile', auth: false),
-          throwsA(
-            isA<ApiClientException>()
-                .having((e) => e.statusCode, 'statusCode', 409)
-                .having((e) => e.code, 'code', 'IDENTITY_CONFLICT')
-                .having(
-                  (e) => e.message,
-                  'message',
-                  'Multiple local accounts match this email; manual resolution required',
-                ),
-          ),
-        );
-      },
-    );
+      await expectLater(
+        apiClient.get('http://127.0.0.1:1/profile', auth: false),
+        throwsA(
+          isA<ApiClientException>()
+              .having((e) => e.statusCode, 'statusCode', 409)
+              .having((e) => e.code, 'code', 'IDENTITY_CONFLICT')
+              .having(
+                (e) => e.message,
+                'message',
+                'Multiple local accounts match this email; manual resolution required',
+              ),
+        ),
+      );
+    });
 
     test(
       'expired multipart upload refreshes once, retries once, and keeps upload fields',
@@ -573,6 +578,10 @@ void main() {
         final interceptor = AuthInterceptor(
           secureStorage: secureStorage,
           centralAuthApi: centralAuthApi,
+          sessionRecovery: SessionRecovery.test(
+            secureStorage: secureStorage,
+            centralAuthApi: centralAuthApi,
+          ),
           onSessionExpired: () {},
           retryDio: _buildMultipartRetryDio(
             capturedAuthHeaders: capturedAuthHeaders,
@@ -627,93 +636,96 @@ void main() {
       },
     );
 
-    test(
-      'three concurrent expired multipart uploads still share one refresh call',
-      () async {
-        final capturedAuthHeaders = <String?>[];
-        final capturedFields = <Map<String, String>>[];
-        final progressEvents = <String>[];
-        final centralAuthApi = _CountingCentralAuthApi();
-        final interceptor = AuthInterceptor(
+    test('three concurrent expired multipart uploads still share one refresh call', () async {
+      final capturedAuthHeaders = <String?>[];
+      final capturedFields = <Map<String, String>>[];
+      final progressEvents = <String>[];
+      final centralAuthApi = _CountingCentralAuthApi();
+      final interceptor = AuthInterceptor(
+        secureStorage: secureStorage,
+        centralAuthApi: centralAuthApi,
+        sessionRecovery: SessionRecovery.test(
           secureStorage: secureStorage,
           centralAuthApi: centralAuthApi,
-          onSessionExpired: () {},
-          retryDio: _buildMultipartRetryDio(
-            capturedAuthHeaders: capturedAuthHeaders,
-            capturedFields: capturedFields,
-            progressEvents: progressEvents,
-          ),
-        );
+        ),
+        onSessionExpired: () {},
+        retryDio: _buildMultipartRetryDio(
+          capturedAuthHeaders: capturedAuthHeaders,
+          capturedFields: capturedFields,
+          progressEvents: progressEvents,
+        ),
+      );
 
-        await Future.wait([
-          _driveErrorForRequestOptions(
-            interceptor,
-            statusCode: 401,
-            code: 'CENTRAL_TOKEN_EXPIRED',
-            requestOptions: _multipartRequestOptions(
-              path: '/media/upload/a',
-              fields: const {'draftId': 'a'},
-            ),
-          ),
-          _driveErrorForRequestOptions(
-            interceptor,
-            statusCode: 401,
-            code: 'CENTRAL_TOKEN_EXPIRED',
-            requestOptions: _multipartRequestOptions(
-              path: '/media/upload/b',
-              fields: const {'draftId': 'b'},
-            ),
-          ),
-          _driveErrorForRequestOptions(
-            interceptor,
-            statusCode: 401,
-            code: 'CENTRAL_TOKEN_EXPIRED',
-            requestOptions: _multipartRequestOptions(
-              path: '/media/upload/c',
-              fields: const {'draftId': 'c'},
-            ),
-          ),
-        ]);
-
-        expect(centralAuthApi.refreshCallCount, equals(1));
-        expect(await secureStorage.refreshToken, equals('new-refresh-token'));
-        expect(capturedAuthHeaders, everyElement('Bearer new-access-token'));
-      },
-    );
-
-    test(
-      'failed refresh for multipart upload clears the session exactly once',
-      () async {
-        final failingApi = _CountingCentralAuthApi(
-          refreshError: CentralAuthException(
-            message: 'Refresh token was revoked',
-            statusCode: 401,
-            code: 'TOKEN_REVOKED',
-          ),
-        );
-        var sessionExpiredCalls = 0;
-        final interceptor = AuthInterceptor(
-          secureStorage: secureStorage,
-          centralAuthApi: failingApi,
-          onSessionExpired: () => sessionExpiredCalls++,
-        );
-
-        await _driveErrorForRequestOptions(
+      await Future.wait([
+        _driveErrorForRequestOptions(
           interceptor,
           statusCode: 401,
           code: 'CENTRAL_TOKEN_EXPIRED',
           requestOptions: _multipartRequestOptions(
-            path: '/media/upload',
-            fields: const {'draftId': 'revoked'},
+            path: '/media/upload/a',
+            fields: const {'draftId': 'a'},
           ),
-        );
+        ),
+        _driveErrorForRequestOptions(
+          interceptor,
+          statusCode: 401,
+          code: 'CENTRAL_TOKEN_EXPIRED',
+          requestOptions: _multipartRequestOptions(
+            path: '/media/upload/b',
+            fields: const {'draftId': 'b'},
+          ),
+        ),
+        _driveErrorForRequestOptions(
+          interceptor,
+          statusCode: 401,
+          code: 'CENTRAL_TOKEN_EXPIRED',
+          requestOptions: _multipartRequestOptions(
+            path: '/media/upload/c',
+            fields: const {'draftId': 'c'},
+          ),
+        ),
+      ]);
 
-        expect(failingApi.refreshCallCount, equals(1));
-        expect(sessionExpiredCalls, equals(1));
-        expect(await secureStorage.accessToken, isNull);
-        expect(await secureStorage.refreshToken, isNull);
-      },
-    );
+      expect(centralAuthApi.refreshCallCount, equals(1));
+      expect(await secureStorage.refreshToken, equals('new-refresh-token'));
+      expect(capturedAuthHeaders, everyElement('Bearer new-access-token'));
+    });
+
+    test('failed refresh for multipart upload clears the session exactly once', () async {
+      final failingApi = _CountingCentralAuthApi(
+        refreshError: CentralAuthException(
+          message: 'Refresh token was revoked',
+          statusCode: 401,
+          code: 'TOKEN_REVOKED',
+        ),
+      );
+      var sessionExpiredCalls = 0;
+      final recovery = SessionRecovery.test(
+        secureStorage: secureStorage,
+        centralAuthApi: failingApi,
+      )..onSessionExpired = () => sessionExpiredCalls++;
+      final interceptor = AuthInterceptor(
+        secureStorage: secureStorage,
+        centralAuthApi: failingApi,
+        sessionRecovery: recovery,
+        onSessionExpired: () {},
+      );
+
+      await _driveErrorForRequestOptions(
+        interceptor,
+        statusCode: 401,
+        code: 'CENTRAL_TOKEN_EXPIRED',
+        requestOptions: _multipartRequestOptions(
+          path: '/media/upload',
+          fields: const {'draftId': 'revoked'},
+        ),
+      );
+
+      expect(failingApi.refreshCallCount, equals(1));
+      expect(sessionExpiredCalls, equals(1));
+      expect(await secureStorage.accessToken, isNull);
+      expect(await secureStorage.refreshToken, isNull);
+    });
 
     test('non-auth 401 for multipart upload is not retried', () async {
       final capturedAuthHeaders = <String?>[];
@@ -723,6 +735,10 @@ void main() {
       final interceptor = AuthInterceptor(
         secureStorage: secureStorage,
         centralAuthApi: centralAuthApi,
+        sessionRecovery: SessionRecovery.test(
+          secureStorage: secureStorage,
+          centralAuthApi: centralAuthApi,
+        ),
         onSessionExpired: () {},
         retryDio: _buildMultipartRetryDio(
           capturedAuthHeaders: capturedAuthHeaders,

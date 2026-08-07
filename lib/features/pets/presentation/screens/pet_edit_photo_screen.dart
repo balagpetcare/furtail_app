@@ -3,16 +3,23 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:furtail_app/services/api_client.dart';
 
 import '../../data/pet_service.dart';
 
-/// Edit pet profile photo (gallery pick + square crop + upload + update profilePicId)
+/// Edit pet profile photo (gallery pick + square crop + upload + update profileImageId)
 /// UI text must be English.
 class PetEditPhotoScreen extends StatefulWidget {
   final int petId;
   final String? currentPhotoUrl;
+  final int? currentVersion;
 
-  const PetEditPhotoScreen({super.key, required this.petId, this.currentPhotoUrl});
+  const PetEditPhotoScreen({
+    super.key,
+    required this.petId,
+    this.currentPhotoUrl,
+    this.currentVersion,
+  });
 
   @override
   State<PetEditPhotoScreen> createState() => _PetEditPhotoScreenState();
@@ -26,7 +33,10 @@ class _PetEditPhotoScreenState extends State<PetEditPhotoScreen> {
   bool _saving = false;
 
   Future<void> _pick() async {
-    final x = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 92);
+    final x = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 92,
+    );
     if (x == null) return;
 
     final cropped = await ImageCropper().cropImage(
@@ -55,20 +65,50 @@ class _PetEditPhotoScreenState extends State<PetEditPhotoScreen> {
     setState(() => _saving = true);
     try {
       final mediaId = await _svc.uploadMedia(_file!);
-      await _svc.updatePet(widget.petId, {"profilePicId": mediaId});
+      await _svc.updatePet(widget.petId, {
+        "profileImageId": mediaId,
+        if (widget.currentVersion != null) "version": widget.currentVersion,
+      });
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_messageFor(e))));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
   bool get _hasUnsavedChanges => _file != null;
+
+  Future<void> _remove() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await _svc.updatePet(widget.petId, {
+        "profileImageId": null,
+        if (widget.currentVersion != null) "version": widget.currentVersion,
+      });
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_messageFor(e))));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _messageFor(Object error) {
+    if (error is ApiClientException && error.statusCode == 409) {
+      return 'This pet changed elsewhere. Refresh and try again.';
+    }
+    return error.toString().replaceAll('Exception: ', '');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +132,9 @@ class _PetEditPhotoScreenState extends State<PetEditPhotoScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Discard Photo?'),
-              content: const Text('Are you sure you want to discard the selected photo?'),
+              content: const Text(
+                'Are you sure you want to discard the selected photo?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
@@ -113,32 +155,47 @@ class _PetEditPhotoScreenState extends State<PetEditPhotoScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-          children: [
-            OutlinedButton.icon(
-              onPressed: _pick,
-              icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Choose from Gallery'),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: _preview(),
+            children: [
+              OutlinedButton.icon(
+                onPressed: _pick,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: const Text('Choose from Gallery'),
               ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save'),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: _preview(),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
+                ),
+              ),
+              if ((widget.currentPhotoUrl ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _saving ? null : _remove,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Remove photo'),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

@@ -77,13 +77,18 @@ class ProfileHeaderStack extends StatelessWidget {
               children: [
                 // Cover
                 Positioned(
-                  left: 0, right: 0, top: 0, height: _coverH,
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: _coverH,
                   child: _ProfileCover(url: coverUrl),
                 ),
                 // Bottom gradient on cover for depth
                 Positioned(
-                  left: 0, right: 0,
-                  top: _coverH - 64, height: 64,
+                  left: 0,
+                  right: 0,
+                  top: _coverH - 64,
+                  height: 64,
                   child: const _BottomFade(),
                 ),
                 // Floating top navigation buttons (transparent with icons and shadow)
@@ -149,9 +154,9 @@ class ProfileHeaderStack extends StatelessWidget {
                       Text(
                         name,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.3,
-                            ),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                        ),
                       ),
                       if (username.isNotEmpty) ...[
                         const SizedBox(height: 2),
@@ -184,7 +189,11 @@ class ProfileHeaderStack extends StatelessWidget {
                 bioText,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.black87, height: 1.4, fontSize: 13.5),
+                style: const TextStyle(
+                  color: Colors.black87,
+                  height: 1.4,
+                  fontSize: 13.5,
+                ),
               ),
             ),
           ],
@@ -221,7 +230,9 @@ class ProfileHeaderStack extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       side: BorderSide(color: cs.primary),
                       foregroundColor: cs.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
@@ -298,28 +309,48 @@ class _DefaultCover extends StatelessWidget {
           ),
         ),
         Positioned(
-          right: 18, top: 18,
+          right: 18,
+          top: 18,
           child: Transform.rotate(
             angle: 0.3,
-            child: Icon(Icons.pets, size: 56, color: Colors.white.withValues(alpha: 0.20)),
+            child: Icon(
+              Icons.pets,
+              size: 56,
+              color: Colors.white.withValues(alpha: 0.20),
+            ),
           ),
         ),
         Positioned(
-          left: 50, top: 55,
+          left: 50,
+          top: 55,
           child: Transform.rotate(
             angle: -0.5,
-            child: Icon(Icons.pets, size: 34, color: Colors.white.withValues(alpha: 0.13)),
+            child: Icon(
+              Icons.pets,
+              size: 34,
+              color: Colors.white.withValues(alpha: 0.13),
+            ),
           ),
         ),
         Positioned(
-          right: 80, bottom: 16,
-          child: Icon(Icons.favorite_rounded, size: 26, color: Colors.white.withValues(alpha: 0.18)),
+          right: 80,
+          bottom: 16,
+          child: Icon(
+            Icons.favorite_rounded,
+            size: 26,
+            color: Colors.white.withValues(alpha: 0.18),
+          ),
         ),
         Positioned(
-          left: 18, bottom: 22,
+          left: 18,
+          bottom: 22,
           child: Transform.rotate(
             angle: 0.4,
-            child: Icon(Icons.pets, size: 22, color: Colors.white.withValues(alpha: 0.12)),
+            child: Icon(
+              Icons.pets,
+              size: 22,
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
           ),
         ),
       ],
@@ -411,7 +442,11 @@ class _AvatarWithCam extends StatelessWidget {
   final String url;
   final String name;
   final VoidCallback onTapCamera;
-  const _AvatarWithCam({required this.url, required this.name, required this.onTapCamera});
+  const _AvatarWithCam({
+    required this.url,
+    required this.name,
+    required this.onTapCamera,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -466,9 +501,16 @@ class _CamBtn extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primary,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1.5),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.6),
+              width: 1.5,
+            ),
           ),
-          child: Icon(Icons.camera_alt, color: Colors.white, size: isSmall ? 15 : 18),
+          child: Icon(
+            Icons.camera_alt,
+            color: Colors.white,
+            size: isSmall ? 15 : 18,
+          ),
         ),
       ),
     );
@@ -484,12 +526,18 @@ class _TierBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFF97316), Color(0xFFFBBF24)]),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF97316), Color(0xFFFBBF24)],
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
       ),
     );
   }

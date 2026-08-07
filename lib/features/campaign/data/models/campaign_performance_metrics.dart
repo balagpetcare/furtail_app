@@ -18,7 +18,11 @@ class CampaignPerformanceMetrics {
 
   double get clickThroughRate => views == 0 ? 0 : clicks / views;
   double get bookingRate => clicks == 0 ? 0 : bookings / clicks;
-  double get paymentConversionRate => bookings == 0 ? 0 : revenue > 0 ? 1.0 : 0.0;
+  double get paymentConversionRate => bookings == 0
+      ? 0
+      : revenue > 0
+      ? 1.0
+      : 0.0;
   double get conversionRate => views == 0 ? 0 : bookings / views;
 
   CampaignPerformanceMetrics copyWith({
@@ -38,21 +42,29 @@ class CampaignPerformanceMetrics {
   }
 
   Map<String, dynamic> toJson() => {
-        'slug': slug,
-        'views': views,
-        'clicks': clicks,
-        'bookings': bookings,
-        'revenue': revenue,
-        'abVariant': abVariant,
-      };
+    'slug': slug,
+    'views': views,
+    'clicks': clicks,
+    'bookings': bookings,
+    'revenue': revenue,
+    'abVariant': abVariant,
+  };
 
   factory CampaignPerformanceMetrics.fromJson(Map<String, dynamic> json) {
     return CampaignPerformanceMetrics(
       slug: json['slug']?.toString() ?? '',
-      views: json['views'] is int ? json['views'] as int : int.tryParse('${json['views']}') ?? 0,
-      clicks: json['clicks'] is int ? json['clicks'] as int : int.tryParse('${json['clicks']}') ?? 0,
-      bookings: json['bookings'] is int ? json['bookings'] as int : int.tryParse('${json['bookings']}') ?? 0,
-      revenue: json['revenue'] is num ? json['revenue'] as num : num.tryParse('${json['revenue']}') ?? 0,
+      views: json['views'] is int
+          ? json['views'] as int
+          : int.tryParse('${json['views']}') ?? 0,
+      clicks: json['clicks'] is int
+          ? json['clicks'] as int
+          : int.tryParse('${json['clicks']}') ?? 0,
+      bookings: json['bookings'] is int
+          ? json['bookings'] as int
+          : int.tryParse('${json['bookings']}') ?? 0,
+      revenue: json['revenue'] is num
+          ? json['revenue'] as num
+          : num.tryParse('${json['revenue']}') ?? 0,
       abVariant: json['abVariant']?.toString(),
     );
   }

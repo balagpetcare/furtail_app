@@ -13,7 +13,9 @@ class EmergencyBroadcastHandler {
 
   static bool isEmergency(PublicCampaignNotification n) {
     final t = n.type.toLowerCase();
-    return urgentTypes.contains(t) || t.contains('outbreak') || t.contains('urgent');
+    return urgentTypes.contains(t) ||
+        t.contains('outbreak') ||
+        t.contains('urgent');
   }
 
   static AppNotificationType notificationType(PublicCampaignNotification n) {

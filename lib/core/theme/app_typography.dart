@@ -56,19 +56,45 @@ abstract final class AppTypography {
       required double size,
       FontWeight weight = FontWeight.w400,
       Color? c,
-    }) =>
-        _inter(fontSize: size, fontWeight: weight, color: c ?? primary);
+    }) => _inter(fontSize: size, fontWeight: weight, color: c ?? primary);
 
     return TextTheme(
-      displayLarge: s(size: AppTypographyScale.displayLarge, weight: FontWeight.w700),
-      displayMedium: s(size: AppTypographyScale.displayMedium, weight: FontWeight.w700),
-      displaySmall: s(size: AppTypographyScale.pageTitle, weight: FontWeight.w600),
-      headlineLarge: s(size: AppTypographyScale.displayMedium, weight: FontWeight.w700),
-      headlineMedium: s(size: AppTypographyScale.pageTitle, weight: FontWeight.w600),
-      headlineSmall: s(size: AppTypographyScale.sectionTitle, weight: FontWeight.w600),
-      titleLarge: s(size: AppTypographyScale.pageTitle, weight: FontWeight.w600),
-      titleMedium: s(size: AppTypographyScale.sectionTitle, weight: FontWeight.w600),
-      titleSmall: s(size: AppTypographyScale.menuTitle, weight: FontWeight.w500),
+      displayLarge: s(
+        size: AppTypographyScale.displayLarge,
+        weight: FontWeight.w700,
+      ),
+      displayMedium: s(
+        size: AppTypographyScale.displayMedium,
+        weight: FontWeight.w700,
+      ),
+      displaySmall: s(
+        size: AppTypographyScale.pageTitle,
+        weight: FontWeight.w600,
+      ),
+      headlineLarge: s(
+        size: AppTypographyScale.displayMedium,
+        weight: FontWeight.w700,
+      ),
+      headlineMedium: s(
+        size: AppTypographyScale.pageTitle,
+        weight: FontWeight.w600,
+      ),
+      headlineSmall: s(
+        size: AppTypographyScale.sectionTitle,
+        weight: FontWeight.w600,
+      ),
+      titleLarge: s(
+        size: AppTypographyScale.pageTitle,
+        weight: FontWeight.w600,
+      ),
+      titleMedium: s(
+        size: AppTypographyScale.sectionTitle,
+        weight: FontWeight.w600,
+      ),
+      titleSmall: s(
+        size: AppTypographyScale.menuTitle,
+        weight: FontWeight.w500,
+      ),
       bodyLarge: s(
         size: AppTypographyScale.bodyLarge,
         weight: FontWeight.w400,
@@ -84,7 +110,10 @@ abstract final class AppTypography {
         weight: FontWeight.w400,
         c: tertiary,
       ),
-      labelLarge: s(size: AppTypographyScale.menuTitle, weight: FontWeight.w600),
+      labelLarge: s(
+        size: AppTypographyScale.menuTitle,
+        weight: FontWeight.w600,
+      ),
       labelMedium: s(
         size: AppTypographyScale.caption,
         weight: FontWeight.w600,
@@ -136,12 +165,11 @@ abstract final class AppTypography {
         letterSpacing: 1.1,
       );
 
-  static TextStyle drawerMenu(BuildContext context, {Color? color}) =>
-      _inter(
-        fontSize: AppTypographyScale.drawerMenu,
-        fontWeight: FontWeight.w600,
-        color: color ?? Theme.of(context).colorScheme.onSurface,
-      );
+  static TextStyle drawerMenu(BuildContext context, {Color? color}) => _inter(
+    fontSize: AppTypographyScale.drawerMenu,
+    fontWeight: FontWeight.w600,
+    color: color ?? Theme.of(context).colorScheme.onSurface,
+  );
 
   static TextStyle drawerSubtitle(BuildContext context, {Color? color}) =>
       _inter(
@@ -179,11 +207,7 @@ abstract final class AppTypography {
       default:
         base = theme.labelSmall!;
     }
-    return base.copyWith(
-      fontWeight: fontWeight,
-      color: color,
-      height: height,
-    );
+    return base.copyWith(fontWeight: fontWeight, color: color, height: height);
   }
 
   static TextStyle _fromTheme(

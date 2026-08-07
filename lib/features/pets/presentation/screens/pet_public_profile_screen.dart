@@ -55,21 +55,20 @@ class _PetPublicState {
     int? followersCount,
     int? likesCount,
     bool? actionInProgress,
-  }) =>
-      _PetPublicState(
-        pet: pet ?? this.pet,
-        posts: posts ?? this.posts,
-        loading: loading ?? this.loading,
-        loadingPosts: loadingPosts ?? this.loadingPosts,
-        error: error,
-        isFollowing: isFollowing ?? this.isFollowing,
-        isLiked: isLiked ?? this.isLiked,
-        isOwner: isOwner ?? this.isOwner,
-        activeTab: activeTab ?? this.activeTab,
-        followersCount: followersCount ?? this.followersCount,
-        likesCount: likesCount ?? this.likesCount,
-        actionInProgress: actionInProgress ?? this.actionInProgress,
-      );
+  }) => _PetPublicState(
+    pet: pet ?? this.pet,
+    posts: posts ?? this.posts,
+    loading: loading ?? this.loading,
+    loadingPosts: loadingPosts ?? this.loadingPosts,
+    error: error,
+    isFollowing: isFollowing ?? this.isFollowing,
+    isLiked: isLiked ?? this.isLiked,
+    isOwner: isOwner ?? this.isOwner,
+    activeTab: activeTab ?? this.activeTab,
+    followersCount: followersCount ?? this.followersCount,
+    likesCount: likesCount ?? this.likesCount,
+    actionInProgress: actionInProgress ?? this.actionInProgress,
+  );
 }
 
 class _PetPublicNotifier extends StateNotifier<_PetPublicState> {
@@ -123,7 +122,9 @@ class _PetPublicNotifier extends StateNotifier<_PetPublicState> {
       actionInProgress: true,
     );
     try {
-      was ? await _petService.unfollowPet(petId) : await _petService.followPet(petId);
+      was
+          ? await _petService.unfollowPet(petId)
+          : await _petService.followPet(petId);
       state = state.copyWith(actionInProgress: false);
     } catch (e) {
       state = state.copyWith(
@@ -146,7 +147,9 @@ class _PetPublicNotifier extends StateNotifier<_PetPublicState> {
       actionInProgress: true,
     );
     try {
-      was ? await _petService.unlikePet(petId) : await _petService.likePet(petId);
+      was
+          ? await _petService.unlikePet(petId)
+          : await _petService.likePet(petId);
       state = state.copyWith(actionInProgress: false);
     } catch (e) {
       state = state.copyWith(
@@ -164,8 +167,8 @@ class _PetPublicNotifier extends StateNotifier<_PetPublicState> {
 
 final _petPublicProvider = StateNotifierProvider.autoDispose
     .family<_PetPublicNotifier, _PetPublicState, int>(
-  (ref, petId) => _PetPublicNotifier(petId),
-);
+      (ref, petId) => _PetPublicNotifier(petId),
+    );
 
 // ── Screen ───────────────────────────────────────────────────────────────────
 
@@ -184,8 +187,10 @@ class PetPublicProfileScreen extends ConsumerWidget {
             children: [
               Icon(Icons.pets_outlined, size: 72, color: Colors.grey.shade400),
               const SizedBox(height: 20),
-              const Text('Pet profile not available',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+              const Text(
+                'Pet profile not available',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              ),
               const SizedBox(height: 24),
               TextButton.icon(
                 onPressed: () => Navigator.maybePop(context),
@@ -206,7 +211,8 @@ class PetPublicProfileScreen extends ConsumerWidget {
     }
 
     if (state.error != null && state.pet == null) {
-      final isNotFound = state.error!.contains('404') ||
+      final isNotFound =
+          state.error!.contains('404') ||
           state.error!.toLowerCase().contains('not found');
       return Scaffold(
         appBar: AppBar(),
@@ -225,15 +231,16 @@ class PetPublicProfileScreen extends ConsumerWidget {
                 Text(
                   isNotFound ? 'Pet profile not found' : 'Something went wrong',
                   style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w700),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (!isNotFound) ...[
                   const SizedBox(height: 8),
                   Text(
                     state.error!.replaceAll('Exception: ', ''),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.grey.shade600, fontSize: 13),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                 ],
                 const SizedBox(height: 28),
@@ -277,10 +284,12 @@ class PetPublicProfileScreen extends ConsumerWidget {
                         top: 0,
                         height: 200,
                         child: pet.coverMediaUrl != null
-                            ? Image.network(pet.coverMediaUrl!,
+                            ? Image.network(
+                                pet.coverMediaUrl!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, _, _) =>
-                                    _GradientCover(name: pet.name))
+                                    _GradientCover(name: pet.name),
+                              )
                             : _GradientCover(name: pet.name),
                       ),
                       Positioned(
@@ -309,19 +318,30 @@ class PetPublicProfileScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(pet.name,
-                          style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF1A1A2E))),
+                      Text(
+                        pet.name,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
                       if (_petSubtitle(pet).isNotEmpty)
-                        Text(_petSubtitle(pet),
-                            style: TextStyle(
-                                fontSize: 14, color: Colors.grey[600])),
+                        Text(
+                          _petSubtitle(pet),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       if (pet.slug != null)
-                        Text('@${pet.slug}',
-                            style: const TextStyle(
-                                fontSize: 13, color: Color(0xFF4C6EF5))),
+                        Text(
+                          '@${pet.slug}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF4C6EF5),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -332,7 +352,10 @@ class PetPublicProfileScreen extends ConsumerWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 40,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -419,10 +442,12 @@ class PetPublicProfileScreen extends ConsumerWidget {
                       top: 0,
                       height: 200,
                       child: pet.coverMediaUrl != null
-                          ? Image.network(pet.coverMediaUrl!,
+                          ? Image.network(
+                              pet.coverMediaUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) =>
-                                  _GradientCover(name: pet.name))
+                                  _GradientCover(name: pet.name),
+                            )
                           : _GradientCover(name: pet.name),
                     ),
                     Positioned(
@@ -443,7 +468,11 @@ class PetPublicProfileScreen extends ConsumerWidget {
                           _TransparentIconButton(
                             icon: Icons.share_outlined,
                             tooltip: 'Share',
-                            onTap: () => ShareService.share(context, type: 'pet', id: petId),
+                            onTap: () => ShareService.share(
+                              context,
+                              type: 'pet',
+                              id: petId,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           PopupMenuButton<String>(
@@ -474,7 +503,13 @@ class PetPublicProfileScreen extends ConsumerWidget {
                                 value: 'report',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.flag_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                                    Icon(
+                                      Icons.flag_rounded,
+                                      size: 18,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
                                     const SizedBox(width: 10),
                                     const Text(
                                       'Report Pet Profile',
@@ -511,19 +546,30 @@ class PetPublicProfileScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(pet.name,
-                              style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1A1A2E))),
+                          Text(
+                            pet.name,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF1A1A2E),
+                            ),
+                          ),
                           if (_petSubtitle(pet).isNotEmpty)
-                            Text(_petSubtitle(pet),
-                                style: TextStyle(
-                                    fontSize: 14, color: Colors.grey[600])),
+                            Text(
+                              _petSubtitle(pet),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
                           if (pet.slug != null)
-                            Text('@${pet.slug}',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Color(0xFF4C6EF5))),
+                            Text(
+                              '@${pet.slug}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF4C6EF5),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -533,14 +579,19 @@ class PetPublicProfileScreen extends ConsumerWidget {
                           backgroundColor: const Color(0xFF4C6EF5),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           elevation: 0,
                         ),
                         icon: const Icon(Icons.edit, size: 16),
-                        label: const Text('Edit',
-                            style: TextStyle(fontWeight: FontWeight.w600)),
+                        label: const Text(
+                          'Edit',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         onPressed: () async {
                           final result = await Navigator.push(
                             context,
@@ -565,9 +616,21 @@ class PetPublicProfileScreen extends ConsumerWidget {
                   spacing: 10,
                   runSpacing: 8,
                   children: [
-                    _StatChip(Icons.favorite_outline, state.likesCount, 'Likes'),
-                    _StatChip(Icons.people_outline, state.followersCount, 'Followers'),
-                    _StatChip(Icons.article_outlined, state.posts.length, 'Posts'),
+                    _StatChip(
+                      Icons.favorite_outline,
+                      state.likesCount,
+                      'Likes',
+                    ),
+                    _StatChip(
+                      Icons.people_outline,
+                      state.followersCount,
+                      'Followers',
+                    ),
+                    _StatChip(
+                      Icons.article_outlined,
+                      state.posts.length,
+                      'Posts',
+                    ),
                   ],
                 ),
               ),
@@ -622,9 +685,10 @@ class PetPublicProfileScreen extends ConsumerWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Text(pet.bio!,
-                        style: TextStyle(
-                            color: Colors.grey[700], fontSize: 14)),
+                    child: Text(
+                      pet.bio!,
+                      style: TextStyle(color: Colors.grey[700], fontSize: 14),
+                    ),
                   ),
                 ),
               ),
@@ -637,15 +701,12 @@ class PetPublicProfileScreen extends ConsumerWidget {
                   color: Colors.white,
                   child: Row(
                     children: tabs.map((tab) {
-                      final active =
-                          state.activeTab == tab.toLowerCase();
+                      final active = state.activeTab == tab.toLowerCase();
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () =>
-                              notifier.setTab(tab.toLowerCase()),
+                          onTap: () => notifier.setTab(tab.toLowerCase()),
                           child: Container(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
                               border: Border(
                                 bottom: BorderSide(
@@ -693,10 +754,10 @@ class PetPublicProfileScreen extends ConsumerWidget {
   }
 
   String _petSubtitle(PetModel pet) {
-    return <String?>[pet.animalTypeName, pet.breedName]
-        .where((s) => s != null && s.isNotEmpty)
-        .whereType<String>()
-        .join(' · ');
+    return <String?>[
+      pet.animalTypeName,
+      pet.breedName,
+    ].where((s) => s != null && s.isNotEmpty).whereType<String>().join(' · ');
   }
 
   Widget _tabContent(_PetPublicState state, PetModel pet) {
@@ -766,14 +827,13 @@ class _AvatarBadge extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8),
         ],
       ),
       child: CircleAvatar(
         radius: 42,
         backgroundColor: const Color(0xFF4C6EF5),
-        backgroundImage:
-            photoUrl != null ? NetworkImage(photoUrl!) : null,
+        backgroundImage: photoUrl != null ? NetworkImage(photoUrl!) : null,
         child: photoUrl == null
             ? const Icon(Icons.pets, size: 36, color: Colors.white)
             : null,
@@ -797,8 +857,11 @@ class _GradientCover extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(Icons.pets,
-            size: 60, color: Colors.white.withValues(alpha: 0.3)),
+        child: Icon(
+          Icons.pets,
+          size: 60,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
       ),
     );
   }
@@ -818,8 +881,7 @@ class _StatChip extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8),
         ],
       ),
       child: Row(
@@ -827,11 +889,14 @@ class _StatChip extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: const Color(0xFF4C6EF5)),
           const SizedBox(width: 6),
-          Text('$count $label',
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A2E))),
+          Text(
+            '$count $label',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
         ],
       ),
     );
@@ -859,29 +924,31 @@ class _SocialButton extends StatelessWidget {
     return Opacity(
       opacity: onTap == null ? 0.5 : 1.0,
       child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: active ? color : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                size: 18, color: active ? Colors.white : color),
-            const SizedBox(width: 6),
-            Text(label,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: active ? color : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: active ? Colors.white : color),
+              const SizedBox(width: 6),
+              Text(
+                label,
                 style: TextStyle(
-                    color: active ? Colors.white : color,
-                    fontWeight: FontWeight.w700)),
-          ],
+                  color: active ? Colors.white : color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 }
@@ -915,24 +982,24 @@ class _PostsSection extends StatelessWidget {
             children: [
               Icon(Icons.article_outlined, size: 56, color: Colors.grey[400]),
               const SizedBox(height: 12),
-              Text('No posts yet',
-                  style:
-                      TextStyle(color: Colors.grey[600], fontSize: 16)),
+              Text(
+                'No posts yet',
+                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              ),
               if (isOwner)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text('Share an update from your pet!',
-                      style: TextStyle(
-                          color: Colors.grey[500], fontSize: 13)),
+                  child: Text(
+                    'Share an update from your pet!',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  ),
                 ),
             ],
           ),
         ),
       );
     }
-    return Column(
-      children: posts.map((p) => _PostCard(post: p)).toList(),
-    );
+    return Column(children: posts.map((p) => _PostCard(post: p)).toList());
   }
 }
 
@@ -956,9 +1023,10 @@ class _PostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -966,8 +1034,9 @@ class _PostCard extends StatelessWidget {
         children: [
           if (firstMedia != null && firstMedia['url'] != null)
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               child: Image.network(
                 MediaUrl.normalize(firstMedia['url'].toString()),
                 height: 220,
@@ -979,19 +1048,24 @@ class _PostCard extends StatelessWidget {
           if (caption.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-              child: Text(caption,
-                  style: const TextStyle(
-                      fontSize: 14, color: Color(0xFF1A1A2E))),
+              child: Text(
+                caption,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
+              ),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
             child: Row(
               children: [
-                _PostStat(Icons.favorite_outline,
-                    (countMap['likes'] ?? 0).toString()),
+                _PostStat(
+                  Icons.favorite_outline,
+                  (countMap['likes'] ?? 0).toString(),
+                ),
                 const SizedBox(width: 14),
-                _PostStat(Icons.comment_outlined,
-                    (countMap['comments'] ?? 0).toString()),
+                _PostStat(
+                  Icons.comment_outlined,
+                  (countMap['comments'] ?? 0).toString(),
+                ),
               ],
             ),
           ),
@@ -1012,8 +1086,7 @@ class _PostStat extends StatelessWidget {
       children: [
         Icon(icon, size: 15, color: Colors.grey[500]),
         const SizedBox(width: 4),
-        Text(count,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(count, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
@@ -1043,8 +1116,10 @@ class _AboutSection extends StatelessWidget {
             _row('Sex', pet.sex),
             _row('Color', pet.colorName),
             _row('Size', pet.sizeName),
-            _row('Date of Birth',
-                pet.dateOfBirth?.toIso8601String().split('T').first),
+            _row(
+              'Date of Birth',
+              pet.dateOfBirth?.toIso8601String().split('T').first,
+            ),
             if (pet.isRescue == true) _row('Rescue Pet', 'Yes'),
             _row('Food Habits', pet.foodHabits),
             _row('Notes', pet.notes),
@@ -1063,14 +1138,16 @@ class _AboutSection extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style:
-                    TextStyle(color: Colors.grey[600], fontSize: 13)),
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
           ),
         ],
       ),
@@ -1118,14 +1195,16 @@ class _HealthSection extends StatelessWidget {
         children: [
           SizedBox(
             width: 130,
-            child: Text(label,
-                style:
-                    TextStyle(color: Colors.grey[600], fontSize: 13)),
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
           ),
         ],
       ),

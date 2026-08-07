@@ -6,11 +6,12 @@ abstract class PetRepository {
   Future<List<Map<String, dynamic>>> getBreeds(int typeId);
 
   Future<List<PetEntity>> getAllPets();
-  Future<int> createPet(PetEntity pet);
+  Future<PetEntity> createPet(PetEntity pet, {String? idempotencyKey});
   Future<void> updatePet(int petId, PetEntity pet);
 
   Future<int> uploadPetPhoto(File file);
-  Future<void> updatePetPhoto(int petId, File file);
+  Future<void> updatePetPhoto(int petId, File file, {int? version});
+  Future<void> removePetPhoto(int petId, {int? version});
 
   // Social profile
   Future<void> updatePetPublicProfile(int petId, Map<String, dynamic> data);
@@ -25,5 +26,7 @@ abstract class PetRepository {
   Future<void> unlikePet(int petId);
   Future<List<Map<String, dynamic>>> getPetPosts(int petId, {int? cursor});
   Future<Map<String, dynamic>> createPetPost(
-      int petId, Map<String, dynamic> payload);
+    int petId,
+    Map<String, dynamic> payload,
+  );
 }

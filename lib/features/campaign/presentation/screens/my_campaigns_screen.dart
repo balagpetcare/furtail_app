@@ -32,9 +32,7 @@ class MyCampaignsScreen extends ConsumerWidget {
                 final b = active[i];
                 return BookingTile(
                   booking: b,
-                  onQrTap: b.qrToken == null
-                      ? null
-                      : () => _openQr(context, b),
+                  onQrTap: b.qrToken == null ? null : () => _openQr(context, b),
                 );
               },
             ),

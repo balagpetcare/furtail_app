@@ -86,7 +86,11 @@ class AppPostSkeleton extends StatelessWidget {
         children: [
           Row(
             children: [
-              AppSkeletonCard(height: 40, width: 40, borderRadius: BorderRadius.all(Radius.circular(20))),
+              AppSkeletonCard(
+                height: 40,
+                width: 40,
+                borderRadius: BorderRadius.all(Radius.circular(20)),
+              ),
               SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -138,13 +142,17 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+            Icon(
+              icon,
+              size: 56,
+              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 16),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
@@ -249,10 +257,10 @@ class AppSectionHeader extends StatelessWidget {
             child: Text(
               title,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.colorScheme.primary,
-                    letterSpacing: 0.5,
-                  ),
+                fontWeight: FontWeight.w700,
+                color: context.colorScheme.primary,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
           ?trailing,

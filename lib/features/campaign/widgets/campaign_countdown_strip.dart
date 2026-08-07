@@ -20,22 +20,28 @@ class CampaignCountdownStrip extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final chips = <Widget>[];
 
-    if (countdown != null && countdown!.countdownEnabled && !countdown!.isExpired) {
-      chips.add(_Chip(
-        icon: Icons.timer_outlined,
-        label: '${countdown!.daysLeft}d ${countdown!.hoursLeft}h left',
-        color: cs.primaryContainer,
-        fg: cs.onPrimaryContainer,
-      ));
+    if (countdown != null &&
+        countdown!.countdownEnabled &&
+        !countdown!.isExpired) {
+      chips.add(
+        _Chip(
+          icon: Icons.timer_outlined,
+          label: '${countdown!.daysLeft}d ${countdown!.hoursLeft}h left',
+          color: cs.primaryContainer,
+          fg: cs.onPrimaryContainer,
+        ),
+      );
     }
 
     if (showSlots && remainingSlots != null && remainingSlots! > 0) {
-      chips.add(_Chip(
-        icon: Icons.event_seat_outlined,
-        label: remainingSlots! <= 5 ? 'Almost full' : '$remainingSlots slots',
-        color: cs.secondaryContainer,
-        fg: cs.onSecondaryContainer,
-      ));
+      chips.add(
+        _Chip(
+          icon: Icons.event_seat_outlined,
+          label: remainingSlots! <= 5 ? 'Almost full' : '$remainingSlots slots',
+          color: cs.secondaryContainer,
+          fg: cs.onSecondaryContainer,
+        ),
+      );
     }
 
     if (chips.isEmpty) return const SizedBox.shrink();
@@ -73,7 +79,14 @@ class _Chip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: fg),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: fg,
+            ),
+          ),
         ],
       ),
     );

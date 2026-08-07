@@ -3,6 +3,7 @@ import 'dart:io';
 class PetEntity {
   final int? id;
   final String name;
+  final int? version;
 
   final int animalTypeId;
   final int? breedId;
@@ -13,6 +14,7 @@ class PetEntity {
   final String? customBreedText;
   final String? customColorText;
   final int? profilePicId;
+  final bool clearProfileImage;
 
   final File? photo;
 
@@ -55,6 +57,7 @@ class PetEntity {
   const PetEntity({
     this.id,
     required this.name,
+    this.version,
     required this.animalTypeId,
     this.breedId,
     this.subBreedId,
@@ -79,6 +82,7 @@ class PetEntity {
     this.weightKg,
     this.photoUrl,
     this.profilePicId,
+    this.clearProfileImage = false,
     this.photo,
     this.bloodType,
     this.allergies,

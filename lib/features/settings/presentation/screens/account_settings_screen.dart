@@ -25,7 +25,8 @@ class AccountSettingsScreen extends StatelessWidget {
                   icon: Icons.person_outline,
                   title: t.editProfile,
                   subtitle: t.editProfileDesc,
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.editProfile),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.editProfile),
                 ),
                 Divider(height: 1, color: cs.outline),
                 SettingsNavTile(

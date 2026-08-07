@@ -18,7 +18,9 @@ class CampaignCacheService {
     await prefs.setInt(_fetchedAtKey, DateTime.now().millisecondsSinceEpoch);
   }
 
-  Future<List<PublicCampaign>?> loadHomeCampaigns({Duration ttl = defaultTtl}) async {
+  Future<List<PublicCampaign>?> loadHomeCampaigns({
+    Duration ttl = defaultTtl,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_homeKey);
     if (raw == null || raw.isEmpty) return null;
@@ -37,7 +39,9 @@ class CampaignCacheService {
       final list = jsonDecode(raw) as List;
       return list
           .whereType<Map>()
-          .map((e) => PublicCampaign.fromCacheJson(Map<String, dynamic>.from(e)))
+          .map(
+            (e) => PublicCampaign.fromCacheJson(Map<String, dynamic>.from(e)),
+          )
           .toList();
     } catch (_) {
       return null;

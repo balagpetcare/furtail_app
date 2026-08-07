@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
   // কনস্ট্রাক্টরে কোনো required ডাটা রাখবেন না
-  const DashboardScreen({super.key}); 
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -25,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       // Login এর সময় সেভ করা ডাটাগুলো এখানে ভেরিয়েবলে সেট করছি
-      userName = prefs.getString('userName') ?? "User Name"; 
+      userName = prefs.getString('userName') ?? "User Name";
       userEmail = prefs.getString('userEmail') ?? "email@example.com";
     });
   }
@@ -40,16 +40,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
             const SizedBox(height: 20),
-            Text(userName, style: context.appText.headlineMedium!.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              userName,
+              style: context.appText.headlineMedium!.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             Text(userEmail, style: const TextStyle(color: Colors.grey)),
-            
+
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
                 // Edit Profile Logic
               },
               child: const Text("Edit Profile"),
-            )
+            ),
           ],
         ),
       ),

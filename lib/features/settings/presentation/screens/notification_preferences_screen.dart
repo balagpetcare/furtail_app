@@ -30,49 +30,113 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                 title: t.pushNotifications,
                 subtitle: t.pushNotificationsDesc,
                 value: prefs.pushEnabled,
-                onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(pushEnabled: v)),
+                onChanged: (v) =>
+                    _patch(ref, prefs, (p) => p.copyWith(pushEnabled: v)),
               ),
             ),
             const SizedBox(height: 14),
             SettingsCard(
               child: Column(
                 children: [
-                  _switch(context, title: t.campaignReminders, value: prefs.campaignReminders,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(campaignReminders: v))),
+                  _switch(
+                    context,
+                    title: t.campaignReminders,
+                    value: prefs.campaignReminders,
+                    onChanged: (v) => _patch(
+                      ref,
+                      prefs,
+                      (p) => p.copyWith(campaignReminders: v),
+                    ),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.vaccineReminders, value: prefs.vaccineReminders,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(vaccineReminders: v))),
+                  _switch(
+                    context,
+                    title: t.vaccineReminders,
+                    value: prefs.vaccineReminders,
+                    onChanged: (v) => _patch(
+                      ref,
+                      prefs,
+                      (p) => p.copyWith(vaccineReminders: v),
+                    ),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.donationUpdates, value: prefs.donationUpdates,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(donationUpdates: v))),
+                  _switch(
+                    context,
+                    title: t.donationUpdates,
+                    value: prefs.donationUpdates,
+                    onChanged: (v) => _patch(
+                      ref,
+                      prefs,
+                      (p) => p.copyWith(donationUpdates: v),
+                    ),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.communityActivity, value: prefs.communityActivity,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(communityActivity: v))),
+                  _switch(
+                    context,
+                    title: t.communityActivity,
+                    value: prefs.communityActivity,
+                    onChanged: (v) => _patch(
+                      ref,
+                      prefs,
+                      (p) => p.copyWith(communityActivity: v),
+                    ),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.commentsNotif, value: prefs.comments,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(comments: v))),
+                  _switch(
+                    context,
+                    title: t.commentsNotif,
+                    value: prefs.comments,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(comments: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.likesNotif, value: prefs.likes,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(likes: v))),
+                  _switch(
+                    context,
+                    title: t.likesNotif,
+                    value: prefs.likes,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(likes: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.followsNotif, value: prefs.follows,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(follows: v))),
+                  _switch(
+                    context,
+                    title: t.followsNotif,
+                    value: prefs.follows,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(follows: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.mentionsNotif, value: prefs.mentions,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(mentions: v))),
+                  _switch(
+                    context,
+                    title: t.mentionsNotif,
+                    value: prefs.mentions,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(mentions: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.messagesNotif, value: prefs.messages,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(messages: v))),
+                  _switch(
+                    context,
+                    title: t.messagesNotif,
+                    value: prefs.messages,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(messages: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.announcementsNotif, value: prefs.announcements,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(announcements: v))),
+                  _switch(
+                    context,
+                    title: t.announcementsNotif,
+                    value: prefs.announcements,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(announcements: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
                   _switch(
                     context,
                     title: t.emergencyNotif,
                     subtitle: t.emergencyNotifDesc,
                     value: prefs.emergency,
-                    onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(emergency: v)),
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(emergency: v)),
                   ),
                   Divider(height: 1, color: cs.outline),
                   _switch(
@@ -80,7 +144,8 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                     title: t.marketingNotif,
                     subtitle: t.marketingNotifDesc,
                     value: prefs.marketing,
-                    onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(marketing: v)),
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(marketing: v)),
                   ),
                 ],
               ),
@@ -89,11 +154,21 @@ class NotificationPreferencesScreen extends ConsumerWidget {
             SettingsCard(
               child: Column(
                 children: [
-                  _switch(context, title: t.allowEmailNotif, value: prefs.allowEmail,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(allowEmail: v))),
+                  _switch(
+                    context,
+                    title: t.allowEmailNotif,
+                    value: prefs.allowEmail,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(allowEmail: v)),
+                  ),
                   Divider(height: 1, color: cs.outline),
-                  _switch(context, title: t.allowSmsNotif, value: prefs.allowSms,
-                      onChanged: (v) => _patch(ref, prefs, (p) => p.copyWith(allowSms: v))),
+                  _switch(
+                    context,
+                    title: t.allowSmsNotif,
+                    value: prefs.allowSms,
+                    onChanged: (v) =>
+                        _patch(ref, prefs, (p) => p.copyWith(allowSms: v)),
+                  ),
                 ],
               ),
             ),

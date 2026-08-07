@@ -37,33 +37,21 @@ class CentralAuthBootstrap {
   final CentralAuthPasswordPolicy? passwordPolicy;
 
   factory CentralAuthBootstrap.fromJson(Map<String, dynamic> json) {
-    final loginMethodsJson =
-        (json['loginMethods'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final loginMethodsJson = (json['loginMethods'] as Map?)?.cast<String, dynamic>() ?? const {};
     final providersJson = (json['providers'] as List?) ?? const [];
-    final enterpriseJson =
-        (json['enterpriseOrganizations'] as List?) ?? const [];
+    final enterpriseJson = (json['enterpriseOrganizations'] as List?) ?? const [];
     final otpJson = (json['otp'] as Map?)?.cast<String, dynamic>();
-    final passwordPolicyJson = (json['passwordPolicy'] as Map?)
-        ?.cast<String, dynamic>();
+    final passwordPolicyJson = (json['passwordPolicy'] as Map?)?.cast<String, dynamic>();
     return CentralAuthBootstrap(
       registrationOpen: json['registrationOpen'] as bool? ?? true,
       requiredProfileFields:
-          (json['requiredProfileFields'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
+          (json['requiredProfileFields'] as List?)?.map((e) => e.toString()).toList() ?? const [],
       loginMethods: CentralAuthLoginMethods.fromJson(loginMethodsJson),
       providers: providersJson
-          .map(
-            (e) => CentralAuthProvider.fromJson(
-              (e as Map).cast<String, dynamic>(),
-            ),
-          )
+          .map((e) => CentralAuthProvider.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
       enterpriseOrganizations: enterpriseJson
-          .map(
-            (e) => (e is Map ? e['orgSlug']?.toString() : e.toString()) ?? '',
-          )
+          .map((e) => (e is Map ? e['orgSlug']?.toString() : e.toString()) ?? '')
           .where((s) => s.isNotEmpty)
           .toList(),
       enterpriseOrgDetails: enterpriseJson
@@ -71,10 +59,7 @@ class CentralAuthBootstrap {
           .map(
             (e) => CentralAuthEnterpriseOrg(
               orgSlug: e['orgSlug']?.toString() ?? '',
-              displayName:
-                  e['displayName']?.toString() ??
-                  e['orgSlug']?.toString() ??
-                  '',
+              displayName: e['displayName']?.toString() ?? e['orgSlug']?.toString() ?? '',
               protocol: e['protocol']?.toString().toUpperCase() ?? 'OIDC',
             ),
           )
@@ -144,8 +129,7 @@ class CentralAuthPasswordPolicy {
     if (requiresNumber && !password.contains(RegExp(r'[0-9]'))) {
       issues.add('number');
     }
-    if (requiresSymbol &&
-        !password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\[\]\\/;~`+=]'))) {
+    if (requiresSymbol && !password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\[\]\\/;~`+=]'))) {
       issues.add('symbol');
     }
     return issues;
@@ -179,11 +163,7 @@ class CentralAuthLoginMethods {
 }
 
 class CentralAuthProvider {
-  const CentralAuthProvider({
-    required this.id,
-    required this.displayName,
-    required this.enabled,
-  });
+  const CentralAuthProvider({required this.id, required this.displayName, required this.enabled});
 
   final String id;
   final String displayName;
@@ -247,11 +227,7 @@ class CentralAuthTokenResult {
   final String? refreshToken;
   final int? expiresIn;
 
-  CentralAuthTokenResult({
-    required this.accessToken,
-    this.refreshToken,
-    this.expiresIn,
-  });
+  CentralAuthTokenResult({required this.accessToken, this.refreshToken, this.expiresIn});
 
   factory CentralAuthTokenResult.fromJson(Map<String, dynamic> json) {
     return CentralAuthTokenResult(
@@ -270,6 +246,17 @@ class CentralAuthUser {
   final String? email;
   final String? phone;
   final String? username;
+  final String? avatarUrl;
+  final DateTime? emailVerifiedAt;
+  final DateTime? phoneVerifiedAt;
+  final Map<String, dynamic> notificationPreferences;
+  // Canonical owner: Central Auth (see wpa_auth_api's User.firstName/
+  // lastName/dateOfBirth). Never read/written through the Furtail public
+  // profile PATCH — Furtail's own UserProfile.birthdate is a deprecated
+  // legacy duplicate.
+  final String? firstName;
+  final String? lastName;
+  final DateTime? dateOfBirth;
 
   CentralAuthUser({
     required this.id,
@@ -277,7 +264,17 @@ class CentralAuthUser {
     this.email,
     this.phone,
     this.username,
+    this.avatarUrl,
+    this.emailVerifiedAt,
+    this.phoneVerifiedAt,
+    this.notificationPreferences = const <String, dynamic>{},
+    this.firstName,
+    this.lastName,
+    this.dateOfBirth,
   });
+
+  bool get isEmailVerified => emailVerifiedAt != null;
+  bool get isPhoneVerified => phoneVerifiedAt != null;
 
   factory CentralAuthUser.fromJson(Map<String, dynamic> json) {
     return CentralAuthUser(
@@ -286,6 +283,19 @@ class CentralAuthUser {
       email: json['email'] as String?,
       phone: json['phone'] as String?,
       username: json['username'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
+      emailVerifiedAt: DateTime.tryParse(json['emailVerifiedAt']?.toString() ?? ''),
+      phoneVerifiedAt: DateTime.tryParse(json['phoneVerifiedAt']?.toString() ?? ''),
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      dateOfBirth: DateTime.tryParse(json['dateOfBirth']?.toString() ?? ''),
+      notificationPreferences: json['notificationPreferences'] is Map<String, dynamic>
+          ? Map<String, dynamic>.from(json['notificationPreferences'] as Map<String, dynamic>)
+          : json['notificationPreferences'] is Map
+          ? Map<String, dynamic>.from(
+              (json['notificationPreferences'] as Map).cast<String, dynamic>(),
+            )
+          : const <String, dynamic>{},
     );
   }
 }
@@ -356,8 +366,7 @@ class CentralAuthException implements Exception {
 /// refresh).
 class CentralAuthApi {
   final Dio _dio;
-  static Future<CentralAuthTokenResult> Function(String refreshToken)?
-  _refreshTokenOverride;
+  static Future<CentralAuthTokenResult> Function(String refreshToken)? _refreshTokenOverride;
 
   CentralAuthApi()
     : _dio = Dio(
@@ -442,9 +451,7 @@ class CentralAuthApi {
           'clientId': CentralAuthConfig.clientId,
         },
       );
-      return CentralAuthTokenResult.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return CentralAuthTokenResult.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _toException(e);
     }
@@ -496,15 +503,9 @@ class CentralAuthApi {
 
   /// Completes a password reset using the opaque `token` from the emailed
   /// reset link. No session is returned; the user must log in again.
-  Future<void> resetPassword({
-    required String token,
-    required String password,
-  }) async {
+  Future<void> resetPassword({required String token, required String password}) async {
     try {
-      await _dio.post(
-        '/auth/reset-password',
-        data: {'token': token, 'password': password},
-      );
+      await _dio.post('/auth/reset-password', data: {'token': token, 'password': password});
     } on DioException catch (e) {
       throw _toException(e);
     }
@@ -529,18 +530,11 @@ class CentralAuthApi {
 
   /// `POST /auth/otp/request` — `channel` is `email`, `phone`, or
   /// `whatsapp`; `recipient` is the corresponding address/number.
-  Future<void> requestOtp({
-    required String channel,
-    required String recipient,
-  }) async {
+  Future<void> requestOtp({required String channel, required String recipient}) async {
     try {
       await _dio.post(
         '/auth/otp/request',
-        data: {
-          'channel': channel,
-          'recipient': recipient,
-          'clientId': CentralAuthConfig.clientId,
-        },
+        data: {'channel': channel, 'recipient': recipient, 'clientId': CentralAuthConfig.clientId},
       );
     } on DioException catch (e) {
       throw _toException(e);
@@ -587,11 +581,7 @@ class CentralAuthApi {
     try {
       final response = await _dio.post(
         '/auth/login/phone',
-        data: {
-          'phone': phone,
-          'password': password,
-          'clientId': CentralAuthConfig.clientId,
-        },
+        data: {'phone': phone, 'password': password, 'clientId': CentralAuthConfig.clientId},
       );
       final body = response.data as Map<String, dynamic>;
       return (
@@ -608,8 +598,7 @@ class CentralAuthApi {
   /// enterprise OIDC idToken with `orgSlug` as `org`) for a Central Auth
   /// session. Never used with a browser/WebView — the provider token is
   /// obtained natively by a provider adapter before this call.
-  Future<({CentralAuthTokenResult tokens, CentralAuthUser user})>
-  identityLogin({
+  Future<({CentralAuthTokenResult tokens, CentralAuthUser user})> identityLogin({
     required String provider,
     String? idToken,
     String? accessToken,
@@ -621,9 +610,9 @@ class CentralAuthApi {
         '/auth/identity/$provider',
         queryParameters: orgSlug != null ? {'org': orgSlug} : null,
         data: {
-          if (idToken != null) 'idToken': idToken,
-          if (accessToken != null) 'accessToken': accessToken,
-          if (nonce != null) 'nonce': nonce,
+          ...?idToken == null ? null : {'idToken': idToken},
+          ...?accessToken == null ? null : {'accessToken': accessToken},
+          ...?nonce == null ? null : {'nonce': nonce},
           'clientId': CentralAuthConfig.clientId,
         },
       );
@@ -652,9 +641,9 @@ class CentralAuthApi {
         '/auth/identity/$provider/link',
         queryParameters: orgSlug != null ? {'org': orgSlug} : null,
         data: {
-          if (idToken != null) 'idToken': idToken,
-          if (providerAccessToken != null) 'accessToken': providerAccessToken,
-          if (nonce != null) 'nonce': nonce,
+          ...?idToken == null ? null : {'idToken': idToken},
+          ...?providerAccessToken == null ? null : {'accessToken': providerAccessToken},
+          ...?nonce == null ? null : {'nonce': nonce},
         },
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
@@ -665,10 +654,7 @@ class CentralAuthApi {
 
   /// `POST /auth/password/set` — sets a password for a social/OIDC-only
   /// account that has none yet. Requires a bearer access token.
-  Future<void> setPassword({
-    required String accessToken,
-    required String password,
-  }) async {
+  Future<void> setPassword({required String accessToken, required String password}) async {
     try {
       await _dio.post(
         '/auth/password/set',
@@ -686,18 +672,12 @@ class CentralAuthApi {
   /// registered custom scheme; `state`/`code_challenge` bind the callback to
   /// this attempt — the callback returns only a single-use code, never
   /// tokens.
-  static Uri socialStartUrl(
-    String providerId, {
-    String? state,
-    String? codeChallenge,
-  }) {
-    return Uri.parse(
-      '${CentralAuthConfig.apiBaseUrl}/auth/social/$providerId/start',
-    ).replace(
+  static Uri socialStartUrl(String providerId, {String? state, String? codeChallenge}) {
+    return Uri.parse('${CentralAuthConfig.apiBaseUrl}/auth/social/$providerId/start').replace(
       queryParameters: {
         'app_client_id': CentralAuthConfig.clientId,
         'redirect_uri': CentralAuthConfig.oauthCallbackUri,
-        if (state != null) 'state': state,
+        ...?state == null ? null : {'state': state},
         if (codeChallenge != null) ...{
           'code_challenge': codeChallenge,
           'code_challenge_method': 'S256',
@@ -708,18 +688,12 @@ class CentralAuthApi {
 
   /// Builds the system-browser OIDC start URL for an enterprise org —
   /// identical contract to [socialStartUrl] (code + PKCE completion).
-  static Uri enterpriseStartUrl(
-    String orgSlug, {
-    String? state,
-    String? codeChallenge,
-  }) {
-    return Uri.parse(
-      '${CentralAuthConfig.apiBaseUrl}/auth/enterprise/$orgSlug/start',
-    ).replace(
+  static Uri enterpriseStartUrl(String orgSlug, {String? state, String? codeChallenge}) {
+    return Uri.parse('${CentralAuthConfig.apiBaseUrl}/auth/enterprise/$orgSlug/start').replace(
       queryParameters: {
         'app_client_id': CentralAuthConfig.clientId,
         'redirect_uri': CentralAuthConfig.oauthCallbackUri,
-        if (state != null) 'state': state,
+        ...?state == null ? null : {'state': state},
         if (codeChallenge != null) ...{
           'code_challenge': codeChallenge,
           'code_challenge_method': 'S256',
@@ -745,9 +719,7 @@ class CentralAuthApi {
           'redirectUri': CentralAuthConfig.oauthCallbackUri,
         },
       );
-      return CentralAuthTokenResult.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return CentralAuthTokenResult.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _toException(e);
     }
@@ -763,6 +735,87 @@ class CentralAuthApi {
       );
       final body = response.data as Map<String, dynamic>;
       return CentralAuthUser.fromJson(body['user'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  /// PATCH /auth/me — identity fields only (firstName, lastName,
+  /// dateOfBirth, displayName). `email`/`phone` are intentionally NOT
+  /// parameters here: changing an already-set contact must go through
+  /// [requestEmailVerification]/[confirmEmailVerification] or
+  /// [requestPhoneChange]/[confirmPhoneChange] below. Every argument is
+  /// omitted from the request body when null (never sent as an explicit
+  /// `null`), so a DOB-only save never risks clearing displayName, etc.
+  Future<CentralAuthUser> updateProfile({
+    required String accessToken,
+    String? displayName,
+    String? firstName,
+    String? lastName,
+    DateTime? dateOfBirth,
+  }) async {
+    try {
+      final response = await _dio.patch(
+        '/users/me',
+        data: {
+          // ignore: use_null_aware_elements
+          if (displayName != null) 'displayName': displayName,
+          // ignore: use_null_aware_elements
+          if (firstName != null) 'firstName': firstName,
+          // ignore: use_null_aware_elements
+          if (lastName != null) 'lastName': lastName,
+          // ignore: use_null_aware_elements
+          if (dateOfBirth != null) 'dateOfBirth': dateOfBirth.toIso8601String(),
+        },
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+      final body = response.data as Map<String, dynamic>;
+      return CentralAuthUser.fromJson(body['user'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  Future<void> requestEmailVerification({
+    required String accessToken,
+    required String email,
+  }) async {
+    try {
+      await _dio.post(
+        '/auth/verify-email/request',
+        data: {'email': email},
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  /// `POST /auth/phone-change/request` — sends a 6-digit SMS code to
+  /// [phone]; works both for setting a change to an already-verified phone
+  /// and, in effect, for verifying a first-time phone since the confirm
+  /// step applies the code's target phone regardless of prior state.
+  Future<void> requestPhoneChange({required String accessToken, required String phone}) async {
+    try {
+      await _dio.post(
+        '/auth/phone-change/request',
+        data: {'phone': phone},
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  /// `POST /auth/phone-change/confirm` — applies the most recent unexpired
+  /// phone-change request for this user once [code] matches.
+  Future<void> confirmPhoneChange({required String accessToken, required String code}) async {
+    try {
+      await _dio.post(
+        '/auth/phone-change/confirm',
+        data: {'code': code},
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
     } on DioException catch (e) {
       throw _toException(e);
     }
@@ -796,10 +849,7 @@ class CentralAuthApi {
       final body = response.data as Map<String, dynamic>;
       final sessions = (body['sessions'] as List?) ?? const [];
       return sessions
-          .map(
-            (e) =>
-                CentralAuthSession.fromJson((e as Map).cast<String, dynamic>()),
-          )
+          .map((e) => CentralAuthSession.fromJson((e as Map).cast<String, dynamic>()))
           .toList();
     } on DioException catch (e) {
       throw _toException(e);
@@ -812,6 +862,62 @@ class CentralAuthApi {
     try {
       await _dio.delete(
         '/auth/sessions/$sessionId',
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  /// `POST /auth/change-password` — requires the current password.
+  Future<void> changePassword({
+    required String accessToken,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      await _dio.post(
+        '/auth/change-password',
+        data: {
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  /// `POST /auth/deactivate` — re-authenticates with [password] before
+  /// deactivating the account (reversible, unlike delete).
+  Future<void> deactivateAccount({required String accessToken, String? password}) async {
+    try {
+      await _dio.post(
+        '/auth/deactivate',
+        data: {
+          // ignore: use_null_aware_elements
+          if (password != null) 'password': password,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+      );
+    } on DioException catch (e) {
+      throw _toException(e);
+    }
+  }
+
+  /// `DELETE /auth/me` — re-authenticates with [password] before
+  /// permanently deleting the account. Irreversible.
+  Future<void> deleteAccount({required String accessToken, String? password}) async {
+    try {
+      await _dio.delete(
+        '/auth/me',
+        data: {
+          // ignore: use_null_aware_elements
+          if (password != null) 'password': password,
+        },
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
     } on DioException catch (e) {
@@ -860,6 +966,4 @@ class CentralAuthApi {
   }
 }
 
-final centralAuthApiProvider = Provider<CentralAuthApi>(
-  (ref) => CentralAuthApi(),
-);
+final centralAuthApiProvider = Provider<CentralAuthApi>((ref) => CentralAuthApi());

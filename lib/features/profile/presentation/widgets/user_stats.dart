@@ -35,12 +35,18 @@ class UserStats extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     value,
-                    style: context.appText.titleMedium!.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
+                    style: context.appText.titleMedium!.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     label,
-                    style: context.appText.labelMedium!.copyWith(color: Colors.white.withValues(alpha: 0.70), fontWeight: FontWeight.w700),
+                    style: context.appText.labelMedium!.copyWith(
+                      color: Colors.white.withValues(alpha: 0.70),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1024,8 +1024,9 @@ class _ReelsPlayerScreenState extends State<ReelsPlayerScreen>
     final vc = _vc;
     final init = _init;
     final theme = Theme.of(context);
-    final likeLabel =
-        Localizations.localeOf(context).languageCode == 'bn' ? 'লাইক' : 'Like';
+    final likeLabel = Localizations.localeOf(context).languageCode == 'bn'
+        ? 'লাইক'
+        : 'Like';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -1443,8 +1444,9 @@ class _ReelsPlayerScreenState extends State<ReelsPlayerScreen>
   /// Pauses the inline controller first; the fullscreen page creates its own.
   void _openFullscreen(PostModel post) {
     final wasPlaying = _vc?.value.isPlaying ?? false;
-    final startMuted =
-        widget.reels.length == 1 ? _detailMuted : media.isMuted.value;
+    final startMuted = widget.reels.length == 1
+        ? _detailMuted
+        : media.isMuted.value;
     final startAt = _vc?.value.position ?? Duration.zero;
     final mediaItem = post.media.isEmpty
         ? null
@@ -2057,8 +2059,9 @@ class _ReelPageState extends State<_ReelPage> {
     final post = widget.post;
     final controller = widget.controller;
     final init = widget.init;
-    final likeLabel =
-        Localizations.localeOf(context).languageCode == 'bn' ? 'লাইক' : 'Like';
+    final likeLabel = Localizations.localeOf(context).languageCode == 'bn'
+        ? 'লাইক'
+        : 'Like';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -2479,5 +2482,3 @@ class _DetailActionButton extends StatelessWidget {
     );
   }
 }
-
-

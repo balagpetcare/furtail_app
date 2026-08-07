@@ -15,7 +15,7 @@ class CampaignRepository {
   final CampaignCacheService _cache;
 
   CampaignRepository(this._api, [CampaignCacheService? cache])
-      : _cache = cache ?? CampaignCacheService();
+    : _cache = cache ?? CampaignCacheService();
 
   dynamic _data(dynamic res) {
     if (res is Map && res['data'] != null) return res['data'];
@@ -26,9 +26,14 @@ class CampaignRepository {
   // Public discovery & booking
   // ---------------------------------------------------------------------------
 
-  Future<List<PublicCampaign>> fetchPublicCampaigns({bool useCache = true}) async {
+  Future<List<PublicCampaign>> fetchPublicCampaigns({
+    bool useCache = true,
+  }) async {
     try {
-      final res = await _api.get(ApiEndpoints.campaignPublicCampaigns(), auth: false);
+      final res = await _api.get(
+        ApiEndpoints.campaignPublicCampaigns(),
+        auth: false,
+      );
       final data = _data(res);
       if (data is! List) {
         if (useCache) {
@@ -57,7 +62,9 @@ class CampaignRepository {
     return await _cache.loadHomeCampaigns() ?? [];
   }
 
-  Future<List<PublicCampaign>> _enrichWithUpcoming(List<PublicCampaign> campaigns) async {
+  Future<List<PublicCampaign>> _enrichWithUpcoming(
+    List<PublicCampaign> campaigns,
+  ) async {
     try {
       final res = await _api.get(
         ApiEndpoints.campaignDiscoveryUpcoming(window: 'this_week'),
@@ -85,7 +92,10 @@ class CampaignRepository {
     }
   }
 
-  Future<PublicCampaign> fetchCampaignBySlug(String slug, {bool useCache = true}) async {
+  Future<PublicCampaign> fetchCampaignBySlug(
+    String slug, {
+    bool useCache = true,
+  }) async {
     try {
       final res = await _api.get(
         ApiEndpoints.campaignPublicCampaignBySlug(slug),
@@ -129,7 +139,10 @@ class CampaignRepository {
   }
 
   Future<List<DhakaCityCorporation>> fetchDhakaCityCorporations() async {
-    final res = await _api.get(ApiEndpoints.campaignDhakaCityCorporations(), auth: false);
+    final res = await _api.get(
+      ApiEndpoints.campaignDhakaCityCorporations(),
+      auth: false,
+    );
     final data = _data(res);
     if (data is! List) return const [];
     return data
@@ -164,7 +177,9 @@ class CampaignRepository {
         .toList();
   }
 
-  Future<List<PublicCampaignLocation>> fetchCampaignLocations(String slug) async {
+  Future<List<PublicCampaignLocation>> fetchCampaignLocations(
+    String slug,
+  ) async {
     final res = await _api.get(
       ApiEndpoints.campaignPublicLocations(slug),
       auth: false,
@@ -173,7 +188,9 @@ class CampaignRepository {
     if (data is! List) return const [];
     return data
         .whereType<Map>()
-        .map((e) => PublicCampaignLocation.fromJson(Map<String, dynamic>.from(e)))
+        .map(
+          (e) => PublicCampaignLocation.fromJson(Map<String, dynamic>.from(e)),
+        )
         .toList();
   }
 
@@ -218,7 +235,8 @@ class CampaignRepository {
       if (draft.slotId != null) body['slotId'] = draft.slotId;
     }
     if (draft.ownerName.isNotEmpty) body['ownerName'] = draft.ownerName;
-    if (draft.alternatePhone.isNotEmpty) body['alternatePhone'] = draft.alternatePhone;
+    if (draft.alternatePhone.isNotEmpty)
+      body['alternatePhone'] = draft.alternatePhone;
     if (draft.couponCode != null && draft.couponCode!.isNotEmpty) {
       body['couponCode'] = draft.couponCode;
     }
@@ -226,17 +244,23 @@ class CampaignRepository {
       body['paymentMethod'] = draft.paymentMethod;
     }
 
-    final res = await _api.post(ApiEndpoints.campaignCheckoutInit(), body, auth: false);
-    return CheckoutInitResult.fromJson(Map<String, dynamic>.from(_data(res) as Map));
+    final res = await _api.post(
+      ApiEndpoints.campaignCheckoutInit(),
+      body,
+      auth: false,
+    );
+    return CheckoutInitResult.fromJson(
+      Map<String, dynamic>.from(_data(res) as Map),
+    );
   }
 
   Future<CheckoutInitResult> confirmFreeCheckout(String checkoutId) async {
-    final res = await _api.post(
-      ApiEndpoints.campaignCheckoutConfirmFree(),
-      {'checkoutId': checkoutId},
-      auth: false,
+    final res = await _api.post(ApiEndpoints.campaignCheckoutConfirmFree(), {
+      'checkoutId': checkoutId,
+    }, auth: false);
+    return CheckoutInitResult.fromJson(
+      Map<String, dynamic>.from(_data(res) as Map),
     );
-    return CheckoutInitResult.fromJson(Map<String, dynamic>.from(_data(res) as Map));
   }
 
   Future<CheckoutStatusResult> getCheckoutStatus(String checkoutId) async {
@@ -244,7 +268,9 @@ class CampaignRepository {
       ApiEndpoints.campaignCheckoutStatus(checkoutId),
       auth: false,
     );
-    return CheckoutStatusResult.fromJson(Map<String, dynamic>.from(_data(res) as Map));
+    return CheckoutStatusResult.fromJson(
+      Map<String, dynamic>.from(_data(res) as Map),
+    );
   }
 
   Future<bool> isHomeCacheStale() => _cache.isHomeCacheStale();
@@ -260,7 +286,10 @@ class CampaignRepository {
   }
 
   Future<List<CampaignBooking>> fetchMyBookings() async {
-    final res = await _api.get(ApiEndpoints.campaignLinkMyBookings(), auth: true);
+    final res = await _api.get(
+      ApiEndpoints.campaignLinkMyBookings(),
+      auth: true,
+    );
     final data = _data(res);
     if (data is! List) return const [];
     return data
@@ -270,7 +299,10 @@ class CampaignRepository {
   }
 
   Future<List<VaccinationRecord>> fetchVaccinations() async {
-    final res = await _api.get(ApiEndpoints.campaignLinkVaccinations(), auth: true);
+    final res = await _api.get(
+      ApiEndpoints.campaignLinkVaccinations(),
+      auth: true,
+    );
     final data = _data(res);
     if (data is! List) return const [];
     return data
@@ -299,7 +331,11 @@ class CampaignRepository {
   }
 
   Future<Map<String, dynamic>> importRecords() async {
-    final res = await _api.post(ApiEndpoints.campaignLinkImport(), {}, auth: true);
+    final res = await _api.post(
+      ApiEndpoints.campaignLinkImport(),
+      {},
+      auth: true,
+    );
     return Map<String, dynamic>.from(_data(res) as Map);
   }
 
@@ -307,11 +343,9 @@ class CampaignRepository {
     required int campaignPetId,
     required int existingPetId,
   }) async {
-    await _api.post(
-      ApiEndpoints.campaignLinkPet(campaignPetId),
-      {'existingPetId': existingPetId},
-      auth: true,
-    );
+    await _api.post(ApiEndpoints.campaignLinkPet(campaignPetId), {
+      'existingPetId': existingPetId,
+    }, auth: true);
   }
 
   Future<Map<String, dynamic>> claimCertificate(String token) async {

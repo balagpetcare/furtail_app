@@ -17,7 +17,9 @@ class UpcomingVaccinationsScreen extends ConsumerWidget {
       body: upcomingAsync.when(
         data: (items) {
           if (items.isEmpty) {
-            return const Center(child: Text('No upcoming vaccinations scheduled'));
+            return const Center(
+              child: Text('No upcoming vaccinations scheduled'),
+            );
           }
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(upcomingVaccinationsProvider),

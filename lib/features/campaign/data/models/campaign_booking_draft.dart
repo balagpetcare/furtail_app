@@ -36,7 +36,9 @@ class CampaignBookingDraft {
   });
 
   bool get hasLocationSelection =>
-      cityCorporationCode.isNotEmpty && bdAreaId != null && bookingArea.isNotEmpty;
+      cityCorporationCode.isNotEmpty &&
+      bdAreaId != null &&
+      bookingArea.isNotEmpty;
 
   CampaignBookingDraft copyWith({
     int? step,
@@ -77,40 +79,49 @@ class CampaignBookingDraft {
   }
 
   Map<String, dynamic> toJson() => {
-        'slug': slug,
-        'step': step,
-        'selectedPetIds': selectedPetIds,
-        'catCount': catCount,
-        'cityCorporationCode': cityCorporationCode,
-        'cityCorporationName': cityCorporationName,
-        'bdAreaId': bdAreaId,
-        'bookingArea': bookingArea,
-        'locationId': locationId,
-        'slotId': slotId,
-        'slotDate': slotDate,
-        'phone': phone,
-        'alternatePhone': alternatePhone,
-        'ownerName': ownerName,
-        'couponCode': couponCode,
-        'paymentMethod': paymentMethod,
-      };
+    'slug': slug,
+    'step': step,
+    'selectedPetIds': selectedPetIds,
+    'catCount': catCount,
+    'cityCorporationCode': cityCorporationCode,
+    'cityCorporationName': cityCorporationName,
+    'bdAreaId': bdAreaId,
+    'bookingArea': bookingArea,
+    'locationId': locationId,
+    'slotId': slotId,
+    'slotDate': slotDate,
+    'phone': phone,
+    'alternatePhone': alternatePhone,
+    'ownerName': ownerName,
+    'couponCode': couponCode,
+    'paymentMethod': paymentMethod,
+  };
 
   factory CampaignBookingDraft.fromJson(Map<String, dynamic> json) {
     final petsRaw = json['selectedPetIds'];
     return CampaignBookingDraft(
       slug: json['slug']?.toString() ?? '',
-      step: json['step'] is int ? json['step'] as int : int.tryParse('${json['step']}') ?? 0,
+      step: json['step'] is int
+          ? json['step'] as int
+          : int.tryParse('${json['step']}') ?? 0,
       selectedPetIds: petsRaw is List
-          ? petsRaw.map((e) => int.tryParse('$e') ?? 0).where((e) => e > 0).toList()
+          ? petsRaw
+                .map((e) => int.tryParse('$e') ?? 0)
+                .where((e) => e > 0)
+                .toList()
           : const [],
       catCount: json['catCount'] is int
           ? json['catCount'] as int
           : int.tryParse('${json['catCount']}') ?? 1,
       cityCorporationCode: json['cityCorporationCode']?.toString() ?? '',
       cityCorporationName: json['cityCorporationName']?.toString() ?? '',
-      bdAreaId: json['bdAreaId'] == null ? null : int.tryParse('${json['bdAreaId']}'),
+      bdAreaId: json['bdAreaId'] == null
+          ? null
+          : int.tryParse('${json['bdAreaId']}'),
       bookingArea: json['bookingArea']?.toString() ?? '',
-      locationId: json['locationId'] == null ? null : int.tryParse('${json['locationId']}'),
+      locationId: json['locationId'] == null
+          ? null
+          : int.tryParse('${json['locationId']}'),
       slotId: json['slotId'] == null ? null : int.tryParse('${json['slotId']}'),
       slotDate: json['slotDate']?.toString(),
       phone: json['phone']?.toString() ?? '',

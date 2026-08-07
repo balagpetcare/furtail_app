@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -36,11 +37,11 @@ class _PetProfileWizardScreenState
 
   bool _isPickingCover = false;
 
-  File? _pendingPhotoFile;
   File? _originalPhotoFile;
   bool _isPickingPhoto = false;
 
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _colorCtrl;
   late final TextEditingController _microCtrl;
   late final TextEditingController _foodCtrl;
   late final TextEditingController _healthCtrl;
@@ -55,6 +56,7 @@ class _PetProfileWizardScreenState
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController();
+    _colorCtrl = TextEditingController();
     _microCtrl = TextEditingController();
     _foodCtrl = TextEditingController();
     _healthCtrl = TextEditingController();
@@ -69,8 +71,17 @@ class _PetProfileWizardScreenState
   @override
   void dispose() {
     for (final c in [
-      _nameCtrl, _microCtrl, _foodCtrl, _healthCtrl, _notesCtrl,
-      _bloodTypeCtrl, _allergiesCtrl, _slugCtrl, _bioCtrl, _weightCtrl,
+      _nameCtrl,
+      _colorCtrl,
+      _microCtrl,
+      _foodCtrl,
+      _healthCtrl,
+      _notesCtrl,
+      _bloodTypeCtrl,
+      _allergiesCtrl,
+      _slugCtrl,
+      _bioCtrl,
+      _weightCtrl,
     ]) {
       c.dispose();
     }
@@ -79,9 +90,22 @@ class _PetProfileWizardScreenState
 
   void _syncControllers(PetFormState s) {
     void sync(TextEditingController c, String v) {
-      if (c.text != v) c.text = v;
+      if (c.text == v) return;
+      final selection = c.selection;
+      final composing = c.value.composing;
+      final base = selection.baseOffset.clamp(0, v.length);
+      final extent = selection.extentOffset.clamp(0, v.length);
+      c.value = TextEditingValue(
+        text: v,
+        selection: TextSelection(baseOffset: base, extentOffset: extent),
+        composing: composing.isValid && composing.end <= v.length
+            ? composing
+            : TextRange.empty,
+      );
     }
+
     sync(_nameCtrl, s.name);
+    sync(_colorCtrl, s.customColorText ?? '');
     sync(_microCtrl, s.microchipNumber);
     sync(_foodCtrl, s.foodHabits);
     sync(_healthCtrl, s.healthDisorders);
@@ -90,7 +114,7 @@ class _PetProfileWizardScreenState
     sync(_allergiesCtrl, s.allergiesText);
     sync(_slugCtrl, s.slug);
     sync(_bioCtrl, s.bio);
-    sync(_weightCtrl, s.weightKg != null ? s.weightKg!.toString() : '');
+    sync(_weightCtrl, s.weightKg != null ? _formatWeight(s.weightKg!) : '');
   }
 
   Future<void> _pickCoverPhoto(PetFormController ctrl) async {
@@ -157,7 +181,10 @@ class _PetProfileWizardScreenState
 
       if (source == null || !mounted) return;
 
-      final picked = await ImagePicker().pickImage(source: source, imageQuality: 85);
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
+      );
       if (picked == null || !mounted) return;
 
       final originalFile = File(picked.path);
@@ -175,18 +202,16 @@ class _PetProfileWizardScreenState
             initAspectRatio: CropAspectRatioPreset.square,
             aspectRatioPresets: [CropAspectRatioPreset.square],
           ),
-          IOSUiSettings(
-            title: 'Crop Pet Photo',
-            aspectRatioLockEnabled: true,
-          ),
+          IOSUiSettings(title: 'Crop Pet Photo', aspectRatioLockEnabled: true),
         ],
       );
 
       if (!mounted) return;
 
+      final selectedFile = cropped != null ? File(cropped.path) : originalFile;
+      ctrl.setPhoto(XFile(selectedFile.path));
       setState(() {
         _originalPhotoFile = originalFile;
-        _pendingPhotoFile = cropped != null ? File(cropped.path) : originalFile;
       });
     } catch (e) {
       if (mounted) {
@@ -199,7 +224,7 @@ class _PetProfileWizardScreenState
     }
   }
 
-  Future<void> _adjustCropFlow() async {
+  Future<void> _adjustCropFlow(PetFormController ctrl) async {
     final orig = _originalPhotoFile;
     if (orig == null) return;
 
@@ -217,17 +242,12 @@ class _PetProfileWizardScreenState
             initAspectRatio: CropAspectRatioPreset.square,
             aspectRatioPresets: [CropAspectRatioPreset.square],
           ),
-          IOSUiSettings(
-            title: 'Crop Pet Photo',
-            aspectRatioLockEnabled: true,
-          ),
+          IOSUiSettings(title: 'Crop Pet Photo', aspectRatioLockEnabled: true),
         ],
       );
 
       if (cropped != null && mounted) {
-        setState(() {
-          _pendingPhotoFile = File(cropped.path);
-        });
+        ctrl.setPhoto(XFile(cropped.path));
       }
     } catch (e) {
       if (mounted) {
@@ -236,8 +256,12 @@ class _PetProfileWizardScreenState
     }
   }
 
-  Widget _buildModernPhotoPicker(BuildContext ctx, PetFormState s, PetFormController ctrl) {
-    final displayFile = _pendingPhotoFile ?? s.photoFile;
+  Widget _buildModernPhotoPicker(
+    BuildContext ctx,
+    PetFormState s,
+    PetFormController ctrl,
+  ) {
+    final displayFile = s.photoFile;
 
     if (displayFile == null) {
       return Center(
@@ -257,7 +281,11 @@ class _PetProfileWizardScreenState
             child: const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_a_photo_outlined, size: 36, color: Color(0xFF4C6EF5)),
+                Icon(
+                  Icons.add_a_photo_outlined,
+                  size: 36,
+                  color: Color(0xFF4C6EF5),
+                ),
                 SizedBox(height: 6),
                 Text(
                   'Add Photo',
@@ -274,8 +302,6 @@ class _PetProfileWizardScreenState
       );
     }
 
-    final isPending = _pendingPhotoFile != null;
-
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -285,10 +311,7 @@ class _PetProfileWizardScreenState
             height: 130,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: isPending ? Colors.orange : const Color(0xFF4C6EF5),
-                width: 3,
-              ),
+              border: Border.all(color: const Color(0xFF4C6EF5), width: 3),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.08),
@@ -297,24 +320,9 @@ class _PetProfileWizardScreenState
                 ),
               ],
             ),
-            child: ClipOval(
-              child: Image.file(
-                displayFile,
-                fit: BoxFit.cover,
-              ),
-            ),
+            child: ClipOval(child: Image.file(displayFile, fit: BoxFit.cover)),
           ),
           const SizedBox(height: 12),
-          if (isPending)
-            Text(
-              'Unsaved Photo Preview',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.orange.shade800,
-              ),
-            ),
-          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -322,11 +330,17 @@ class _PetProfileWizardScreenState
             children: [
               if (_originalPhotoFile != null)
                 OutlinedButton.icon(
-                  onPressed: _adjustCropFlow,
+                  onPressed: () => _adjustCropFlow(ctrl),
                   icon: const Icon(Icons.crop_rotate_rounded, size: 16),
-                  label: const Text('Crop/Adjust', style: TextStyle(fontSize: 12)),
+                  label: const Text(
+                    'Crop/Adjust',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
                 ),
               OutlinedButton.icon(
@@ -334,45 +348,42 @@ class _PetProfileWizardScreenState
                 icon: const Icon(Icons.cached_rounded, size: 16),
                 label: const Text('Change', style: TextStyle(fontSize: 12)),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
-              if (isPending)
-                ElevatedButton.icon(
-                  onPressed: () {
-                    ctrl.setPhoto(XFile(_pendingPhotoFile!.path));
-                    setState(() {
-                      _pendingPhotoFile = null;
-                    });
-                  },
-                  icon: const Icon(Icons.check_rounded, size: 16),
-                  label: const Text('Use This Photo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4C6EF5),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    elevation: 0,
+              OutlinedButton.icon(
+                onPressed: () {
+                  ctrl.removePhoto();
+                  setState(() {
+                    _originalPhotoFile = null;
+                  });
+                },
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 16,
+                  color: Colors.red,
+                ),
+                label: const Text(
+                  'Remove',
+                  style: TextStyle(fontSize: 12, color: Colors.red),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-              if (!isPending)
-                OutlinedButton.icon(
-                  onPressed: () {
-                    ctrl.removePhoto();
-                    setState(() {
-                      _pendingPhotoFile = null;
-                      _originalPhotoFile = null;
-                    });
-                  },
-                  icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
-                  label: const Text('Remove', style: TextStyle(fontSize: 12, color: Colors.red)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
+              ),
             ],
           ),
         ],
@@ -397,6 +408,7 @@ class _PetProfileWizardScreenState
         AppSnackBar.show(context, next.error!, success: false);
       }
       if (next.success && prev?.success != true) {
+        if (!mounted) return;
         Navigator.of(context).pop(true);
       }
     });
@@ -422,7 +434,10 @@ class _PetProfileWizardScreenState
               ),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Discard', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  'Discard',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
@@ -432,42 +447,41 @@ class _PetProfileWizardScreenState
         }
       },
       child: Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          state.editMode ? 'Edit Pet' : 'Register New Pet',
-          style: const TextStyle(
-            color: Color(0xFF1A1A2E),
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+        backgroundColor: const Color(0xFFF8F9FB),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: Text(
+            state.editMode ? 'Edit Pet' : 'Register New Pet',
+            style: const TextStyle(
+              color: Color(0xFF1A1A2E),
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
           ),
+          iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
-      ),
-      body: SafeArea(
-        child: state.loading && state.step == 0 && state.animalTypes.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : (state.error != null && state.step == 0 && state.animalTypes.isEmpty)
-                ? _ErrorRetry(
-                    message: state.error!,
-                    onRetry: () => ctrl.init(),
-                  )
-                : Column(
-                children: [
-                  _WizardProgress(step: state.step, titles: _titles),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                      child: _stepBody(context, state, ctrl),
+        body: SafeArea(
+          child: state.loading && state.step == 0 && state.animalTypes.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : (state.error != null &&
+                    state.step == 0 &&
+                    state.animalTypes.isEmpty)
+              ? _ErrorRetry(message: state.error!, onRetry: () => ctrl.init())
+              : Column(
+                  children: [
+                    _WizardProgress(step: state.step, titles: _titles),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        child: _stepBody(context, state, ctrl),
+                      ),
                     ),
-                  ),
-                  _WizardFooter(state: state, ctrl: ctrl),
-                ],
-              ),
-      ),
+                    _WizardFooter(state: state, ctrl: ctrl),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -503,7 +517,9 @@ class _PetProfileWizardScreenState
           label: 'e.g. Buddy, Luna',
           controller: _nameCtrl,
           onChanged: ctrl.setName,
-          errorText: s.showStep1Errors && s.name.trim().isEmpty ? 'Name is required' : null,
+          errorText: s.showStep1Errors && s.name.trim().isEmpty
+              ? 'Name is required'
+              : null,
         ),
         const SizedBox(height: 14),
         _FieldLabel('Animal Type', required: true),
@@ -511,13 +527,17 @@ class _PetProfileWizardScreenState
           label: 'Select type',
           value: s.animalTypeId,
           items: s.animalTypes
-              .map((m) => DropdownMenuItem<int>(
-                    value: m['id'] as int?,
-                    child: Text((m['name'] ?? '').toString()),
-                  ))
+              .map(
+                (m) => DropdownMenuItem<int>(
+                  value: m['id'] as int?,
+                  child: Text((m['name'] ?? '').toString()),
+                ),
+              )
               .toList(),
           onChanged: (v) => ctrl.setAnimalType(v),
-          errorText: s.showStep1Errors && s.animalTypeId == null ? 'Animal type is required' : null,
+          errorText: s.showStep1Errors && s.animalTypeId == null
+              ? 'Animal type is required'
+              : null,
         ),
         const SizedBox(height: 14),
         _FieldLabel('Breed'),
@@ -525,21 +545,15 @@ class _PetProfileWizardScreenState
           label: 'Select breed (optional)',
           value: s.breedId,
           items: s.breeds
-              .map((m) => DropdownMenuItem<int>(
-                    value: m['id'] as int?,
-                    child: Text((m['name'] ?? '').toString()),
-                  ))
+              .map(
+                (m) => DropdownMenuItem<int>(
+                  value: m['id'] as int?,
+                  child: Text((m['name'] ?? '').toString()),
+                ),
+              )
               .toList(),
           onChanged: (v) => ctrl.setBreed(v),
         ),
-        if (s.breedId == null) ...[
-          const SizedBox(height: 10),
-          AppTextField(
-            label: 'Custom breed name (if not listed)',
-            controller: TextEditingController(text: s.customBreedText ?? ''),
-            onChanged: ctrl.setCustomBreed,
-          ),
-        ],
         const SizedBox(height: 14),
         _FieldLabel('Sex', required: true),
         AppDropdown<String>(
@@ -587,7 +601,10 @@ class _PetProfileWizardScreenState
   // ── Step 2: Appearance ────────────────────────────────────────────────────
 
   Widget _step2Appearance(
-      BuildContext ctx, PetFormState s, PetFormController ctrl) {
+    BuildContext ctx,
+    PetFormState s,
+    PetFormController ctrl,
+  ) {
     return _WizardCard(
       title: 'Appearance',
       subtitle: 'Physical characteristics',
@@ -598,18 +615,20 @@ class _PetProfileWizardScreenState
         const SizedBox(height: 14),
         AppTextField(
           label: 'Color (e.g. Golden, Black & White)',
-          controller:
-              TextEditingController(text: s.customColorText ?? ''),
+          controller: _colorCtrl,
           onChanged: ctrl.setCustomColor,
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.start,
         ),
         const SizedBox(height: 14),
         AppTextField(
           label: 'Weight in kg (optional)',
           controller: _weightCtrl,
-          onChanged: (v) =>
-              ctrl.setWeight(double.tryParse(v)),
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (v) => ctrl.setWeight(double.tryParse(v)),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.start,
+          inputFormatters: const [_DecimalTextInputFormatter()],
         ),
       ],
     );
@@ -618,7 +637,10 @@ class _PetProfileWizardScreenState
   // ── Step 3: Health ────────────────────────────────────────────────────────
 
   Widget _step3Health(
-      BuildContext ctx, PetFormState s, PetFormController ctrl) {
+    BuildContext ctx,
+    PetFormState s,
+    PetFormController ctrl,
+  ) {
     return _WizardCard(
       title: 'Health Information',
       subtitle: 'Medical and care details',
@@ -666,7 +688,10 @@ class _PetProfileWizardScreenState
   // ── Step 4: Lifestyle ─────────────────────────────────────────────────────
 
   Widget _step4Lifestyle(
-      BuildContext ctx, PetFormState s, PetFormController ctrl) {
+    BuildContext ctx,
+    PetFormState s,
+    PetFormController ctrl,
+  ) {
     return _WizardCard(
       title: 'Lifestyle & Care',
       subtitle: 'Daily habits and preferences',
@@ -700,7 +725,10 @@ class _PetProfileWizardScreenState
   // ── Step 5: Public Profile ────────────────────────────────────────────────
 
   Widget _step5PublicProfile(
-      BuildContext ctx, PetFormState s, PetFormController ctrl) {
+    BuildContext ctx,
+    PetFormState s,
+    PetFormController ctrl,
+  ) {
     return _WizardCard(
       title: 'Public Pet Profile',
       subtitle: 'Create a social page for your pet',
@@ -743,9 +771,7 @@ class _PetProfileWizardScreenState
           _CoverPhotoPicker(
             file: s.coverPhotoFile,
             existingUrl: s.coverMediaUrl,
-            onPick: _isPickingCover
-                ? null
-                : () => _pickCoverPhoto(ctrl),
+            onPick: _isPickingCover ? null : () => _pickCoverPhoto(ctrl),
             onRemove: ctrl.removeCoverPhoto,
           ),
         ],
@@ -756,7 +782,10 @@ class _PetProfileWizardScreenState
   // ── Step 6: Review ────────────────────────────────────────────────────────
 
   Widget _step6Review(
-      BuildContext ctx, PetFormState s, PetFormController ctrl) {
+    BuildContext ctx,
+    PetFormState s,
+    PetFormController ctrl,
+  ) {
     String lookupName(List<Map<String, dynamic>> list, int? id) {
       if (id == null) return '';
       final hit = list.where((e) => e['id'] == id).toList();
@@ -771,17 +800,24 @@ class _PetProfileWizardScreenState
         if (s.photoFile != null)
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.file(s.photoFile!, height: 180, fit: BoxFit.cover,
-                width: double.infinity),
+            child: Image.file(
+              s.photoFile!,
+              height: 180,
+              fit: BoxFit.cover,
+              width: double.infinity,
+            ),
           ),
         const SizedBox(height: 16),
         _WizardCard(
           title: s.name.isEmpty ? 'New Pet' : s.name,
-          subtitle: [typeName, breedName].where((s) => s.isNotEmpty).join(' · '),
+          subtitle: [
+            typeName,
+            breedName,
+          ].where((s) => s.isNotEmpty).join(' · '),
           children: [
             _ReviewRow('Name', s.name),
             _ReviewRow('Type', typeName),
-            _ReviewRow('Breed', s.customBreedText ?? breedName),
+            _ReviewRow('Breed', breedName),
             _ReviewRow('Sex', s.sex),
             _ReviewRow('Date of Birth', _dateText(s.dob)),
             if (s.weightKg != null) _ReviewRow('Weight', '${s.weightKg} kg'),
@@ -789,8 +825,7 @@ class _PetProfileWizardScreenState
             _ReviewRow('Rescue', s.isRescue ? 'Yes' : 'No'),
             if (s.microchipNumber.isNotEmpty)
               _ReviewRow('Microchip', s.microchipNumber),
-            if (s.foodHabits.isNotEmpty)
-              _ReviewRow('Food', s.foodHabits),
+            if (s.foodHabits.isNotEmpty) _ReviewRow('Food', s.foodHabits),
           ],
         ),
         if (s.isPublicProfileEnabled) ...[
@@ -799,7 +834,10 @@ class _PetProfileWizardScreenState
             title: 'Public Profile',
             subtitle: 'Visible to everyone',
             children: [
-              _ReviewRow('Username', s.slug.isEmpty ? '(auto-generated)' : '@${s.slug}'),
+              _ReviewRow(
+                'Username',
+                s.slug.isEmpty ? '(auto-generated)' : '@${s.slug}',
+              ),
               if (s.bio.isNotEmpty) _ReviewRow('Bio', s.bio),
               _ReviewRow('Visibility', 'Public'),
             ],
@@ -811,11 +849,17 @@ class _PetProfileWizardScreenState
           decoration: BoxDecoration(
             color: const Color(0xFFEFF9F0),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.3)),
+            border: Border.all(
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+            ),
           ),
           child: Row(
             children: [
-              const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 20),
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xFF4CAF50),
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -823,7 +867,9 @@ class _PetProfileWizardScreenState
                       ? 'Ready to save your changes!'
                       : 'Ready to create your pet\'s profile!',
                   style: const TextStyle(
-                      color: Color(0xFF2E7D32), fontWeight: FontWeight.w600),
+                    color: Color(0xFF2E7D32),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -865,14 +911,19 @@ class _WizardCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E))),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(subtitle,
-              style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+          Text(
+            subtitle,
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
           const SizedBox(height: 20),
           ...children,
         ],
@@ -907,8 +958,8 @@ class _WizardProgress extends StatelessWidget {
                     color: done
                         ? const Color(0xFF4C6EF5)
                         : current
-                            ? const Color(0xFF4C6EF5).withValues(alpha: 0.4)
-                            : const Color(0xFFE0E0E0),
+                        ? const Color(0xFF4C6EF5).withValues(alpha: 0.4)
+                        : const Color(0xFFE0E0E0),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -950,12 +1001,15 @@ class _WizardFooter extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   side: const BorderSide(color: Color(0xFF4C6EF5)),
                 ),
                 onPressed: state.loading ? null : ctrl.back,
-                child: const Text('Back',
-                    style: TextStyle(color: Color(0xFF4C6EF5))),
+                child: const Text(
+                  'Back',
+                  style: TextStyle(color: Color(0xFF4C6EF5)),
+                ),
               ),
             ),
           if (state.step > 0) const SizedBox(width: 12),
@@ -967,7 +1021,8 @@ class _WizardFooter extends StatelessWidget {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: state.loading
@@ -984,7 +1039,9 @@ class _WizardFooter extends StatelessWidget {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : Text(
                       isLast
@@ -999,8 +1056,6 @@ class _WizardFooter extends StatelessWidget {
     );
   }
 }
-
-
 
 class _CoverPhotoPicker extends StatelessWidget {
   final File? file;
@@ -1029,7 +1084,8 @@ class _CoverPhotoPicker extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               color: const Color(0xFFF0F2FF),
               border: Border.all(
-                  color: const Color(0xFF4C6EF5).withValues(alpha: 0.3)),
+                color: const Color(0xFF4C6EF5).withValues(alpha: 0.3),
+              ),
             ),
             child: hasImage
                 ? ClipRRect(
@@ -1041,11 +1097,16 @@ class _CoverPhotoPicker extends StatelessWidget {
                 : const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_photo_alternate_outlined,
-                          size: 36, color: Color(0xFF4C6EF5)),
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 36,
+                        color: Color(0xFF4C6EF5),
+                      ),
                       SizedBox(height: 8),
-                      Text('Add Cover Photo',
-                          style: TextStyle(color: Color(0xFF4C6EF5))),
+                      Text(
+                        'Add Cover Photo',
+                        style: TextStyle(color: Color(0xFF4C6EF5)),
+                      ),
                     ],
                   ),
           ),
@@ -1061,8 +1122,7 @@ class _CoverPhotoPicker extends StatelessWidget {
                     color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child:
-                      const Icon(Icons.close, size: 16, color: Colors.white),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white),
                 ),
               ),
             ),
@@ -1105,10 +1165,11 @@ class _SwitchTile extends StatelessWidget {
         value: value,
         onChanged: onChanged,
         activeThumbColor: const Color(0xFF4C6EF5),
-        title:
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
       ),
     );
   }
@@ -1126,11 +1187,14 @@ class _FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A2E))),
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
           if (required) ...[
             const SizedBox(width: 4),
             const Text('*', style: TextStyle(color: Colors.red, fontSize: 13)),
@@ -1156,13 +1220,13 @@ class _InfoBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline,
-              size: 18, color: Color(0xFF4C6EF5)),
+          const Icon(Icons.info_outline, size: 18, color: Color(0xFF4C6EF5)),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text,
-                style: const TextStyle(
-                    fontSize: 12, color: Color(0xFF3A4DCC))),
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF3A4DCC)),
+            ),
           ),
         ],
       ),
@@ -1185,14 +1249,16 @@ class _ReviewRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 13, color: Colors.grey[600])),
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600)),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -1213,7 +1279,11 @@ class _ErrorRetry extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 48, color: Color(0xFFB0B8C1)),
+            const Icon(
+              Icons.wifi_off_rounded,
+              size: 48,
+              color: Color(0xFFB0B8C1),
+            ),
             const SizedBox(height: 16),
             const Text(
               'Failed to load animal types',
@@ -1240,4 +1310,25 @@ class _ErrorRetry extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DecimalTextInputFormatter extends TextInputFormatter {
+  const _DecimalTextInputFormatter();
+
+  static final RegExp _pattern = RegExp(r'^\d*([.]\d*)?$');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return _pattern.hasMatch(newValue.text) ? newValue : oldValue;
+  }
+}
+
+String _formatWeight(double weight) {
+  final raw = weight.toStringAsFixed(
+    weight.truncateToDouble() == weight ? 0 : 3,
+  );
+  return raw.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'[.]$'), '');
 }

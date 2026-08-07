@@ -10,13 +10,17 @@ class CampaignGeoTarget {
     this.serviceAreas = const [],
   });
 
-  bool get isEmpty => cities.isEmpty && districts.isEmpty && serviceAreas.isEmpty;
+  bool get isEmpty =>
+      cities.isEmpty && districts.isEmpty && serviceAreas.isEmpty;
 
   factory CampaignGeoTarget.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const CampaignGeoTarget();
     List<String> list(dynamic v) {
       if (v is! List) return const [];
-      return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      return v
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
 
     return CampaignGeoTarget(
@@ -27,10 +31,10 @@ class CampaignGeoTarget {
   }
 
   Map<String, dynamic> toJson() => {
-        'cities': cities,
-        'districts': districts,
-        'serviceAreas': serviceAreas,
-      };
+    'cities': cities,
+    'districts': districts,
+    'serviceAreas': serviceAreas,
+  };
 }
 
 /// User location preferences for geo-filtered notifications.
@@ -57,22 +61,28 @@ class UserGeoPreferences {
       (serviceArea != null && serviceArea!.isNotEmpty);
 
   Map<String, dynamic> toJson() => {
-        'city': city,
-        'district': district,
-        'serviceArea': serviceArea,
-        'divisionId': divisionId,
-        'districtId': districtId,
-        'upazilaId': upazilaId,
-      };
+    'city': city,
+    'district': district,
+    'serviceArea': serviceArea,
+    'divisionId': divisionId,
+    'districtId': districtId,
+    'upazilaId': upazilaId,
+  };
 
   factory UserGeoPreferences.fromJson(Map<String, dynamic> json) {
     return UserGeoPreferences(
       city: json['city']?.toString(),
       district: json['district']?.toString(),
       serviceArea: json['serviceArea']?.toString(),
-      divisionId: json['divisionId'] == null ? null : int.tryParse('${json['divisionId']}'),
-      districtId: json['districtId'] == null ? null : int.tryParse('${json['districtId']}'),
-      upazilaId: json['upazilaId'] == null ? null : int.tryParse('${json['upazilaId']}'),
+      divisionId: json['divisionId'] == null
+          ? null
+          : int.tryParse('${json['divisionId']}'),
+      districtId: json['districtId'] == null
+          ? null
+          : int.tryParse('${json['districtId']}'),
+      upazilaId: json['upazilaId'] == null
+          ? null
+          : int.tryParse('${json['upazilaId']}'),
     );
   }
 }

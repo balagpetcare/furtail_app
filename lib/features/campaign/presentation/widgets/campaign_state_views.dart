@@ -47,12 +47,18 @@ class CampaignEmptyView extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: cs.outline),
             const SizedBox(height: 12),
-            Text(title, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -66,7 +72,11 @@ class CampaignEmptyView extends StatelessWidget {
 class CampaignOfflineView extends StatelessWidget {
   final VoidCallback? onRetry;
   final bool showStaleHint;
-  const CampaignOfflineView({super.key, this.onRetry, this.showStaleHint = true});
+  const CampaignOfflineView({
+    super.key,
+    this.onRetry,
+    this.showStaleHint = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +103,11 @@ class CampaignErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),
             if (onRetry != null) ...[
@@ -119,4 +133,5 @@ double campaignHorizontalPadding(BuildContext context) {
   return 16;
 }
 
-bool campaignIsTablet(BuildContext context) => MediaQuery.sizeOf(context).width >= 600;
+bool campaignIsTablet(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= 600;

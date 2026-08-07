@@ -178,27 +178,26 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
                         children: List.generate(total, (i) {
                           return Expanded(
                             child: Container(
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 2),
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
                               height: 2.5,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(2),
                                 child: i < _currentIndex
                                     ? const ColoredBox(color: Colors.white)
                                     : i == _currentIndex
-                                        ? AnimatedBuilder(
-                                            animation: _progressCtrl,
-                                            builder: (_, _) =>
-                                                LinearProgressIndicator(
+                                    ? AnimatedBuilder(
+                                        animation: _progressCtrl,
+                                        builder: (_, _) =>
+                                            LinearProgressIndicator(
                                               value: _progressCtrl.value,
                                               backgroundColor: Colors.white30,
                                               valueColor:
                                                   const AlwaysStoppedAnimation(
-                                                      Colors.white),
+                                                    Colors.white,
+                                                  ),
                                             ),
-                                          )
-                                        : const ColoredBox(
-                                            color: Colors.white30),
+                                      )
+                                    : const ColoredBox(color: Colors.white30),
                               ),
                             ),
                           );
@@ -209,7 +208,9 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
                     // Close / delete row
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 0),
+                        horizontal: 4,
+                        vertical: 0,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -218,7 +219,10 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                              ),
                               onPressed: () => Navigator.pop(context),
                             ),
                           ),
@@ -231,18 +235,23 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen>
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white),
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   )
                                 : Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.40),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.40,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.white),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.white,
+                                      ),
                                       onPressed: _deleteCurrentStory,
                                     ),
                                   ),
@@ -290,9 +299,8 @@ class _StoryMedia extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      placeholder: (_, _) => const Center(
-        child: CircularProgressIndicator(color: Colors.white54),
-      ),
+      placeholder: (_, _) =>
+          const Center(child: CircularProgressIndicator(color: Colors.white54)),
       errorWidget: (_, _, _) => Container(
         color: Colors.grey[900],
         child: const Center(
@@ -339,8 +347,7 @@ class _UserInfoRow extends StatelessWidget {
               ),
               Text(
                 _timeAgo(story.createdAt),
-                style:
-                    const TextStyle(color: Colors.white60, fontSize: 11),
+                style: const TextStyle(color: Colors.white60, fontSize: 11),
               ),
             ],
           ),

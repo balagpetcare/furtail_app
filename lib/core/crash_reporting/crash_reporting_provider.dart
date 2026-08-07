@@ -7,6 +7,7 @@ final crashReportingServiceProvider = Provider<CrashReportingService>(
   (ref) => CrashReportingService.instance,
 );
 
-final crashlyticsProviderObserverProvider = Provider<FurtailCrashlyticsProviderObserver>(
-  (ref) => FurtailCrashlyticsProviderObserver(),
-);
+final crashlyticsProviderObserverProvider =
+    Provider<FurtailCrashlyticsProviderObserver>(
+      (ref) => FurtailCrashlyticsProviderObserver(),
+    );

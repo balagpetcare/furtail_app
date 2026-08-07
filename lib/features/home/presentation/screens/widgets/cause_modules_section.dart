@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:furtail_app/core/theme/app_typography.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
+
 /// Dummy (static) modules that must appear on the home feed.
 ///
 /// Includes: Adoption, Donation/Fund Collection, Campaign.
@@ -26,14 +27,17 @@ class CauseModulesSection extends StatelessWidget {
             ),
             child: Text(
               'Explore',
-              style: AppTypography.sectionTitle(context).copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              style: AppTypography.sectionTitle(
+                context,
+              ).copyWith(fontWeight: FontWeight.w800),
             ),
           ),
           LayoutBuilder(
             builder: (context, constraints) {
-              final cardWidth = (constraints.maxWidth * 0.72).clamp(200.0, 260.0);
+              final cardWidth = (constraints.maxWidth * 0.72).clamp(
+                200.0,
+                260.0,
+              );
               return SizedBox(
                 height: 150,
                 child: ListView(
@@ -133,7 +137,10 @@ class _CauseCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF7F7F7),
                     borderRadius: BorderRadius.circular(99),
@@ -154,7 +161,9 @@ class _CauseCard extends StatelessWidget {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: context.appText.bodyMedium!.copyWith(fontWeight: FontWeight.w800),
+              style: context.appText.bodyMedium!.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -173,16 +182,18 @@ class _CauseCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: 0.62,
                   backgroundColor: const Color(0xFFF0F0F0),
-                  valueColor: AlwaysStoppedAnimation(context.colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation(
+                    context.colorScheme.primary,
+                  ),
                   minHeight: 8,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 '৳ 62,000 / ৳ 100,000',
-                style: AppTypography.caption(context).copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+                style: AppTypography.caption(
+                  context,
+                ).copyWith(color: cs.onSurfaceVariant),
               ),
             ] else
               SizedBox(
@@ -191,14 +202,16 @@ class _CauseCard extends StatelessWidget {
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFE6E6E6)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   child: Text(
                     'View',
-                    style: AppTypography.bodyRegular(context).copyWith(
-                      color: cs.onSurface,
-                    ),
+                    style: AppTypography.bodyRegular(
+                      context,
+                    ).copyWith(color: cs.onSurface),
                   ),
                 ),
               ),

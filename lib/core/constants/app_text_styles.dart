@@ -18,11 +18,10 @@ class AppTextStyles {
   static TextStyle get caption => _theme.bodySmall!;
 
   static TextStyle get rewardPoints => _theme.titleLarge!.copyWith(
-        fontWeight: FontWeight.bold,
-        color: AppColors.accentGold,
-      );
+    fontWeight: FontWeight.bold,
+    color: AppColors.accentGold,
+  );
 
-  static TextStyle get taskCompleted => _theme.labelLarge!.copyWith(
-        color: AppColors.successGreen,
-      );
+  static TextStyle get taskCompleted =>
+      _theme.labelLarge!.copyWith(color: AppColors.successGreen);
 }

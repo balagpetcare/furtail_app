@@ -56,7 +56,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: t.accountDesc,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AccountSettingsScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const AccountSettingsScreen(),
+                ),
               ),
             ),
           ),
@@ -73,7 +75,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: t.privacySettingsDesc,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const PrivacySettingsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const PrivacySettingsScreen(),
+                    ),
                   ),
                 ),
                 Divider(height: 1, color: cs.outline),
@@ -83,7 +87,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: t.blockedUsersDesc,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const BlockedUsersScreen(),
+                    ),
                   ),
                 ),
               ],
@@ -100,7 +106,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: t.notificationPreferencesDesc,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const NotificationPreferencesScreen(),
+                ),
               ),
             ),
           ),
@@ -117,7 +125,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: t.mediaAndStorageDesc,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const MediaStorageSettingsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const MediaStorageSettingsScreen(),
+                    ),
                   ),
                 ),
                 Divider(height: 1, color: cs.outline),
@@ -127,7 +137,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   subtitle: t.storageAndCacheDesc,
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const StorageCacheScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const StorageCacheScreen(),
+                    ),
                   ),
                 ),
               ],
@@ -165,7 +177,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 ListTile(
                   leading: Icon(Icons.light_mode_outlined, color: cs.primary),
-                  title: Text(t.themeLight, style: AppTypography.menuTitle(context)),
+                  title: Text(
+                    t.themeLight,
+                    style: AppTypography.menuTitle(context),
+                  ),
                   subtitle: Text(
                     'Furtail uses a consistent light theme on all devices.',
                     style: AppTypography.drawerSubtitle(context),
@@ -176,7 +191,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   valueListenable: media.playOneByOneWifiOnly,
                   builder: (_, v, _) => SwitchListTile.adaptive(
                     value: v,
-                    onChanged: (next) => media.playOneByOneWifiOnly.value = next,
+                    onChanged: (next) =>
+                        media.playOneByOneWifiOnly.value = next,
                     title: Text(t.playVideosOneByOneWifiOnly),
                     subtitle: Text(t.playVideosOneByOneWifiOnlyDesc),
                   ),
@@ -255,7 +271,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   leading: Icon(Icons.info_outline, color: cs.primary),
                   title: Text(t.appVersion),
-                  trailing: const Text('10.0.0', style: TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: const Text(
+                    '10.0.0',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
@@ -280,9 +299,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showComingSoon(BuildContext context, AppLocalizations t) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(t.comingSoon), behavior: SnackBarBehavior.floating));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(t.comingSoon),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _confirmLogout(BuildContext context, AppLocalizations t) async {
@@ -297,8 +319,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           title: Text(t.logoutConfirmTitle),
           content: Text(t.logoutConfirmMessage),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t.logout)),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(t.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t.logout),
+            ),
           ],
         ),
       );

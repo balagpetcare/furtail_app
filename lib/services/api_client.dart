@@ -8,6 +8,7 @@ import 'package:furtail_app/core/auth/auth_controller.dart';
 import 'package:furtail_app/core/auth/auth_interceptor.dart';
 import 'package:furtail_app/core/auth/central_auth_api.dart';
 import 'package:furtail_app/core/auth/secure_storage_service.dart';
+import 'package:furtail_app/core/auth/session_recovery.dart';
 import 'package:furtail_app/core/crash_reporting/crash_reporting_service.dart';
 import 'package:furtail_app/core/network/multipart_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,8 +101,7 @@ class ApiClient {
   /// regardless of whether it came from the default wiring above or from an
   /// explicit [authInterceptor] argument.
   @visibleForTesting
-  bool get hasAuthInterceptorForTest =>
-      _dio.interceptors.whereType<AuthInterceptor>().isNotEmpty;
+  bool get hasAuthInterceptorForTest => _dio.interceptors.whereType<AuthInterceptor>().isNotEmpty;
 
   Future<Map<String, String>> _headers({
     required bool auth,
@@ -185,10 +185,7 @@ class ApiClient {
   }) {
     final decoded = _safeDecode(error.response?.data);
     return ApiClientException(
-      message: _messageFromDecoded(
-        decoded,
-        fallback: error.message ?? 'API Error',
-      ),
+      message: _messageFromDecoded(decoded, fallback: error.message ?? 'API Error'),
       statusCode: error.response?.statusCode,
       code: _codeFromDecoded(decoded),
       dioExceptionType: error.type.name,
@@ -199,11 +196,7 @@ class ApiClient {
     );
   }
 
-  Future<T> _runHttp<T>(
-    String method,
-    String url,
-    Future<T> Function() request,
-  ) async {
+  Future<T> _runHttp<T>(String method, String url, Future<T> Function() request) async {
     try {
       return await request();
     } on DioException catch (e) {
@@ -232,11 +225,7 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> get(
-    String url, {
-    bool auth = true,
-    Map<String, String>? headers,
-  }) async {
+  Future<dynamic> get(String url, {bool auth = true, Map<String, String>? headers}) async {
     return _runHttp('GET', url, () async {
       final res = await _dio.get<dynamic>(
         url,
@@ -287,11 +276,7 @@ class ApiClient {
     });
   }
 
-  Future<dynamic> delete(
-    String url, {
-    bool auth = true,
-    Map<String, String>? headers,
-  }) async {
+  Future<dynamic> delete(String url, {bool auth = true, Map<String, String>? headers}) async {
     return _runHttp('DELETE', url, () async {
       final res = await _dio.delete<dynamic>(
         url,
@@ -304,11 +289,7 @@ class ApiClient {
     });
   }
 
-  Future<Uint8List> getBytes(
-    String url, {
-    bool auth = true,
-    Map<String, String>? headers,
-  }) async {
+  Future<Uint8List> getBytes(String url, {bool auth = true, Map<String, String>? headers}) async {
     return _runHttp('GET', url, () async {
       final res = await _dio.get<List<int>>(
         url,
@@ -414,9 +395,7 @@ class ApiClient {
       // `auth: true`) the Authorization header — the latter is normally
       // attached by AuthInterceptor's onRequest hook.
       final requestHeaders = await _headers(auth: auth, extraHeaders: headers);
-      requestHeaders.remove(
-        'Content-Type',
-      ); // let Dio set the multipart boundary
+      requestHeaders.remove('Content-Type'); // let Dio set the multipart boundary
 
       final res = await _dio.post<dynamic>(
         url,
@@ -427,10 +406,8 @@ class ApiClient {
           headers: requestHeaders,
           extra: {
             'auth': auth,
-            'multipartRetryFactory': () => _buildFormData(
-              files: files,
-              fields: fields ?? const <String, String>{},
-            ),
+            'multipartRetryFactory': () =>
+                _buildFormData(files: files, fields: fields ?? const <String, String>{}),
           },
         ),
       );
@@ -448,10 +425,7 @@ class ApiClient {
     }
     for (final file in files) {
       formData.files.add(
-        MapEntry<String, MultipartFile>(
-          file.fieldName,
-          await _toMultipartFile(file),
-        ),
+        MapEntry<String, MultipartFile>(file.fieldName, await _toMultipartFile(file)),
       );
     }
     return formData;
@@ -463,11 +437,7 @@ class ApiClient {
 
     if (part.file is File) {
       final file = part.file as File;
-      return MultipartFile.fromFile(
-        file.path,
-        filename: filename,
-        contentType: contentType,
-      );
+      return MultipartFile.fromFile(file.path, filename: filename, contentType: contentType);
     }
 
     if (part.file is XFile) {
@@ -479,9 +449,7 @@ class ApiClient {
       );
     }
 
-    throw ArgumentError(
-      'Unsupported multipart file type: ${part.file.runtimeType}',
-    );
+    throw ArgumentError('Unsupported multipart file type: ${part.file.runtimeType}');
   }
 
   String _defaultFilename(Object file) {
@@ -524,6 +492,14 @@ class ApiBinaryResponse {
 }
 
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
+  // The one authoritative place that configures the shared SessionRecovery
+  // singleton's session-expired callback — every AuthInterceptor and every
+  // direct-Central-Auth caller (ProfileService, SafetyService, ...) shares
+  // this same instance, so configuring it here once wires logout for all
+  // of them without each constructor fighting over ownership.
+  SessionRecovery.instance.onSessionExpired = () {
+    ref.read(authControllerProvider.notifier).forceLogout();
+  };
   final interceptor = AuthInterceptor(
     secureStorage: ref.read(secureStorageServiceProvider),
     centralAuthApi: ref.read(centralAuthApiProvider),
@@ -533,10 +509,7 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   );
   final client = ApiClient(authInterceptor: interceptor);
   if (kDebugMode) {
-    developer.log(
-      'apiClientProvider built instance=${client.hashCode}',
-      name: 'ApiClient',
-    );
+    developer.log('apiClientProvider built instance=${client.hashCode}', name: 'ApiClient');
   }
   return client;
 });

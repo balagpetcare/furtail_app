@@ -7,7 +7,8 @@ class WalletWithdrawScreen extends ConsumerStatefulWidget {
   const WalletWithdrawScreen({super.key});
 
   @override
-  ConsumerState<WalletWithdrawScreen> createState() => _WalletWithdrawScreenState();
+  ConsumerState<WalletWithdrawScreen> createState() =>
+      _WalletWithdrawScreenState();
 }
 
 class _WalletWithdrawScreenState extends ConsumerState<WalletWithdrawScreen> {
@@ -37,7 +38,9 @@ class _WalletWithdrawScreenState extends ConsumerState<WalletWithdrawScreen> {
 
       // Minimal payout details for V2 (can be expanded later)
       final payoutDetails = <String, dynamic>{
-        'walletNumber': _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+        'walletNumber': _noteCtrl.text.trim().isEmpty
+            ? null
+            : _noteCtrl.text.trim(),
       };
 
       await repo.createWithdrawRequest(
@@ -55,9 +58,9 @@ class _WalletWithdrawScreenState extends ConsumerState<WalletWithdrawScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -69,9 +72,7 @@ class _WalletWithdrawScreenState extends ConsumerState<WalletWithdrawScreen> {
     final summaryAsync = ref.watch(walletSummaryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Withdraw'),
-      ),
+      appBar: AppBar(title: const Text('Withdraw')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -83,8 +84,12 @@ class _WalletWithdrawScreenState extends ConsumerState<WalletWithdrawScreen> {
                   color: const Color(0xFFF6F8FB),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Text('Available: ${w.availableBalance} ${w.currency}',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                child: Text(
+                  'Available: ${w.availableBalance} ${w.currency}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
               loading: () => const LinearProgressIndicator(),
               error: (e, _) => Text(e.toString()),
@@ -116,7 +121,9 @@ class _WalletWithdrawScreenState extends ConsumerState<WalletWithdrawScreen> {
                       DropdownMenuItem(value: 'ROCKET', child: Text('Rocket')),
                       DropdownMenuItem(value: 'BANK', child: Text('Bank')),
                     ],
-                    onChanged: _submitting ? null : (v) => setState(() => _method = v ?? 'BKASH'),
+                    onChanged: _submitting
+                        ? null
+                        : (v) => setState(() => _method = v ?? 'BKASH'),
                     decoration: const InputDecoration(
                       labelText: 'Method',
                       border: OutlineInputBorder(),

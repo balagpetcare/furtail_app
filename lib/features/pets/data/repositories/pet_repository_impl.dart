@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:furtail_app/features/common/data/repositories/animal_taxonomy_repository.dart';
+
 import '../../domain/entities/pet_entity.dart';
 import '../../domain/repositories/pet_repository.dart';
 import '../datasources/pet_remote_ds.dart';
@@ -8,17 +10,55 @@ import '../pet_service.dart';
 
 class PetRepositoryImpl implements PetRepository {
   final PetRemoteDs remote;
-  final PetService _service = PetService();
+  final PetService _service;
+  final AnimalTaxonomyRepository _taxonomy;
 
-  PetRepositoryImpl(this.remote);
+  PetRepositoryImpl(
+    this.remote, {
+    PetService? service,
+    required AnimalTaxonomyRepository taxonomy,
+  }) : _service = service ?? PetService(),
+       _taxonomy = taxonomy;
 
   @override
-  Future<List<Map<String, dynamic>>> getAnimalTypes() =>
-      remote.getAnimalTypes();
+  Future<List<Map<String, dynamic>>> getAnimalTypes() async {
+    final types = await _taxonomy.getAnimalTypes();
+    return types
+        .map(
+          (type) => {
+            'id': type.id,
+            'code': type.code,
+            'name': type.name,
+            'nameBn': type.nameBn,
+            'icon': type.icon,
+            'scientificName': type.scientificName,
+            'displayOrder': type.displayOrder,
+          },
+        )
+        .toList();
+  }
 
   @override
-  Future<List<Map<String, dynamic>>> getBreeds(int typeId) =>
-      remote.getBreeds(typeId);
+  Future<List<Map<String, dynamic>>> getBreeds(int typeId) async {
+    final breeds = await _taxonomy.getBreeds(animalTypeId: typeId);
+    return breeds
+        .map(
+          (breed) => {
+            'id': breed.id,
+            'code': breed.code,
+            'name': breed.name,
+            'nameBn': breed.nameBn,
+            'animalTypeId': breed.animalTypeId,
+            'aliasNames': breed.aliasNames,
+            'isMixed': breed.isMixed,
+            'isOther': breed.isOther,
+            'isLocal': breed.isLocal,
+            'isUnknown': breed.isUnknown,
+            'displayOrder': breed.displayOrder,
+          },
+        )
+        .toList();
+  }
 
   @override
   Future<List<PetEntity>> getAllPets() async {
@@ -27,9 +67,10 @@ class PetRepositoryImpl implements PetRepository {
   }
 
   @override
-  Future<int> createPet(PetEntity pet) {
+  Future<PetEntity> createPet(PetEntity pet, {String? idempotencyKey}) {
     final payload = PetModel(
       name: pet.name,
+      version: pet.version,
       animalTypeId: pet.animalTypeId,
       breedId: pet.breedId,
       subBreedId: pet.subBreedId,
@@ -54,15 +95,17 @@ class PetRepositoryImpl implements PetRepository {
 
     return remote.registerPetWithOptionalPhoto(
       payload: payload,
-      photoFile: pet.photo,
+      photoFile: pet.profilePicId == null ? pet.photo : null,
+      idempotencyKey: idempotencyKey,
     );
   }
 
   @override
-  Future<void> updatePet(int petId, PetEntity pet) {
+  Future<void> updatePet(int petId, PetEntity pet) async {
     final payload = PetModel(
       id: petId,
       name: pet.name,
+      version: pet.version,
       animalTypeId: pet.animalTypeId,
       breedId: pet.breedId,
       subBreedId: pet.subBreedId,
@@ -85,21 +128,40 @@ class PetRepositoryImpl implements PetRepository {
       allergies: pet.allergies,
     ).toPayload();
 
-    return remote.updatePet(petId, payload);
+    if (pet.photo != null) {
+      payload["profileImageId"] = await remote.uploadMedia(pet.photo!);
+    } else if (pet.clearProfileImage) {
+      payload["profileImageId"] = null;
+    }
+
+    await remote.updatePet(petId, payload);
   }
 
   @override
   Future<int> uploadPetPhoto(File file) => remote.uploadMedia(file);
 
   @override
-  Future<void> updatePetPhoto(int petId, File file) async {
+  Future<void> updatePetPhoto(int petId, File file, {int? version}) async {
     final mediaId = await remote.uploadMedia(file);
-    await remote.updatePet(petId, {"profilePicId": mediaId});
+    await remote.updatePet(petId, {
+      "profileImageId": mediaId,
+      ...version == null ? const <String, dynamic>{} : {"version": version},
+    });
+  }
+
+  @override
+  Future<void> removePetPhoto(int petId, {int? version}) async {
+    await remote.updatePet(petId, {
+      "profileImageId": null,
+      ...version == null ? const <String, dynamic>{} : {"version": version},
+    });
   }
 
   @override
   Future<void> updatePetPublicProfile(
-      int petId, Map<String, dynamic> data) async {
+    int petId,
+    Map<String, dynamic> data,
+  ) async {
     await _service.updatePetPublicProfile(petId, data);
   }
 
@@ -110,8 +172,7 @@ class PetRepositoryImpl implements PetRepository {
   }
 
   @override
-  Future<PetEntity> getPublicPet(int petId) =>
-      _service.getPublicPet(petId);
+  Future<PetEntity> getPublicPet(int petId) => _service.getPublicPet(petId);
 
   @override
   Future<Map<String, dynamic>> getPetSocialStatus(int petId) =>
@@ -135,6 +196,7 @@ class PetRepositoryImpl implements PetRepository {
 
   @override
   Future<Map<String, dynamic>> createPetPost(
-          int petId, Map<String, dynamic> payload) =>
-      _service.createPetPost(petId, payload);
+    int petId,
+    Map<String, dynamic> payload,
+  ) => _service.createPetPost(petId, payload);
 }

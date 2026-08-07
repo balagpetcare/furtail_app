@@ -30,8 +30,7 @@ extension AppThemeContext on BuildContext {
   Color get mutedTextColor => colorScheme.onSurfaceVariant;
 
   /// Elevated card surface (white in Furtail light theme).
-  Color get bpaCardColor =>
-      appTheme.cardTheme.color ?? colorScheme.surface;
+  Color get bpaCardColor => appTheme.cardTheme.color ?? colorScheme.surface;
 
   Color get bpaSuccess => FurtailDesignTokens.success;
 

@@ -25,7 +25,9 @@ class LanguageSelectScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Text(
               label,
-              style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w800),
+              style: context.appText.bodyLarge!.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ),
@@ -42,7 +44,9 @@ class LanguageSelectScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             Text(
               t.selectLanguage,
-              style: context.appText.titleLarge!.copyWith(fontWeight: FontWeight.w900),
+              style: context.appText.titleLarge!.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 18),
             button(label: t.english, code: 'en'),

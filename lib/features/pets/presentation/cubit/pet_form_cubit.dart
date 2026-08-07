@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,11 +13,10 @@ import 'pet_form_state.dart';
 
 final petFormProvider =
     AutoDisposeNotifierProviderFamily<PetFormController, PetFormState, int?>(
-  PetFormController.new,
-);
+      PetFormController.new,
+    );
 
-class PetFormController
-    extends AutoDisposeFamilyNotifier<PetFormState, int?> {
+class PetFormController extends AutoDisposeFamilyNotifier<PetFormState, int?> {
   @override
   PetFormState build(int? petId) {
     scheduleMicrotask(() async {
@@ -42,15 +42,24 @@ class PetFormController
     state = state.copyWith(loading: true, error: null, success: false);
     try {
       final list = await ref.read(getPetsUsecaseProvider)();
-      final pet = list.firstWhere((p) => p.id == state.petId);
+      final pet = list.cast<PetEntity?>().firstWhere(
+        (candidate) => candidate?.id == state.petId,
+        orElse: () => null,
+      );
+      if (pet == null) {
+        throw StateError('Unable to find that pet. Refresh and try again.');
+      }
 
       final breeds = await ref.read(getBreedsUsecaseProvider)(pet.animalTypeId);
+      final breedBelongsToType =
+          pet.breedId == null || breeds.any((b) => b['id'] == pet.breedId);
 
       int? ageYears;
       if (pet.dateOfBirth != null) {
         final now = DateTime.now();
         final dob = pet.dateOfBirth!;
-        ageYears = now.year -
+        ageYears =
+            now.year -
             dob.year -
             ((now.month < dob.month ||
                     (now.month == dob.month && now.day < dob.day))
@@ -62,14 +71,16 @@ class PetFormController
         loading: false,
         breeds: breeds,
         name: pet.name,
+        version: pet.version,
         animalTypeId: pet.animalTypeId,
-        breedId: pet.breedId,
+        breedId: breedBelongsToType ? pet.breedId : null,
         dob: pet.dateOfBirth,
         ageYears: ageYears,
         sex: pet.sex,
         isRescue: pet.isRescue,
         isNeutered: pet.isNeutered,
         weightKg: pet.weightKg,
+        uploadedProfileImageId: pet.profilePicId,
         microchipNumber: pet.microchipNumber ?? "",
         foodHabits: pet.foodHabits ?? "",
         healthDisorders: pet.healthDisorders ?? "",
@@ -81,6 +92,9 @@ class PetFormController
         isPublicProfileEnabled: pet.isPublicProfileEnabled ?? false,
         coverMediaId: pet.coverMediaId,
         coverMediaUrl: pet.coverMediaUrl,
+        error: breedBelongsToType
+            ? null
+            : "This pet has a legacy breed value. Choose a canonical breed before saving.",
       );
     } catch (e) {
       state = state.copyWith(loading: false, error: e.toString());
@@ -98,7 +112,11 @@ class PetFormController
         return;
       }
     }
-    state = state.copyWith(step: state.step + 1, error: null, showStep1Errors: false);
+    state = state.copyWith(
+      step: state.step + 1,
+      error: null,
+      showStep1Errors: false,
+    );
   }
 
   void back() {
@@ -114,14 +132,29 @@ class PetFormController
       state = state.copyWith(customBreedText: v, error: null);
   void setPhoto(XFile file) {
     state = state.copyWith(
-        photo: file, photoFile: File(file.path), photoChanged: true);
+      photo: file,
+      photoFile: File(file.path),
+      photoChanged: true,
+      clearUploadedProfileImageId: true,
+    );
   }
-  void removePhoto() =>
-      state = state.copyWith(photo: null, photoFile: null, photoChanged: true);
+
+  void removePhoto() => state = state.copyWith(
+    clearPhoto: true,
+    clearPhotoFile: true,
+    photoChanged: true,
+  );
 
   Future<void> setAnimalType(int? id) async {
     state = state.copyWith(
-        animalTypeId: id, breedId: null, breeds: [], loading: true, error: null);
+      animalTypeId: id,
+      clearAnimalTypeId: id == null,
+      clearBreedId: true,
+      clearCustomBreedText: true,
+      breeds: [],
+      loading: true,
+      error: null,
+    );
     if (id == null) {
       state = state.copyWith(loading: false);
       return;
@@ -160,33 +193,42 @@ class PetFormController
   // ── Step 4: Lifestyle ─────────────────────────────────────────────────────
   void setFood(String v) => state = state.copyWith(foodHabits: v, error: null);
   void setNotes(String v) => state = state.copyWith(notes: v, error: null);
-  void setWeight(double? v) =>
-      state = state.copyWith(weightKg: v, error: null);
+  void setWeight(double? v) => state = state.copyWith(weightKg: v, error: null);
 
   // ── Step 5: Public Profile ────────────────────────────────────────────────
   void setPublicProfile(bool v) =>
       state = state.copyWith(isPublicProfileEnabled: v, error: null);
-  void setSlug(String v) =>
-      state = state.copyWith(slug: v.toLowerCase().replaceAll(' ', '-'), error: null);
+  void setSlug(String v) => state = state.copyWith(
+    slug: v.toLowerCase().replaceAll(' ', '-'),
+    error: null,
+  );
   void setBio(String v) => state = state.copyWith(bio: v, error: null);
   void setCoverPhoto(XFile file) {
     state = state.copyWith(
-        coverPhoto: file,
-        coverPhotoFile: File(file.path),
-        coverPhotoChanged: true);
+      coverPhoto: file,
+      coverPhotoFile: File(file.path),
+      coverPhotoChanged: true,
+    );
   }
 
   void setCoverPhotoFile(File file) {
     state = state.copyWith(
-        coverPhoto: null,
-        coverPhotoFile: file,
-        coverPhotoChanged: true);
+      coverPhoto: null,
+      coverPhotoFile: file,
+      coverPhotoChanged: true,
+    );
   }
+
   void removeCoverPhoto() => state = state.copyWith(
-      coverPhoto: null, coverPhotoFile: null, coverPhotoChanged: true);
+    clearCoverPhoto: true,
+    clearCoverPhotoFile: true,
+    coverPhotoChanged: true,
+  );
 
   // ── Submit ────────────────────────────────────────────────────────────────
   Future<void> submit() async {
+    if (state.loading) return;
+
     if (!state.basicValid) {
       state = state.copyWith(error: "Name and Animal Type are required");
       return;
@@ -200,12 +242,30 @@ class PetFormController
           .where((s) => s.isNotEmpty)
           .toList();
 
+      final createIdempotencyKey =
+          state.createIdempotencyKey ?? _newCreateIdempotencyKey();
+      int? uploadedProfileImageId = state.uploadedProfileImageId;
+      if (!state.editMode &&
+          state.photoFile != null &&
+          uploadedProfileImageId == null) {
+        uploadedProfileImageId = await ref.read(uploadPetMediaIdProvider)(
+          state.photoFile!,
+        );
+        state = state.copyWith(
+          uploadedProfileImageId: uploadedProfileImageId,
+          createIdempotencyKey: createIdempotencyKey,
+        );
+      }
+
       final pet = PetEntity(
         id: state.petId,
         name: state.name.trim(),
+        version: state.version,
         animalTypeId: state.animalTypeId!,
         breedId: state.breedId,
-        customBreedText: state.customBreedText?.trim(),
+        customBreedText: state.breedId == null
+            ? null
+            : state.customBreedText?.trim(),
         dateOfBirth: state.dob,
         sex: state.sex,
         isRescue: state.isRescue,
@@ -214,11 +274,17 @@ class PetFormController
         microchipNumber: state.microchipNumber.trim().isEmpty
             ? null
             : state.microchipNumber.trim(),
-        foodHabits: state.foodHabits.trim().isEmpty ? null : state.foodHabits.trim(),
-        healthDisorders:
-            state.healthDisorders.trim().isEmpty ? null : state.healthDisorders.trim(),
+        foodHabits: state.foodHabits.trim().isEmpty
+            ? null
+            : state.foodHabits.trim(),
+        healthDisorders: state.healthDisorders.trim().isEmpty
+            ? null
+            : state.healthDisorders.trim(),
         notes: state.notes.trim().isEmpty ? null : state.notes.trim(),
-        photo: state.photo != null ? File(state.photo!.path) : null,
+        photo: state.editMode ? state.photoFile : null,
+        profilePicId: uploadedProfileImageId,
+        clearProfileImage:
+            state.editMode && state.photoChanged && state.photoFile == null,
         bloodType: state.bloodType?.trim(),
         allergies: allergiesList.isEmpty ? null : allergiesList,
       );
@@ -228,36 +294,57 @@ class PetFormController
       if (state.editMode) {
         petId = state.petId!;
         await ref.read(updatePetUsecaseProvider)(petId, pet);
+        unawaited(ref.read(ownerPetListProvider.notifier).refresh());
       } else {
-        petId = await ref.read(createPetUsecaseProvider)(pet);
+        final createdPet = await ref.read(createPetUsecaseProvider)(
+          pet,
+          idempotencyKey: createIdempotencyKey,
+        );
+        petId = createdPet.id ?? 0;
+        if (petId <= 0) {
+          throw StateError(
+            'Pet creation did not return a valid canonical pet id.',
+          );
+        }
         state = state.copyWith(petId: petId);
+        ref.read(ownerPetListProvider.notifier).upsert(createdPet);
+        unawaited(ref.read(ownerPetListProvider.notifier).refresh());
         await ref.read(analyticsServiceProvider).logPetCreated(petId: petId);
       }
 
-      // Upload profile photo
-      if (state.photoChanged && state.photoFile != null) {
-        await ref.read(uploadPetPhotoUsecaseProvider)(petId, state.photoFile!);
-      }
-
       // Update public profile if enabled
-      if (state.isPublicProfileEnabled || state.slug.trim().isNotEmpty || state.bio.trim().isNotEmpty) {
+      if (state.isPublicProfileEnabled ||
+          state.slug.trim().isNotEmpty ||
+          state.bio.trim().isNotEmpty) {
         final profilePayload = <String, dynamic>{
           "isPublicProfileEnabled": state.isPublicProfileEnabled,
           if (state.slug.trim().isNotEmpty) "slug": state.slug.trim(),
           if (state.bio.trim().isNotEmpty) "bio": state.bio.trim(),
         };
-        await ref.read(updatePetPublicProfileUsecaseProvider)(petId, profilePayload);
+        await ref.read(updatePetPublicProfileUsecaseProvider)(
+          petId,
+          profilePayload,
+        );
       }
 
       // Upload cover photo
       if (state.coverPhotoChanged && state.coverPhotoFile != null) {
-        await ref.read(uploadPetCoverPhotoUsecaseProvider)(petId, state.coverPhotoFile!);
+        await ref.read(uploadPetCoverPhotoUsecaseProvider)(
+          petId,
+          state.coverPhotoFile!,
+        );
       }
 
       state = state.copyWith(loading: false, success: true);
     } catch (e) {
       state = state.copyWith(loading: false, error: e.toString());
     }
+  }
+
+  String _newCreateIdempotencyKey() {
+    final millis = DateTime.now().millisecondsSinceEpoch;
+    final random = Random.secure().nextInt(1 << 32).toRadixString(16);
+    return 'furtail-owner-pet-$millis-$random';
   }
 }
 

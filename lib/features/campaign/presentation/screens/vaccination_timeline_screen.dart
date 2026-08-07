@@ -20,7 +20,9 @@ class VaccinationTimelineScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(petName != null ? 'Timeline · $petName' : 'Vaccination Timeline'),
+        title: Text(
+          petName != null ? 'Timeline · $petName' : 'Vaccination Timeline',
+        ),
         backgroundColor: context.colorScheme.primary,
         foregroundColor: context.colorScheme.onPrimary,
       ),
@@ -57,7 +59,9 @@ class VaccinationTimelineScreen extends ConsumerWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CertificateViewerScreen(token: e.certificateToken!),
+                            builder: (_) => CertificateViewerScreen(
+                              token: e.certificateToken!,
+                            ),
                           ),
                         );
                       },

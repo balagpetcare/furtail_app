@@ -17,8 +17,9 @@ class VaccinationRemindersScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () =>
-                ref.read(vaccinationRemindersProvider.notifier).refreshFromRecords(),
+            onPressed: () => ref
+                .read(vaccinationRemindersProvider.notifier)
+                .refreshFromRecords(),
           ),
         ],
       ),
@@ -50,8 +51,9 @@ class VaccinationRemindersScreen extends ConsumerWidget {
                     'Due $due · Remind on ${DateFormat('d MMM yyyy').format(remindOn)}',
                   ),
                   value: r.enabled,
-                  onChanged: (v) =>
-                      ref.read(vaccinationRemindersProvider.notifier).toggle(r.id, v),
+                  onChanged: (v) => ref
+                      .read(vaccinationRemindersProvider.notifier)
+                      .toggle(r.id, v),
                 ),
               );
             },

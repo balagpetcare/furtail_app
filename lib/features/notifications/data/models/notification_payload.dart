@@ -31,17 +31,16 @@ class NotificationPayload {
       nested = Map<String, dynamic>.from(notification);
     }
 
-    final title = data['title'] ??
-        nested['title']?.toString() ??
-        'Furtail';
-    final body = data['body'] ??
-        data['message'] ??
-        nested['body']?.toString() ??
-        '';
+    final title = data['title'] ?? nested['title']?.toString() ?? 'Furtail';
+    final body =
+        data['body'] ?? data['message'] ?? nested['body']?.toString() ?? '';
 
     // Backend social notifications send 'route'/'deepLink' instead of 'actionUrl'.
-    final actionUrl = data['actionUrl'] ?? data['action_url'] ??
-        data['route'] ?? data['deepLink'];
+    final actionUrl =
+        data['actionUrl'] ??
+        data['action_url'] ??
+        data['route'] ??
+        data['deepLink'];
 
     return NotificationPayload(
       type: AppNotificationType.fromCode(data['type']),
@@ -68,9 +67,7 @@ class NotificationPayload {
       body: body,
       actionUrl: actionUrl,
       notificationId: dedupeKey,
-      data: {
-        if (dedupeKey != null) 'dedupeKey': dedupeKey,
-      },
+      data: {if (dedupeKey != null) 'dedupeKey': dedupeKey},
     );
   }
 }

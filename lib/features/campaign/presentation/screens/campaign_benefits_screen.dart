@@ -17,10 +17,7 @@ class CampaignBenefitsScreen extends ConsumerWidget {
         data: (b) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
-              b.name,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text(b.name, style: Theme.of(context).textTheme.headlineSmall),
             if (b.description != null) ...[
               const SizedBox(height: 8),
               Text(b.description!),
@@ -50,7 +47,10 @@ class CampaignBenefitsScreen extends ConsumerWidget {
             ),
             if (b.vaccineTypes.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Text('Vaccines included', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Vaccines included',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               ...b.vaccineTypes.map(
                 (v) => ListTile(
                   leading: const Icon(Icons.vaccines),

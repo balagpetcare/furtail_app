@@ -16,10 +16,12 @@ class VisitorProfileResolverScreen extends StatefulWidget {
   const VisitorProfileResolverScreen({super.key, required this.username});
 
   @override
-  State<VisitorProfileResolverScreen> createState() => _VisitorProfileResolverScreenState();
+  State<VisitorProfileResolverScreen> createState() =>
+      _VisitorProfileResolverScreenState();
 }
 
-class _VisitorProfileResolverScreenState extends State<VisitorProfileResolverScreen> {
+class _VisitorProfileResolverScreenState
+    extends State<VisitorProfileResolverScreen> {
   String? _error;
 
   String get _cleanUsername => widget.username.replaceFirst(RegExp(r'^@'), '');
@@ -32,7 +34,9 @@ class _VisitorProfileResolverScreenState extends State<VisitorProfileResolverScr
 
   Future<void> _resolve() async {
     try {
-      final raw = await SocialService().getVisitorProfileByUsername(widget.username);
+      final raw = await SocialService().getVisitorProfileByUsername(
+        widget.username,
+      );
       final profile = VisitorProfileModel.fromApi(raw);
       if (!mounted) return;
       if (profile.id <= 0) {
@@ -43,9 +47,7 @@ class _VisitorProfileResolverScreenState extends State<VisitorProfileResolverScr
       if (!mounted) return;
       if (currentUserId != null && profile.id == currentUserId) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const UserProfileScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const UserProfileScreen()),
         );
         return;
       }
@@ -57,7 +59,8 @@ class _VisitorProfileResolverScreenState extends State<VisitorProfileResolverScr
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString().replaceAll('Exception: ', '');
-      final isNotFound = msg.contains('404') || msg.toLowerCase().contains('not found');
+      final isNotFound =
+          msg.contains('404') || msg.toLowerCase().contains('not found');
       setState(() => _error = isNotFound ? 'Profile not found' : msg);
     }
   }
@@ -73,15 +76,17 @@ class _VisitorProfileResolverScreenState extends State<VisitorProfileResolverScr
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.person_off_outlined,
-                    size: 72, color: Theme.of(context).colorScheme.outline),
+                Icon(
+                  Icons.person_off_outlined,
+                  size: 72,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
                 const SizedBox(height: 20),
                 Text(
                   'Profile not found',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
                 Text(

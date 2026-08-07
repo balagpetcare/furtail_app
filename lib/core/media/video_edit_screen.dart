@@ -138,26 +138,31 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
     final int token = ++_token;
     final c = VideoPlayerController.file(widget.file);
     _c = c;
-    _initFuture = c.initialize().then((_) {
-      if (!mounted || token != _token) return;
-      final durMs = c.value.duration.inMilliseconds.toDouble();
-      _totalMs = durMs.clamp(1.0, double.infinity);
-      _startMs = 0.0;
-      _endMs = _totalMs;
-      _seekSliderMs = _totalMs / 2; // middle as initial cover candidate
-      c.setLooping(true);
-      c.play();
-      if (mounted) setState(() {});
-    }).catchError((e) {
-      debugPrint('[VideoEdit] init failed: $e');
-    });
+    _initFuture = c
+        .initialize()
+        .then((_) {
+          if (!mounted || token != _token) return;
+          final durMs = c.value.duration.inMilliseconds.toDouble();
+          _totalMs = durMs.clamp(1.0, double.infinity);
+          _startMs = 0.0;
+          _endMs = _totalMs;
+          _seekSliderMs = _totalMs / 2; // middle as initial cover candidate
+          c.setLooping(true);
+          c.play();
+          if (mounted) setState(() {});
+        })
+        .catchError((e) {
+          debugPrint('[VideoEdit] init failed: $e');
+        });
   }
 
   @override
   void dispose() {
     final c = _c;
     _c = null;
-    try { c?.pause(); } catch (_) {}
+    try {
+      c?.pause();
+    } catch (_) {}
     c?.dispose();
     super.dispose();
   }
@@ -167,14 +172,20 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
   void _togglePlay() {
     final c = _c;
     if (c == null) return;
-    if (c.value.isPlaying) { c.pause(); } else { c.play(); }
+    if (c.value.isPlaying) {
+      c.pause();
+    } else {
+      c.play();
+    }
     setState(() {});
   }
 
   void _applyPreviewVolume() {
     final c = _c;
     if (c == null) return;
-    try { c.setVolume(_mute ? 0.0 : _volume.clamp(0.0, 2.0)); } catch (_) {}
+    try {
+      c.setVolume(_mute ? 0.0 : _volume.clamp(0.0, 2.0));
+    } catch (_) {}
   }
 
   void _seekToMs(double ms) {
@@ -274,7 +285,10 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
 
                 final playing = c.value.isPlaying;
                 final dur = c.value.duration;
-                final durMs = dur.inMilliseconds.toDouble().clamp(1.0, double.infinity);
+                final durMs = dur.inMilliseconds.toDouble().clamp(
+                  1.0,
+                  double.infinity,
+                );
 
                 return Column(
                   children: [
@@ -382,7 +396,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.content_cut_rounded, color: Colors.white70, size: 16),
+            const Icon(
+              Icons.content_cut_rounded,
+              color: Colors.white70,
+              size: 16,
+            ),
             const SizedBox(width: 8),
             const Text(
               'Trim',
@@ -394,7 +412,10 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
             ),
             const Spacer(),
             _TimeChip(label: _formatMs(currentStart.round())),
-            const Text(' — ', style: TextStyle(color: Colors.white38, fontSize: 12)),
+            const Text(
+              ' — ',
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
             _TimeChip(label: _formatMs(currentEnd.round())),
             const SizedBox(width: 8),
             Container(
@@ -426,7 +447,9 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
           ),
           activeColor: Colors.white,
           inactiveColor: Colors.white24,
-          overlayColor: WidgetStateProperty.all(Colors.white.withValues(alpha: 0.15)),
+          overlayColor: WidgetStateProperty.all(
+            Colors.white.withValues(alpha: 0.15),
+          ),
           onChanged: (r) {
             // Enforce minimum 1-second duration
             final minEnd = r.start + _minTrimDurationMs;
@@ -454,7 +477,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
-                const Icon(Icons.image_outlined, color: Colors.white70, size: 16),
+                const Icon(
+                  Icons.image_outlined,
+                  color: Colors.white70,
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'Cover Thumbnail',
@@ -514,7 +541,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                           color: Colors.black54,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                        child: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -523,14 +554,20 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                     bottom: 4,
                     left: 4,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         _formatMs(_coverTimestampMs ?? 0),
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ),
@@ -588,20 +625,25 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: _isGeneratingCover ? null : _pickCoverAtCurrentPosition,
+              onPressed: _isGeneratingCover
+                  ? null
+                  : _pickCoverAtCurrentPosition,
               icon: _isGeneratingCover
                   ? const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.camera_alt_outlined, size: 16),
               label: Text(
                 _isGeneratingCover
                     ? 'Extracting…'
                     : _coverThumbnail != null
-                        ? 'Update Cover'
-                        : 'Set Cover from Current Frame',
+                    ? 'Update Cover'
+                    : 'Set Cover from Current Frame',
                 style: const TextStyle(fontSize: 13),
               ),
               style: OutlinedButton.styleFrom(
@@ -630,7 +672,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.aspect_ratio_rounded, color: Colors.white70, size: 16),
+            const Icon(
+              Icons.aspect_ratio_rounded,
+              color: Colors.white70,
+              size: 16,
+            ),
             const SizedBox(width: 8),
             const Text(
               'Aspect Ratio',
@@ -685,7 +731,9 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                       style: TextStyle(
                         color: selected ? Colors.white : Colors.white54,
                         fontSize: 10,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -704,11 +752,14 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
     final double w;
     final double h;
     if (opt.ratio == null) {
-      w = 20; h = 16; // original — slightly wider
+      w = 20;
+      h = 16; // original — slightly wider
     } else if (opt.ratio! >= 1.0) {
-      w = 20; h = 20 / opt.ratio!;
+      w = 20;
+      h = 20 / opt.ratio!;
     } else {
-      w = 20 * opt.ratio!; h = 20;
+      w = 20 * opt.ratio!;
+      h = 20;
     }
     return Container(
       width: w.clamp(8, 24),
@@ -728,7 +779,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.high_quality_rounded, color: Colors.white70, size: 16),
+            const Icon(
+              Icons.high_quality_rounded,
+              color: Colors.white70,
+              size: 16,
+            ),
             const SizedBox(width: 8),
             const Text(
               'Quality',
@@ -761,7 +816,10 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
             return GestureDetector(
               onTap: () => setState(() => _quality = opt.id),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: selected
                       ? Colors.white.withValues(alpha: 0.12)
@@ -780,7 +838,9 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                       style: TextStyle(
                         color: selected ? Colors.white : Colors.white54,
                         fontSize: 12,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -811,7 +871,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.volume_up_outlined, color: Colors.white70, size: 16),
+            const Icon(
+              Icons.volume_up_outlined,
+              color: Colors.white70,
+              size: 16,
+            ),
             const SizedBox(width: 8),
             const Text(
               'Audio',
@@ -830,7 +894,10 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: _mute
                       ? Colors.red.withValues(alpha: 0.20)
@@ -846,7 +913,9 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      _mute ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                      _mute
+                          ? Icons.volume_off_rounded
+                          : Icons.volume_up_rounded,
                       size: 14,
                       color: _mute ? Colors.red.shade300 : Colors.white70,
                     ),
@@ -869,7 +938,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.volume_down_rounded, color: Colors.white38, size: 14),
+              const Icon(
+                Icons.volume_down_rounded,
+                color: Colors.white38,
+                size: 14,
+              ),
               Expanded(
                 child: Slider(
                   value: _volume.clamp(0.0, 2.0),
@@ -884,7 +957,11 @@ class _VideoEditScreenState extends State<VideoEditScreen> {
                   },
                 ),
               ),
-              const Icon(Icons.volume_up_rounded, color: Colors.white38, size: 14),
+              const Icon(
+                Icons.volume_up_rounded,
+                color: Colors.white38,
+                size: 14,
+              ),
               SizedBox(
                 width: 36,
                 child: Text(

@@ -23,7 +23,9 @@ void main() {
     });
 
     test('furtail scheme campaign detail', () {
-      final t = DeepLinkParser.parse(Uri.parse('furtail://campaign/detail/my-slug'));
+      final t = DeepLinkParser.parse(
+        Uri.parse('furtail://campaign/detail/my-slug'),
+      );
       expect(t?.kind, DeepLinkKind.campaignDetail);
       expect(t?.id, 'my-slug');
     });

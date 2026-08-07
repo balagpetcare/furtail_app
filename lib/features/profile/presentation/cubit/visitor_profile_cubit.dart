@@ -7,11 +7,15 @@ import '../../data/models/visitor_profile_model.dart';
 import 'package:furtail_app/services/social_service.dart';
 import 'package:furtail_app/core/storage/local_storage.dart';
 
-final visitorProfileProvider = AutoDisposeNotifierProviderFamily<VisitorProfileController, VisitorProfileState, int>(
-  VisitorProfileController.new,
-);
+final visitorProfileProvider =
+    AutoDisposeNotifierProviderFamily<
+      VisitorProfileController,
+      VisitorProfileState,
+      int
+    >(VisitorProfileController.new);
 
-class VisitorProfileController extends AutoDisposeFamilyNotifier<VisitorProfileState, int> {
+class VisitorProfileController
+    extends AutoDisposeFamilyNotifier<VisitorProfileState, int> {
   late final SocialService _social;
 
   @override
@@ -67,7 +71,10 @@ class VisitorProfileController extends AutoDisposeFamilyNotifier<VisitorProfileS
 
     // Optimistically toggle follow status and adjust followersCount
     final nextFollowing = !s.isFollowing;
-    final nextCount = (p.followersCount + (nextFollowing ? 1 : -1)).clamp(0, 999999);
+    final nextCount = (p.followersCount + (nextFollowing ? 1 : -1)).clamp(
+      0,
+      999999,
+    );
     final updatedProfile = p.copyWith(followersCount: nextCount);
     final updatedStatus = SocialStatus(
       isFollowing: nextFollowing,
@@ -130,10 +137,7 @@ class VisitorProfileController extends AutoDisposeFamilyNotifier<VisitorProfileS
       incomingRequestId: s.incomingRequestId,
     );
 
-    state = state.copyWith(
-      status: updatedStatus,
-      error: null,
-    );
+    state = state.copyWith(status: updatedStatus, error: null);
 
     try {
       if (s.isLiked) {
@@ -229,7 +233,10 @@ class VisitorProfileController extends AutoDisposeFamilyNotifier<VisitorProfileS
         final updated = await _social.getStatus(p.id);
         state = state.copyWith(isFriendLoading: false, status: updated);
       } catch (e) {
-        state = state.copyWith(isFriendLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+        state = state.copyWith(
+          isFriendLoading: false,
+          error: e.toString().replaceAll('Exception: ', ''),
+        );
       }
       return;
     }
@@ -237,5 +244,4 @@ class VisitorProfileController extends AutoDisposeFamilyNotifier<VisitorProfileS
     // Otherwise, send request.
     return sendFriendRequest();
   }
-
 }

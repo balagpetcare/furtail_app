@@ -17,7 +17,10 @@ class ProfileStatusComposer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("What's on your mind?", style: TextStyle(fontWeight: FontWeight.w900)),
+          const Text(
+            "What's on your mind?",
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -26,12 +29,18 @@ class ProfileStatusComposer extends StatelessWidget {
                   readOnly: true,
                   decoration: InputDecoration(
                     hintText: 'Write a status...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     isDense: true,
                   ),
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Open create post form (TODO: wire route).')),
+                      const SnackBar(
+                        content: Text(
+                          'Open create post form (TODO: wire route).',
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -40,7 +49,11 @@ class ProfileStatusComposer extends StatelessWidget {
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Open media post composer (TODO: wire route).')),
+                    const SnackBar(
+                      content: Text(
+                        'Open media post composer (TODO: wire route).',
+                      ),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.photo_library_outlined),

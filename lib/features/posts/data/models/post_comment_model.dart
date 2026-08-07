@@ -3,12 +3,18 @@ class PostCommentAuthorModel {
   final String name;
   final String? avatarUrl;
 
-  PostCommentAuthorModel({required this.id, required this.name, this.avatarUrl});
+  PostCommentAuthorModel({
+    required this.id,
+    required this.name,
+    this.avatarUrl,
+  });
 
   factory PostCommentAuthorModel.fromJson(Map<String, dynamic> json) {
     final profile = (json['profile'] as Map<String, dynamic>?) ?? {};
     final avatarMedia = (profile['avatarMedia'] as Map<String, dynamic>?) ?? {};
-    final displayName = (profile['displayName'] ?? profile['username'] ?? 'User').toString();
+    final displayName =
+        (profile['displayName'] ?? profile['username'] ?? 'Furtail Member')
+            .toString();
     final avatarUrl = (avatarMedia['url'] as String?)?.trim();
     return PostCommentAuthorModel(
       id: (json['id'] as num).toInt(),
@@ -30,8 +36,10 @@ class PostCommentModel {
   // ── Phase 1: Premium comment fields ─────────────────────────────────────
   /// Whether the comment has been edited after creation.
   final bool isEdited;
+
   /// Optional media attachment URL (image/video) attached to the comment.
   final String? attachmentUrl;
+
   /// Number of replies to this comment (useful for paginated replies).
   final int replyCount;
 
@@ -52,8 +60,12 @@ class PostCommentModel {
     return PostCommentModel(
       id: (json['id'] as num).toInt(),
       text: (json['text'] ?? '').toString(),
-      createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString()) ?? DateTime.now(),
-      author: PostCommentAuthorModel.fromJson((json['user'] as Map<String, dynamic>?) ?? const {'id': 0}),
+      createdAt:
+          DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
+          DateTime.now(),
+      author: PostCommentAuthorModel.fromJson(
+        (json['user'] as Map<String, dynamic>?) ?? const {'id': 0},
+      ),
       likeCount: (json['likeCount'] as num?)?.toInt() ?? 0,
       isLikedByMe: (json['isLikedByMe'] as bool?) ?? false,
       parentId: (json['parentId'] as num?)?.toInt(),

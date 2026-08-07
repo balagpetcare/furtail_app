@@ -39,7 +39,9 @@ class CityCorporationAreaPicker extends ConsumerWidget {
           error: (_, _) => const Text('Could not load city corporations.'),
           data: (corps) {
             return DropdownButtonFormField<String>(
-              initialValue: cityCorporationCode.isEmpty ? null : cityCorporationCode,
+              initialValue: cityCorporationCode.isEmpty
+                  ? null
+                  : cityCorporationCode,
               decoration: InputDecoration(
                 labelText: 'Select corporation',
                 errorText: corpError,
@@ -83,10 +85,7 @@ class CityCorporationAreaPicker extends ConsumerWidget {
               ),
               items: areas
                   .map(
-                    (a) => DropdownMenuItem(
-                      value: a.id,
-                      child: Text(a.nameEn),
-                    ),
+                    (a) => DropdownMenuItem(value: a.id, child: Text(a.nameEn)),
                   )
                   .toList(),
               onChanged: (id) {
@@ -101,8 +100,8 @@ class CityCorporationAreaPicker extends ConsumerWidget {
         Text(
           'Your vaccination center will be assigned automatically based on area capacity.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

@@ -179,6 +179,9 @@ class FundraisingRepository {
     String? cursor,
     bool? verified,
     String? category,
+    String? beneficiaryType,
+    String? urgency,
+    String? status,
     String? location,
     String? sort,
   }) async {
@@ -187,6 +190,9 @@ class FundraisingRepository {
       cursor: cursor,
       verified: verified,
       category: category,
+      beneficiaryType: beneficiaryType,
+      urgency: urgency,
+      status: status,
       location: location,
       sort: sort,
     );
@@ -198,6 +204,9 @@ class FundraisingRepository {
     String? cursor,
     bool? verified,
     String? category,
+    String? beneficiaryType,
+    String? urgency,
+    String? status,
     String? location,
     String? sort,
   }) async {
@@ -207,6 +216,9 @@ class FundraisingRepository {
         cursor: cursor,
         verified: verified,
         category: category,
+        beneficiaryType: beneficiaryType,
+        urgency: urgency,
+        status: status,
         location: location,
         sort: sort,
       ),
@@ -216,13 +228,37 @@ class FundraisingRepository {
   }
 
   // ✅ Only campaigns created by the current user (for Unified Withdraw Hub).
-  Future<List<FundraisingCampaign>> fetchMyCampaigns({int limit = 100}) async {
+  Future<FundraisingPage<FundraisingCampaign>> fetchMyCampaignsPage({
+    int limit = 100,
+    String? cursor,
+    bool? verified,
+    String? category,
+    String? beneficiaryType,
+    String? urgency,
+    String? status,
+    String? location,
+    String? sort,
+  }) async {
     final res = await _api.get(
-      ApiEndpoints.fundraisingMyCampaigns(limit: limit),
+      ApiEndpoints.fundraisingMyCampaigns(
+        limit: limit,
+        cursor: cursor,
+        verified: verified,
+        category: category,
+        beneficiaryType: beneficiaryType,
+        urgency: urgency,
+        status: status,
+        location: location,
+        sort: sort,
+      ),
       auth: true,
     );
-    final data = _asObjectList(res);
-    return data.map(FundraisingCampaign.fromJson).toList(growable: false);
+    return _asObjectPage(res, FundraisingCampaign.fromJson);
+  }
+
+  Future<List<FundraisingCampaign>> fetchMyCampaigns({int limit = 100}) async {
+    final page = await fetchMyCampaignsPage(limit: limit);
+    return page.items;
   }
 
   Future<FundraisingCampaign> fetchCampaign(int id) async {

@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/theme/typography.dart';
+
 class AchievementUiModel {
   final String name;
   final IconData icon;
@@ -28,49 +28,49 @@ class AchievementsSection extends StatelessWidget {
   const AchievementsSection({super.key, required this.points});
 
   List<AchievementUiModel> get _all => const [
-        AchievementUiModel(
-          name: 'First Post',
-          icon: Icons.edit_square,
-          requiredPoints: 20,
-          description: 'Publish your first status update.',
-          howTo: 'Create a post from your profile and share a short update.',
-        ),
-        AchievementUiModel(
-          name: 'Photo Sharer',
-          icon: Icons.photo_camera,
-          requiredPoints: 120,
-          description: 'Share photos and engage with the community.',
-          howTo: 'Upload 5 photos in your posts and receive at least 10 likes.',
-        ),
-        AchievementUiModel(
-          name: 'Friendly',
-          icon: Icons.group,
-          requiredPoints: 300,
-          description: 'Build connections and follow friends.',
-          howTo: 'Follow 20 people and interact with their posts consistently.',
-        ),
-        AchievementUiModel(
-          name: 'Pet Parent',
-          icon: Icons.pets,
-          requiredPoints: 500,
-          description: 'Add pets and keep their profiles updated.',
-          howTo: 'Add at least 2 pets and complete their profiles with photos.',
-        ),
-        AchievementUiModel(
-          name: 'Top Member',
-          icon: Icons.emoji_events,
-          requiredPoints: 1000,
-          description: 'Reach a high point milestone.',
-          howTo: 'Post regularly, earn reactions/comments, and stay active weekly.',
-        ),
-        AchievementUiModel(
-          name: 'Community Helper',
-          icon: Icons.volunteer_activism,
-          requiredPoints: 2000,
-          description: 'Help others with helpful posts and comments.',
-          howTo: 'Share helpful tips and get 50 positive reactions from users.',
-        ),
-      ];
+    AchievementUiModel(
+      name: 'First Post',
+      icon: Icons.edit_square,
+      requiredPoints: 20,
+      description: 'Publish your first status update.',
+      howTo: 'Create a post from your profile and share a short update.',
+    ),
+    AchievementUiModel(
+      name: 'Photo Sharer',
+      icon: Icons.photo_camera,
+      requiredPoints: 120,
+      description: 'Share photos and engage with the community.',
+      howTo: 'Upload 5 photos in your posts and receive at least 10 likes.',
+    ),
+    AchievementUiModel(
+      name: 'Friendly',
+      icon: Icons.group,
+      requiredPoints: 300,
+      description: 'Build connections and follow friends.',
+      howTo: 'Follow 20 people and interact with their posts consistently.',
+    ),
+    AchievementUiModel(
+      name: 'Pet Parent',
+      icon: Icons.pets,
+      requiredPoints: 500,
+      description: 'Add pets and keep their profiles updated.',
+      howTo: 'Add at least 2 pets and complete their profiles with photos.',
+    ),
+    AchievementUiModel(
+      name: 'Top Member',
+      icon: Icons.emoji_events,
+      requiredPoints: 1000,
+      description: 'Reach a high point milestone.',
+      howTo: 'Post regularly, earn reactions/comments, and stay active weekly.',
+    ),
+    AchievementUiModel(
+      name: 'Community Helper',
+      icon: Icons.volunteer_activism,
+      requiredPoints: 2000,
+      description: 'Help others with helpful posts and comments.',
+      howTo: 'Share helpful tips and get 50 positive reactions from users.',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +91,9 @@ class AchievementsSection extends StatelessWidget {
         children: [
           Text(
             'My Awards / Achievements',
-            style: context.appText.bodyLarge!.copyWith(fontWeight: FontWeight.w900),
+            style: context.appText.bodyLarge!.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 10),
           SizedBox(
@@ -149,7 +151,10 @@ class AchievementsSection extends StatelessWidget {
                 : '${a.howTo}\n\nRequired points: ${a.requiredPoints}\nYour points: $points',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
           ],
         );
       },
@@ -162,7 +167,11 @@ class _AchievementCard extends StatelessWidget {
   final bool achieved;
   final VoidCallback onTap;
 
-  const _AchievementCard({required this.model, required this.achieved, required this.onTap});
+  const _AchievementCard({
+    required this.model,
+    required this.achieved,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +183,13 @@ class _AchievementCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE6E6E6)),
         color: Colors.white,
         boxShadow: achieved
-            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 14, offset: const Offset(0, 6))]
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ]
             : null,
       ),
       child: Column(
@@ -184,9 +199,15 @@ class _AchievementCard extends StatelessWidget {
             width: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: achieved ? const Color(0xFFFFF5CC) : const Color(0xFFF2F2F2),
+              color: achieved
+                  ? const Color(0xFFFFF5CC)
+                  : const Color(0xFFF2F2F2),
             ),
-            child: Icon(model.icon, size: 22, color: achieved ? const Color(0xFFB8860B) : Colors.black45),
+            child: Icon(
+              model.icon,
+              size: 22,
+              color: achieved ? const Color(0xFFB8860B) : Colors.black45,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
@@ -194,7 +215,9 @@ class _AchievementCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: context.appText.labelMedium!.copyWith(fontWeight: FontWeight.w800),
+            style: context.appText.labelMedium!.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -207,10 +230,26 @@ class _AchievementCard extends StatelessWidget {
           ? child
           : ColorFiltered(
               colorFilter: const ColorFilter.matrix(<double>[
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0.2126, 0.7152, 0.0722, 0, 0,
-                0, 0, 0, 1, 0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0.2126,
+                0.7152,
+                0.0722,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
               ]),
               child: Stack(
                 children: [
@@ -218,7 +257,11 @@ class _AchievementCard extends StatelessWidget {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Icon(Icons.lock_outline, size: 16, color: Colors.black.withValues(alpha: 0.45)),
+                    child: Icon(
+                      Icons.lock_outline,
+                      size: 16,
+                      color: Colors.black.withValues(alpha: 0.45),
+                    ),
                   ),
                 ],
               ),

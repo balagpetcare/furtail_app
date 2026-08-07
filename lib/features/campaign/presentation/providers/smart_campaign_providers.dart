@@ -13,7 +13,9 @@ import '../../domain/smart_campaign/campaign_geo_target.dart';
 import '../providers/campaign_providers.dart';
 import '../../../notifications/presentation/providers/notification_controller.dart';
 
-final userGeoPreferencesServiceProvider = Provider<UserGeoPreferencesService>((ref) {
+final userGeoPreferencesServiceProvider = Provider<UserGeoPreferencesService>((
+  ref,
+) {
   return UserGeoPreferencesService();
 });
 
@@ -21,17 +23,23 @@ final geoTargetingServiceProvider = Provider<GeoTargetingService>((ref) {
   return GeoTargetingService(ref.read(userGeoPreferencesServiceProvider));
 });
 
-final campaignAbTestingServiceProvider = Provider<CampaignAbTestingService>((ref) {
+final campaignAbTestingServiceProvider = Provider<CampaignAbTestingService>((
+  ref,
+) {
   return CampaignAbTestingService();
 });
 
-final campaignCountdownServiceProvider = Provider<CampaignCountdownService>((ref) {
+final campaignCountdownServiceProvider = Provider<CampaignCountdownService>((
+  ref,
+) {
   return CampaignCountdownService(ref.read(campaignRepositoryProvider));
 });
 
-final campaignPerformanceTrackerProvider = Provider<CampaignPerformanceTracker>((ref) {
-  return CampaignPerformanceTracker();
-});
+final campaignPerformanceTrackerProvider = Provider<CampaignPerformanceTracker>(
+  (ref) {
+    return CampaignPerformanceTracker();
+  },
+);
 
 final smartCampaignEngineProvider = Provider<SmartCampaignEngine>((ref) {
   return SmartCampaignEngine(
@@ -42,23 +50,32 @@ final smartCampaignEngineProvider = Provider<SmartCampaignEngine>((ref) {
   );
 });
 
-final userGeoPreferencesProvider = FutureProvider<UserGeoPreferences>((ref) async {
+final userGeoPreferencesProvider = FutureProvider<UserGeoPreferences>((
+  ref,
+) async {
   return ref.read(userGeoPreferencesServiceProvider).load();
 });
 
 final campaignCountdownProvider =
-    FutureProvider.family<CampaignCountdownSnapshot?, String>((ref, slug) async {
-  return ref.read(smartCampaignEngineProvider).countdown.forSlug(slug);
-});
+    FutureProvider.family<CampaignCountdownSnapshot?, String>((
+      ref,
+      slug,
+    ) async {
+      return ref.read(smartCampaignEngineProvider).countdown.forSlug(slug);
+    });
 
 final campaignPerformanceProvider =
-    FutureProvider.family<CampaignPerformanceMetrics, String>((ref, slug) async {
-  return ref.read(campaignPerformanceTrackerProvider).load(slug);
-});
+    FutureProvider.family<CampaignPerformanceMetrics, String>((
+      ref,
+      slug,
+    ) async {
+      return ref.read(campaignPerformanceTrackerProvider).load(slug);
+    });
 
-final allCampaignPerformanceProvider = FutureProvider<List<CampaignPerformanceMetrics>>((ref) async {
-  return ref.read(campaignPerformanceTrackerProvider).loadAll();
-});
+final allCampaignPerformanceProvider =
+    FutureProvider<List<CampaignPerformanceMetrics>>((ref) async {
+      return ref.read(campaignPerformanceTrackerProvider).loadAll();
+    });
 
 /// Syncs smart vaccination reminders when records change.
 final smartVaccinationReminderSyncProvider = FutureProvider<void>((ref) async {

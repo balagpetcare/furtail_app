@@ -15,7 +15,8 @@ class QrVerificationScreen extends ConsumerStatefulWidget {
   const QrVerificationScreen({super.key, this.initialToken});
 
   @override
-  ConsumerState<QrVerificationScreen> createState() => _QrVerificationScreenState();
+  ConsumerState<QrVerificationScreen> createState() =>
+      _QrVerificationScreenState();
 }
 
 class _QrVerificationScreenState extends ConsumerState<QrVerificationScreen> {
@@ -50,7 +51,9 @@ class _QrVerificationScreenState extends ConsumerState<QrVerificationScreen> {
     });
 
     try {
-      final data = await ref.read(campaignRepositoryProvider).verifyCertificatePublic(token);
+      final data = await ref
+          .read(campaignRepositoryProvider)
+          .verifyCertificatePublic(token);
       if (mounted) {
         setState(() => _result = data);
       }
@@ -104,7 +107,10 @@ class _QrVerificationScreenState extends ConsumerState<QrVerificationScreen> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(Icons.verified_user_rounded),
             label: const Text('Verify certificate'),
@@ -115,33 +121,39 @@ class _QrVerificationScreenState extends ConsumerState<QrVerificationScreen> {
               color: Colors.red.shade50,
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(_error!, style: TextStyle(color: Colors.red.shade900)),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Colors.red.shade900),
+                ),
               ),
             ),
-          if (_result != null) _VerificationResultCard(
-            data: _result!,
-            token: _controller.text.trim().toUpperCase(),
-            onViewFull: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CertificateViewerScreen(token: _controller.text.trim().toUpperCase()),
-                ),
-              );
-            },
-            onShowQr: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => QrViewerScreen(
-                    title: 'Verify QR',
-                    payload: _controller.text.trim().toUpperCase(),
-                    subtitle: _result!['petName']?.toString(),
+          if (_result != null)
+            _VerificationResultCard(
+              data: _result!,
+              token: _controller.text.trim().toUpperCase(),
+              onViewFull: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CertificateViewerScreen(
+                      token: _controller.text.trim().toUpperCase(),
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+              onShowQr: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QrViewerScreen(
+                      title: 'Verify QR',
+                      payload: _controller.text.trim().toUpperCase(),
+                      subtitle: _result!['petName']?.toString(),
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
@@ -163,10 +175,16 @@ class _VerificationResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final valid = data['valid'] == true || data['status']?.toString().toUpperCase() == 'VALID';
-    final petName = data['petName']?.toString() ?? data['pet']?['name']?.toString() ?? '—';
-    final vaccine = data['vaccineType']?.toString() ?? data['vaccine']?.toString() ?? '—';
-    final vaccinatedAt = _parseDate(data['vaccinatedAt'] ?? data['administeredAt']);
+    final valid =
+        data['valid'] == true ||
+        data['status']?.toString().toUpperCase() == 'VALID';
+    final petName =
+        data['petName']?.toString() ?? data['pet']?['name']?.toString() ?? '—';
+    final vaccine =
+        data['vaccineType']?.toString() ?? data['vaccine']?.toString() ?? '—';
+    final vaccinatedAt = _parseDate(
+      data['vaccinatedAt'] ?? data['administeredAt'],
+    );
 
     return Card(
       child: Padding(
@@ -184,8 +202,12 @@ class _VerificationResultCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    valid ? 'Certificate is valid' : 'Certificate not found or invalid',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    valid
+                        ? 'Certificate is valid'
+                        : 'Certificate not found or invalid',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -195,10 +217,17 @@ class _VerificationResultCard extends StatelessWidget {
               _line('Pet', petName),
               _line('Vaccine', vaccine),
               if (vaccinatedAt != null)
-                _line('Vaccinated', DateFormat('d MMM yyyy').format(vaccinatedAt)),
+                _line(
+                  'Vaccinated',
+                  DateFormat('d MMM yyyy').format(vaccinatedAt),
+                ),
               _line('Token', token),
               const SizedBox(height: 12),
-              OutlinedButton.icon(onPressed: onShowQr, icon: const Icon(Icons.qr_code_2), label: const Text('Show QR')),
+              OutlinedButton.icon(
+                onPressed: onShowQr,
+                icon: const Icon(Icons.qr_code_2),
+                label: const Text('Show QR'),
+              ),
               const SizedBox(height: 8),
               FilledButton.icon(
                 onPressed: onViewFull,
@@ -218,8 +247,16 @@ class _VerificationResultCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 90, child: Text(label, style: const TextStyle(color: Colors.black54))),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+          SizedBox(
+            width: 90,
+            child: Text(label, style: const TextStyle(color: Colors.black54)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );

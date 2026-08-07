@@ -5,9 +5,6 @@ class CreateStoryUseCase {
   final StoryRepository _repo;
   CreateStoryUseCase(this._repo);
 
-  Future<StoryEntity> call({
-    required String mediaPath,
-    String? caption,
-  }) =>
+  Future<StoryEntity> call({required String mediaPath, String? caption}) =>
       _repo.createStory(mediaPath: mediaPath, caption: caption);
 }

@@ -39,20 +39,22 @@ class PrivacySettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'profileVisibleToEveryone': profileVisibleToEveryone,
-        'showOnlineStatus': showOnlineStatus,
-        'allowMessagesFromFollowersOnly': allowMessagesFromFollowersOnly,
-        'showActivityInFeed': showActivityInFeed,
-        'allowTagging': allowTagging,
-        'whoCanComment': whoCanComment.name,
-      };
+    'profileVisibleToEveryone': profileVisibleToEveryone,
+    'showOnlineStatus': showOnlineStatus,
+    'allowMessagesFromFollowersOnly': allowMessagesFromFollowersOnly,
+    'showActivityInFeed': showActivityInFeed,
+    'allowTagging': allowTagging,
+    'whoCanComment': whoCanComment.name,
+  };
 
   factory PrivacySettings.fromJson(Map<String, dynamic> json) {
-    bool b(String key, {bool fallback = true}) => json[key] == false ? false : fallback;
+    bool b(String key, {bool fallback = true}) =>
+        json[key] == false ? false : fallback;
     return PrivacySettings(
       profileVisibleToEveryone: b('profileVisibleToEveryone'),
       showOnlineStatus: b('showOnlineStatus'),
-      allowMessagesFromFollowersOnly: json['allowMessagesFromFollowersOnly'] == true,
+      allowMessagesFromFollowersOnly:
+          json['allowMessagesFromFollowersOnly'] == true,
       showActivityInFeed: b('showActivityInFeed'),
       allowTagging: b('allowTagging'),
       whoCanComment: CommentPermission.values.firstWhere(

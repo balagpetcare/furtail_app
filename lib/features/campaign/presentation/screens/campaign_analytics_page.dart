@@ -26,13 +26,17 @@ class CampaignAnalyticsPage extends ConsumerWidget {
         ),
         data: (stats) {
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(campaignLiveAnalyticsProvider(slug)),
+            onRefresh: () async =>
+                ref.invalidate(campaignLiveAnalyticsProvider(slug)),
             child: ListView(
               padding: EdgeInsets.all(padding),
               children: [
                 _metricGrid(context, stats),
                 const SizedBox(height: 20),
-                Text('Area-wise statistics', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Area-wise statistics',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
                 if (stats.areaStats.isEmpty)
                   const Text('No area data yet.')
@@ -41,7 +45,9 @@ class CampaignAnalyticsPage extends ConsumerWidget {
                     (a) => Card(
                       child: ListTile(
                         title: Text(a.bookingArea),
-                        subtitle: Text('${a.totalBookings} bookings · ${a.totalCats} cats'),
+                        subtitle: Text(
+                          '${a.totalBookings} bookings · ${a.totalCats} cats',
+                        ),
                         trailing: Text('${a.vaccinatedCats} done'),
                       ),
                     ),
@@ -88,9 +94,8 @@ class CampaignAnalyticsPage extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Text(
                       e.$2,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),

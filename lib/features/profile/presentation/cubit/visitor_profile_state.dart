@@ -20,9 +20,8 @@ class VisitorProfileState {
     this.status,
   });
 
-  factory VisitorProfileState.initial() => const VisitorProfileState(
-        loading: true,
-      );
+  factory VisitorProfileState.initial() =>
+      const VisitorProfileState(loading: true);
 
   VisitorProfileState copyWith({
     bool? loading,
@@ -44,4 +43,3 @@ class VisitorProfileState {
     );
   }
 }
-

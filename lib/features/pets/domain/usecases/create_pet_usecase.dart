@@ -5,5 +5,6 @@ class CreatePetUsecase {
   final PetRepository repo;
   CreatePetUsecase(this.repo);
 
-  Future<int> call(PetEntity pet) => repo.createPet(pet);
+  Future<PetEntity> call(PetEntity pet, {String? idempotencyKey}) =>
+      repo.createPet(pet, idempotencyKey: idempotencyKey);
 }

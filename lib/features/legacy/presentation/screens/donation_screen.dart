@@ -6,12 +6,7 @@ import 'package:furtail_app/features/fundraising/presentation/widgets/fundraisin
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_details_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
 
-enum DonationSort {
-  newest,
-  endingSoon,
-  progressLow,
-  progressHigh,
-}
+enum DonationSort { newest, endingSoon, progressLow, progressHigh }
 
 class DonationScreen extends ConsumerStatefulWidget {
   const DonationScreen({super.key});
@@ -36,10 +31,19 @@ class _DonationScreenState extends ConsumerState<DonationScreen> {
             icon: const Icon(Icons.sort_rounded),
             onSelected: (v) => setState(() => _sort = v),
             itemBuilder: (_) => const [
-              PopupMenuItem(value: DonationSort.endingSoon, child: Text('Ending soon')),
+              PopupMenuItem(
+                value: DonationSort.endingSoon,
+                child: Text('Ending soon'),
+              ),
               PopupMenuItem(value: DonationSort.newest, child: Text('Newest')),
-              PopupMenuItem(value: DonationSort.progressHigh, child: Text('Highest progress')),
-              PopupMenuItem(value: DonationSort.progressLow, child: Text('Lowest progress')),
+              PopupMenuItem(
+                value: DonationSort.progressHigh,
+                child: Text('Highest progress'),
+              ),
+              PopupMenuItem(
+                value: DonationSort.progressLow,
+                child: Text('Lowest progress'),
+              ),
             ],
           ),
           IconButton(
@@ -47,7 +51,9 @@ class _DonationScreenState extends ConsumerState<DonationScreen> {
             icon: const Icon(Icons.add_rounded),
             onPressed: () async {
               final created = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(builder: (_) => const FundraisingCreateScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const FundraisingCreateScreen(),
+                ),
               );
               if (created == true) {
                 ref.invalidate(fundraisingFeedProvider);
@@ -97,7 +103,10 @@ class _DonationScreenState extends ConsumerState<DonationScreen> {
                 campaign: c,
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => FundraisingDetailsScreen(campaignId: c.id)),
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          FundraisingDetailsScreen(campaignId: c.id),
+                    ),
                   );
                 },
               );

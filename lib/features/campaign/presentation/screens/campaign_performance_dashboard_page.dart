@@ -43,11 +43,14 @@ class CampaignPerformanceDashboardPage extends ConsumerWidget {
                 if (metrics.isEmpty) {
                   return const CampaignEmptyView(
                     title: 'No metrics yet',
-                    subtitle: 'Open the home banner or complete a booking to collect data.',
+                    subtitle:
+                        'Open the home banner or complete a booking to collect data.',
                   );
                 }
                 return Column(
-                  children: metrics.map((m) => _MetricCard(metrics: m)).toList(),
+                  children: metrics
+                      .map((m) => _MetricCard(metrics: m))
+                      .toList(),
                 );
               },
             ),
@@ -60,7 +63,10 @@ class CampaignPerformanceDashboardPage extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Active campaigns', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Active campaigns',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
                     ...state.campaigns.map(
                       (c) => ListTile(
@@ -98,16 +104,28 @@ class _MetricCard extends StatelessWidget {
           children: [
             Text(metrics.slug, style: Theme.of(context).textTheme.titleMedium),
             if (metrics.abVariant != null)
-              Text('Variant ${metrics.abVariant}', style: Theme.of(context).textTheme.labelSmall),
+              Text(
+                'Variant ${metrics.abVariant}',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             const SizedBox(height: 12),
             _row('Views', '${metrics.views}'),
             _row('Clicks', '${metrics.clicks}'),
             _row('Bookings', '${metrics.bookings}'),
             _row('Revenue', '৳${metrics.revenue}'),
             const Divider(height: 20),
-            _row('Banner CTR', '${(metrics.clickThroughRate * 100).toStringAsFixed(1)}%'),
-            _row('Booking rate', '${(metrics.bookingRate * 100).toStringAsFixed(1)}%'),
-            _row('Conversion', '${(metrics.conversionRate * 100).toStringAsFixed(1)}%'),
+            _row(
+              'Banner CTR',
+              '${(metrics.clickThroughRate * 100).toStringAsFixed(1)}%',
+            ),
+            _row(
+              'Booking rate',
+              '${(metrics.bookingRate * 100).toStringAsFixed(1)}%',
+            ),
+            _row(
+              'Conversion',
+              '${(metrics.conversionRate * 100).toStringAsFixed(1)}%',
+            ),
           ],
         ),
       ),

@@ -11,32 +11,35 @@ class ProfileTabAbout extends StatelessWidget {
   final UserProfileModel profile;
   final VoidCallback? onSeeMore;
 
-  const ProfileTabAbout({
-    super.key,
-    required this.profile,
-    this.onSeeMore,
-  });
+  const ProfileTabAbout({super.key, required this.profile, this.onSeeMore});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final bio      = (profile.bio ?? '').trim();
-    final livesIn  = (profile.placeLive ?? '').trim();
-    final from     = (profile.from ?? '').trim();
+    final bio = (profile.bio ?? '').trim();
+    final livesIn = (profile.placeLive ?? '').trim();
+    final from = (profile.from ?? '').trim();
     final profType = (profile.profileType ?? '').trim();
-    final work     = (profile.workStatus ?? '').trim();
-    final edu      = (profile.education ?? '').trim();
+    final work = (profile.workStatus ?? '').trim();
+    final edu = (profile.education ?? '').trim();
 
-    final gender   = (profile.gender ?? '').trim();
+    final gender = (profile.gender ?? '').trim();
     final religion = (profile.religiousStatus ?? '').trim();
-    final marital  = (profile.maritalStatus ?? '').trim();
-    final bday     = profile.birthdate;
+    final marital = (profile.maritalStatus ?? '').trim();
+    final bday = profile.birthdate;
 
-    final hasIntro = livesIn.isNotEmpty || from.isNotEmpty ||
-        profType.isNotEmpty || work.isNotEmpty || edu.isNotEmpty;
-    final hasPrivate = gender.isNotEmpty || religion.isNotEmpty ||
-        marital.isNotEmpty || bday != null;
+    final hasIntro =
+        livesIn.isNotEmpty ||
+        from.isNotEmpty ||
+        profType.isNotEmpty ||
+        work.isNotEmpty ||
+        edu.isNotEmpty;
+    final hasPrivate =
+        gender.isNotEmpty ||
+        religion.isNotEmpty ||
+        marital.isNotEmpty ||
+        bday != null;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -47,11 +50,19 @@ class ProfileTabAbout extends StatelessWidget {
         if (bio.isNotEmpty)
           _card(
             cs,
-            child: Text(bio, style: const TextStyle(fontSize: 14, height: 1.55)),
+            child: Text(
+              bio,
+              style: const TextStyle(fontSize: 14, height: 1.55),
+            ),
           )
         else
-          _addPrompt(context, cs, 'Add a bio to tell people about yourself',
-              Icons.edit_note_rounded, onSeeMore),
+          _addPrompt(
+            context,
+            cs,
+            'Add a bio to tell people about yourself',
+            Icons.edit_note_rounded,
+            onSeeMore,
+          ),
 
         const SizedBox(height: 20),
 
@@ -76,8 +87,13 @@ class ProfileTabAbout extends StatelessWidget {
             ),
           )
         else
-          _addPrompt(context, cs, 'Add your location, work, and education',
-              Icons.add_location_alt_outlined, onSeeMore),
+          _addPrompt(
+            context,
+            cs,
+            'Add your location, work, and education',
+            Icons.add_location_alt_outlined,
+            onSeeMore,
+          ),
 
         // ── Private personal info (only when at least one field is set) ──────
         if (hasPrivate) ...[
@@ -108,14 +124,12 @@ class ProfileTabAbout extends StatelessWidget {
             cs,
             child: Column(
               children: [
-                if (gender.isNotEmpty)
-                  _iconRow(Icons.wc_outlined, gender),
+                if (gender.isNotEmpty) _iconRow(Icons.wc_outlined, gender),
                 if (religion.isNotEmpty)
                   _iconRow(Icons.brightness_low_outlined, religion),
                 if (marital.isNotEmpty)
                   _iconRow(Icons.favorite_border_rounded, marital),
-                if (bday != null)
-                  _iconRow(Icons.cake_outlined, _fmtDate(bday)),
+                if (bday != null) _iconRow(Icons.cake_outlined, _fmtDate(bday)),
               ],
             ),
           ),
@@ -134,7 +148,8 @@ class ProfileTabAbout extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
@@ -147,9 +162,9 @@ class ProfileTabAbout extends StatelessWidget {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   static Widget _secTitle(String t) => Text(
-        t,
-        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-      );
+    t,
+    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+  );
 
   static Widget _card(ColorScheme cs, {required Widget child}) {
     return Container(
@@ -218,8 +233,18 @@ class ProfileTabAbout extends StatelessWidget {
 
   static String _fmtDate(DateTime d) {
     const m = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${m[d.month - 1]} ${d.day}, ${d.year}';
   }

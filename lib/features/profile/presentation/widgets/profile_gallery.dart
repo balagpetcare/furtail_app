@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/theme/typography.dart';
+
 class ProfileGallery extends StatelessWidget {
   final List<String> urls;
 
@@ -15,7 +16,10 @@ class ProfileGallery extends StatelessWidget {
       children: [
         Text(
           "Gallery",
-          style: context.appText.bodyLarge!.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
+          style: context.appText.bodyLarge!.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
         ),
         const SizedBox(height: 12),
         GridView.builder(
