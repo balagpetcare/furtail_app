@@ -370,10 +370,17 @@ class PostsRemoteDs {
     String? songArtist,
     int? songStartMs,
     int? songDurationMs,
+    // Ownership of this key belongs to the caller (the create-post
+    // repository/controller boundary) — see that layer for why it must be
+    // one stable key per logical draft, reused across retries.
+    String? idempotencyKey,
   }) async {
+    final headers = await _authHeaders(json: true);
+    final idempotencyHeaders = _buildUploadHeaders(idempotencyKey: idempotencyKey);
+    if (idempotencyHeaders != null) headers.addAll(idempotencyHeaders);
     final res = await http.post(
       Uri.parse(ApiEndpoints.postsCreate()),
-      headers: await _authHeaders(json: true),
+      headers: headers,
       body: jsonEncode({
         'type': type,
         'caption': caption,

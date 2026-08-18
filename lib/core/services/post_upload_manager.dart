@@ -657,6 +657,12 @@ class PostUploadManager {
           songArtist: task.songArtist,
           songStartMs: task.songStartMs,
           songDurationMs: task.songDurationMs,
+          // task.id is generated once when the task is first built (see
+          // create_post_screen.dart) and retry() always reconstructs the
+          // task with the SAME id (see retry() above) — so this is exactly
+          // the stable one-key-per-logical-operation retry() needs. A
+          // genuinely new post starts a brand new task with a new id.
+          idempotencyKey: task.id,
         );
         debugPrint(
           '[PostUploadManager] API response time: ${DateTime.now().difference(apiStart).inMilliseconds}ms',
