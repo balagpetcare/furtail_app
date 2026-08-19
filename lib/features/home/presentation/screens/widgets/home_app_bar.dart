@@ -5,6 +5,9 @@ import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:furtail_app/features/messaging/presentation/providers/messaging_providers.dart'
+    show messagesUnreadCountProvider;
 
 class HomeAppBar extends StatelessWidget {
   final String userName;
@@ -73,6 +76,50 @@ class HomeAppBar extends StatelessWidget {
             color: cs.onSurface,
             onPressed: () =>
                 Navigator.pushNamed(context, AppRoutes.notificationsList),
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final unread =
+                  ref.watch(messagesUnreadCountProvider).valueOrNull ?? 0;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AccessibleIconButton(
+                    icon: Icons.chat_bubble_outline_rounded,
+                    tooltip: 'Messages',
+                    semanticLabel: 'Messages',
+                    color: cs.onSurface,
+                    onPressed: () =>
+                        Navigator.pushNamed(context, AppRoutes.messagesInbox),
+                  ),
+                  if (unread > 0)
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: cs.error,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unread > 99 ? '99+' : '$unread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),

@@ -52,9 +52,9 @@ class CustomBottomNav extends StatelessWidget {
                 Expanded(
                   child: _buildNavItem(
                     context,
-                    Icons.medical_services_outlined,
-                    Icons.medical_services_rounded,
-                    'Services',
+                    Icons.people_alt_outlined,
+                    Icons.people_alt_rounded,
+                    'Friends',
                     3,
                   ),
                 ),

@@ -13,6 +13,8 @@ import 'package:furtail_app/core/widgets/placeholder_screen.dart';
 
 // Ã Â¦â€°Ã Â¦â€¡Ã Â¦Å“Ã Â§â€¡Ã Â¦Å¸ Ã Â¦â€¡Ã Â¦Â®Ã Â¦ÂªÃ Â§â€¹Ã Â¦Â°Ã Â§ÂÃ Â¦Å¸
 import 'widgets/home_app_bar.dart';
+import '../widgets/home_composer_entry.dart';
+import '../widgets/people_you_may_know_section.dart';
 import 'widgets/service_grid.dart';
 import 'widgets/feed_list.dart';
 import 'widgets/custom_bottom_nav.dart';
@@ -28,6 +30,7 @@ import 'package:furtail_app/features/legacy/presentation/screens/create_post_scr
 import 'package:furtail_app/features/legacy/presentation/screens/shop_screen.dart';
 import 'package:furtail_app/features/legacy/presentation/screens/services_screen.dart';
 import 'package:furtail_app/features/profile/presentation/screens/user_profile_screen.dart';
+import 'package:furtail_app/features/social/presentation/screens/people_hub_screen.dart';
 
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_feed_screen.dart';
 import 'package:furtail_app/features/fundraising/presentation/screens/fundraising_create_screen.dart';
@@ -60,7 +63,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
   // Ã¢Å“â€¦ Rebuild/refresh tokens for each tab (IndexedStack keeps state; tokens force reload)
   int _homeRefreshToken = 0;
   final int _videosRefreshToken = 0;
-  int _servicesRefreshToken = 0;
+  int _friendsRefreshToken = 0;
   int _profileRefreshToken = 0;
 
   // Connectivity: auto-refresh feed when internet returns.
@@ -341,9 +344,29 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
     setState(() {
       _selectedIndex = index;
       if (index == 0) _homeRefreshToken++;
-      if (index == 3) _servicesRefreshToken++;
+      if (index == 3) _friendsRefreshToken++;
       if (index == 4 && isSameTab) _profileRefreshToken++;
     });
+  }
+
+  /// Opens the canonical Create Post flow directly — used by the Home
+  /// composer entry (tap "Share something...").  Mirrors the login-gate +
+  /// refresh-on-success behavior of the `_CreateAction.post` case in the
+  /// bottom-sheet create menu, since both open the same screen.
+  Future<void> _openCreatePost() async {
+    if (!_isLoggedIn) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => LoginScreen()),
+      );
+      await _loadUserData();
+      if (!mounted || !_isLoggedIn) return;
+    }
+    final created = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+    );
+    if (created == true && mounted) setState(() => _homeRefreshToken++);
   }
 
   Future<void> _showCreateSheet() async {
@@ -456,7 +479,10 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
         if (changed == true && mounted) await _loadUserData();
         return;
       case _CreateAction.service:
-        if (mounted) setState(() => _selectedIndex = 3);
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ServicesScreen()),
+        );
         return;
       case _CreateAction.lostPet:
         if (mounted) {
@@ -546,8 +572,13 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
         }
 
       case BPADrawerDestination.services:
-        if (mounted) setState(() => _selectedIndex = 3);
-        return;
+        {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ServicesScreen()),
+          );
+          return;
+        }
 
       case BPADrawerDestination.petRegister:
         {
@@ -575,7 +606,10 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
       case BPADrawerDestination.grooming:
       case BPADrawerDestination.training:
         {
-          if (mounted) setState(() => _selectedIndex = 3);
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ServicesScreen()),
+          );
           return;
         }
 
@@ -589,18 +623,23 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
         }
 
       case BPADrawerDestination.community:
-      case BPADrawerDestination.events:
         {
-          pushPlaceholder(
-            'Coming Soon',
-            'This feature is being built and will be available soon.',
-          );
+          await Navigator.pushNamed(context, AppRoutes.peopleHub);
           return;
         }
 
       case BPADrawerDestination.messages:
         {
           await Navigator.pushNamed(context, AppRoutes.messagesInbox);
+          return;
+        }
+
+      case BPADrawerDestination.events:
+        {
+          pushPlaceholder(
+            'Coming Soon',
+            'This feature is being built and will be available soon.',
+          );
           return;
         }
 
@@ -838,6 +877,7 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
           pendingUpload: _currentUploadState,
           onRetryUpload: _onRetryUploadFromFeed,
           onCancelUpload: _onCancelUploadFromFeed,
+          onComposerTap: _openCreatePost,
         ),
       ),
       KeyedSubtree(
@@ -846,8 +886,8 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
       ),
       const SizedBox.shrink(),
       KeyedSubtree(
-        key: ValueKey('services_$_servicesRefreshToken'),
-        child: const ServicesScreen(),
+        key: ValueKey('friends_$_friendsRefreshToken'),
+        child: const PeopleHubScreen(),
       ),
       KeyedSubtree(
         key: ValueKey('profile_$_profileRefreshToken'),
@@ -968,6 +1008,7 @@ class HomeContentAssembly extends ConsumerWidget {
   final PostUploadState? pendingUpload;
   final VoidCallback? onRetryUpload;
   final VoidCallback? onCancelUpload;
+  final VoidCallback? onComposerTap;
 
   const HomeContentAssembly({
     super.key,
@@ -977,6 +1018,7 @@ class HomeContentAssembly extends ConsumerWidget {
     this.pendingUpload,
     this.onRetryUpload,
     this.onCancelUpload,
+    this.onComposerTap,
   });
 
   @override
@@ -996,10 +1038,17 @@ class HomeContentAssembly extends ConsumerWidget {
           floating: true,
           snap: true,
           toolbarHeight: 48,
-          flexibleSpace: SafeArea(
-            bottom: false,
-            child: ColoredBox(
-              color: cs.surface,
+          // ColoredBox must wrap SafeArea, not the other way around:
+          // SafeArea only adds padding, it paints nothing, so with the
+          // background inside it the status-bar-height strip at the very
+          // top of this flexibleSpace was left fully transparent — while
+          // floating/snap revealed the header mid-scroll, whatever had
+          // just scrolled out from underneath (e.g. a PYMK card's border)
+          // could paint through that gap as a stray line.
+          flexibleSpace: ColoredBox(
+            color: cs.surface,
+            child: SafeArea(
+              bottom: false,
               child: HomeAppBar(
                 userName: userName,
                 avatarUrl: ref.watch(currentUserProvider).avatarUrl,
@@ -1011,6 +1060,16 @@ class HomeContentAssembly extends ConsumerWidget {
         // ── Slim status bar (offline + upload status) ────────────────
         SliverToBoxAdapter(child: _buildSlimStatusBar(context)),
 
+        // ── Post composer entry ("Share something...") ───────────────
+        if (onComposerTap != null)
+          SliverToBoxAdapter(
+            child: HomeComposerEntry(
+              avatarUrl: ref.watch(currentUserProvider).avatarUrl,
+              userName: userName,
+              onTap: onComposerTap!,
+            ),
+          ),
+
         // ── My Day / Story ──────────────────────────────────────────
         SliverToBoxAdapter(
           child: Column(
@@ -1018,6 +1077,7 @@ class HomeContentAssembly extends ConsumerWidget {
               const MyDaySection(),
               const SizedBox(height: 10),
               const ServiceGrid(),
+              const PeopleYouMayKnowSection(),
               const SizedBox(height: 8),
               Divider(
                 thickness: 1,

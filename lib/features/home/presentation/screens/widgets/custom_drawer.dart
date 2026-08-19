@@ -162,6 +162,11 @@ class _FurtailAppDrawerState extends State<FurtailAppDrawer> {
                     onTap: () => _onTap(BPADrawerDestination.community),
                   ),
                   DrawerMenuItem(
+                    icon: Icons.chat_bubble_rounded,
+                    title: 'Messages',
+                    onTap: () => _onTap(BPADrawerDestination.messages),
+                  ),
+                  DrawerMenuItem(
                     icon: Icons.pets_rounded,
                     title: 'My Pets',
                     onTap: () => _onTap(BPADrawerDestination.petList),

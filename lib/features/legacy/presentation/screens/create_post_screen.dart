@@ -394,38 +394,53 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: Colors.grey.shade200),
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              item.icon,
-                              color: Theme.of(context).colorScheme.primary,
+                        // ListTile paints its own Material ink layer, which
+                        // needs a Material ancestor to render onto. Sitting
+                        // directly inside a Container with `color:` set trips
+                        // "ListTile background color or ink splashes may be
+                        // invisible" because the Container paints *over* the
+                        // ancestor Material this tile would otherwise find,
+                        // so the ink splash renders behind it. A transparent
+                        // Material here gives the tile its own paint surface
+                        // while the Container above keeps the visible
+                        // background/border.
+                        child: Material(
+                          type: MaterialType.transparency,
+                          borderRadius: BorderRadius.circular(14),
+                          clipBehavior: Clip.antiAlias,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
                             ),
-                          ),
-                          title: Text(
-                            item.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            '${item.source} • ${item.durationLabel}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.play_circle_outline),
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                item.icon,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
-                              FilledButton(
-                                onPressed: () => Navigator.pop(ctx, item),
-                                child: const Text('Select'),
-                              ),
-                            ],
+                            ),
+                            title: Text(
+                              item.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '${item.source} • ${item.durationLabel}',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.play_circle_outline),
+                                ),
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(ctx, item),
+                                  child: const Text('Select'),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
