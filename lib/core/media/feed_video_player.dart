@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -27,6 +28,11 @@ class FeedVideoPlayer extends StatefulWidget {
   final BoxFit fit;
   final VoidCallback? onFullscreenPressed;
 
+  /// Poster/thumbnail shown behind the player while it loads and, if
+  /// initialization fails, behind the retry affordance — so the card
+  /// never shows a bare black rectangle while a real preview exists.
+  final String? posterUrl;
+
   /// When true: hides all controls; tap navigates to the detail screen instead
   /// of toggling play/pause. Designed for in-feed card usage.
   final bool feedMode;
@@ -48,13 +54,15 @@ class FeedVideoPlayer extends StatefulWidget {
     this.onFullscreenPressed,
     this.feedMode = false,
     this.isDetailViewer = false,
+    this.posterUrl,
   });
 
   @override
   State<FeedVideoPlayer> createState() => _FeedVideoPlayerState();
 }
 
-class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
+class _FeedVideoPlayerState extends State<FeedVideoPlayer>
+    with WidgetsBindingObserver {
   final _media = MediaPlaybackController.instance;
   VideoPlayerController? _c;
   Future<void>? _init;
@@ -71,9 +79,23 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
   bool _isScrubbing = false;
   double _lastVisibilityFraction = 0.0;
   bool _initFailed = false;
+  bool _pausedForLifecycle = false;
 
   Future<bool> _shouldAutoplay() async {
     if (!widget.enableAutoplay) return false;
+    // Data Saver overrides the Wi-Fi-only toggle with an even more
+    // conservative rule: never autoplay, full stop. High Quality overrides
+    // it the other way: autoplay is fine even on cellular. Auto (the
+    // default) defers entirely to the existing playOneByOneWifiOnly
+    // setting, unchanged.
+    switch (_media.autoplayQualityPreference) {
+      case MediaQualityPreference.dataSaver:
+        return false;
+      case MediaQualityPreference.high:
+        return true;
+      case MediaQualityPreference.auto:
+        break;
+    }
     if (_media.playOneByOneWifiOnly.value) {
       try {
         final connectivityList = await Connectivity().checkConnectivity();
@@ -95,6 +117,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _media.ensureInitialized();
     _muted =
         widget.startMuted ||
@@ -122,6 +145,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (widget.syncMuteWithGlobal) {
       _media.isMuted.removeListener(_onMuteChanged);
     }
@@ -131,6 +155,42 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
     _visDebounce?.cancel();
     _disposeController();
     super.dispose();
+  }
+
+  /// Pauses when the app leaves the foreground (backgrounded, an incoming
+  /// call overlay, etc.) and resumes only if the video was actually
+  /// playing for that reason (not paused by the user) and this card is
+  /// still meaningfully visible — mirrors the same >=70% visibility bar
+  /// used for autoplay, so resuming never un-pauses an offscreen card.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final c = _c;
+    if (c == null) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      if (c.value.isPlaying) {
+        _pausedForLifecycle = true;
+        try {
+          c.pause();
+        } catch (_) {}
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_pausedForLifecycle) {
+        _pausedForLifecycle = false;
+        if (_lastVisibilityFraction >= 0.70) {
+          _shouldAutoplay().then((allowed) {
+            if (!allowed || !mounted) return;
+            final current = _c;
+            if (current != null && !current.value.isPlaying) {
+              try {
+                current.play();
+              } catch (_) {}
+            }
+          });
+        }
+      }
+    }
   }
 
   @override
@@ -356,6 +416,7 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
       MaterialPageRoute(
         builder: (_) => FullscreenVideoPlayerScreen(
           url: widget.url,
+          posterUrl: widget.posterUrl,
           startAt: pos,
           startMuted: _muted,
           autoplay: wasPlaying,
@@ -439,13 +500,46 @@ class _FeedVideoPlayerState extends State<FeedVideoPlayer> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Container(color: Colors.black12),
+              if (widget.posterUrl != null && widget.posterUrl!.isNotEmpty)
+                FurtailCachedImage(
+                  imageUrl: widget.posterUrl,
+                  fit: widget.fit,
+                  errorWidget: Container(color: Colors.black12),
+                )
+              else
+                Container(color: Colors.black12),
               if (_initFailed)
-                const Center(
-                  child: Icon(
-                    Icons.play_circle_outline,
-                    color: Colors.white70,
-                    size: 56,
+                Center(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _setup,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.refresh_rounded,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Tap to retry',
+                          style: context.appText.bodySmall!.copyWith(
+                            color: Colors.white,
+                            shadows: const [
+                              Shadow(blurRadius: 6, color: Colors.black87),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               else if (_c == null || _init == null)

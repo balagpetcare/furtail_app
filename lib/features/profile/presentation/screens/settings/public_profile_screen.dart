@@ -12,12 +12,40 @@ import '../../widgets/settings_scaffold.dart';
 /// Public profile — displayName, username, bio. Owned entirely by Furtail;
 /// this screen never calls Central Auth to load or save anything.
 class PublicProfileScreen extends ConsumerStatefulWidget {
-  const PublicProfileScreen({super.key, required this.initial, this.profileService});
+  const PublicProfileScreen({
+    super.key,
+    required this.initial,
+    this.profileService,
+  });
   final UserProfileModel initial;
   final ProfileService? profileService;
 
   @override
-  ConsumerState<PublicProfileScreen> createState() => _PublicProfileScreenState();
+  ConsumerState<PublicProfileScreen> createState() =>
+      _PublicProfileScreenState();
+}
+
+/// Canonical stored gender values — kept in sync with `GENDER_VALUES` in
+/// the backend's `shared-user-profile.ts`. The stored value is always one
+/// of these; display labels live only here, on the client.
+enum GenderOption {
+  male('MALE', 'Male'),
+  female('FEMALE', 'Female'),
+  other('OTHER', 'Other'),
+  preferNotToSay('PREFER_NOT_TO_SAY', 'Prefer not to say');
+
+  const GenderOption(this.value, this.label);
+  final String value;
+  final String label;
+
+  static GenderOption? fromValue(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final upper = raw.trim().toUpperCase();
+    for (final option in GenderOption.values) {
+      if (option.value == upper) return option;
+    }
+    return null;
+  }
 }
 
 class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
@@ -27,6 +55,7 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
   late final TextEditingController _displayName;
   late final TextEditingController _username;
   late final TextEditingController _bio;
+  GenderOption? _gender;
 
   bool _saving = false;
   String? _formError;
@@ -38,13 +67,18 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
   void initState() {
     super.initState();
     final initialUsername = widget.initial.username ?? '';
-    _usernameWasEmailDerived = ProfileValidation.looksEmailDerived(initialUsername);
+    _usernameWasEmailDerived = ProfileValidation.looksEmailDerived(
+      initialUsername,
+    );
     _displayName = TextEditingController(text: widget.initial.name);
     // A legacy email-derived username is a private repair state, never a
     // real public username — the field starts empty so the user must
     // deliberately choose a real one instead of unknowingly keeping it.
-    _username = TextEditingController(text: _usernameWasEmailDerived ? '' : initialUsername);
+    _username = TextEditingController(
+      text: _usernameWasEmailDerived ? '' : initialUsername,
+    );
     _bio = TextEditingController(text: widget.initial.bio ?? '');
+    _gender = GenderOption.fromValue(widget.initial.gender);
     for (final c in [_displayName, _username, _bio]) {
       c.addListener(_onFieldChanged);
     }
@@ -71,6 +105,7 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
     final baselineUsername = _usernameWasEmailDerived ? '' : (p.username ?? '');
     if (_username.text.trim() != baselineUsername) return true;
     if (_bio.text.trim() != (p.bio ?? '')) return true;
+    if (_gender != GenderOption.fromValue(p.gender)) return true;
     return false;
   }
 
@@ -108,8 +143,11 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
     try {
       final payload = <String, dynamic>{
         'displayName': _displayName.text.trim(),
-        'username': _username.text.trim().isEmpty ? null : _username.text.trim(),
+        'username': _username.text.trim().isEmpty
+            ? null
+            : _username.text.trim(),
         'bio': _bio.text.trim().isEmpty ? null : _bio.text.trim(),
+        'gender': _gender?.value,
       };
 
       final updated = await _svc.updateProfile(payload);
@@ -151,7 +189,11 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
     return SettingsScaffold(
       title: 'Public profile',
       hasUnsavedChanges: _hasUnsavedChanges,
-      saveState: SettingsSaveState(saving: _saving, dirty: _hasUnsavedChanges, onSave: _save),
+      saveState: SettingsSaveState(
+        saving: _saving,
+        dirty: _hasUnsavedChanges,
+        onSave: _save,
+      ),
       body: Form(
         key: _formKey,
         child: Column(
@@ -170,7 +212,11 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.alternate_email, color: colors.onSecondaryContainer, size: 18),
+                    Icon(
+                      Icons.alternate_email,
+                      color: colors.onSecondaryContainer,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -229,10 +275,32 @@ class _PublicProfileScreenState extends ConsumerState<PublicProfileScreen> {
               decoration: InputDecoration(
                 labelText: 'Bio',
                 hintText: 'Tell people a little about yourself...',
-                helperText: 'Up to ${ProfileValidation.bioMaxLength} characters',
+                helperText:
+                    'Up to ${ProfileValidation.bioMaxLength} characters',
                 errorText: _bioFieldError,
                 prefixIcon: const Icon(Icons.notes_rounded),
                 border: const OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            const SettingsSectionLabel('Gender'),
+            const SizedBox(height: 10),
+            Semantics(
+              label: 'Gender',
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final option in GenderOption.values)
+                    ChoiceChip(
+                      label: Text(option.label),
+                      selected: _gender == option,
+                      onSelected: (selected) {
+                        setState(() => _gender = selected ? option : null);
+                      },
+                    ),
+                ],
               ),
             ),
 

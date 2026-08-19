@@ -31,7 +31,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    // Without these, typing in either field never flips `_hasUnsavedChanges`
+    // reactively — the Save button (which is disabled while `!dirty`, see
+    // SettingsScaffold) would stay disabled until some unrelated rebuild
+    // happened to occur.
+    _firstName.addListener(_onFieldChanged);
+    _lastName.addListener(_onFieldChanged);
     _load();
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
@@ -58,6 +68,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   @override
   void dispose() {
+    _firstName.removeListener(_onFieldChanged);
+    _lastName.removeListener(_onFieldChanged);
     _firstName.dispose();
     _lastName.dispose();
     super.dispose();
@@ -100,13 +112,16 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       final message = e is SessionRecoveryException
           ? e.message
           : e.toString().replaceAll('Exception: ', '');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
   }
 
-  String? _required(String? v) => (v ?? '').trim().isEmpty ? 'This field is required' : null;
+  String? _required(String? v) =>
+      (v ?? '').trim().isEmpty ? 'This field is required' : null;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +148,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return SettingsScaffold(
       title: 'Personal Details',
       hasUnsavedChanges: _hasUnsavedChanges,
-      saveState: SettingsSaveState(saving: _saving, dirty: _hasUnsavedChanges, onSave: _save),
+      saveState: SettingsSaveState(
+        saving: _saving,
+        dirty: _hasUnsavedChanges,
+        onSave: _save,
+      ),
       body: Form(
         key: _formKey,
         child: Column(

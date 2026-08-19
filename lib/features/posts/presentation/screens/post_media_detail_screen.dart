@@ -497,6 +497,7 @@ class _PostMediaDetailScreenState extends State<PostMediaDetailScreen> {
       return Center(
         child: FeedVideoPlayer(
           url: item.playbackUrl,
+          posterUrl: item.thumbnailUrl,
           visibilityKey: 'detail-video-${item.id}',
           startMuted: false, // detail screen plays sound
           syncMuteWithGlobal: false,

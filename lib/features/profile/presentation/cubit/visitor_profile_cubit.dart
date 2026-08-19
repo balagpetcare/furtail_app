@@ -244,4 +244,23 @@ class VisitorProfileController
     // Otherwise, send request.
     return sendFriendRequest();
   }
+
+  /// Removes the user from the current user's friends list. Best-effort: the
+  /// backend route may not exist yet (404), in which case the error is
+  /// surfaced via state (SnackBar) instead of hard-failing the screen.
+  Future<void> unfriend() async {
+    final p = state.profile;
+    if (p == null) return;
+    state = state.copyWith(isFriendLoading: true, error: null);
+    try {
+      await _social.unfriend(p.id);
+      final updated = await _social.getStatus(p.id);
+      state = state.copyWith(isFriendLoading: false, status: updated);
+    } catch (e) {
+      state = state.copyWith(
+        isFriendLoading: false,
+        error: e.toString().replaceAll('Exception: ', ''),
+      );
+    }
+  }
 }

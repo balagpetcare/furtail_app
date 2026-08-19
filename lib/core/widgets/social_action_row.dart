@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:furtail_app/core/widgets/reaction_control.dart';
 
 class SocialActionRow extends StatelessWidget {
   final int likeCount;
   final int commentCount;
   final int shareCount;
   final bool isLiked;
+  final String? viewerReaction;
+  final ValueChanged<String?>? onReact;
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
@@ -25,6 +28,8 @@ class SocialActionRow extends StatelessWidget {
     required this.commentCount,
     required this.shareCount,
     required this.isLiked,
+    this.viewerReaction,
+    this.onReact,
     required this.onLike,
     required this.onComment,
     required this.onShare,
@@ -48,7 +53,6 @@ class SocialActionRow extends StatelessWidget {
     final theme = Theme.of(context);
     final baseColor = foregroundColor ?? theme.colorScheme.onSurfaceVariant;
     final activeColor = selectedColor ?? theme.colorScheme.primary;
-    final likeLabel = _likeLabel(context);
 
     final content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -56,11 +60,15 @@ class SocialActionRow extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _SocialActionButton(
-                icon: isLiked ? Icons.favorite : Icons.favorite_border,
-                label: '$likeLabel ($likeCount)',
-                color: isLiked ? activeColor : baseColor,
-                onTap: onLike,
+              child: ReactionControl(
+                viewerReaction: viewerReaction ?? (isLiked ? 'LIKE' : null),
+                onReact: (val) {
+                  if (onReact != null) {
+                    onReact!(val);
+                  } else {
+                    onLike();
+                  }
+                },
               ),
             ),
             Expanded(
@@ -102,12 +110,6 @@ class SocialActionRow extends StatelessWidget {
         : ColoredBox(color: backgroundColor!, child: content);
 
     return Padding(padding: padding, child: row);
-  }
-
-  static String _likeLabel(BuildContext context) {
-    return Localizations.localeOf(context).languageCode == 'bn'
-        ? 'লাইক'
-        : 'Like';
   }
 }
 

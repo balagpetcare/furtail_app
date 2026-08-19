@@ -16,6 +16,8 @@ import 'package:furtail_app/features/posts/presentation/widgets/report_bottom_sh
 import 'package:furtail_app/core/widgets/app_state_widgets.dart';
 import 'package:furtail_app/features/settings/data/datasources/settings_local_datasource.dart';
 import 'package:furtail_app/features/settings/data/models/blocked_user.dart';
+import 'package:furtail_app/features/messaging/presentation/providers/messaging_providers.dart'
+    show messagingRepositoryProvider;
 
 /// Visitor profile should look almost identical to UserProfile,
 /// but without any edit options.
@@ -239,7 +241,9 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
       );
     } else if (isFriend) {
       friendButton = OutlinedButton.icon(
-        onPressed: null,
+        onPressed: isFriendLoading
+            ? null
+            : () => _confirmUnfriend(context, ctrl, profile.displayName),
         icon: const Icon(Icons.people_rounded, size: 18),
         label: const Text('Friends'),
         style: OutlinedButton.styleFrom(
@@ -336,9 +340,34 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
                 );
               } else if (v == 'block') {
                 _blockUser(context, profile);
+              } else if (v == 'unfriend') {
+                _confirmUnfriend(context, ctrl, profile.displayName);
               }
             },
             itemBuilder: (_) => [
+              if (isFriend)
+                PopupMenuItem(
+                  value: 'unfriend',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.person_remove_rounded,
+                        size: 18,
+                        color: cs.error,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Unfriend User',
+                          style: TextStyle(
+                            color: cs.error,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               PopupMenuItem(
                 value: 'report',
                 child: Row(
@@ -387,6 +416,29 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
             pets: profile.petsCount,
           ),
         ),
+        if (profile.mutualFriendsCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.people_alt_outlined,
+                  size: 14,
+                  color: context.mutedTextColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${profile.mutualFriendsCount} mutual friends',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.mutedTextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         const SizedBox(height: 12),
 
         if (!isSelf) ...[
@@ -409,25 +461,28 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
           ),
           const SizedBox(height: 8),
 
-          // Message — always disabled, full width
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Tooltip(
-              message: 'Messaging coming soon',
+          // Message — enabled only for accepted friends (backend messaging
+          // policy restricts chat to accepted friends). Not a fake enabled
+          // button: eligibility is driven by the real relationship status.
+          if (isFriend)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                child: FilledButton.icon(
+                  onPressed: isFriendLoading
+                      ? null
+                      : () => _openConversation(context, ref, profile),
+                  icon: const Icon(Icons.chat_bubble_rounded, size: 18),
                   label: const Text('Message'),
-                  style: OutlinedButton.styleFrom(
+                  style: FilledButton.styleFrom(
                     padding: btnPad,
                     shape: btnShape,
+                    elevation: 0,
                   ),
                 ),
               ),
             ),
-          ),
           const SizedBox(height: 12),
         ],
         if (profile.awards.isNotEmpty) ...[
@@ -633,6 +688,37 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
     );
   }
 
+  Future<void> _openConversation(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic profile,
+  ) async {
+    final userId = profile.id as int;
+    try {
+      final conversationId = await ref
+          .read(messagingRepositoryProvider)
+          .startConversation(userId);
+      if (!context.mounted) return;
+      Navigator.pushNamed(
+        context,
+        AppRoutes.messagesChat,
+        arguments: {
+          'conversationId': conversationId,
+          'otherUserId': userId,
+          'otherUserName': profile.displayName?.toString(),
+          'otherUserAvatarUrl': profile.avatarUrl?.toString(),
+        },
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open this conversation. Please try again.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _blockUser(BuildContext context, dynamic profile) async {
     final userId = profile.id as int;
     final name = profile.displayName?.toString() ?? 'Furtail Member';
@@ -667,6 +753,32 @@ class _VisitorProfileScreenState extends ConsumerState<VisitorProfileScreen>
       context,
     ).showSnackBar(SnackBar(content: Text('$name blocked')));
     Navigator.of(context).popUntil((r) => r.isFirst);
+  }
+
+  Future<void> _confirmUnfriend(
+    BuildContext context,
+    VisitorProfileController ctrl,
+    String name,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove friend?'),
+        content: Text('$name will be removed from your friends list.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await ctrl.unfriend();
   }
 }
 

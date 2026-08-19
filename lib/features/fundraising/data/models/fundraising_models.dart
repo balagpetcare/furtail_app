@@ -116,18 +116,37 @@ class FundraisingMediaItem {
   final int id;
   final String url;
   final String type;
+  final String? hlsUrl;
+  final String? thumbnailUrl;
 
   const FundraisingMediaItem({
     required this.id,
     required this.url,
     required this.type,
+    this.hlsUrl,
+    this.thumbnailUrl,
   });
 
+  /// The URL to actually hand the video player: prefers the real HLS
+  /// master playlist once transcoding has produced one, falls back to
+  /// the original file (which is what this was before any processing
+  /// completed, or for legacy media uploaded before HLS support existed).
+  String get playbackUrl =>
+      (hlsUrl != null && hlsUrl!.isNotEmpty) ? hlsUrl! : url;
+
   factory FundraisingMediaItem.fromJson(Map<String, dynamic> json) {
+    final hlsRaw = (json['hlsUrl'] ?? json['hls_url'])?.toString();
+    final thumbRaw = json['thumbnailUrl']?.toString();
     return FundraisingMediaItem(
       id: fundraisingInt(json['id']) ?? 0,
       url: MediaUrl.normalize((json['url'] ?? '').toString()),
       type: (json['type'] ?? '').toString(),
+      hlsUrl: hlsRaw != null && hlsRaw.isNotEmpty
+          ? MediaUrl.normalize(hlsRaw)
+          : null,
+      thumbnailUrl: thumbRaw != null && thumbRaw.isNotEmpty
+          ? MediaUrl.normalize(thumbRaw)
+          : null,
     );
   }
 }

@@ -1,8 +1,20 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:furtail_app/core/media/feed_video_player.dart';
 import 'package:furtail_app/core/media/furtail_cache_manager.dart';
 import 'package:furtail_app/features/posts/data/models/post_model.dart';
+
+/// Development-only diagnostic for a failed feed-media load — logs enough
+/// to triage (media id + normalized URL) without ever printing anything in
+/// a release build, and without ever logging a signed/pre-authorized URL's
+/// query string (stripped here since none of this app's media URLs are
+/// expected to carry one; if that ever changes, strip query params before
+/// logging).
+void _logMediaLoadFailure({required int mediaId, required String url}) {
+  if (!kDebugMode) return;
+  debugPrint('[feed-media] failed to load mediaId=$mediaId url=$url');
+}
 
 /// Animated shimmer skeleton used while an image is loading.
 class _MediaSkeleton extends StatefulWidget {
@@ -57,6 +69,101 @@ class _MediaSkeletonState extends State<_MediaSkeleton>
   }
 }
 
+/// Professional, theme-aware fallback for a feed image that failed to
+/// load — replaces the old oversized grey block + raw "Could not load
+/// image" text. Fills the space it's given (the parent already constrains
+/// aspect ratio/max height), stays subtle, and offers Retry only for the
+/// primary single-media case where a tap target makes sense.
+class _BrokenMediaTile extends StatelessWidget {
+  const _BrokenMediaTile({this.onRetry, this.compact = false});
+
+  final VoidCallback? onRetry;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      color: cs.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            color: cs.onSurfaceVariant,
+            size: compact ? 22 : 28,
+          ),
+          if (!compact && onRetry != null) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: cs.primary,
+                minimumSize: const Size(0, 32),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: const Text('Retry', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Wraps a single feed image with cache-evict-and-retry: tapping Retry in
+/// the broken-media fallback clears this specific URL from the disk/memory
+/// cache and rebuilds, so a transient failure (e.g. a momentary network
+/// blip) doesn't strand the user with a permanently broken tile until they
+/// leave and return to the feed.
+class _RetryableFeedImage extends StatefulWidget {
+  const _RetryableFeedImage({
+    required this.imageUrl,
+    required this.mediaId,
+    required this.fit,
+    this.compact = false,
+  });
+
+  final String imageUrl;
+  final int mediaId;
+  final BoxFit fit;
+  final bool compact;
+
+  @override
+  State<_RetryableFeedImage> createState() => _RetryableFeedImageState();
+}
+
+class _RetryableFeedImageState extends State<_RetryableFeedImage> {
+  int _attempt = 0;
+
+  Future<void> _retry() async {
+    await CachedNetworkImage.evictFromCache(
+      widget.imageUrl,
+      cacheManager: FurtailImageCacheManager(),
+    );
+    if (mounted) setState(() => _attempt++);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CachedNetworkImage(
+      key: ValueKey('${widget.imageUrl}#$_attempt'),
+      imageUrl: widget.imageUrl,
+      cacheManager: FurtailImageCacheManager(),
+      fit: widget.fit,
+      placeholder: (_, _) => const _MediaSkeleton(),
+      errorWidget: (_, _, _) {
+        _logMediaLoadFailure(mediaId: widget.mediaId, url: widget.imageUrl);
+        return _BrokenMediaTile(
+          compact: widget.compact,
+          onRetry: widget.compact ? null : _retry,
+        );
+      },
+    );
+  }
+}
+
 class PostMediaGrid extends StatelessWidget {
   final List<PostMediaModel> media;
   final Function(int) onTap;
@@ -106,6 +213,7 @@ class PostMediaGrid extends StatelessWidget {
           aspectRatio: ratio,
           child: FeedVideoPlayer(
             url: item.playbackUrl,
+            posterUrl: item.thumbnailUrl,
             visibilityKey: 'post-grid-video-${item.id}',
             startMuted: true,
             enableAutoplay: true,
@@ -124,31 +232,10 @@ class PostMediaGrid extends StatelessWidget {
         aspectRatio: ratio,
         child: GestureDetector(
           onTap: () => onTap(0),
-          child: CachedNetworkImage(
+          child: _RetryableFeedImage(
             imageUrl: item.url,
-            cacheManager: FurtailImageCacheManager(),
+            mediaId: item.id,
             fit: BoxFit.cover,
-            placeholder: (_, _) => const _MediaSkeleton(),
-            errorWidget: (_, _, _) => Container(
-              color: const Color(0xFFEEEEEE),
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.grey,
-                      size: 32,
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Could not load image',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
         ),
       ),
@@ -316,21 +403,11 @@ class PostMediaGrid extends StatelessWidget {
       );
     }
 
-    return CachedNetworkImage(
+    return _RetryableFeedImage(
       imageUrl: item.url,
-      cacheManager: FurtailImageCacheManager(),
+      mediaId: item.id,
       fit: BoxFit.cover,
-      placeholder: (_, _) => const _MediaSkeleton(),
-      errorWidget: (_, _, _) => Container(
-        color: const Color(0xFFEEEEEE),
-        child: const Center(
-          child: Icon(
-            Icons.broken_image_outlined,
-            color: Colors.grey,
-            size: 28,
-          ),
-        ),
-      ),
+      compact: true,
     );
   }
 }

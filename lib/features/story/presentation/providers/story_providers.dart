@@ -118,7 +118,26 @@ class StoryFeedNotifier extends StateNotifier<AsyncValue<List<StoryEntity>>> {
   }
 
   /// Best-effort view tracking — never shows an error to the user.
+  /// Optimistically flips `isViewedByMe` locally first (so the homepage tray
+  /// ring and ordering update immediately, and a caller re-checking
+  /// `isViewedByMe` from this provider's state won't re-fire the call) —
+  /// the server call itself is idempotent (view-count is a Set of viewer
+  /// ids), so a failure here just means the optimistic flip is corrected by
+  /// the next background refresh rather than needing a rollback.
   Future<void> markViewed(int storyId) async {
+    final current = state.valueOrNull;
+    if (current != null) {
+      final index = current.indexWhere((s) => s.id == storyId);
+      if (index != -1 && !current[index].isViewedByMe) {
+        final updated = [...current];
+        final story = updated[index];
+        updated[index] = story.copyWith(
+          isViewedByMe: true,
+          viewCount: story.viewCount + 1,
+        );
+        if (!_disposed) state = AsyncValue.data(updated);
+      }
+    }
     try {
       await _repository.markViewed(storyId);
     } catch (_) {}

@@ -57,6 +57,15 @@ class _PostCardState extends State<PostCard> {
     final commentCount =
         (data['commentCount'] as num?)?.toInt() ?? _post.commentCount;
     final isLikedByMe = (data['isLikedByMe'] as bool?) ?? _post.isLikedByMe;
+    final viewerReaction = data.containsKey('viewerReaction')
+        ? data['viewerReaction']?.toString()
+        : _post.viewerReaction;
+    final reactionSummary = data.containsKey('reactionSummary')
+        ? PostModel.reactionSummaryFrom(data['reactionSummary'])
+        : _post.reactionSummary;
+    final totalReactionCount =
+        (data['totalReactionCount'] as num?)?.toInt() ??
+        _post.totalReactionCount;
 
     setState(() {
       _post = PostModel(
@@ -73,6 +82,9 @@ class _PostCardState extends State<PostCard> {
         likeCount: likeCount,
         commentCount: commentCount,
         isLikedByMe: isLikedByMe,
+        viewerReaction: viewerReaction,
+        reactionSummary: reactionSummary,
+        totalReactionCount: totalReactionCount,
         isBookmarkedByMe: _post.isBookmarkedByMe,
         privacy: _post.privacy,
         backgroundStyle: _post.backgroundStyle,
@@ -116,6 +128,71 @@ class _PostCardState extends State<PostCard> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Like failed: ${e.toString()}')));
+    } finally {
+      if (mounted) setState(() => _likeBusy = false);
+    }
+  }
+
+  Future<void> _handleReact(String? reaction) async {
+    if (!mounted) return;
+    if (_likeBusy) return;
+
+    final currentlyLiked = _post.isLikedByMe;
+    final currentReaction = _post.viewerReaction;
+    final originalLikeCount = _post.likeCount;
+    final originalTotalCount = _post.totalReactionCount;
+    final originalSummary = Map<String, int>.from(_post.reactionSummary);
+
+    setState(() {
+      _likeBusy = true;
+      var newSummary = Map<String, int>.from(originalSummary);
+      var totalDelta = 0;
+      var likeDelta = 0;
+
+      // Remove old reaction
+      if (currentReaction != null) {
+        newSummary[currentReaction] = (newSummary[currentReaction] ?? 1) - 1;
+        totalDelta -= 1;
+        if (currentReaction == 'LIKE') likeDelta -= 1;
+      } else if (currentlyLiked) {
+        likeDelta -= 1;
+      }
+
+      // Add new reaction
+      if (reaction != null) {
+        newSummary[reaction] = (newSummary[reaction] ?? 0) + 1;
+        totalDelta += 1;
+        if (reaction == 'LIKE') likeDelta += 1;
+      }
+
+      _post = _post.copyWith(
+        viewerReaction: reaction,
+        reactionSummary: newSummary,
+        totalReactionCount: originalTotalCount + totalDelta,
+        isLikedByMe: reaction != null,
+        likeCount: originalLikeCount + likeDelta,
+      );
+    });
+
+    try {
+      final res = reaction == null
+          ? await _ds.unlikePost(_post.id)
+          : await _ds.likePost(_post.id, reaction: reaction);
+      _patchCounts(res);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _post = _post.copyWith(
+          viewerReaction: currentReaction,
+          reactionSummary: originalSummary,
+          totalReactionCount: originalTotalCount,
+          isLikedByMe: currentlyLiked,
+          likeCount: originalLikeCount,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reaction failed: ${e.toString()}')),
+      );
     } finally {
       if (mounted) setState(() => _likeBusy = false);
     }
@@ -437,6 +514,7 @@ class _PostCardState extends State<PostCard> {
 
                 PostCardActions(
                   post: post,
+                  onReact: _handleReact,
                   onLike: _toggleLike,
                   onOpenComments: _openComments,
                   onShare: () {

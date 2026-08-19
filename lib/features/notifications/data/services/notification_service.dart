@@ -102,6 +102,7 @@ class NotificationService {
   bool get permissionsRequested => _permissionsRequested;
 
   NotificationTapCallback? onNotificationTap;
+  NotificationTapCallback? onForegroundNotification;
   IncomingFcmHandler? onIncomingFcm;
 
   Future<void> initialize() async {
@@ -317,6 +318,7 @@ class NotificationService {
     }
     final payload = _payloadFromRemoteMessage(message);
     await showLocalNotification(payload);
+    onForegroundNotification?.call(payload);
   }
 
   Future<void> _onMessageOpenedApp(RemoteMessage message) async {

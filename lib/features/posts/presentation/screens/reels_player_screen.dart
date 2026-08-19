@@ -77,6 +77,7 @@ class _ReelsPlayerScreenState extends State<ReelsPlayerScreen>
 
   VoidCallback? _muteListener;
   bool _detailMuted = false;
+  bool _pausedForLifecycle = false;
 
   static const List<String> _categories = [
     'For You',
@@ -164,9 +165,18 @@ class _ReelsPlayerScreenState extends State<ReelsPlayerScreen>
     final c = _vc;
     if (c == null) return;
     if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      if (c.value.isPlaying) {
+        _pausedForLifecycle = true;
+        try {
+          c.pause();
+        } catch (_) {}
+      }
+    } else if (state == AppLifecycleState.resumed && _pausedForLifecycle) {
+      _pausedForLifecycle = false;
       try {
-        c.pause();
+        c.play();
       } catch (_) {}
     }
   }
@@ -1107,11 +1117,28 @@ class _ReelsPlayerScreenState extends State<ReelsPlayerScreen>
                                 );
                               }
                               if (snap.hasError) {
-                                return const Center(
-                                  child: Icon(
-                                    Icons.error_outline,
-                                    color: Colors.white38,
-                                    size: 48,
+                                return Center(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () => _prepare(_index),
+                                    child: const Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.refresh_rounded,
+                                          color: Colors.white70,
+                                          size: 48,
+                                        ),
+                                        SizedBox(height: 6),
+                                        Text(
+                                          'Tap to retry',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               }
@@ -1528,6 +1555,7 @@ class _ReelsPlayerScreenState extends State<ReelsPlayerScreen>
                   });
                 },
                 onOpenMoreMenu: () => _showMoreMenu(post),
+                onRetry: () => _prepare(i),
               );
             },
           ),
@@ -1908,6 +1936,7 @@ class _ReelPage extends StatefulWidget {
   final VoidCallback onFullscreen;
   final VoidCallback onNavigateToProfile;
   final VoidCallback onOpenMoreMenu;
+  final VoidCallback onRetry;
 
   const _ReelPage({
     required this.post,
@@ -1921,6 +1950,7 @@ class _ReelPage extends StatefulWidget {
     required this.onFullscreen,
     required this.onNavigateToProfile,
     required this.onOpenMoreMenu,
+    required this.onRetry,
   });
 
   @override
@@ -2122,6 +2152,32 @@ class _ReelPageState extends State<_ReelPage> {
                   builder: (_, snap) {
                     if (snap.connectionState != ConnectionState.done) {
                       return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snap.hasError) {
+                      return Center(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: widget.onRetry,
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.refresh_rounded,
+                                color: Colors.white70,
+                                size: 48,
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                'Tap to retry',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
                     }
 
                     final ratio = controller.value.aspectRatio > 0

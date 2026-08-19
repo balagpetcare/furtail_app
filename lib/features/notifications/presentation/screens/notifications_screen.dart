@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import 'package:furtail_app/core/deep_link/deep_link_provider.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
+import 'package:furtail_app/features/social/presentation/screens/people_hub_screen.dart';
 
 import '../../data/models/notification_item.dart';
 import '../../domain/notification_type.dart';
@@ -52,6 +54,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ref.read(notificationsListProvider.notifier).markAsRead(item.id);
     }
 
+    // Friend-request notifications jump straight to the People Hub Requests
+    // tab (the canonical Review Friend Request destination).
+    if (item.type == AppNotificationType.friendRequestReceived) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              const PeopleHubScreen(initialTabIndex: PeopleHubTab.requests),
+        ),
+      );
+      return;
+    }
+
     final url = item.actionUrl;
     if (url != null && url.isNotEmpty) {
       ref.read(deepLinkServiceProvider).handleString(url);
@@ -61,7 +76,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     // Fallback navigation by type.
     final deepLink = ref.read(deepLinkServiceProvider);
     switch (item.type) {
-      case AppNotificationType.friendRequestReceived:
       case AppNotificationType.friendRequestAccepted:
       case AppNotificationType.userFollowed:
         if (item.actorId != null) {
@@ -181,29 +195,94 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       );
     }
 
+    final sections = _groupNotifications(state.items);
+    final children = <Widget>[];
+    for (final section in sections) {
+      children.add(_SectionHeader(label: section.label));
+      for (final item in section.items) {
+        children.add(
+          _NotificationTile(item: item, onTap: () => _onTapItem(item)),
+        );
+      }
+    }
+    if (state.hasMore) {
+      children.add(
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: _onRefresh,
-      child: ListView.builder(
+      child: ListView(
         controller: _scrollController,
-        itemCount: state.items.length + (state.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= state.items.length) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            );
-          }
-          return _NotificationTile(
-            item: state.items[index],
-            onTap: () => _onTapItem(state.items[index]),
-          );
-        },
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: children,
+      ),
+    );
+  }
+}
+
+class _NotificationSection {
+  final String label;
+  final List<NotificationItem> items;
+
+  const _NotificationSection({required this.label, required this.items});
+}
+
+List<_NotificationSection> _groupNotifications(List<NotificationItem> items) {
+  final sections = <String, List<NotificationItem>>{};
+  final now = DateTime.now();
+  for (final item in items) {
+    final date = DateTime(
+      item.createdAt.year,
+      item.createdAt.month,
+      item.createdAt.day,
+    );
+    final label = _sectionLabel(date, now);
+    sections.putIfAbsent(label, () => <NotificationItem>[]).add(item);
+  }
+  return sections.entries
+      .map(
+        (entry) => _NotificationSection(label: entry.key, items: entry.value),
+      )
+      .toList();
+}
+
+String _sectionLabel(DateTime date, DateTime now) {
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+  if (date == today) return 'Today';
+  if (date == yesterday) return 'Yesterday';
+  return DateFormat('MMMM d, yyyy').format(date);
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String label;
+
+  const _SectionHeader({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+      child: Text(
+        label,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }

@@ -1415,6 +1415,7 @@ class _AdoptionMediaViewerState extends State<_AdoptionMediaViewer> {
                     return Center(
                       child: FeedVideoPlayer(
                         url: url,
+                        posterUrl: item.thumbnailUrl,
                         visibilityKey: 'adoption-viewer-${widget.petId}-$i',
                         startMuted: false,
                         enableAutoplay: false,

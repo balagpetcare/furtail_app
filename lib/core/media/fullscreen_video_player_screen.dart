@@ -2,18 +2,21 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:furtail_app/core/theme/typography.dart';
+import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import 'furtail_cache_manager.dart';
+import 'media_playback_controller.dart';
 
 class FullscreenVideoPlayerScreen extends StatefulWidget {
   final String url;
   final Duration startAt;
   final bool startMuted;
   final bool autoplay;
+  final String? posterUrl;
 
   const FullscreenVideoPlayerScreen({
     super.key,
@@ -21,6 +24,7 @@ class FullscreenVideoPlayerScreen extends StatefulWidget {
     this.startAt = Duration.zero,
     this.startMuted = false,
     this.autoplay = true,
+    this.posterUrl,
   });
 
   @override
@@ -29,7 +33,8 @@ class FullscreenVideoPlayerScreen extends StatefulWidget {
 }
 
 class _FullscreenVideoPlayerScreenState
-    extends State<FullscreenVideoPlayerScreen> {
+    extends State<FullscreenVideoPlayerScreen>
+    with WidgetsBindingObserver {
   VideoPlayerController? _c;
   Future<void>? _init;
   bool _muted = false;
@@ -38,14 +43,43 @@ class _FullscreenVideoPlayerScreenState
   int _token = 0;
   bool _wakelockHeld = false;
   String? _activeFilePath;
+  bool _initFailed = false;
+  bool _pausedForLifecycle = false;
 
   @override
   void initState() {
     super.initState();
-    final int token = ++_token;
+    WidgetsBinding.instance.addObserver(this);
     _muted = widget.startMuted;
-    _init = _initializeVideo(token);
+    _startInit();
     _autoHide();
+  }
+
+  void _startInit() {
+    final int token = ++_token;
+    _initFailed = false;
+    _init = _initializeVideo(token);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final c = _c;
+    if (c == null) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      if (c.value.isPlaying) {
+        _pausedForLifecycle = true;
+        try {
+          c.pause();
+        } catch (_) {}
+      }
+    } else if (state == AppLifecycleState.resumed && _pausedForLifecycle) {
+      _pausedForLifecycle = false;
+      try {
+        c.play();
+      } catch (_) {}
+    }
   }
 
   Future<void> _initializeVideo(int token) async {
@@ -82,13 +116,19 @@ class _FullscreenVideoPlayerScreenState
         return;
       }
 
-      // On mobile data, start muted
-      try {
-        final connectivityList = await Connectivity().checkConnectivity();
-        if (connectivityList.contains(ConnectivityResult.mobile)) {
-          _muted = true;
-        }
-      } catch (_) {}
+      // Data Saver always starts muted (conservative regardless of
+      // connection); otherwise start muted only on mobile data.
+      if (MediaPlaybackController.instance.autoplayQualityPreference ==
+          MediaQualityPreference.dataSaver) {
+        _muted = true;
+      } else {
+        try {
+          final connectivityList = await Connectivity().checkConnectivity();
+          if (connectivityList.contains(ConnectivityResult.mobile)) {
+            _muted = true;
+          }
+        } catch (_) {}
+      }
 
       if (widget.startAt > Duration.zero) {
         try {
@@ -114,11 +154,22 @@ class _FullscreenVideoPlayerScreenState
       setState(() {});
     } catch (e) {
       debugPrint('Fullscreen video init failed: $e');
+      if (_activeFilePath != null) {
+        VideoCacheService.instance.unregisterActivePath(_activeFilePath!);
+        _activeFilePath = null;
+      }
+      try {
+        _c?.dispose();
+      } catch (_) {}
+      _c = null;
+      if (!mounted || token != _token) return;
+      setState(() => _initFailed = true);
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _hide?.cancel();
     final c = _c;
     _c = null;
@@ -196,9 +247,53 @@ class _FullscreenVideoPlayerScreenState
                 if (_show) _autoHide();
               },
               onDoubleTap: _togglePlay,
-              child: c == null || _init == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : FutureBuilder<void>(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (widget.posterUrl != null && widget.posterUrl!.isNotEmpty)
+                    FurtailCachedImage(
+                      imageUrl: widget.posterUrl,
+                      fit: BoxFit.contain,
+                      errorWidget: const SizedBox.shrink(),
+                    ),
+                  if (_initFailed)
+                    Center(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(_startInit),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.45),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.refresh_rounded,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Could not play this video. Tap to retry.',
+                              style: context.appText.bodySmall!.copyWith(
+                                color: Colors.white,
+                                shadows: const [
+                                  Shadow(blurRadius: 6, color: Colors.black87),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (c == null || _init == null)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    FutureBuilder<void>(
                       future: _init,
                       builder: (_, snap) {
                         if (snap.connectionState != ConnectionState.done) {
@@ -216,6 +311,8 @@ class _FullscreenVideoPlayerScreenState
                         );
                       },
                     ),
+                ],
+              ),
             ),
 
             if (_show && c != null)

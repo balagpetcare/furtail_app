@@ -30,6 +30,7 @@ class VisitorProfileModel {
   final int followersCount;
   final int followingCount;
   final int petsCount;
+  final int mutualFriendsCount;
 
   final List<PetModel> pets;
   final List<VisitorAward> awards;
@@ -59,6 +60,7 @@ class VisitorProfileModel {
     required this.followersCount,
     required this.followingCount,
     required this.petsCount,
+    this.mutualFriendsCount = 0,
     required this.pets,
     required this.awards,
     required this.galleryUrls,
@@ -87,6 +89,7 @@ class VisitorProfileModel {
     int? followersCount,
     int? followingCount,
     int? petsCount,
+    int? mutualFriendsCount,
     List<PetModel>? pets,
     List<VisitorAward>? awards,
     List<String>? galleryUrls,
@@ -114,6 +117,7 @@ class VisitorProfileModel {
       followersCount: followersCount ?? this.followersCount,
       followingCount: followingCount ?? this.followingCount,
       petsCount: petsCount ?? this.petsCount,
+      mutualFriendsCount: mutualFriendsCount ?? this.mutualFriendsCount,
       pets: pets ?? this.pets,
       awards: awards ?? this.awards,
       galleryUrls: galleryUrls ?? this.galleryUrls,
@@ -257,6 +261,13 @@ class VisitorProfileModel {
         ? (data['followingCount'] as num).toInt()
         : 0;
 
+    // Mutual friends may arrive camelCase or snake_case.
+    final mutualFriendsCount = (data['mutualFriendsCount'] is num)
+        ? (data['mutualFriendsCount'] as num).toInt()
+        : (data['mutual_friends_count'] is num)
+        ? (data['mutual_friends_count'] as num).toInt()
+        : 0;
+
     final rawPreviews = (data['followerPreviewUrls'] as List?) ?? const [];
     final followerPreviewUrls = rawPreviews
         .whereType<String>()
@@ -287,6 +298,7 @@ class VisitorProfileModel {
       followersCount: followersCount,
       followingCount: followingCount,
       petsCount: pets.length,
+      mutualFriendsCount: mutualFriendsCount,
       pets: pets,
       awards: awards,
       galleryUrls: galleryUrls,

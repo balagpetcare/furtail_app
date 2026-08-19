@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:furtail_app/core/media/media_playback_controller.dart';
 import 'package:furtail_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:furtail_app/services/api_client.dart';
 
@@ -128,7 +129,11 @@ final mediaUploadSettingsProvider =
 class MediaUploadSettingsNotifier extends AsyncNotifier<MediaUploadSettings> {
   @override
   Future<MediaUploadSettings> build() async {
-    return ref.read(_mediaUploadDatasource).loadMediaUploadSettings();
+    final settings = await ref
+        .read(_mediaUploadDatasource)
+        .loadMediaUploadSettings();
+    _applyQualityPreference(settings.uploadQuality);
+    return settings;
   }
 
   Future<void> patch(
@@ -137,6 +142,19 @@ class MediaUploadSettingsNotifier extends AsyncNotifier<MediaUploadSettings> {
     final current = state.asData?.value ?? const MediaUploadSettings();
     final next = fn(current);
     state = AsyncData(next);
+    _applyQualityPreference(next.uploadQuality);
     await ref.read(_mediaUploadDatasource).saveMediaUploadSettings(next);
+  }
+
+  /// Pushes `UploadQuality` into `MediaPlaybackController`, the global
+  /// singleton the video autoplay policy reads from (outside the Riverpod
+  /// provider tree) — see its `setAutoplayQualityPreference`.
+  void _applyQualityPreference(UploadQuality quality) {
+    final preference = switch (quality) {
+      UploadQuality.dataSaver => MediaQualityPreference.dataSaver,
+      UploadQuality.standard => MediaQualityPreference.auto,
+      UploadQuality.high => MediaQualityPreference.high,
+    };
+    MediaPlaybackController.instance.setAutoplayQualityPreference(preference);
   }
 }

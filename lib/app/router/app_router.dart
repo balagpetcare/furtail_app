@@ -37,6 +37,8 @@ import 'package:furtail_app/core/auth/auth_gate.dart';
 import 'package:furtail_app/features/messaging/presentation/screens/inbox_screen.dart';
 import 'package:furtail_app/features/messaging/presentation/screens/chat_screen.dart';
 import 'package:furtail_app/features/social/presentation/screens/people_hub_screen.dart';
+import 'package:furtail_app/features/search/presentation/screens/global_search_screen.dart';
+import 'package:furtail_app/features/notifications/presentation/screens/notifications_screen.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -59,6 +61,9 @@ class AppRouter {
 
       case AppRoutes.home:
         return MaterialPageRoute(builder: (_) => const FurtailHomeScreen());
+
+      case AppRoutes.search:
+        return MaterialPageRoute(builder: (_) => const GlobalSearchScreen());
 
       case AppRoutes.shop:
         return MaterialPageRoute(builder: (_) => const ShopScreen());
@@ -245,9 +250,7 @@ class AppRouter {
         );
 
       case AppRoutes.notificationsList:
-        return MaterialPageRoute(
-          builder: (_) => const FurtailHomeScreen(initialIndex: 4),
-        );
+        return MaterialPageRoute(builder: (_) => const NotificationsScreen());
 
       case AppRoutes.petList:
         return MaterialPageRoute(builder: (_) => const PetListScreen());

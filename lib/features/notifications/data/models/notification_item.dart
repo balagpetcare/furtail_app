@@ -59,7 +59,14 @@ class NotificationItem {
       case AppNotificationType.friendRequestReceived:
       case AppNotificationType.friendRequestAccepted:
       case AppNotificationType.userFollowed:
+      case AppNotificationType.profileLiked:
         return actorId != null ? '/profile/$actorId' : null;
+      case AppNotificationType.message:
+      case AppNotificationType.postLiked:
+      case AppNotificationType.postCommented:
+      case AppNotificationType.postReplied:
+      case AppNotificationType.commentLiked:
+        return deepLink;
       case AppNotificationType.adoptionLike:
       case AppNotificationType.adoptionComment:
       case AppNotificationType.adoptionApplicationSubmitted:

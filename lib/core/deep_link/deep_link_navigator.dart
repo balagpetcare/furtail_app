@@ -11,6 +11,7 @@ import '../../features/posts/presentation/screens/post_details_by_id_screen.dart
 import '../../features/profile/presentation/screens/visitor_profile_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/profile/presentation/screens/visitor_profile_resolver_screen.dart';
+import '../../features/social/presentation/screens/people_hub_screen.dart';
 import 'deep_link_target.dart';
 
 /// Maps [DeepLinkTarget] to in-app navigation.
@@ -72,8 +73,9 @@ abstract final class DeepLinkNavigator {
         );
       case DeepLinkKind.friendRequests:
         return MaterialPageRoute(
-          builder: (_) => const FurtailHomeScreen(initialIndex: 4),
-          settings: const RouteSettings(name: AppRoutes.notificationsList),
+          builder: (_) =>
+              const PeopleHubScreen(initialTabIndex: PeopleHubTab.requests),
+          settings: const RouteSettings(name: AppRoutes.peopleHub),
         );
       case DeepLinkKind.adoption:
         final adoptionId = int.tryParse(target.id);

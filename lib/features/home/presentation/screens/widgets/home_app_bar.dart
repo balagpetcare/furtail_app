@@ -3,11 +3,13 @@ import 'package:furtail_app/core/accessibility/a11y_widgets.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/theme/typography.dart';
-import 'package:furtail_app/core/widgets/furtail_network_image.dart';
+import 'package:furtail_app/core/widgets/count_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:furtail_app/features/messaging/presentation/providers/messaging_providers.dart'
     show messagesUnreadCountProvider;
+import 'package:furtail_app/features/notifications/presentation/providers/notification_controller.dart'
+    show notificationsUnreadCountProvider;
 
 class HomeAppBar extends StatelessWidget {
   final String userName;
@@ -24,67 +26,62 @@ class HomeAppBar extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: hPad, vertical: AppSpacing.xs),
-      child: Row(
-        children: [
-          MinTouchTarget(
-            semanticLabel: 'Open navigation menu',
-            onTap: () => Scaffold.of(context).openDrawer(),
-            child: FurtailNetworkAvatar(
-              imageUrl: avatarUrl,
-              displayName: userName,
-              radius: 20,
-              backgroundColor: cs.primary,
-              foregroundColor: cs.onPrimary,
+      child: SizedBox(
+        height: 56, // Target approximately 56-64 logical pixels
+        child: Row(
+          children: [
+            AccessibleIconButton(
+              icon: Icons.menu,
+              tooltip: 'Open navigation menu',
+              semanticLabel: 'Open navigation menu',
+              color: cs.onSurface,
+              onPressed: () => Scaffold.of(context).openDrawer(),
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Semantics(
-              textField: true,
-              label: 'Search Furtail',
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: cs.outline),
-                ),
-                child: TextField(
-                  textAlignVertical: TextAlignVertical.center,
-                  style: context.appText.bodyMedium!.copyWith(
-                    color: cs.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search Furtail…',
-                    hintStyle: context.appText.bodyMedium!.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                    isDense: true,
-                  ),
-                ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              'Furtail',
+              style: context.appText.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: cs.primary,
+                letterSpacing: -0.5,
               ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          AccessibleIconButton(
-            icon: Icons.notifications_outlined,
-            tooltip: 'Notifications',
-            semanticLabel: 'Notifications',
-            color: cs.onSurface,
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.notificationsList),
-          ),
-          Consumer(
-            builder: (context, ref, _) {
-              final unread =
-                  ref.watch(messagesUnreadCountProvider).valueOrNull ?? 0;
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  AccessibleIconButton(
+            const Spacer(),
+            AccessibleIconButton(
+              icon: Icons.search,
+              tooltip: 'Search Furtail',
+              semanticLabel: 'Search Furtail',
+              color: cs.onSurface,
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.search),
+            ),
+            Consumer(
+              builder: (context, ref, child) {
+                final unreadAsync = ref.watch(notificationsUnreadCountProvider);
+                final count = unreadAsync.valueOrNull ?? 0;
+
+                return CountBadge(
+                  count: count,
+                  child: AccessibleIconButton(
+                    icon: Icons.notifications_outlined,
+                    tooltip: 'Notifications',
+                    semanticLabel: 'Notifications',
+                    color: cs.onSurface,
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.notificationsList,
+                    ),
+                  ),
+                );
+              },
+            ),
+            Consumer(
+              builder: (context, ref, child) {
+                final count =
+                    ref.watch(messagesUnreadCountProvider).valueOrNull ?? 0;
+
+                return CountBadge(
+                  count: count,
+                  child: AccessibleIconButton(
                     icon: Icons.chat_bubble_outline_rounded,
                     tooltip: 'Messages',
                     semanticLabel: 'Messages',
@@ -92,36 +89,11 @@ class HomeAppBar extends StatelessWidget {
                     onPressed: () =>
                         Navigator.pushNamed(context, AppRoutes.messagesInbox),
                   ),
-                  if (unread > 0)
-                    Positioned(
-                      right: 2,
-                      top: 2,
-                      child: Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          color: cs.error,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          unread > 99 ? '99+' : '$unread',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

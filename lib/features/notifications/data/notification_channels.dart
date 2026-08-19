@@ -11,7 +11,20 @@ abstract final class NotificationChannels {
   static const String uploadProgressChannelId = 'upload_progress';
   static const String uploadAlertChannelId = 'upload_alerts';
 
+  /// Dedicated high-importance channel for 1:1 direct messages. Stable ID —
+  /// must match `channelIdFor()` in the backend's push-delivery.service.ts,
+  /// since a push whose `channelId` doesn't match an already-created
+  /// channel silently falls back to the OS default channel (no custom
+  /// sound/importance). Android notification channels are immutable after
+  /// first creation on a given install: if this channel was ever created
+  /// with different settings on a dev device, uninstall/reinstall (or
+  /// Settings > Apps > Furtail > Notifications > Messages) is required to
+  /// see updated settings — code changes alone cannot retroactively change
+  /// a channel a user already has.
+  static const String messagesChannelId = 'furtail_messages';
+
   static String idFor(AppNotificationType type) {
+    if (type == AppNotificationType.message) return messagesChannelId;
     if (type.isSocial) return socialChannelId;
     return '$_prefix${type.code}';
   }
@@ -101,6 +114,16 @@ abstract final class NotificationChannels {
         'General',
         'Other notifications',
         Importance.defaultImportance,
+      ),
+      // Direct messages — high importance, sound + vibration, so a new
+      // message is never mistaken for a low-priority background alert.
+      AndroidNotificationChannel(
+        messagesChannelId,
+        'Messages',
+        description: 'New direct messages from other Furtail users',
+        importance: Importance.high,
+        playSound: true,
+        enableVibration: true,
       ),
       // Social interactions channel (shared by all social types)
       AndroidNotificationChannel(

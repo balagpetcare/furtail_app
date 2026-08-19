@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:furtail_app/app/router/app_routes.dart';
 import 'package:furtail_app/core/deep_link/deep_link_provider.dart';
+import 'package:furtail_app/core/navigation/app_navigator.dart';
 import 'package:furtail_app/services/api_client.dart';
 
 import '../../../campaign/data/models/campaign_models.dart';
 import '../../../campaign/data/services/campaign_notification_service.dart';
 import '../../../campaign/data/services/reminder_storage.dart';
+import '../../../messaging/presentation/providers/message_notification_coordinator.dart';
 import '../../data/models/notification_item.dart';
 import '../../data/models/notification_payload.dart';
 import '../../data/repositories/notification_repository.dart';
@@ -93,6 +96,7 @@ class NotificationsListNotifier extends Notifier<NotificationsListState> {
         nextCursor: res.nextCursor,
         unreadCount: res.unreadCount,
       );
+      ref.invalidate(notificationsUnreadCountProvider);
     } catch (e, st) {
       state = state.copyWith(loading: false, error: e.toString());
       if (kDebugMode) {
@@ -114,6 +118,7 @@ class NotificationsListNotifier extends Notifier<NotificationsListState> {
         nextCursor: res.nextCursor,
         unreadCount: res.unreadCount,
       );
+      ref.invalidate(notificationsUnreadCountProvider);
     } catch (_) {
       state = state.copyWith(loadingMore: false);
     }
@@ -180,6 +185,11 @@ class NotificationsListNotifier extends Notifier<NotificationsListState> {
       items: [item, ...state.items],
       unreadCount: state.unreadCount + 1,
     );
+    ref.invalidate(notificationsUnreadCountProvider);
+  }
+
+  void refreshUnreadCount() {
+    ref.invalidate(notificationsUnreadCountProvider);
   }
 }
 
@@ -208,12 +218,15 @@ final notificationControllerProvider =
     );
 
 class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
+  int? _lastHandledMessageTapId;
+
   @override
   Future<NotificationBootstrapState> build() async {
     final service = ref.read(notificationServiceProvider);
     final repo = ref.read(notificationRepositoryProvider);
 
     service.onNotificationTap = _handleNotificationTap;
+    service.onForegroundNotification = _handleForegroundNotification;
     service.onIncomingFcm = _handleIncomingFcm;
 
     await service.initialize();
@@ -301,12 +314,129 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
   }
 
   Future<bool> _handleIncomingFcm(Map<String, dynamic> data) async {
+    final rawType = data['type']?.toString();
+    if (rawType == AppNotificationType.message.code) {
+      return _handleIncomingMessageFcm(data);
+    }
     if (!CampaignNotificationService.isCampaignFcmPayload(data)) return false;
     await ref.read(campaignNotificationServiceProvider).handleFcmData(data);
     return true;
   }
 
+  /// Foreground FCM dedup/visibility policy for MESSAGE notifications (see
+  /// MessageNotificationCoordinator). Returns true to SUPPRESS the generic
+  /// system/local notification banner+sound this FCM message would
+  /// otherwise trigger via `showLocalNotification` — either because the
+  /// realtime SSE path already handled this exact message, or because the
+  /// recipient is already looking at that exact conversation right now.
+  Future<bool> _handleIncomingMessageFcm(Map<String, dynamic> data) async {
+    final messageId = int.tryParse(data['messageId']?.toString() ?? '');
+    final conversationId = int.tryParse(
+      data['conversationId']?.toString() ?? '',
+    );
+    if (kDebugMode) {
+      debugPrint('[Push] foreground message $messageId');
+    }
+    final coordinator = ref.read(messageNotificationCoordinatorProvider);
+    if (conversationId != null &&
+        coordinator.isConversationActive(conversationId)) {
+      // The open ChatScreen's realtime bubble already shows this — an
+      // Android system notification for the conversation the user is
+      // already looking at would just be noise.
+      if (messageId != null) coordinator.claimMessage(messageId);
+      await _refreshNotificationCenterState();
+      return true;
+    }
+    if (messageId != null && !coordinator.claimMessage(messageId)) {
+      // Already surfaced via SSE (e.g. Inbox bump) — don't show it twice.
+      await _refreshNotificationCenterState();
+      return true;
+    }
+    // Genuinely new to this device and not the currently-open conversation
+    // — let it fall through to the normal foreground local notification
+    // (Messages channel: sound + banner), satisfying "foreground but on
+    // another page" policy.
+    return false;
+  }
+
+  Future<void> _handleForegroundNotification(
+    NotificationPayload payload,
+  ) async {
+    await _refreshNotificationCenterState();
+  }
+
+  /// MESSAGE notifications never go through the generic notification-
+  /// details screen — they deep-link straight into the exact conversation.
+  /// Returns true if this payload was a message tap (handled or safely
+  /// no-opped as a duplicate), false to let the generic handling below run.
+  bool _tryHandleMessageTap(NotificationPayload payload) {
+    if (payload.type != AppNotificationType.message) return false;
+    return _navigateToMessageFromData(payload.data);
+  }
+
+  /// Shared by both the live tap handlers above and
+  /// [tryConsumePendingMessageTap]'s terminated-app cold-start path — one
+  /// canonical place that knows how to turn a MESSAGE FCM data payload into
+  /// a `AppRoutes.messagesChat` navigation. `senderId` is used as
+  /// `otherUserId`: the recipient's "other participant" in a 1:1 thread is
+  /// always whoever sent the message.
+  bool _navigateToMessageFromData(Map<String, String> data) {
+    final conversationId = int.tryParse(data['conversationId'] ?? '');
+    final otherUserId = int.tryParse(
+      data['otherUserId'] ?? data['senderId'] ?? '',
+    );
+    if (conversationId == null ||
+        conversationId <= 0 ||
+        otherUserId == null ||
+        otherUserId <= 0) {
+      if (kDebugMode) {
+        debugPrint('[Push] opened notification malformed message payload');
+      }
+      return false;
+    }
+
+    final messageId = int.tryParse(data['messageId'] ?? '');
+    if (messageId != null) {
+      if (_lastHandledMessageTapId == messageId) return true;
+      _lastHandledMessageTapId = messageId;
+    }
+
+    if (kDebugMode) {
+      debugPrint('[Push] opened notification $conversationId');
+    }
+
+    final args = <String, dynamic>{
+      'conversationId': conversationId,
+      'otherUserId': otherUserId,
+      if ((data['senderDisplayName'] ?? '').isNotEmpty)
+        'otherUserName': data['senderDisplayName'],
+      if ((data['senderAvatarUrl'] ?? '').isNotEmpty)
+        'otherUserAvatarUrl': data['senderAvatarUrl'],
+    };
+
+    final nav = AppNavigator.state;
+    if (nav != null) {
+      nav.pushNamed(AppRoutes.messagesChat, arguments: args);
+    } else {
+      // Router not ready yet (terminated-app cold start) — persisted so
+      // main.dart's bootstrap can consume it once init/auth/router settle.
+      ref.read(notificationRepositoryProvider).savePendingTapPayload(data);
+    }
+    return true;
+  }
+
+  /// Called by main.dart's bootstrap for a terminated-app cold start whose
+  /// pending tap payload turns out to be a MESSAGE notification. Returns
+  /// true if it handled navigation (caller should skip its generic
+  /// notificationId/actionUrl fallback), false otherwise.
+  bool tryConsumePendingMessageTap(Map<String, String> data) {
+    if (data['type'] != AppNotificationType.message.code) return false;
+    return _navigateToMessageFromData(data);
+  }
+
   void _handleNotificationTap(NotificationPayload payload) {
+    if (_tryHandleMessageTap(payload)) return;
+
     if (kDebugMode) {
       debugPrint(
         '[NotificationController] tap: ${payload.type.code} ${payload.actionUrl}',
@@ -329,8 +459,17 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
       case AppNotificationType.friendRequestReceived:
       case AppNotificationType.friendRequestAccepted:
       case AppNotificationType.userFollowed:
+      case AppNotificationType.profileLiked:
         if (payload.data['actorId'] != null) {
           deepLink.handleString('/profile/${payload.data['actorId']}');
+        }
+        break;
+      case AppNotificationType.postLiked:
+      case AppNotificationType.postCommented:
+      case AppNotificationType.postReplied:
+      case AppNotificationType.commentLiked:
+        if (payload.data['postId'] != null) {
+          deepLink.handleString('/post/${payload.data['postId']}');
         }
         break;
       case AppNotificationType.petFollowed:
@@ -349,11 +488,28 @@ class NotificationController extends AsyncNotifier<NotificationBootstrapState> {
           deepLink.handleString(payload.actionUrl!);
         }
         break;
+      case AppNotificationType.message:
+        break;
       default:
         break;
     }
   }
 
-  Future<Map<String, String>?> consumePendingTap() =>
-      ref.read(notificationRepositoryProvider).consumePendingTapPayload();
+  Future<void> _refreshNotificationCenterState() async {
+    ref.invalidate(notificationsUnreadCountProvider);
+    final listState = ref.read(notificationsListProvider);
+    if (listState.items.isNotEmpty ||
+        listState.error != null ||
+        listState.loading ||
+        listState.loadingMore) {
+      await ref.read(notificationsListProvider.notifier).load();
+    }
+  }
+
+  Future<Map<String, String>?> consumePendingTap() async {
+    final pending = await ref
+        .read(notificationRepositoryProvider)
+        .consumePendingTapPayload();
+    return pending;
+  }
 }

@@ -258,6 +258,10 @@ class PostModel {
   final int likeCount;
   final int commentCount;
   final bool isLikedByMe;
+  final String? viewerReaction;
+  final Map<String, int> reactionSummary;
+  final int totalReactionCount;
+  final List<PostAuthorModel> topReactors;
   final bool isBookmarkedByMe;
   final String privacy;
   final String? backgroundStyle;
@@ -305,6 +309,10 @@ class PostModel {
     required this.likeCount,
     required this.commentCount,
     required this.isLikedByMe,
+    this.viewerReaction,
+    this.reactionSummary = const {},
+    this.totalReactionCount = 0,
+    this.topReactors = const [],
     this.isBookmarkedByMe = false,
     this.privacy = 'PUBLIC',
     this.backgroundStyle,
@@ -347,6 +355,21 @@ class PostModel {
       return int.tryParse(trimmed);
     }
     return null;
+  }
+
+  /// Parses a reaction summary payload (a `Map` of reaction type to a numeric
+  /// count) into a typed `Map` of reaction type to count. Non-numeric values
+  /// are coerced to their integer value; missing or malformed payloads yield
+  /// an empty map.
+  static Map<String, int> reactionSummaryFrom(dynamic raw) {
+    if (raw is! Map) return const <String, int>{};
+    return <String, int>{
+      for (final e in raw.entries)
+        if (e.key != null)
+          e.key.toString(): e.value is num
+              ? (e.value as num).toInt()
+              : (int.tryParse(e.value.toString()) ?? 0),
+    };
   }
 
   static int? _readFundraiserIdFromPayload(dynamic raw) {
@@ -514,6 +537,15 @@ class PostModel {
           (json['isLiked'] as bool?) ??
           (json['isPawed'] as bool?) ??
           false,
+      viewerReaction: json['viewerReaction']?.toString(),
+      reactionSummary: reactionSummaryFrom(json['reactionSummary']),
+      totalReactionCount: _readCount(countJson, json, const [
+        'totalReactionCount',
+        'reactionCount',
+      ]),
+      topReactors: ((json['topReactors'] as List?) ?? const [])
+          .map((e) => PostAuthorModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
       isBookmarkedByMe: (json['isBookmarkedByMe'] as bool?) ?? false,
       privacy: (json['privacy'] ?? 'PUBLIC').toString(),
       backgroundStyle: json['backgroundStyle']?.toString(),
@@ -566,6 +598,10 @@ class PostModel {
     int? likeCount,
     int? commentCount,
     bool? isLikedByMe,
+    String? viewerReaction,
+    Map<String, int>? reactionSummary,
+    int? totalReactionCount,
+    List<PostAuthorModel>? topReactors,
     bool? isBookmarkedByMe,
     String? privacy,
     String? backgroundStyle,
@@ -607,6 +643,10 @@ class PostModel {
       likeCount: likeCount ?? this.likeCount,
       commentCount: commentCount ?? this.commentCount,
       isLikedByMe: isLikedByMe ?? this.isLikedByMe,
+      viewerReaction: viewerReaction ?? this.viewerReaction,
+      reactionSummary: reactionSummary ?? this.reactionSummary,
+      totalReactionCount: totalReactionCount ?? this.totalReactionCount,
+      topReactors: topReactors ?? this.topReactors,
       isBookmarkedByMe: isBookmarkedByMe ?? this.isBookmarkedByMe,
       privacy: privacy ?? this.privacy,
       backgroundStyle: backgroundStyle ?? this.backgroundStyle,

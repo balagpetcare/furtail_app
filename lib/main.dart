@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:furtail_app/l10n/app_localizations.dart';
 import 'app/router/app_router.dart';
 import 'core/deep_link/deep_link_provider.dart';
+import 'core/auth/auth_controller.dart';
 import 'core/localization/locale_controller.dart';
 import 'core/navigation/app_navigator.dart';
 import 'core/theme/app_theme.dart';
@@ -20,6 +21,7 @@ import 'core/crash_reporting/crash_reporting_service.dart';
 import 'core/config/app_config.dart';
 import 'features/notifications/data/services/notification_service.dart';
 import 'features/notifications/presentation/providers/notification_controller.dart';
+import 'features/social/presentation/providers/presence_providers.dart';
 import 'core/services/post_upload_manager.dart';
 import 'core/media/furtail_cache_manager.dart' show VideoCacheService;
 import 'core/network/api_config.dart';
@@ -81,11 +83,101 @@ class FurtailApp extends ConsumerStatefulWidget {
   ConsumerState<FurtailApp> createState() => _FurtailAppState();
 }
 
-class _FurtailAppState extends ConsumerState<FurtailApp> {
+class _FurtailAppState extends ConsumerState<FurtailApp>
+    with WidgetsBindingObserver {
+  DateTime? _lastNotificationRefreshAt;
+  ProviderSubscription<AuthState>? _authSubscription;
+  int? _pushRegisteredForUserId;
+  AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
+
+  // Captured in initState — `ref` is not usable from dispose() once the
+  // element starts unmounting (same pitfall as any ConsumerState), so the
+  // reference dispose() needs has to be grabbed while `ref` is still live.
+  late final HeartbeatController _heartbeatController;
+
   @override
   void initState() {
     super.initState();
+    _heartbeatController = ref.read(heartbeatControllerProvider);
+    WidgetsBinding.instance.addObserver(this);
+    _authSubscription = ref.listenManual(authControllerProvider, (
+      previous,
+      next,
+    ) {
+      final previousStatus = previous?.status;
+      final currentStatus = next.status;
+      if (currentStatus == AuthStatus.authenticated) {
+        final userId = next.profile?.id;
+        if (userId != null && userId != _pushRegisteredForUserId) {
+          _pushRegisteredForUserId = userId;
+          unawaited(
+            ref
+                .read(notificationControllerProvider.notifier)
+                .registerPushAfterAuth(),
+          );
+        }
+      } else if (previousStatus == AuthStatus.authenticated ||
+          currentStatus == AuthStatus.unauthenticated ||
+          currentStatus == AuthStatus.bootstrapFailed) {
+        _pushRegisteredForUserId = null;
+      }
+
+      if (currentStatus == AuthStatus.authenticated) {
+        if (_lifecycleState == AppLifecycleState.resumed) {
+          ref.read(heartbeatControllerProvider).start();
+        }
+      } else if (previousStatus == AuthStatus.authenticated) {
+        // Logout (or session loss) — clear active status immediately rather
+        // than waiting out the Redis TTL.
+        ref.read(heartbeatControllerProvider).stop(notifyOffline: true);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrapServices());
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.close();
+    _authSubscription = null;
+    WidgetsBinding.instance.removeObserver(this);
+    _heartbeatController.stop();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    _lifecycleState = state;
+
+    final isAuthenticated =
+        ref.read(authControllerProvider).status == AuthStatus.authenticated;
+    if (state == AppLifecycleState.resumed) {
+      if (isAuthenticated) ref.read(heartbeatControllerProvider).start();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      if (isAuthenticated) {
+        ref.read(heartbeatControllerProvider).stop(notifyOffline: true);
+      }
+    }
+
+    if (state != AppLifecycleState.resumed) return;
+    final now = DateTime.now();
+    if (_lastNotificationRefreshAt != null &&
+        now.difference(_lastNotificationRefreshAt!) <
+            const Duration(seconds: 2)) {
+      return;
+    }
+    _lastNotificationRefreshAt = now;
+
+    unawaited(ref.read(notificationsUnreadCountProvider.future));
+    final listState = ref.read(notificationsListProvider);
+    if (listState.items.isNotEmpty ||
+        listState.error != null ||
+        listState.loading ||
+        listState.loadingMore) {
+      unawaited(ref.read(notificationsListProvider.notifier).load());
+    }
   }
 
   Future<void> _bootstrapServices() async {

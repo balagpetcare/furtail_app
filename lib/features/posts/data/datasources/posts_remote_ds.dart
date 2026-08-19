@@ -376,7 +376,9 @@ class PostsRemoteDs {
     String? idempotencyKey,
   }) async {
     final headers = await _authHeaders(json: true);
-    final idempotencyHeaders = _buildUploadHeaders(idempotencyKey: idempotencyKey);
+    final idempotencyHeaders = _buildUploadHeaders(
+      idempotencyKey: idempotencyKey,
+    );
     if (idempotencyHeaders != null) headers.addAll(idempotencyHeaders);
     final res = await http.post(
       Uri.parse(ApiEndpoints.postsCreate()),
@@ -515,10 +517,11 @@ class PostsRemoteDs {
     }
   }
 
-  Future<Map<String, dynamic>> likePost(int postId) async {
+  Future<Map<String, dynamic>> likePost(int postId, {String? reaction}) async {
     final res = await http.post(
       Uri.parse(ApiEndpoints.postsLike(postId: postId)),
-      headers: await _authHeaders(json: false),
+      headers: await _authHeaders(json: true),
+      body: jsonEncode({if (reaction != null) 'reaction': reaction}),
     );
     if (res.statusCode != 200) {
       throw Exception('Like failed (${res.statusCode}): ${res.body}');

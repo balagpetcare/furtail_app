@@ -53,8 +53,10 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                         if (isVideo) {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  FullscreenVideoPlayerScreen(url: m.url),
+                              builder: (_) => FullscreenVideoPlayerScreen(
+                                url: m.playbackUrl,
+                                posterUrl: m.thumbnailUrl,
+                              ),
                             ),
                           );
                         } else {
@@ -87,7 +89,7 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
                           fit: StackFit.expand,
                           children: [
                             if (isVideo)
-                              _VideoCover(url: m.url)
+                              _VideoCover(url: m.url, posterUrl: m.thumbnailUrl)
                             else
                               CachedNetworkImage(
                                 imageUrl: m.url,
@@ -226,11 +228,25 @@ class _FundraisingMediaCarouselState extends State<FundraisingMediaCarousel> {
 
 class _VideoCover extends StatelessWidget {
   final String url;
-  const _VideoCover({required this.url});
+  final String? posterUrl;
+  const _VideoCover({required this.url, this.posterUrl});
 
   @override
   Widget build(BuildContext context) {
-    // For now, show a dark cover. (Feed video player is heavier; avoid in details carousel)
-    return Container(color: const Color(0xFF111111));
+    // Feed video player is heavier and unnecessary here — this carousel
+    // only needs a static preview; tapping opens the real player
+    // fullscreen. Shows the real poster frame when the backend has
+    // generated one, falling back to a plain dark cover otherwise (e.g.
+    // legacy video uploaded before poster extraction existed).
+    final poster = posterUrl?.trim() ?? '';
+    if (poster.isEmpty) {
+      return Container(color: const Color(0xFF111111));
+    }
+    return CachedNetworkImage(
+      imageUrl: poster,
+      cacheManager: FurtailImageCacheManager(),
+      fit: BoxFit.cover,
+      errorWidget: (_, _, _) => Container(color: const Color(0xFF111111)),
+    );
   }
 }

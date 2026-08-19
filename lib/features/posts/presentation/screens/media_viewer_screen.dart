@@ -400,6 +400,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
           Center(
             child: FeedVideoPlayer(
               url: item.playbackUrl,
+              posterUrl: item.thumbnailUrl,
               visibilityKey: 'mv-video-${item.id}',
               startMuted: false,
               syncMuteWithGlobal: false,
@@ -599,6 +600,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
                     children: [
                       FeedVideoPlayer(
                         url: item.playbackUrl,
+                        posterUrl: item.thumbnailUrl,
                         visibilityKey: 'mv-video-${item.id}',
                         startMuted: true,
                         enableAutoplay: true,
