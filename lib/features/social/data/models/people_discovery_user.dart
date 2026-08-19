@@ -6,7 +6,6 @@ class PeopleDiscoveryUser {
   final String displayName;
   final String? username;
   final String? avatarUrl;
-  final MediaVariants? avatarVariants;
   final String? bio;
   final String? placeLive;
   final String? from;
@@ -22,10 +21,8 @@ class PeopleDiscoveryUser {
   final bool interactionAllowed;
   final bool canViewFullProfile;
 
-  /// The right-sized avatar image for a discovery-list tile, falling back
-  /// to [avatarUrl] when no variants exist yet.
-  String? resolvedAvatarUrl(MediaUse use) =>
-      MediaUrl.pick(avatarVariants, use: use, fallbackUrl: avatarUrl);
+  String? resolvedAvatarUrl() =>
+      avatarUrl != null ? MediaUrl.normalize(avatarUrl!) : null;
 
   const PeopleDiscoveryUser({
     required this.id,
@@ -33,7 +30,6 @@ class PeopleDiscoveryUser {
     required this.displayName,
     required this.username,
     required this.avatarUrl,
-    this.avatarVariants,
     required this.bio,
     required this.placeLive,
     required this.from,
@@ -56,7 +52,6 @@ class PeopleDiscoveryUser {
     String? displayName,
     String? username,
     String? avatarUrl,
-    MediaVariants? avatarVariants,
     String? bio,
     String? placeLive,
     String? from,
@@ -78,7 +73,6 @@ class PeopleDiscoveryUser {
       displayName: displayName ?? this.displayName,
       username: username ?? this.username,
       avatarUrl: avatarUrl ?? this.avatarUrl,
-      avatarVariants: avatarVariants ?? this.avatarVariants,
       bio: bio ?? this.bio,
       placeLive: placeLive ?? this.placeLive,
       from: from ?? this.from,
@@ -158,7 +152,6 @@ class PeopleDiscoveryUser {
       displayName: text(data['displayName']) ?? 'Furtail Member',
       username: text(data['username']),
       avatarUrl: text(data['avatarUrl']),
-      avatarVariants: MediaVariants.fromJson(data['avatarVariants']),
       bio: text(data['bio']),
       placeLive: text(data['placeLive']),
       from: text(data['from']),

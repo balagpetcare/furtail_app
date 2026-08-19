@@ -285,6 +285,37 @@ class ApiEndpoints {
   static String friendRequestCancel(int requestId) =>
       "${ApiConfig.apiV1}/social/friend-request/$requestId/cancel";
 
+  static String unfriend(int userId) =>
+      "${ApiConfig.apiV1}/social/friends/$userId";
+  static String blockUser(int userId) =>
+      "${ApiConfig.apiV1}/social/block/$userId";
+  static String unblockUser(int userId) =>
+      "${ApiConfig.apiV1}/social/block/$userId";
+  static String socialCounts(int userId) =>
+      "${ApiConfig.apiV1}/social/counts/$userId";
+  static String socialFriends({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/friends?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String socialFollowers({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/followers?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String socialFollowing({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/following?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String friendRequestsIncoming({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/friend-requests/incoming?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String friendRequestsOutgoing({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/friend-requests/outgoing?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String blockedUsers({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/blocked?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String peopleDiscoverySuggestions({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/social/discovery/suggestions?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String dismissPeopleSuggestion(int userId) =>
+      "${ApiConfig.apiV1}/social/discovery/suggestions/$userId/dismiss";
+  static String peopleDiscoverySearch({
+    required String query,
+    int limit = 20,
+    String? cursor,
+  }) =>
+      "${ApiConfig.apiV1}/social/discovery/search?q=${Uri.encodeQueryComponent(query)}&${_cursorQuery(limit: limit, cursor: cursor)}";
+
   // ---------- FUNDRAISING (PHASE A) ----------
   /// Fundraising feed with optional filters
   /// Supported params (server): limit, verified, category, location, sort
@@ -900,4 +931,44 @@ class ApiEndpoints {
   /// GET /api/v1/public/countries/default — single default country
   static String get publicCountryDefault =>
       "${ApiConfig.apiV1}/public/countries/default";
+
+  static String _cursorQuery({int limit = 20, String? cursor}) {
+    final params = <String, String>{'limit': '$limit'};
+    if (cursor != null && cursor.isNotEmpty) params['cursor'] = cursor;
+    return params.entries
+        .map(
+          (e) =>
+              '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+        )
+        .join('&');
+  }
+
+  // ---------- DIRECT MESSAGING ----------
+  static String messagingConversations({int limit = 20, String? cursor}) =>
+      "${ApiConfig.apiV1}/messages/conversations?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String messagingStartConversation() =>
+      "${ApiConfig.apiV1}/messages/conversations";
+  static String messagingMessages(
+    int conversationId, {
+    int limit = 30,
+    String? cursor,
+  }) =>
+      "${ApiConfig.apiV1}/messages/conversations/$conversationId/messages?${_cursorQuery(limit: limit, cursor: cursor)}";
+  static String messagingSend(int conversationId) =>
+      "${ApiConfig.apiV1}/messages/conversations/$conversationId/messages";
+  static String messagingMessage(int conversationId, int messageId) =>
+      "${ApiConfig.apiV1}/messages/conversations/$conversationId/messages/$messageId";
+  static String messagingMarkRead(int conversationId) =>
+      "${ApiConfig.apiV1}/messages/conversations/$conversationId/read";
+  static String messagingTyping(int conversationId) =>
+      "${ApiConfig.apiV1}/messages/conversations/$conversationId/typing";
+  static String messagingUnread() => "${ApiConfig.apiV1}/messages/unread";
+  static String messagingMediaSettings() =>
+      "${ApiConfig.apiV1}/messages/media-settings";
+  static String realtimeStream() => "${ApiConfig.apiV1}/realtime/stream";
+
+  // ---------- PRESENCE / ACTIVE STATUS ----------
+  static String presenceHeartbeat() => "${ApiConfig.apiV1}/presence/heartbeat";
+  static String presenceOffline() => "${ApiConfig.apiV1}/presence/offline";
+  static String presenceBulk() => "${ApiConfig.apiV1}/presence/bulk";
 }

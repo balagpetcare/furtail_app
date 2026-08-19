@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:furtail_app/app/router/app_routes.dart';
-import 'package:furtail_app/core/media/media_url.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 
 import 'package:furtail_app/features/social/presentation/providers/presence_providers.dart';
@@ -121,6 +120,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             : const Text('Messages'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.people_alt_outlined),
+            tooltip: 'Friends & People',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.peopleHub),
+          ),
+          IconButton(
             icon: Icon(_searching ? Icons.close_rounded : Icons.search_rounded),
             tooltip: _searching ? 'Close search' : 'Search conversations',
             onPressed: _toggleSearch,
@@ -207,7 +211,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               conversation.conversationId,
               conversation.otherUserId,
               conversation.otherUser?.displayName,
-              conversation.otherUser?.resolvedAvatarUrl(MediaUse.thumbnail),
+              conversation.otherUser?.resolvedAvatarUrl(),
             ),
           );
         },

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/navigation/profile_navigation.dart';
-import 'package:furtail_app/core/media/media_url.dart';
-import 'package:furtail_app/features/profile/data/models/visitor_profile_model.dart';
 import 'package:furtail_app/core/theme/spacing.dart';
 
 import '../../data/models/presence_info.dart';
@@ -61,16 +59,7 @@ class SocialUserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => ProfileNavigation.openUserProfile(
-        context,
-        user.id,
-        preview: VisitorProfilePreview(
-          id: user.id,
-          displayName: user.displayName,
-          username: user.username,
-          avatarUrl: user.avatarUrl,
-        ),
-      ),
+      onTap: () => ProfileNavigation.openUserProfile(context, user.id),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -79,7 +68,7 @@ class SocialUserTile extends StatelessWidget {
         child: Row(
           children: [
             PresenceAvatar(
-              url: user.resolvedAvatarUrl(MediaUse.thumbnail),
+              url: user.resolvedAvatarUrl(),
               displayName: user.displayName,
               radius: avatarRadius,
               isOnline: presence?.isOnline ?? false,

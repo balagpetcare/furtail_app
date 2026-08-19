@@ -1,4 +1,12 @@
-import 'package:furtail_app/core/media/authenticated_media.dart' show resolveMediaUrl;
+import 'package:furtail_app/core/media/media_url.dart';
+
+/// Adapted from the pre-phase3 snapshot's `resolveMediaUrl` (which assumed
+/// an authenticated media-fetch layer that no longer exists) onto this
+/// branch's plain URL normalization (`MediaUrl.normalize`).
+String? resolveMediaUrl(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  return MediaUrl.normalize(raw);
+}
 
 /// Best-effort MIME type from a filename's extension — used only to render
 /// a sensible *local* preview (image thumbnail vs. video vs. audio icon)

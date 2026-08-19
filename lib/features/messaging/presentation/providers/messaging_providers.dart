@@ -867,7 +867,8 @@ class MessageThreadController
             if (result.status?.toUpperCase() == 'FAILED') {
               throw MediaUploadException(
                 kind: MediaUploadErrorKind.storageFailure,
-                userMessage: 'This file could not be processed. Please try again.',
+                userMessage:
+                    'This file could not be processed. Please try again.',
               );
             }
             mediaIds.add(result.id);
@@ -1168,9 +1169,9 @@ class MessageThreadController
         // `attachments` entirely, so a media message delivered via SSE
         // rendered with no attachment at all until the thread next
         // reconciled from REST.
-        final incoming = MessageModel.fromApi(event.data).copyWith(
-          id: messageId,
-        );
+        final incoming = MessageModel.fromApi(
+          event.data,
+        ).copyWith(id: messageId);
         _mergeIncoming(incoming);
       case 'message.updated':
         final id = (event.data['messageId'] as num?)?.toInt();

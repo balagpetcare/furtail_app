@@ -6,7 +6,6 @@ import 'package:furtail_app/core/navigation/profile_navigation.dart';
 import 'package:furtail_app/core/network/connectivity_service.dart';
 import 'package:furtail_app/core/providers/current_user_provider.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
-import 'package:furtail_app/core/widgets/block_confirm_dialog.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:furtail_app/features/social/presentation/providers/presence_providers.dart';
 import 'package:furtail_app/features/social/presentation/providers/social_providers.dart';
@@ -161,7 +160,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   Future<void> _handleBlock() async {
     final name = widget.otherUserName ?? 'this user';
-    final confirmed = await BlockConfirmDialog.show(context, userName: name);
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Block user?'),
+            content: Text(
+              'You will no longer see messages from $name and they '
+              "won't be able to message you.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Block'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
     if (!confirmed || !mounted) return;
     try {
       await ref.read(socialRepositoryProvider).block(widget.otherUserId);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:furtail_app/core/media/media_url.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
 import 'package:furtail_app/features/social/presentation/widgets/presence_dot.dart';
@@ -76,8 +75,7 @@ class ConversationTile extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 FurtailNetworkAvatar(
-                  imageUrl:
-                      other?.resolvedAvatarUrl(MediaUse.thumbnail) ?? avatarUrl,
+                  imageUrl: other?.resolvedAvatarUrl() ?? avatarUrl,
                   displayName: name,
                   radius: 28,
                   backgroundColor: cs.primaryContainer,

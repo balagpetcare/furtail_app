@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:furtail_app/core/navigation/profile_navigation.dart';
-import 'package:furtail_app/core/media/media_url.dart';
-import 'package:furtail_app/features/profile/data/models/visitor_profile_model.dart';
 
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/features/social/data/models/people_discovery_user.dart';
@@ -50,16 +48,7 @@ class PeopleDiscoveryTile extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
-          onTap: () => ProfileNavigation.openUserProfile(
-            context,
-            user.id,
-            preview: VisitorProfilePreview(
-              id: user.id,
-              displayName: user.displayName,
-              username: user.username,
-              avatarUrl: user.avatarUrl,
-            ),
-          ),
+          onTap: () => ProfileNavigation.openUserProfile(context, user.id),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Stack(
@@ -70,7 +59,7 @@ class PeopleDiscoveryTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SocialAvatar(
-                        url: user.resolvedAvatarUrl(MediaUse.thumbnail),
+                        url: user.resolvedAvatarUrl(),
                         displayName: user.displayName,
                         radius: 28,
                       ),

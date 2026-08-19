@@ -10,12 +10,8 @@ class SocialUserSummary {
   final String displayName;
   final String? username;
   final String? avatarUrl;
-  final MediaVariants? avatarVariants;
-
-  /// The right-sized avatar image for a list-row tile, falling back to
-  /// [avatarUrl] when no variants exist yet.
-  String? resolvedAvatarUrl(MediaUse use) =>
-      MediaUrl.pick(avatarVariants, use: use, fallbackUrl: avatarUrl);
+  String? resolvedAvatarUrl() =>
+      avatarUrl != null ? MediaUrl.normalize(avatarUrl!) : null;
 
   /// Present for incoming/outgoing friend-request rows only.
   final int? requestId;
@@ -28,7 +24,6 @@ class SocialUserSummary {
     required this.displayName,
     this.username,
     this.avatarUrl,
-    this.avatarVariants,
     this.requestId,
     this.since,
   });
@@ -64,7 +59,6 @@ class SocialUserSummary {
       displayName: displayName.isEmpty ? 'Furtail Member' : displayName,
       username: username.isEmpty ? null : username,
       avatarUrl: avatarUrl.isEmpty ? null : avatarUrl,
-      avatarVariants: MediaVariants.fromJson(avatarMedia['variants']),
       requestId: requestId,
       since: since,
     );

@@ -34,6 +34,9 @@ import 'package:furtail_app/features/campaign/presentation/screens/certificate_v
 import 'package:furtail_app/core/widgets/placeholder_screen.dart';
 import 'package:furtail_app/features/adoption/presentation/screens/adoption_home_screen.dart';
 import 'package:furtail_app/core/auth/auth_gate.dart';
+import 'package:furtail_app/features/messaging/presentation/screens/inbox_screen.dart';
+import 'package:furtail_app/features/messaging/presentation/screens/chat_screen.dart';
+import 'package:furtail_app/features/social/presentation/screens/people_hub_screen.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -248,6 +251,30 @@ class AppRouter {
 
       case AppRoutes.petList:
         return MaterialPageRoute(builder: (_) => const PetListScreen());
+
+      case AppRoutes.messagesInbox:
+        return MaterialPageRoute(builder: (_) => const InboxScreen());
+
+      case AppRoutes.messagesChat:
+        {
+          final args = settings.arguments as Map<String, dynamic>? ?? const {};
+          final conversationId = args['conversationId'] as int?;
+          final otherUserId = args['otherUserId'] as int?;
+          if (conversationId == null || otherUserId == null) {
+            return _notFound('Missing conversation arguments');
+          }
+          return MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              conversationId: conversationId,
+              otherUserId: otherUserId,
+              otherUserName: args['otherUserName'] as String?,
+              otherUserAvatarUrl: args['otherUserAvatarUrl'] as String?,
+            ),
+          );
+        }
+
+      case AppRoutes.peopleHub:
+        return MaterialPageRoute(builder: (_) => const PeopleHubScreen());
 
       default:
         return _notFound('Route not found');

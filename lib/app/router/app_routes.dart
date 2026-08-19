@@ -38,6 +38,11 @@ class AppRoutes {
 
   static const lostPetAlert = '/lost-pet-alert';
 
+  static const messagesInbox = '/messages';
+  static const messagesChat =
+      '/messages/chat'; // args: {conversationId, otherUserId, otherUserName?, otherUserAvatarUrl?}
+  static const peopleHub = '/people';
+
   static const notificationsList = '/notifications';
   static const settings = '/settings';
   static const accountSettings = '/settings/account';

@@ -590,12 +590,17 @@ class _FurtailHomeScreenState extends ConsumerState<FurtailHomeScreen> {
 
       case BPADrawerDestination.community:
       case BPADrawerDestination.events:
-      case BPADrawerDestination.messages:
         {
           pushPlaceholder(
             'Coming Soon',
             'This feature is being built and will be available soon.',
           );
+          return;
+        }
+
+      case BPADrawerDestination.messages:
+        {
+          await Navigator.pushNamed(context, AppRoutes.messagesInbox);
           return;
         }
 

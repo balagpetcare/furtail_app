@@ -7,7 +7,6 @@ import 'package:furtail_app/app/router/app_routes.dart';
 import 'package:furtail_app/core/navigation/profile_navigation.dart';
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/features/messaging/presentation/providers/messaging_providers.dart';
-import 'package:furtail_app/features/profile/data/models/visitor_profile_model.dart';
 import 'package:furtail_app/features/social/data/models/presence_info.dart';
 import 'package:furtail_app/features/social/data/models/social_user_summary.dart';
 import 'package:furtail_app/features/social/presentation/providers/people_discovery_providers.dart';
@@ -543,16 +542,8 @@ class _RelationshipTabState extends ConsumerState<_RelationshipTab> {
           presence: presence,
           trailing: _FriendRowActions(
             onMessage: () => _openConversation(context, row),
-            onViewProfile: () => ProfileNavigation.openUserProfile(
-              context,
-              row.id,
-              preview: VisitorProfilePreview(
-                id: row.id,
-                displayName: row.displayName,
-                username: row.username,
-                avatarUrl: row.avatarUrl,
-              ),
-            ),
+            onViewProfile: () =>
+                ProfileNavigation.openUserProfile(context, row.id),
             onRemove: () => _confirmUnfriend(context, controller, row),
           ),
         );

@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 
 import 'package:furtail_app/core/theme/theme_extensions.dart';
 import 'package:furtail_app/core/widgets/furtail_network_image.dart';
-import 'package:furtail_app/core/widgets/authenticated_network_image.dart';
 import 'package:furtail_app/core/media/fullscreen_gallery_viewer.dart';
 import 'package:furtail_app/core/media/fullscreen_video_player_screen.dart';
 
@@ -214,7 +213,6 @@ class MessageBubble extends StatelessWidget {
                               urls: urls,
                               initialIndex: initialIndex,
                               heroTagPrefix: 'msg_${message.id}_',
-                              authenticated: true,
                             ),
                           ),
                         );
@@ -230,7 +228,7 @@ class MessageBubble extends StatelessWidget {
                         // check on the backend) — a plain unauthenticated
                         // network image request 403s. This fetches through
                         // the app's own authenticated API client instead.
-                        child: AuthenticatedNetworkImage(
+                        child: FurtailCachedImage(
                           imageUrl: thumb,
                           width: boxWidth,
                           height: boxHeight,
@@ -247,10 +245,8 @@ class MessageBubble extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => FullscreenVideoPlayerScreen(
-                            url: attachment.url!,
-                            posterUrl: poster,
-                          ),
+                          builder: (_) =>
+                              FullscreenVideoPlayerScreen(url: attachment.url!),
                         ),
                       );
                     },
@@ -263,7 +259,7 @@ class MessageBubble extends StatelessWidget {
                           fit: StackFit.expand,
                           children: [
                             if (poster != null)
-                              AuthenticatedNetworkImage(
+                              FurtailCachedImage(
                                 imageUrl: poster,
                                 width: boxWidth,
                                 height: boxHeight,

@@ -41,7 +41,8 @@ class MessageMediaPreparationService {
     if (bytes.isEmpty) {
       throw const MediaUploadException(
         kind: MediaUploadErrorKind.invalidPayload,
-        userMessage: 'The selected image is empty. Please choose a different file.',
+        userMessage:
+            'The selected image is empty. Please choose a different file.',
       );
     }
 

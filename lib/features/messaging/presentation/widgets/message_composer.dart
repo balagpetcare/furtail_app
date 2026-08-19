@@ -170,7 +170,9 @@ class _MessageComposerState extends State<MessageComposer> {
     );
     await target.writeAsBytes(bytes, flush: true);
     if (kDebugMode) {
-      debugPrint('[MediaUpload] selected type=image/video size=${bytes.length}');
+      debugPrint(
+        '[MediaUpload] selected type=image/video size=${bytes.length}',
+      );
     }
     return target;
   }

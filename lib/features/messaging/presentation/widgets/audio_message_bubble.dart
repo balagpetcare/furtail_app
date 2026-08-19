@@ -4,9 +4,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:furtail_app/core/media/authenticated_media.dart';
-import 'package:furtail_app/services/api_client.dart';
-
 /// Play/pause + progress for a single voice/audio message attachment.
 /// Minimal `audioplayers`-based player (already a declared dependency, no
 /// new package) — mirrors the "smallest maintainable" approach the rest of
@@ -103,13 +100,8 @@ class _AudioMessageBubbleState extends ConsumerState<AudioMessageBubble> {
       _errored = false;
     });
     try {
-      final client = ref.read(apiClientProvider);
-      final path = await AuthenticatedMediaCache.instance.fetchAudioFile(
-        client,
-        widget.url,
-      );
       if (!mounted) return;
-      await _player.play(DeviceFileSource(path));
+      await _player.play(UrlSource(widget.url));
     } catch (_) {
       if (mounted) setState(() => _errored = true);
     } finally {
